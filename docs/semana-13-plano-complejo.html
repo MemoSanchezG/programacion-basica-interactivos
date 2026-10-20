@@ -1,0 +1,1139 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="tipo" content="simulador">
+<title>El plano complejo</title>
+
+<style>
+  :root {
+    --azul:#00408F; --azul-oscuro:#0A2A57; --guinda:#8C1D35; --oro:#B8975A; --oro-texto:#8A6A2E;
+    --azul-claro:#E8EEF7; --oro-claro:#F7F1E6; --guinda-claro:#F5E6EA; --verde:#2F7D5B;
+    --tinta:#1B1F2A; --gris:#5B6472; --gris-claro:#E9ECF1; --borde:#D9DEE6; --fondo:#FFFFFF;
+    --cmd-fondo:#0C0C0C; --cmd-texto:#E6E6E6;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--fondo); color:var(--tinta);
+         font:16px/1.45 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .franja { height:8px; background:var(--azul); border-bottom:3px solid var(--oro); }
+  header { max-width:1280px; margin:0 auto; padding:12px 18px 4px; }
+  .semana { color:var(--guinda); font-weight:bold; letter-spacing:.04em; font-size:.85rem; text-transform:uppercase; }
+  h1 { font-family:Cambria,Georgia,serif; color:var(--azul-oscuro); font-size:1.7rem; margin:2px 0 2px; }
+  .sub { color:var(--gris); margin:0; }
+  main { max-width:1280px; margin:0 auto; padding:8px 18px 24px; }
+  nav.pestanas { display:flex; gap:4px; flex-wrap:wrap; border-bottom:2px solid var(--gris-claro); margin:6px 0 12px; }
+  nav.pestanas button { font:inherit; font-weight:bold; border:none; background:none; color:var(--gris);
+                        padding:8px 14px; cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; }
+  nav.pestanas button.activo { color:var(--azul-oscuro); border-bottom-color:var(--azul); }
+  nav.pestanas button:focus-visible { outline:2px solid var(--azul); }
+  section.vista { display:none; }
+  section.vista.activo { display:block; }
+  .fila { display:grid; grid-template-columns:minmax(260px,360px) minmax(0,1fr); gap:16px; align-items:start; }
+  .panel { background:#fff; border:1px solid var(--borde); border-radius:10px; padding:12px 14px; }
+  .panel h2 { font-size:1.02rem; color:var(--azul-oscuro); margin:0 0 8px; }
+  label { display:block; font-weight:bold; color:var(--azul-oscuro); margin-top:10px; }
+  label small { font-weight:normal; color:var(--gris); }
+  input[type=range] { width:100%; }
+  input[type=number], input[type=text], select, textarea { font:inherit; padding:4px 6px; border:1px solid var(--borde);
+                        border-radius:6px; }
+  input.mono, textarea.mono { font-family:Consolas,"Courier New",monospace; }
+  button.accion { font:inherit; font-weight:bold; border-radius:8px; padding:7px 12px; margin:8px 6px 0 0;
+                  border:1px solid var(--azul); background:#fff; color:var(--azul); cursor:pointer; }
+  button.accion:hover, button.accion:focus-visible { background:var(--azul); color:#fff; outline:none; }
+  canvas { width:100%; display:block; border:1px solid var(--borde); border-radius:10px; background:#fff; }
+  .lectura { background:var(--oro-claro); border-left:4px solid var(--oro); border-radius:8px; padding:10px 12px;
+             margin-top:12px; line-height:1.55; }
+  .lectura b { color:var(--azul-oscuro); }
+  .ok { color:var(--verde); font-weight:bold; }
+  .mal { color:var(--guinda); font-weight:bold; }
+  .preguntas { background:var(--azul-claro); border-radius:8px; padding:10px 14px; margin-top:12px; }
+  .preguntas h3 { margin:0 0 4px; font-size:.95rem; color:var(--azul-oscuro); }
+  .preguntas ol { margin:0; padding-left:20px; }
+  /* Código Python con los colores del curso (minted, estilo borland) y salida de consola (cmd). */
+  .codigo { border:1px solid var(--tinta); background:#fff; font:15px/1.5 Consolas,"Courier New",monospace;
+            overflow-x:auto; margin:8px 0; }
+  .codigo ol { margin:0; padding:8px 12px 8px 3.4em; }
+  .codigo li { white-space:pre; }
+  .codigo li::marker { color:var(--gris); font:11px Cambria,Georgia,serif; }
+  .codigo .kw { color:#000080; font-weight:bold; }
+  .codigo .str, .codigo .num { color:#0000FF; }
+  .codigo .com { color:#008800; font-style:italic; }
+  .codigo .marca { background:var(--oro-claro); outline:1px solid var(--oro); }
+  .consola { background:var(--cmd-fondo); color:var(--cmd-texto); font:15px/1.45 Consolas,"Courier New",monospace;
+             white-space:pre-wrap; word-break:break-word; padding:8px 12px; border-radius:4px; margin:8px 0; min-height:2.2em; }
+  footer { max-width:1280px; margin:0 auto; padding:6px 18px 18px; color:var(--gris); font-size:.85rem; }
+  footer a { color:var(--azul); }
+  @media (max-width: 820px) { .fila { grid-template-columns:1fr; } }
+
+  /* Propios de este simulador */
+  .fila > * { min-width:0; }
+  .panel h3 { font-size:.98rem; color:var(--azul-oscuro); margin:14px 0 4px; }
+  .nota { color:var(--gris); font-size:.93rem; margin:6px 0 0; }
+  fieldset.grupo { border:0; padding:0; margin:10px 0 0; min-width:0; }
+  fieldset.grupo legend { font-weight:bold; color:var(--azul-oscuro); padding:0; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  .chip { display:inline-block; margin:0; font-weight:normal; position:relative; }
+  .chip input { position:absolute; opacity:0; width:1px; height:1px; margin:0; }
+  .chip span { display:inline-block; border:1px solid var(--azul); color:var(--azul); border-radius:999px;
+               padding:3px 11px; font-weight:bold; cursor:pointer; background:#fff; }
+  .chip input:checked + span { background:var(--azul); color:#fff; }
+  .chip input:focus-visible + span { outline:2px solid var(--oro); outline-offset:2px; }
+  .chip input:disabled + span { opacity:.45; cursor:default; }
+  .complejo { display:grid; grid-template-columns:auto 1fr auto 1fr; gap:4px 6px; align-items:center; margin-top:4px; }
+  .complejo label { margin:0; font-weight:normal; color:var(--tinta); }
+  .complejo input { width:100%; min-width:0; }
+  fieldset.punto { border:1px solid var(--borde); border-radius:8px; padding:4px 10px 8px; margin:10px 0 0; }
+  fieldset.punto legend { font-weight:bold; padding:0 4px; }
+  fieldset.punto.z1 legend { color:var(--guinda); }
+  fieldset.punto.z2 legend { color:var(--azul); }
+  fieldset.punto:disabled { opacity:.5; }
+  .en-linea { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .en-linea input[type=range] { flex:1 1 140px; width:auto; }
+  .en-linea output { min-width:2.4em; font-weight:bold; color:var(--guinda); text-align:right; }
+  .valor { color:var(--guinda); font-weight:bold; }
+  .mono { font-family:Consolas,"Courier New",monospace; }
+  .consola .err { color:#FF8A80; }
+  .lectura { overflow-wrap:anywhere; }
+  .z1c { color:var(--guinda); font-weight:bold; }
+  .z2c { color:var(--azul); font-weight:bold; }
+  .zrc { color:var(--verde); font-weight:bold; }
+  #plano { touch-action:none; cursor:crosshair; }
+  #plano:focus-visible { outline:3px solid var(--oro); outline-offset:2px; }
+  .dos-lienzos { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  @media (max-width: 700px) { .dos-lienzos { grid-template-columns:1fr; } }
+  .formula { font-family:Cambria,Georgia,serif; font-size:1.1rem; color:var(--azul-oscuro); }
+  @media (max-width: 480px) {
+    main, header, footer { padding-left:12px; padding-right:12px; }
+    .panel { padding:10px; }
+    .codigo, .consola { font-size:13.5px; }
+  }
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header>
+  <div class="semana">Semana 13 · Matemáticas con Python</div>
+  <h1>El plano complejo</h1>
+  <p class="sub">Arrastra z1 y z2 para ver la suma, el producto, el conjugado y la forma polar, y resuelve cuadráticas con raíces complejas.</p>
+</header>
+<main>
+  <nav class="pestanas" role="tablist" aria-label="Vistas del simulador">
+    <button type="button" class="activo" data-vista="v1" role="tab" id="tab-v1" aria-controls="v1" aria-selected="true">Operaciones en el plano</button>
+    <button type="button" data-vista="v2" role="tab" id="tab-v2" aria-controls="v2" aria-selected="false">Raíces de una cuadrática</button>
+  </nav>
+
+  
+  <section class="vista activo" id="v1" role="tabpanel" aria-labelledby="tab-v1">
+    <div class="fila">
+      <div class="panel">
+        <h2>Operación</h2>
+        <fieldset class="grupo">
+          <legend class="nota" style="font-weight:normal">Elige qué calcular</legend>
+          <div class="chips" id="ops">
+            <label class="chip"><input type="radio" name="op" value="suma" checked><span>z1 + z2</span></label>
+            <label class="chip"><input type="radio" name="op" value="resta"><span>z1 − z2</span></label>
+            <label class="chip"><input type="radio" name="op" value="prod"><span>z1 · z2</span></label>
+            <label class="chip"><input type="radio" name="op" value="div"><span>z1 / z2</span></label>
+            <label class="chip"><input type="radio" name="op" value="conj"><span>Conjugado y abs</span></label>
+            <label class="chip"><input type="radio" name="op" value="polar"><span>Forma polar</span></label>
+            <label class="chip"><input type="radio" name="op" value="girar"><span>Girar × 1j</span></label>
+            <label class="chip"><input type="radio" name="op" value="pot"><span>Potencias</span></label>
+          </div>
+        </fieldset>
+        <fieldset class="punto z1" id="caja-z1">
+          <legend>z1</legend>
+          <div class="complejo">
+            <label for="re1">Re</label><input id="re1" type="number" min="-10" max="10" step="0.5" value="3">
+            <label for="im1">Im</label><input id="im1" type="number" min="-10" max="10" step="0.5" value="4">
+          </div>
+        </fieldset>
+        <fieldset class="punto z2" id="caja-z2">
+          <legend>z2</legend>
+          <div class="complejo">
+            <label for="re2">Re</label><input id="re2" type="number" min="-10" max="10" step="0.5" value="1">
+            <label for="im2">Im</label><input id="im2" type="number" min="-10" max="10" step="0.5" value="-2">
+          </div>
+        </fieldset>
+        <div id="cajaPot" hidden>
+          <label for="nPot">Potencias de z1 hasta: z1<sup id="nPotSup">8</sup></label>
+          <div class="en-linea"><input id="nPot" type="range" min="2" max="12" step="1" value="8"><output id="nPotVal" for="nPot">8</output></div>
+        </div>
+        <div>
+          <button type="button" class="accion" id="girar">× 1j (girar z1)</button>
+          <button type="button" class="accion" id="reiniciar">Reiniciar</button>
+        </div>
+        <fieldset class="grupo">
+          <legend>Punto que mueves con clic o teclado</legend>
+          <div class="chips">
+            <label class="chip"><input type="radio" name="activo" value="z1" checked><span>z1</span></label>
+            <label class="chip"><input type="radio" name="activo" value="z2"><span>z2</span></label>
+          </div>
+        </fieldset>
+        <label for="escala">Escala del plano</label>
+        <select id="escala">
+          <option value="auto" selected>Automática</option>
+          <option value="3">±3</option>
+          <option value="5">±5</option>
+          <option value="10">±10</option>
+          <option value="20">±20</option>
+          <option value="50">±50</option>
+        </select>
+        <div class="lectura" id="lectura1" aria-live="polite"></div>
+      </div>
+      <div class="panel">
+        <canvas id="plano" tabindex="0" aria-label="Plano complejo con los puntos z1 y z2 y el resultado de la operación elegida. Arrastra un punto, haz clic para mover el punto activo o usa las flechas del teclado."></canvas>
+        <p class="nota">Arrastra z1 o z2 con el mouse o el dedo (se ajustan a medios: 0.5). Con el plano seleccionado, las flechas mueven el punto activo y las teclas 1 y 2 lo cambian.</p>
+        <h3>El código en Python</h3>
+        <div id="codigo1"></div>
+        <div class="consola" id="salida1" aria-label="Salida del programa"></div>
+        <p class="nota" id="notaError1" hidden>Antes de esta línea, Python también imprime el <i>Traceback</i>: la ruta de tu archivo y la línea donde ocurrió el error.</p>
+        <p class="nota" id="notaCero1" hidden><b>¿Un −0?</b> Es un cero con signo (<span class="mono">-0.0</span>): vale lo mismo que 0 (<span class="mono">-0.0 == 0.0</span> es True). Aparece, por ejemplo, al multiplicar 0.0 por un negativo.</p>
+        <div class="preguntas">
+          <h3>Para explorar</h3>
+          <ol>
+            <li>Suma: ¿qué figura forman 0, z1, z1 + z2 y z2? ¿Dónde tienes que poner z2 para que la figura se aplaste en una línea?</li>
+            <li>Producto: pon z2 = 1j, luego z2 = 2 y luego z2 = 1 + 1j. ¿Qué le hace cada uno a z1?</li>
+            <li>Antes de presionar "× 1j" cuatro veces, predice dónde termina z1. ¿Qué tiene que ver con que 1j · 1j sea −1?</li>
+            <li>Conjugado: ¿por qué z1 · z1.conjugate() siempre da un número sin parte imaginaria? ¿Cuánto da con 3 + 4j?</li>
+            <li>Potencias: busca un z1 con el que la espiral crezca, uno con el que se encoja y uno con el que dé vueltas en un círculo.</li>
+            <li>Forma polar: en tu computadora imprime <span class="mono">cmath.rect(r, theta)</span>. ¿Sale exactamente z1? ¿Por qué el programa compara con <span class="mono">cmath.isclose</span> y no con ==?</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  
+  <section class="vista" id="v2" role="tabpanel" aria-labelledby="tab-v2">
+    <div class="fila">
+      <div class="panel">
+        <h2>a·x² + b·x + c = 0</h2>
+        <label for="ca">a = <span class="valor" id="caVal"></span> <small>(no puede ser 0)</small></label>
+        <input id="ca" type="range" min="-10" max="10" step="1" value="1">
+        <label for="cb">b = <span class="valor" id="cbVal"></span></label>
+        <input id="cb" type="range" min="-10" max="10" step="1" value="2">
+        <label for="cc">c = <span class="valor" id="ccVal"></span></label>
+        <input id="cc" type="range" min="-10" max="10" step="1" value="5">
+        <div>
+          <button type="button" class="accion" data-abc="1,2,5">1, 2, 5 (la clase)</button>
+          <button type="button" class="accion" data-abc="1,-3,2">1, −3, 2</button>
+          <button type="button" class="accion" data-abc="1,2,1">1, 2, 1</button>
+          <button type="button" class="accion" data-abc="1,1,1">1, 1, 1</button>
+        </div>
+        <div class="lectura" id="lectura2" aria-live="polite"></div>
+      </div>
+      <div class="panel">
+        <div class="dos-lienzos">
+          <canvas id="raices" aria-label="Plano complejo con las dos raíces de la ecuación cuadrática"></canvas>
+          <canvas id="parabola" aria-label="Gráfica de la parábola y igual a a x al cuadrado más b x más c, con sus cruces con el eje x cuando las raíces son reales"></canvas>
+        </div>
+        <h3>El código en Python</h3>
+        <div id="codigo2"></div>
+        <div class="consola" id="salida2" aria-label="Salida del programa"></div>
+        <p class="nota" id="notaCero2" hidden><b>¿Un −0?</b> Es un cero con signo (<span class="mono">-0.0</span>): vale lo mismo que 0 (<span class="mono">-0.0 == 0.0</span> es True). Sale al dividir 0.0 entre un número negativo, como 2*a cuando a &lt; 0.</p>
+        <div class="preguntas">
+          <h3>Para explorar</h3>
+          <ol>
+            <li>Con 1, 2, 5 (el ejemplo de la clase), ¿por qué las dos raíces tienen la misma parte real? ¿Dónde está esa parte real en la parábola?</li>
+            <li>Con a = 1 y b = 2, mueve c de −10 a 10. ¿En qué valor de c las raíces dejan de ser reales? ¿Qué le pasa a la parábola justo ahí?</li>
+            <li>¿Por qué Python imprime <span class="mono">(2+0j)</span> y no <span class="mono">2.0</span> aunque el discriminante sea positivo?</li>
+            <li>Busca una ecuación en la que la "Comprobación" no dé exactamente <span class="mono">0j</span>. ¿Por qué pasa? ¿Cómo comprobarías la raíz sin usar ==?</li>
+            <li>Con a negativo y raíces reales, Python imprime algo como <span class="mono">(1-0j)</span>. ¿Qué es ese −0?</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<footer>
+  Programación Básica · FCFM-UANL · funciona sin internet. Las salidas son las de Python 3.12.
+  <a href="index.html">Índice de simuladores</a> · <a href="#qr-sitio" class="qr-abrir">Abrir en el celular (QR)</a>
+</footer>
+
+<script>
+// Aritmética de complex y formato como en Python 3.12 (funciones puras, sin la página).
+var PY13 = (function () {
+  "use strict";
+
+  // ---------- Mostrar valores como los imprime Python ----------
+  // PyFloat marca un número que en Python es float aunque valga un entero (531.0, 35.0).
+  function PyFloat(valor) { this.valor = valor; }
+
+  // repr() de un float de Python: la representación más corta que vuelve al mismo número.
+  function pyFloat(x) {
+    if (Number.isNaN(x)) return "nan";
+    if (x === Infinity) return "inf";
+    if (x === -Infinity) return "-inf";
+    if (x === 0) return Object.is(x, -0) ? "-0.0" : "0.0";
+    var partes = Math.abs(x).toExponential().split("e");
+    var digitos = partes[0].replace(".", "");
+    var exp = parseInt(partes[1], 10);
+    var decpt = exp + 1, signo = x < 0 ? "-" : "";
+    if (decpt > 16 || decpt < -3) {
+      var mant = digitos.length > 1 ? digitos[0] + "." + digitos.slice(1) : digitos[0];
+      return signo + mant + "e" + (exp < 0 ? "-" : "+") + (Math.abs(exp) < 10 ? "0" : "") + Math.abs(exp);
+    }
+    if (decpt <= 0) return signo + "0." + "0".repeat(-decpt) + digitos;
+    if (decpt >= digitos.length) return signo + digitos + "0".repeat(decpt - digitos.length) + ".0";
+    return signo + digitos.slice(0, decpt) + "." + digitos.slice(decpt);
+  }
+
+  // repr() de un texto: comillas simples, o dobles si el texto trae ' y no trae ".
+  function pyStr(s) {
+    var q = (s.indexOf("'") >= 0 && s.indexOf('"') < 0) ? '"' : "'";
+    var r = "";
+    for (var i = 0; i < s.length; i++) {
+      var c = s[i], code = s.charCodeAt(i);
+      if (c === "\\") r += "\\\\";
+      else if (c === q) r += "\\" + q;
+      else if (c === "\n") r += "\\n";
+      else if (c === "\r") r += "\\r";
+      else if (c === "\t") r += "\\t";
+      else if (code < 32 || code === 127) r += "\\x" + (code < 16 ? "0" : "") + code.toString(16);
+      else r += c;
+    }
+    return q + r + q;
+  }
+
+  // repr() de un valor: None, True/False, int, float (PyFloat), str, list y dict.
+  function pyRepr(v) {
+    if (v === null || v === undefined) return "None";
+    if (v === true) return "True";
+    if (v === false) return "False";
+    if (v instanceof PyFloat) return pyFloat(v.valor);
+    if (typeof v === "number") return Number.isInteger(v) ? String(v) : pyFloat(v);
+    if (typeof v === "string") return pyStr(v);
+    if (Array.isArray(v)) return "[" + v.map(pyRepr).join(", ") + "]";
+    return "{" + Object.keys(v).map(function (k) { return pyStr(k) + ": " + pyRepr(v[k]); }).join(", ") + "}";
+  }
+
+  // ---------- round(x, n) de Python: redondeo correcto del valor exacto del float ----------
+  var vista = new DataView(new ArrayBuffer(8));
+  function racional(x) {
+    vista.setFloat64(0, x);
+    var hi = vista.getUint32(0), lo = vista.getUint32(4), ex = (hi >>> 20) & 0x7ff, m, e;
+    var mant = (BigInt(hi & 0xfffff) << 32n) | BigInt(lo);
+    if (ex === 0) { m = mant; e = -1074; } else { m = mant | (1n << 52n); e = ex - 1075; }
+    var n = (hi >>> 31) ? -m : m;
+    return e >= 0 ? { n: n << BigInt(e), d: 1n } : { n: n, d: 1n << BigInt(-e) };
+  }
+  function formatoF(x, nd) {
+    var r = racional(x), neg = r.n < 0n || Object.is(x, -0), n = r.n < 0n ? -r.n : r.n;
+    var num = n * 10n ** BigInt(nd), q = num / r.d, dos = 2n * (num % r.d);
+    if (dos > r.d || (dos === r.d && (q & 1n) === 1n)) q += 1n;
+    var s = q.toString();
+    if (nd > 0) {
+      if (s.length <= nd) s = "0".repeat(nd - s.length + 1) + s;
+      s = s.slice(0, s.length - nd) + "." + s.slice(s.length - nd);
+    }
+    return (neg ? "-" : "") + s;
+  }
+  function redondear(x, nd) { return isFinite(x) ? parseFloat(formatoF(x, nd)) : x; }
+
+  // ---------- complex ----------
+  function Z(re, im) { return { re: re, im: im }; }
+  // Una parte del complejo como la escribe repr(): sin ".0" al final (3.0 → 3, -0.0 → -0)
+  function parteC(x) { var s = pyFloat(x); return /\.0$/.test(s) ? s.slice(0, -2) : s; }
+  // repr() de complex: (3+4j), 4j, -2j, 0j, (-1+0j), (-0+1j), (1e+16+1j)
+  function pyComplex(re, im) {
+    if (re === 0 && !Object.is(re, -0)) return parteC(im) + "j";
+    var sim = parteC(im);
+    if (sim.charAt(0) !== "-") sim = "+" + sim;
+    return "(" + parteC(re) + sim + "j)";
+  }
+  function reprZ(z) { return pyComplex(z.re, z.im); }
+
+  function ErrorPy(tipo, mensaje) { this.tipo = tipo; this.mensaje = mensaje; }
+  ErrorPy.prototype.texto = function () { return this.tipo + ": " + this.mensaje; };
+
+  // Las operaciones de CPython 3.12 (Objects/complexobject.c), en el mismo orden
+  function suma(a, b) { return Z(a.re + b.re, a.im + b.im); }
+  function resta(a, b) { return Z(a.re - b.re, a.im - b.im); }
+  function prod(a, b) { return Z(a.re * b.re - a.im * b.im, a.re * b.im + a.im * b.re); }
+  function neg(a) { return Z(-a.re, -a.im); }
+  function conj(a) { return Z(a.re, -a.im); }
+  function cociente(a, b) {
+    var abr = b.re < 0 ? -b.re : b.re, abi = b.im < 0 ? -b.im : b.im, ratio, denom;
+    if (abr >= abi) {
+      if (abr === 0) throw new ErrorPy("ZeroDivisionError", "complex division by zero");
+      ratio = b.im / b.re;
+      denom = b.re + b.im * ratio;
+      return Z((a.re + a.im * ratio) / denom, (a.im - a.re * ratio) / denom);
+    }
+    if (abi >= abr) {
+      ratio = b.re / b.im;
+      denom = b.re * ratio + b.im;
+      return Z((a.re * ratio + a.im) / denom, (a.im * ratio - a.re) / denom);
+    }
+    return Z(NaN, NaN);
+  }
+  var C1 = Z(1, 0);
+  // z ** n con n entero (c_powi / c_powu de CPython)
+  function potencia(x, n) {
+    function powu(x, n) {
+      var r = C1, p = x, mask = 1;
+      while (mask > 0 && n >= mask) {
+        if (n & mask) r = prod(r, p);
+        mask <<= 1;
+        p = prod(p, p);
+      }
+      return r;
+    }
+    return n > 0 ? powu(x, n) : cociente(C1, powu(x, -n));
+  }
+  // Un int o float de Python dentro de una operación con complex: complex(x, 0.0)
+  function comoComplex(x) { return Z(x === 0 ? 0 : x, 0); }
+  // cmath.sqrt de un int (el discriminante), que Python convierte a complex(x, 0.0): el mismo
+  // algoritmo de cmathmodule.c, donde hypot(ax, 0.0) es ax
+  function raizReal(x) {
+    var z = comoComplex(x);
+    if (z.re === 0) return Z(0, 0);
+    var ax = Math.abs(z.re) / 8;
+    var s = 2 * Math.sqrt(ax + ax);
+    var d = 0 / (2 * s);
+    return z.re >= 0 ? Z(s, d) : Z(d, s);
+  }
+  // abs(z) cuando x*x + y*y es exacto (puntos de la rejilla y sus productos): igual en todo sistema
+  function modulo(z) { return Math.sqrt(z.re * z.re + z.im * z.im); }
+  // cmath.phase(z) y math.degrees
+  function fase(z) { return Math.atan2(z.im, z.re); }
+  function grados(rad) { return rad * (180 / Math.PI); }
+
+  // El literal de Python para un punto de la rejilla (múltiplos de 0.5) y el valor que le da Python
+  function num(v) { return String(v === 0 ? 0 : v); }
+  function literal(x, y) {
+    x = x === 0 ? 0 : x; y = y === 0 ? 0 : y;
+    var cod;
+    if (x === 0 && y === 0) cod = "0j";
+    else if (y === 0) cod = num(x) + " + 0j";
+    else if (x === 0) cod = y > 0 ? num(y) + "j" : "0 - " + num(-y) + "j";
+    else cod = num(x) + (y > 0 ? " + " : " - ") + num(Math.abs(y)) + "j";
+    return { codigo: cod, z: Z(x, y) };
+  }
+  function tieneMenosCero(z) { return Object.is(z.re, -0) || Object.is(z.im, -0); }
+
+  // ---------- Programas: el código y lo que imprime ----------
+  function programaPlano(op, x1, y1, x2, y2, n) {
+    var L1 = literal(x1, y1), L2 = literal(x2, y2), z1 = L1.z, z2 = L2.z;
+    var cod = [], sal = [], error = null, res = null, extra = {}, i, menosCero = false;
+    var usaCmath = ["prod", "div", "polar", "girar", "pot"].indexOf(op) >= 0;
+    if (usaCmath) cod.push("import cmath", "import math", "");
+    // Cada valor que se imprime pasa por aquí para saber si aparece un cero con signo (-0)
+    function pf(x) { if (Object.is(x, -0)) menosCero = true; return pyFloat(x); }
+    function r2(x) { return pf(redondear(x, 2)); }
+    function r3(x) { return pf(redondear(x, 3)); }
+    function reprZ(z) { if (tieneMenosCero(z)) menosCero = true; return pyComplex(z.re, z.im); }
+    try {
+      if (op === "suma") {
+        cod.push("z1 = " + L1.codigo, "z2 = " + L2.codigo, "s = z1 + z2", "print(s)", "print(s.real, s.imag)");
+        res = suma(z1, z2);
+        sal.push(reprZ(res), pf(res.re) + " " + pf(res.im));
+      } else if (op === "resta") {
+        cod.push("z1 = " + L1.codigo, "z2 = " + L2.codigo, "d = z1 - z2", "print(d)", "print(z1 + (-z2))");
+        res = resta(z1, z2);
+        sal.push(reprZ(res), reprZ(suma(z1, neg(z2))));
+      } else if (op === "prod") {
+        cod.push("z1 = " + L1.codigo, "z2 = " + L2.codigo, "p = z1 * z2", "print(p)",
+                 "print(abs(z1) * abs(z2), abs(p))",
+                 "g1 = math.degrees(cmath.phase(z1))", "g2 = math.degrees(cmath.phase(z2))",
+                 "print(round(g1 + g2, 2), round(math.degrees(cmath.phase(p)), 2))");
+        res = prod(z1, z2);
+        sal.push(reprZ(res), pf(modulo(z1) * modulo(z2)) + " " + pf(modulo(res)),
+                 r2(grados(fase(z1)) + grados(fase(z2))) + " " + r2(grados(fase(res))));
+      } else if (op === "div") {
+        cod.push("z1 = " + L1.codigo, "z2 = " + L2.codigo, "q = z1 / z2", "print(q)",
+                 "print(round(abs(z1) / abs(z2), 3), round(abs(q), 3))",
+                 "g1 = math.degrees(cmath.phase(z1))", "g2 = math.degrees(cmath.phase(z2))",
+                 "print(round(g1 - g2, 2), round(math.degrees(cmath.phase(q)), 2))");
+        res = cociente(z1, z2);
+        sal.push(reprZ(res), r3(modulo(z1) / modulo(z2)) + " " + r3(modulo(res)),
+                 r2(grados(fase(z1)) - grados(fase(z2))) + " " + r2(grados(fase(res))));
+      } else if (op === "conj") {
+        cod.push("z1 = " + L1.codigo, "c = z1.conjugate()", "print(c)", "print(abs(z1), abs(c))", "print(z1 * c)");
+        res = conj(z1);
+        sal.push(reprZ(res), pf(modulo(z1)) + " " + pf(modulo(res)), reprZ(prod(z1, res)));
+        extra.producto = prod(z1, res);
+      } else if (op === "polar") {
+        cod.push("z1 = " + L1.codigo, "r, theta = cmath.polar(z1)", "print(round(r, 3), round(theta, 3))",
+                 "print(round(math.degrees(theta), 2))", "z = cmath.rect(r, theta)",
+                 "print(round(abs(z), 3), round(math.degrees(cmath.phase(z)), 2))", "print(cmath.isclose(z, z1))");
+        var r = modulo(z1), th = fase(z1);
+        var zr = th === 0 ? Z(r, r * th) : Z(r * Math.cos(th), r * Math.sin(th));
+        sal.push(r3(r) + " " + r3(th), r2(grados(th)), r3(modulo(zr)) + " " + r2(grados(fase(zr))), "True");
+        res = z1;
+      } else if (op === "girar") {
+        cod.push("z = " + L1.codigo, "for _ in range(4):", "    z = z * 1j", "    print(z, round(math.degrees(cmath.phase(z)), 2))");
+        var z = z1, giros = [];
+        for (i = 0; i < 4; i++) {
+          z = prod(z, Z(0, 1));
+          giros.push(z);
+          sal.push(reprZ(z) + " " + r2(grados(fase(z))));
+        }
+        extra.giros = giros;
+        res = giros[0];
+      } else if (op === "pot") {
+        cod.push("z = " + L1.codigo, "for k in range(1, " + (n + 1) + "):", "    p = z ** k",
+                 "    print(k, p, round(abs(p), 3), round(math.degrees(cmath.phase(p)), 2))");
+        var pots = [];
+        for (i = 1; i <= n; i++) {
+          var p = potencia(z1, i);
+          pots.push(p);
+          sal.push(i + " " + reprZ(p) + " " + r3(modulo(p)) + " " + r2(grados(fase(p))));
+        }
+        extra.potencias = pots;
+        res = pots[n - 1];
+      }
+    } catch (e) {
+      if (!(e instanceof ErrorPy)) throw e;
+      error = e.texto();
+    }
+    return { codigo: cod.join("\n"), salida: sal.join("\n"), error: error, z1: z1, z2: z2, res: res, extra: extra,
+             menosCero: menosCero };
+  }
+
+  function programaCuadratica(a, b, c) {
+    var disc = b * b - 4 * a * c;
+    var s = raizReal(disc), mb = -b === 0 ? 0 : -b, dosA = comoComplex(2 * a);
+    var x1 = cociente(suma(comoComplex(mb), s), dosA);
+    var x2 = cociente(resta(comoComplex(mb), s), dosA);
+    function evalua(x) {     // a*x**2 + b*x + c
+      return suma(suma(prod(comoComplex(a), potencia(x, 2)), prod(comoComplex(b), x)), comoComplex(c));
+    }
+    var cod = [
+      "import cmath",
+      "",
+      "a, b, c = " + a + ", " + b + ", " + c,
+      "disc = b**2 - 4*a*c",
+      "x1 = (-b + cmath.sqrt(disc)) / (2*a)",
+      "x2 = (-b - cmath.sqrt(disc)) / (2*a)",
+      "",
+      'print("Discriminante:", disc)',
+      'print("x1 =", x1)',
+      'print("x2 =", x2)',
+      'print("Comprobación:", a*x1**2 + b*x1 + c)'
+    ];
+    var comp = evalua(x1);
+    var sal = ["Discriminante: " + disc, "x1 = " + reprZ(x1), "x2 = " + reprZ(x2), "Comprobación: " + reprZ(comp)];
+    return { codigo: cod.join("\n"), salida: sal.join("\n"), error: null, disc: disc, raiz: s, x1: x1, x2: x2,
+             comprobacion: comp, comprobacion2: evalua(x2),
+             menosCero: tieneMenosCero(x1) || tieneMenosCero(x2) || tieneMenosCero(comp) };
+  }
+
+  return {
+    PyFloat: PyFloat, pyFloat: pyFloat, pyStr: pyStr, pyRepr: pyRepr, redondear: redondear, formatoF: formatoF,
+    Z: Z, pyComplex: pyComplex, reprZ: reprZ, suma: suma, resta: resta, prod: prod, neg: neg, conj: conj,
+    cociente: cociente, potencia: potencia, raizReal: raizReal, modulo: modulo, fase: fase, grados: grados,
+    literal: literal, ErrorPy: ErrorPy, programaPlano: programaPlano, programaCuadratica: programaCuadratica
+  };
+})();
+</script>
+
+<script>
+(function () {
+  "use strict";
+  var P = PY13;
+  // Colores FCFM para el lienzo
+  var C = { azul:"#00408F", azulOscuro:"#0A2A57", guinda:"#8C1D35", oro:"#B8975A", oroTexto:"#8A6A2E",
+            verde:"#2F7D5B", gris:"#5B6472", grisClaro:"#E9ECF1", borde:"#D9DEE6", tinta:"#1B1F2A",
+            azulClaro:"#E8EEF7", oroClaro:"#F7F1E6", guindaClaro:"#F5E6EA", verdeClaro:"#E3F0EA" };
+  var FUENTE = "Calibri, 'Segoe UI', system-ui, sans-serif", MONO = "Consolas, 'Courier New', monospace";
+  function $(id) { return document.getElementById(id); }
+  var sinMovimiento = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Pestañas
+  var botonesVista = document.querySelectorAll("nav.pestanas button");
+  function abrirVista(id) {
+    botonesVista.forEach(function (x) {
+      var activo = x.dataset.vista === id;
+      x.classList.toggle("activo", activo);
+      x.setAttribute("aria-selected", activo ? "true" : "false");
+    });
+    document.querySelectorAll("section.vista").forEach(function (x) { x.classList.toggle("activo", x.id === id); });
+    dibujarTodo();
+  }
+  botonesVista.forEach(function (b) { b.addEventListener("click", function () { abrirVista(b.dataset.vista); }); });
+
+  // Lienzo nítido en pantallas de alta densidad; proporcion = alto/ancho
+  function preparar(cv, proporcion) {
+    var dpr = window.devicePixelRatio || 1, w = cv.clientWidth || 600;
+    cv.style.height = (w * proporcion) + "px";
+    cv.width = Math.round(w * dpr); cv.height = Math.round(w * proporcion * dpr);
+    var g = cv.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { g: g, w: w, h: w * proporcion };
+  }
+
+  function esc(t) {
+    return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  // ---------- Código Python con los colores del curso ----------
+  var PY_KW = /^(False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)$/;
+  function pyResaltar(linea) {
+    var html = "", i = 0, m, resto;
+    while (i < linea.length) {
+      resto = linea.slice(i);
+      if ((m = /^#.*/.exec(resto))) { html += '<span class="com">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[rRbBfFuU]{0,2}("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/.exec(resto))) { html += '<span class="str">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[A-Za-z_\u00C0-\u024F][\w\u00C0-\u024F]*/.exec(resto))) { html += PY_KW.test(m[0]) ? '<span class="kw">' + m[0] + "</span>" : esc(m[0]); }
+      else if ((m = /^(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?j?/.exec(resto))) { html += '<span class="num">' + m[0] + "</span>"; }
+      else { m = [resto[0]]; html += esc(m[0]); }
+      i += m[0].length;
+    }
+    return html;
+  }
+  // Pinta código en un contenedor, con números de línea; marcar = número de línea (1, 2...) a resaltar.
+  function mostrarCodigo(el, codigo, marcar) {
+    var lineas = codigo.replace(/\n$/, "").split("\n");
+    el.innerHTML = '<div class="codigo"><ol>' + lineas.map(function (l, k) {
+      return "<li" + (marcar === k + 1 ? ' class="marca"' : "") + ">" + (pyResaltar(l) || " ") + "</li>";
+    }).join("") + "</ol></div>";
+  }
+  function mostrarSalida(el, prog) {
+    el.innerHTML = esc(prog.salida) + (prog.error ? (prog.salida ? "\n" : "") + '<span class="err">' + esc(prog.error) + "</span>" : "");
+  }
+
+  // Números para leer (no son salida de Python)
+  function f(x, dec) {
+    var s = Number(x.toFixed(dec === undefined ? 2 : dec));
+    if (Object.is(s, -0)) s = 0;
+    return String(s).replace("-", "−");
+  }
+  function zTexto(z) {           // 3 + 4i escrito para leer, con j como en Python
+    var re = f(z.re, 2), im = f(Math.abs(z.im), 2), negIm = z.im < 0 && f(z.im, 2) !== "0";
+    if (f(z.im, 2) === "0") return re;
+    if (re === "0") return (negIm ? "−" : "") + im + "j";
+    return re + (negIm ? " − " : " + ") + im + "j";
+  }
+  function texto(g, t, x, y, color, tam, alin, base, negrita, fuente) {
+    g.save(); g.fillStyle = color; g.font = (negrita ? "bold " : "") + (tam || 15) + "px " + (fuente || FUENTE);
+    g.textAlign = alin || "left"; g.textBaseline = base || "alphabetic"; g.fillText(t, x, y); g.restore();
+  }
+  function linea(g, x0, y0, x1, y1, color, ancho, guiones) {
+    g.save(); g.strokeStyle = color; g.lineWidth = ancho || 1; if (guiones) g.setLineDash(guiones);
+    g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke(); g.restore();
+  }
+  function flecha(g, x0, y0, x1, y1, color, ancho, guiones) {
+    var L = Math.hypot(x1 - x0, y1 - y0);
+    if (L < 1) return;
+    var ux = (x1 - x0) / L, uy = (y1 - y0) / L, t = Math.min(12, L * 0.4);
+    linea(g, x0, y0, x1 - ux * t * 0.6, y1 - uy * t * 0.6, color, ancho, guiones);
+    g.save(); g.fillStyle = color; g.beginPath(); g.moveTo(x1, y1);
+    g.lineTo(x1 - ux * t - uy * t * 0.45, y1 - uy * t + ux * t * 0.45);
+    g.lineTo(x1 - ux * t + uy * t * 0.45, y1 - uy * t - ux * t * 0.45);
+    g.closePath(); g.fill(); g.restore();
+  }
+  function punto(g, x, y, color, r) {
+    g.save(); g.fillStyle = color; g.strokeStyle = "#fff"; g.lineWidth = 2;
+    g.beginPath(); g.arc(x, y, r || 6, 0, 2 * Math.PI); g.fill(); g.stroke(); g.restore();
+  }
+  // Etiqueta con fondo blanco para que se lea sobre la rejilla
+  function etiqueta(g, t, x, y, color, alin, tam) {
+    tam = tam || 14;
+    g.save(); g.font = "bold " + tam + "px " + FUENTE;
+    var w = g.measureText(t).width, x0 = alin === "right" ? x - w : alin === "center" ? x - w / 2 : x;
+    g.fillStyle = "rgba(255,255,255,0.85)"; g.fillRect(x0 - 3, y - tam + 1, w + 6, tam + 5);
+    g.fillStyle = color; g.textAlign = "left"; g.textBaseline = "alphabetic"; g.fillText(t, x0, y);
+    g.restore();
+  }
+  function escalaBonita(m) {
+    var pasos = [2, 3, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40, 50, 60, 80, 100];
+    for (var i = 0; i < pasos.length; i++) if (m <= pasos[i]) return pasos[i];
+    var p = Math.pow(10, Math.ceil(Math.log10(m)));
+    return m <= p / 2 ? p / 2 : p;
+  }
+  function pasoRejilla(R) { return R <= 6 ? 1 : R <= 15 ? 2 : R <= 30 ? 5 : R <= 60 ? 10 : Math.pow(10, Math.floor(Math.log10(R))) * (R / Math.pow(10, Math.floor(Math.log10(R))) > 5 ? 2 : 1); }
+
+  // ================================================================ Vista 1: operaciones en el plano
+  var est = { x1: 3, y1: 4, x2: 1, y2: -2, op: "suma", n: 8, activo: "z1", R: 5, arrastre: null, anim: null, antes: null };
+  var prog1 = null, vistaPl = null;
+  function opActual() { var r = document.querySelector('input[name="op"]:checked'); return r ? r.value : "suma"; }
+  function usaZ2(op) { return ["suma", "resta", "prod", "div"].indexOf(op) >= 0; }
+  function limpiar(v) { v = Math.round(v * 2) / 2; v = Math.max(-10, Math.min(10, v)); return v === 0 ? 0 : v; }
+
+  function puntosEscena() {
+    var pts = [P.Z(est.x1, est.y1)];
+    if (usaZ2(est.op)) pts.push(P.Z(est.x2, est.y2));
+    if (prog1) {
+      if (prog1.res && !prog1.error) pts.push(prog1.res);
+      if (prog1.extra.giros) pts = pts.concat(prog1.extra.giros);
+      if (prog1.extra.potencias) pts = pts.concat(prog1.extra.potencias);
+      if (est.op === "resta") pts.push(P.neg(P.Z(est.x2, est.y2)));
+      if (est.op === "conj" && prog1.res) pts.push(prog1.res);
+    }
+    return pts;
+  }
+  function calcularEscala() {
+    var sel = $("escala").value;
+    if (sel !== "auto") { est.R = Number(sel); return; }
+    var m = 1.5;
+    puntosEscena().forEach(function (z) { if (isFinite(z.re) && isFinite(z.im)) m = Math.max(m, Math.abs(z.re), Math.abs(z.im)); });
+    est.R = escalaBonita(m * 1.15);
+  }
+
+  function actualizar1(reescalar) {
+    est.op = opActual();
+    $("caja-z2").disabled = !usaZ2(est.op);
+    document.querySelector('input[name="activo"][value="z2"]').disabled = !usaZ2(est.op);
+    if (!usaZ2(est.op) && est.activo === "z2") { est.activo = "z1"; document.querySelector('input[name="activo"][value="z1"]').checked = true; }
+    $("cajaPot").hidden = est.op !== "pot";
+    $("re1").value = est.x1; $("im1").value = est.y1; $("re2").value = est.x2; $("im2").value = est.y2;
+    prog1 = P.programaPlano(est.op, est.x1, est.y1, est.x2, est.y2, est.n);
+    if (reescalar !== false) calcularEscala();
+    var marcar = { suma: 3, resta: 3, prod: 6, div: 6, conj: 2, polar: 4, girar: 6, pot: 7 }[est.op];
+    mostrarCodigo($("codigo1"), prog1.codigo, marcar);
+    mostrarSalida($("salida1"), prog1);
+    $("notaError1").hidden = !prog1.error;
+    $("notaCero1").hidden = !prog1.menosCero;
+    lectura1();
+    dibujarPlano();
+  }
+
+  function infoZ(nombre, clase, z) {
+    var r = P.modulo(z), g = P.grados(P.fase(z));
+    return "<span class='" + clase + "'>" + nombre + "</span> = " + esc(zTexto(z)) + ": |" + nombre + "| = " + f(r, 3) +
+           (r === 0 ? "" : ", ángulo " + f(g, 2) + "°");
+  }
+  function lectura1() {
+    var z1 = prog1.z1, z2 = prog1.z2, html = infoZ("z1", "z1c", z1) + "<br>";
+    if (usaZ2(est.op)) html += infoZ("z2", "z2c", z2) + "<br>";
+    var R = prog1.res;
+    if (prog1.error) html += "<span class='mal'>No se puede dividir entre 0j</span>: z2 está en el origen.";
+    else if (est.op === "suma") html += "<span class='zrc'>z1 + z2</span> = " + esc(zTexto(R)) + ": se suman las partes reales (" + f(z1.re) + " + " + f(z2.re) + ") y las imaginarias (" + f(z1.im) + " + " + f(z2.im) + ").";
+    else if (est.op === "resta") html += "<span class='zrc'>z1 − z2</span> = " + esc(zTexto(R)) + " = z1 + (−z2). La flecha punteada gris va de z2 a z1 y es la misma.";
+    else if (est.op === "prod" || est.op === "div") {
+      var g1 = P.grados(P.fase(z1)), g2 = P.grados(P.fase(z2)), gr = P.grados(P.fase(R)), esP = est.op === "prod";
+      var gs = esP ? g1 + g2 : g1 - g2, vuelta = Math.abs(gs - gr) > 1e-6 ? " (" + f(gs, 2) + "° y " + f(gr, 2) + "° son el mismo ángulo: difieren en 360°)" : "";
+      html += "<span class='zrc'>" + (esP ? "z1 · z2" : "z1 / z2") + "</span> = " + esc(zTexto(R)) + "<br>" +
+        "Módulo: " + f(P.modulo(z1), 3) + (esP ? " × " : " ÷ ") + f(P.modulo(z2), 3) + " = <b>" + f(esP ? P.modulo(z1) * P.modulo(z2) : P.modulo(z1) / P.modulo(z2), 3) + "</b><br>" +
+        "Ángulo: " + f(g1, 2) + "° " + (esP ? "+" : "−") + " (" + f(g2, 2) + "°) = <b>" + f(gs, 2) + "°</b>" + vuelta;
+    } else if (est.op === "conj") {
+      html += "<span class='zrc'>conjugado</span> = " + esc(zTexto(R)) + ": el reflejo de z1 en el eje real.<br>z1 · conjugado = " + esc(zTexto(prog1.extra.producto)) + ".";
+    } else if (est.op === "polar") {
+      html += "<b>Forma polar:</b> r = " + f(P.modulo(z1), 3) + ", θ = " + f(P.fase(z1), 3) + " rad = " + f(P.grados(P.fase(z1)), 2) + "°<br>" +
+        "z1 = r·(cos θ + j·sen θ) = " + f(P.modulo(z1), 3) + "·(" + f(Math.cos(P.fase(z1)), 3) + " + " + f(Math.sin(P.fase(z1)), 3) + "j)";
+    } else if (est.op === "girar") {
+      html += "Cada <b>× 1j</b> gira 90° sin cambiar el módulo: " + prog1.extra.giros.map(function (z) { return esc(zTexto(z)); }).join(" → ") + ".";
+      if (est.antes) html += "<br>Último giro: (" + esc(zTexto(est.antes)) + ") × 1j = " + esc(zTexto(z1)) + ".";
+    } else if (est.op === "pot") {
+      var r1 = P.modulo(z1);
+      html += "Cada potencia multiplica el módulo por " + f(r1, 3) + " y suma " + f(P.grados(P.fase(z1)), 2) + "° al ángulo.<br>" +
+        "|z1<sup>" + est.n + "</sup>| = " + f(r1, 3) + "<sup>" + est.n + "</sup> = " + f(Math.pow(r1, est.n), 3) + ".";
+      if (est.ajustePot) html += "<br><span class='nota'>Para que la espiral quepa en el plano, z1 empezó en 1 + 0.5j. Muévelo para probar otros.</span>";
+    }
+    $("lectura1").innerHTML = html;
+  }
+
+  // ---------- dibujo del plano ----------
+  function dibujarPlano(animZ1) {
+    var cv = $("plano");
+    if (!cv.offsetParent) return;
+    var w0 = cv.clientWidth || 600, angosto = w0 < 560;
+    var d = preparar(cv, angosto ? 0.95 : 0.66), g = d.g, w = d.w, h = d.h;
+    g.clearRect(0, 0, w, h);
+    var m = 22, R = est.R, u = Math.min((w - 2 * m) / (2 * R), (h - 2 * m) / (2 * R));
+    var cx = w / 2, cy = h / 2;
+    var Rx = (w / 2 - m) / u, Ry = (h / 2 - m) / u;
+    function X(v) { return cx + v * u; }
+    function Y(v) { return cy - v * u; }
+    vistaPl = { cx: cx, cy: cy, u: u, Rx: Rx, Ry: Ry };
+    // rejilla
+    var paso = pasoRejilla(R), k;
+    if (u * 0.5 >= 9) {
+      for (k = -Math.floor(Rx * 2); k <= Rx * 2; k++) if (k % 2) linea(g, X(k / 2), Y(-Ry), X(k / 2), Y(Ry), "#F3F5F8", 1);
+      for (k = -Math.floor(Ry * 2); k <= Ry * 2; k++) if (k % 2) linea(g, X(-Rx), Y(k / 2), X(Rx), Y(k / 2), "#F3F5F8", 1);
+    }
+    for (k = -Math.floor(Rx); k <= Rx; k++) if (k % paso === 0 || (paso <= 2 && u >= 14)) linea(g, X(k), Y(-Ry), X(k), Y(Ry), C.grisClaro, 1);
+    for (k = -Math.floor(Ry); k <= Ry; k++) if (k % paso === 0 || (paso <= 2 && u >= 14)) linea(g, X(-Rx), Y(k), X(Rx), Y(k), C.grisClaro, 1);
+    linea(g, X(-Rx), cy, X(Rx), cy, C.gris, 1.5);
+    linea(g, cx, Y(-Ry), cx, Y(Ry), C.gris, 1.5);
+    // números de los ejes, saltando algunos si no caben
+    g.save(); g.font = "12px " + FUENTE; var anchoEt = g.measureText("−" + Math.floor(Rx / paso) * paso).width; g.restore();
+    var cadaX = Math.max(1, Math.ceil((anchoEt + 10) / (paso * u))), cadaY = Math.max(1, Math.ceil(16 / (paso * u)));
+    for (k = -Math.floor(Rx / paso) * paso; k <= Rx; k += paso) if (k !== 0 && Math.round(k / paso) % cadaX === 0) texto(g, String(k).replace("-", "−"), X(k), cy + 15, C.gris, 12, "center");
+    for (k = -Math.floor(Ry / paso) * paso; k <= Ry; k += paso) if (k !== 0 && Math.round(k / paso) % cadaY === 0) texto(g, (String(k) + "j").replace("-", "−"), cx - 5, Y(k) + 4, C.gris, 12, "right");
+    texto(g, "Re", X(Rx) - 2, cy - 6, C.tinta, 14, "right", "alphabetic", true);
+    texto(g, "Im", cx + 6, Y(Ry) + 12, C.tinta, 14, "left", "alphabetic", true);
+
+    var z1 = animZ1 || P.Z(est.x1, est.y1), z2 = P.Z(est.x2, est.y2), O = { x: cx, y: cy };
+    function Pt(z) { return { x: X(z.re), y: Y(z.im) }; }
+    function dentro(z) { return Math.abs(z.re) <= Rx + 1e-9 && Math.abs(z.im) <= Ry + 1e-9; }
+    function fuera(z, nombre, color) {          // un punto fuera de la vista: flechita en el borde
+      var t = Math.min((Rx - 0.3) / Math.abs(z.re || 1e-9), (Ry - 0.3) / Math.abs(z.im || 1e-9), 1);
+      var b = P.Z(z.re * t, z.im * t), p = Pt(b);
+      flecha(g, X(b.re * 0.9), Y(b.im * 0.9), p.x, p.y, color, 3);
+      etiqueta(g, nombre + " fuera de la vista: " + zTexto(z), Math.min(Math.max(p.x, 120), w - 120), p.y + (p.y < cy ? 22 : -10), color, "center", 13);
+    }
+    function vector(z, color, nombre, ancho, guiones, desde) {
+      if (!dentro(z) && !desde) { fuera(z, nombre, color); return; }
+      var a = desde ? Pt(desde) : O, b = Pt(z);
+      flecha(g, a.x, a.y, b.x, b.y, color, ancho || 3, guiones);
+    }
+    function arco(z, color, rad, etq) {
+      var ang = P.fase(z);
+      if (P.modulo(z) === 0) return;
+      g.save(); g.strokeStyle = color; g.lineWidth = 2.5; g.beginPath();
+      g.arc(cx, cy, rad, 0, -ang, ang > 0); g.stroke(); g.restore();
+      if (etq) etiqueta(g, etq, cx + (rad + 8) * Math.cos(ang / 2), cy - (rad + 8) * Math.sin(ang / 2) + 5, color, Math.cos(ang / 2) >= 0 ? "left" : "right", 13);
+    }
+    function nombrePunto(z, t, color, dx, dy) {
+      if (!dentro(z)) return;
+      var p = Pt(z), der = z.re >= 0;
+      etiqueta(g, t, p.x + (dx !== undefined ? dx : (der ? 10 : -10)), p.y + (dy !== undefined ? dy : (z.im >= 0 ? -10 : 20)), color, dx !== undefined ? "center" : (der ? "left" : "right"), 14);
+    }
+    var op = est.op, res = prog1 && !prog1.error ? prog1.res : null;
+    if (op === "suma" && res) {
+      var p1 = Pt(z1), p2 = Pt(z2), ps = Pt(res);
+      g.save(); g.fillStyle = "rgba(47,125,91,0.08)"; g.beginPath(); g.moveTo(O.x, O.y); g.lineTo(p1.x, p1.y); g.lineTo(ps.x, ps.y); g.lineTo(p2.x, p2.y); g.closePath(); g.fill(); g.restore();
+      vector(res, C.azul, "z2", 2, [6, 5], z1);
+      vector(res, C.guinda, "z1", 2, [6, 5], z2);
+      vector(res, C.verde, "z1 + z2", 4);
+      nombrePunto(res, "z1 + z2", C.verde);
+    } else if (op === "resta" && res) {
+      var mz2 = P.neg(z2), pm = Pt(mz2), pr = Pt(res), q1 = Pt(z1);
+      g.save(); g.fillStyle = "rgba(47,125,91,0.08)"; g.beginPath(); g.moveTo(O.x, O.y); g.lineTo(q1.x, q1.y); g.lineTo(pr.x, pr.y); g.lineTo(pm.x, pm.y); g.closePath(); g.fill(); g.restore();
+      vector(mz2, C.azul, "−z2", 2, [4, 4]);
+      nombrePunto(mz2, "−z2", C.azul);
+      vector(res, C.azul, "", 2, [6, 5], z1);
+      vector(z1, C.gris, "", 2, [2, 4], z2);
+      vector(res, C.verde, "z1 − z2", 4);
+      nombrePunto(res, "z1 − z2", C.verde);
+    } else if ((op === "prod" || op === "div") && res) {
+      var rr = Math.min(48, u * 1.2) + 10;
+      arco(z1, C.guinda, rr - 10, "θ1");
+      arco(z2, C.azul, rr + 6, "θ2");
+      arco(res, C.verde, rr + 22, op === "prod" ? "θ1 + θ2" : "θ1 − θ2");
+      vector(res, C.verde, op === "prod" ? "z1 · z2" : "z1 / z2", 4);
+      nombrePunto(res, op === "prod" ? "z1 · z2" : "z1 / z2", C.verde);
+    } else if (op === "conj" && res) {
+      var r0 = P.modulo(z1) * u;
+      g.save(); g.strokeStyle = C.gris; g.setLineDash([4, 5]); g.beginPath(); g.arc(cx, cy, r0, 0, 2 * Math.PI); g.stroke(); g.restore();
+      linea(g, X(z1.re), Y(z1.im), X(res.re), Y(res.im), C.oro, 2, [3, 4]);
+      vector(res, C.verde, "conjugado", 4);
+      nombrePunto(res, "z1.conjugate()", C.verde);
+      linea(g, X(-Rx), cy, X(Rx), cy, C.oro, 2.5);
+      etiqueta(g, "espejo: eje real", X(-Rx) + 4, cy - 6, C.oroTexto, "left", 13);
+    } else if (op === "polar") {
+      var rp = P.modulo(z1) * u, th = P.fase(z1);
+      g.save(); g.strokeStyle = C.gris; g.setLineDash([4, 5]); g.beginPath(); g.arc(cx, cy, rp, 0, 2 * Math.PI); g.stroke(); g.restore();
+      linea(g, X(z1.re), Y(z1.im), X(z1.re), cy, C.oro, 2, [5, 4]);
+      linea(g, X(z1.re), Y(z1.im), cx, Y(z1.im), C.oro, 2, [5, 4]);
+      etiqueta(g, "r·cos θ", X(z1.re / 2), cy + (z1.im >= 0 ? 30 : -18), C.oroTexto, "center", 13);
+      etiqueta(g, "r·sen θ", X(z1.re) + (z1.re >= 0 ? 8 : -8), Y(z1.im / 2) + 5, C.oroTexto, z1.re >= 0 ? "left" : "right", 13);
+      arco(z1, C.verde, Math.min(46, rp * 0.45) + 14, "θ = " + f(th, 3) + " rad");
+      etiqueta(g, "r = " + f(P.modulo(z1), 3), X(z1.re / 2) + (z1.re * z1.im >= 0 ? -10 : 10), Y(z1.im / 2) - 8, C.guinda, z1.re * z1.im >= 0 ? "right" : "left", 13);
+    } else if (op === "girar" && prog1) {
+      var rg = P.modulo(z1) * u;
+      g.save(); g.strokeStyle = C.gris; g.setLineDash([4, 5]); g.beginPath(); g.arc(cx, cy, rg, 0, 2 * Math.PI); g.stroke(); g.restore();
+      if (!animZ1) {
+        prog1.extra.giros.forEach(function (zg, i) {
+          if (i === 3) return;
+          vector(zg, i === 0 ? C.verde : "rgba(47,125,91,0.45)", "", i === 0 ? 3 : 2, i === 0 ? null : [5, 4]);
+          nombrePunto(zg, "z1 · 1j" + (i ? ["", "²", "³"][i] : ""), C.verde);
+        });
+      }
+    } else if (op === "pot" && prog1) {
+      var pots = prog1.extra.potencias, th0 = P.fase(z1), r1 = P.modulo(z1);
+      if (r1 > 0) {
+        g.save(); g.strokeStyle = C.oro; g.lineWidth = 1.6; g.setLineDash([5, 4]); g.beginPath();
+        var N = pots.length;
+        for (k = 0; k <= N * 30; k++) {
+          var t = k / 30, rr2 = Math.pow(r1, t), ang = th0 * t;
+          var xx = X(rr2 * Math.cos(ang)), yy = Y(rr2 * Math.sin(ang));
+          if (k === 0) g.moveTo(xx, yy); else g.lineTo(xx, yy);
+        }
+        g.stroke(); g.restore();
+      }
+      punto(g, X(1), cy, C.gris, 4);
+      etiqueta(g, "1 = z1⁰", X(1) + 6, cy + 18, C.gris, "left", 12);
+      var sups = ["", "", "²", "³", "⁴", "⁵", "⁶", "⁷", "⁸", "⁹", "¹⁰", "¹¹", "¹²"];
+      pots.forEach(function (p, i) {
+        if (!dentro(p)) return;
+        var q = Pt(p);
+        if (i > 0) punto(g, q.x, q.y, C.verde, 5);
+        if (i > 0 && (pots.length <= 8 || i % 2 === 1 || i === pots.length - 1)) etiqueta(g, "z1" + sups[i + 1], q.x + 7, q.y - 7, C.verde, "left", 13);
+      });
+      var ult = pots[pots.length - 1];
+      if (!dentro(ult)) fuera(ult, "z1" + sups[pots.length], C.verde);
+    }
+    // z1 y z2 encima
+    if (usaZ2(op)) { vector(z2, C.azul, "z2", 3); }
+    vector(z1, C.guinda, "z1", 3);
+    if (usaZ2(op)) { var q2 = Pt(z2); punto(g, q2.x, q2.y, C.azul, est.activo === "z2" ? 9 : 7); nombrePunto(z2, "z2", C.azul); }
+    var q1b = Pt(z1);
+    if (dentro(z1)) { punto(g, q1b.x, q1b.y, C.guinda, est.activo === "z1" ? 9 : 7); nombrePunto(z1, "z1", C.guinda); }
+    if (op === "div" && prog1 && prog1.error) etiqueta(g, "z2 = 0j: no se puede dividir", cx, 24, C.guinda, "center", 15);
+  }
+
+  // ---------- arrastrar, clic y teclado ----------
+  function valorDe(ev) {
+    var r = $("plano").getBoundingClientRect(), v = vistaPl;
+    var px = ev.clientX - r.left, py = ev.clientY - r.top;
+    return { re: (px - v.cx) / v.u, im: (v.cy - py) / v.u, px: px, py: py };
+  }
+  function mover(nombre, re, im) {
+    var v = vistaPl, lim = function (x, R) { return Math.max(-Math.min(10, Math.floor(R * 2) / 2), Math.min(Math.min(10, Math.floor(R * 2) / 2), x)); };
+    re = limpiar(lim(re, v ? v.Rx : 10)); im = limpiar(lim(im, v ? v.Ry : 10));
+    if (nombre === "z1") { if (re === est.x1 && im === est.y1) return; est.x1 = re; est.y1 = im; }
+    else { if (re === est.x2 && im === est.y2) return; est.x2 = re; est.y2 = im; }
+    est.antes = null; est.ajustePot = false;
+    actualizar1(false);
+  }
+  $("plano").addEventListener("pointerdown", function (ev) {
+    if (est.anim) return;
+    var v = valorDe(ev), tol = ev.pointerType === "touch" ? 30 : 18, mejor = null, dmin = Infinity;
+    [["z1", est.x1, est.y1], ["z2", est.x2, est.y2]].forEach(function (c) {
+      if (c[0] === "z2" && !usaZ2(est.op)) return;
+      var dd = Math.hypot(vistaPl.cx + c[1] * vistaPl.u - v.px, vistaPl.cy - c[2] * vistaPl.u - v.py);
+      if (dd < dmin) { dmin = dd; mejor = c[0]; }
+    });
+    var cual = dmin <= tol ? mejor : est.activo;
+    est.arrastre = cual;
+    ponerActivo(cual);
+    $("plano").setPointerCapture(ev.pointerId);
+    mover(cual, v.re, v.im);
+    ev.preventDefault();
+  });
+  $("plano").addEventListener("pointermove", function (ev) {
+    if (!est.arrastre) return;
+    var v = valorDe(ev);
+    mover(est.arrastre, v.re, v.im);
+  });
+  function soltar() { if (est.arrastre) { est.arrastre = null; actualizar1(true); } }
+  $("plano").addEventListener("pointerup", soltar);
+  $("plano").addEventListener("pointercancel", soltar);
+  $("plano").addEventListener("keydown", function (ev) {
+    var k = ev.key, dx = 0, dy = 0;
+    if (k === "1") { ponerActivo("z1"); dibujarPlano(); ev.preventDefault(); return; }
+    if (k === "2" && usaZ2(est.op)) { ponerActivo("z2"); dibujarPlano(); ev.preventDefault(); return; }
+    if (k === "ArrowLeft") dx = -0.5; else if (k === "ArrowRight") dx = 0.5;
+    else if (k === "ArrowUp") dy = 0.5; else if (k === "ArrowDown") dy = -0.5; else return;
+    ev.preventDefault();
+    if (est.activo === "z1") moverTeclado("z1", est.x1 + dx, est.y1 + dy); else moverTeclado("z2", est.x2 + dx, est.y2 + dy);
+  });
+  function moverTeclado(nombre, re, im) {
+    re = limpiar(re); im = limpiar(im);
+    if (nombre === "z1") { est.x1 = re; est.y1 = im; } else { est.x2 = re; est.y2 = im; }
+    est.antes = null; est.ajustePot = false;
+    actualizar1(true);
+  }
+  function ponerActivo(cual) {
+    est.activo = cual;
+    document.querySelectorAll('input[name="activo"]').forEach(function (r) { r.checked = r.value === cual; });
+  }
+  document.querySelectorAll('input[name="activo"]').forEach(function (r) {
+    r.addEventListener("change", function () { est.activo = r.value; dibujarPlano(); });
+  });
+  [["re1", "x1"], ["im1", "y1"], ["re2", "x2"], ["im2", "y2"]].forEach(function (par) {
+    $(par[0]).addEventListener("change", function () {
+      var v = Number($(par[0]).value);
+      if (!isFinite(v)) v = 0;
+      est[par[1]] = limpiar(v);
+      est.antes = null; est.ajustePot = false;
+      actualizar1(true);
+    });
+  });
+  $("ops").addEventListener("change", function () {
+    est.antes = null; est.ajustePot = false;
+    // Al entrar a Potencias con un z1 lejano, se empieza con 1 + 0.5j para ver la espiral completa
+    if (opActual() === "pot" && Math.hypot(est.x1, est.y1) > 2) { est.x1 = 1; est.y1 = 0.5; est.ajustePot = true; }
+    actualizar1(true);
+  });
+  $("escala").addEventListener("change", function () { actualizar1(true); });
+  $("nPot").addEventListener("input", function () {
+    est.n = Number($("nPot").value);
+    $("nPotVal").textContent = est.n; $("nPotSup").textContent = est.n;
+    actualizar1(true);
+  });
+  $("reiniciar").addEventListener("click", function () {
+    est.x1 = 3; est.y1 = 4; est.x2 = 1; est.y2 = -2; est.antes = null; est.ajustePot = false;
+    actualizar1(true);
+  });
+  $("girar").addEventListener("click", function () {
+    if (est.anim) return;
+    var z = P.Z(est.x1, est.y1), r = P.modulo(z), a0 = P.fase(z);
+    var destino = P.prod(z, P.Z(0, 1)), listo = false, reloj = null;
+    function terminar() {
+      if (listo) return;
+      listo = true;
+      clearTimeout(reloj);
+      est.anim = null;
+      est.antes = z; est.ajustePot = false;
+      est.x1 = limpiar(destino.re); est.y1 = limpiar(destino.im);
+      actualizar1(true);
+    }
+    if (sinMovimiento || r === 0) { terminar(); return; }
+    var t0 = null;
+    est.anim = true;
+    reloj = setTimeout(terminar, 800);       // por si la pestaña no está visible y no hay cuadros de animación
+    function cuadro(ts) {
+      if (listo) return;
+      if (t0 === null) t0 = ts;
+      var t = Math.min(1, (ts - t0) / 450), e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+      dibujarPlano(P.Z(r * Math.cos(a0 + e * Math.PI / 2), r * Math.sin(a0 + e * Math.PI / 2)));
+      if (t < 1) requestAnimationFrame(cuadro); else terminar();
+    }
+    requestAnimationFrame(cuadro);
+  });
+
+  // ================================================================ Vista 2: raíces de una cuadrática
+  var prevA = 1;
+  function abc() { return [Number($("ca").value), Number($("cb").value), Number($("cc").value)]; }
+  $("ca").addEventListener("input", function () {
+    var a = Number($("ca").value);
+    if (a === 0) { a = prevA > 0 ? -1 : 1; $("ca").value = a; }
+    prevA = a;
+    actualizar2();
+  });
+  $("cb").addEventListener("input", actualizar2);
+  $("cc").addEventListener("input", actualizar2);
+  document.querySelectorAll("[data-abc]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var v = b.dataset.abc.split(",");
+      $("ca").value = v[0]; $("cb").value = v[1]; $("cc").value = v[2]; prevA = Number(v[0]);
+      actualizar2();
+    });
+  });
+  var prog2 = null;
+  function signoNum(n) { return n < 0 ? "−" + (-n) : String(n); }
+  function actualizar2() {
+    var v = abc(), a = v[0], b = v[1], c = v[2];
+    $("caVal").textContent = signoNum(a); $("cbVal").textContent = signoNum(b); $("ccVal").textContent = signoNum(c);
+    prog2 = P.programaCuadratica(a, b, c);
+    mostrarCodigo($("codigo2"), prog2.codigo, 5);
+    mostrarSalida($("salida2"), prog2);
+    $("notaCero2").hidden = !prog2.menosCero;
+    var disc = prog2.disc, raiz = Math.sqrt(Math.abs(disc)), exacta = Number.isInteger(raiz);
+    var tipo = disc > 0 ? "dos raíces reales distintas" : disc === 0 ? "una raíz real doble" : "dos raíces complejas conjugadas";
+    var rz = disc === 0 ? "0" : (exacta ? String(raiz) : "√" + Math.abs(disc) + " ≈ " + f(raiz, 2)) + (disc < 0 ? "j" : "");
+    var ecuacion = (a === 1 ? "" : a === -1 ? "−" : signoNum(a)) + "x² " + (b < 0 ? "− " : "+ ") + Math.abs(b) + "x " + (c < 0 ? "− " : "+ ") + Math.abs(c) + " = 0";
+    var html = "<span class='formula'>" + ecuacion + "</span><br>" +
+      "<b>Discriminante:</b> b² − 4ac = " + signoNum(b) + "² − 4·" + signoNum(a) + "·" + signoNum(c) + " = <b>" + signoNum(disc) + "</b><br>" +
+      (disc > 0 ? "<span class='ok'>Positivo</span>" : disc === 0 ? "<span class='ok'>Cero</span>" : "<span class='mal'>Negativo</span>") + ": " + tipo + ".<br>" +
+      "<span class='formula'>x = (−b ± √disc) / (2a) = (" + signoNum(-b) + " ± " + (disc < 0 ? "√" + signoNum(disc) : "√" + disc) + ") / " + signoNum(2 * a) + "</span><br>" +
+      "con √" + signoNum(disc) + " = " + rz + (disc < 0 ? " (cmath.sqrt sí puede; math.sqrt lanzaría ValueError)" : "") + "<br>" +
+      "<b>x1</b> = " + esc(zTexto(prog2.x1)) + " · <b>x2</b> = " + esc(zTexto(prog2.x2)) +
+      (disc < 0 ? "<br>Misma parte real (" + f(-b / (2 * a), 2) + "), parte imaginaria con signo contrario." : "");
+    $("lectura2").innerHTML = html;
+    dibujarRaices(); dibujarParabola();
+  }
+
+  function dibujarRaices() {
+    var cv = $("raices");
+    if (!cv.offsetParent || !prog2) return;
+    var d = preparar(cv, 0.9), g = d.g, w = d.w, h = d.h;
+    g.clearRect(0, 0, w, h);
+    var x1 = prog2.x1, x2 = prog2.x2, m = Math.max(1.5, Math.abs(x1.re), Math.abs(x1.im), Math.abs(x2.re), Math.abs(x2.im));
+    var R = escalaBonita(m * 1.25), top = 30, mg = 16, u = Math.min((w - 2 * mg) / (2 * R), (h - top - mg) / (2 * R));
+    var cx = w / 2, cy = top + (h - top) / 2;
+    function X(v) { return cx + v * u; }
+    function Y(v) { return cy - v * u; }
+    texto(g, "Las raíces en el plano complejo", 10, 20, C.azulOscuro, 15, "left", "alphabetic", true);
+    var paso = pasoRejilla(R), k;
+    for (k = -Math.floor(R / paso) * paso; k <= R; k += paso) {
+      linea(g, X(k), Y(-R), X(k), Y(R), C.grisClaro, 1);
+      linea(g, X(-R), Y(k), X(R), Y(k), C.grisClaro, 1);
+      if (k !== 0) { texto(g, String(k).replace("-", "−"), X(k), cy + 14, C.gris, 11, "center"); texto(g, (k + "j").replace("-", "−"), cx - 4, Y(k) + 4, C.gris, 11, "right"); }
+    }
+    linea(g, X(-R), cy, X(R), cy, C.gris, 1.5);
+    linea(g, cx, Y(-R), cx, Y(R), C.gris, 1.5);
+    texto(g, "Re", X(R), cy - 5, C.tinta, 13, "right", "alphabetic", true);
+    texto(g, "Im", cx + 5, Y(R) + 11, C.tinta, 13, "left", "alphabetic", true);
+    if (prog2.disc < 0) linea(g, X(x1.re), Y(x1.im), X(x2.re), Y(x2.im), C.oro, 2, [5, 4]);
+    var mismas = x1.re === x2.re && x1.im === x2.im;
+    punto(g, X(x1.re), Y(x1.im), C.verde, 7);
+    if (!mismas) punto(g, X(x2.re), Y(x2.im), C.verde, 7);
+    function etq(z, nombre) {
+      var real = prog2.disc >= 0, dy = real ? (nombre === "x1" ? -12 : 24) : (z.im >= 0 ? -8 : 18);
+      etiqueta(g, nombre + " = " + zTexto(z), X(z.re) + (real ? 0 : 10), Y(z.im) + dy, C.verde, real ? "center" : "left", 13);
+    }
+    if (mismas) etiqueta(g, "x1 = x2 = " + zTexto(x1), X(x1.re), Y(x1.im) - 12, C.verde, "center", 13);
+    else { etq(x1, "x1"); etq(x2, "x2"); }
+  }
+
+  function dibujarParabola() {
+    var cv = $("parabola");
+    if (!cv.offsetParent || !prog2) return;
+    var d = preparar(cv, 0.9), g = d.g, w = d.w, h = d.h;
+    g.clearRect(0, 0, w, h);
+    var v = abc(), a = v[0], b = v[1], c = v[2], xv = -b / (2 * a), yv = c - b * b / (4 * a);
+    var semi = Math.max(3, prog2.disc >= 0 ? Math.abs(prog2.x1.re - xv) * 1.5 + 1 : Math.abs(prog2.x1.im) * 1.5 + 1);
+    var x0 = xv - semi, x1 = xv + semi;
+    function F(x) { return a * x * x + b * x + c; }
+    var ys = [F(x0), F(x1), yv, 0], ymin = Math.min.apply(null, ys), ymax = Math.max.apply(null, ys);
+    var dy = (ymax - ymin) || 1; ymin -= dy * 0.12; ymax += dy * 0.12;
+    var izq = 40, der = w - 12, arr = 30, abj = h - 24;
+    function X(x) { return izq + (x - x0) / (x1 - x0) * (der - izq); }
+    function Y(y) { return abj - (y - ymin) / (ymax - ymin) * (abj - arr); }
+    texto(g, "La parábola y = ax² + bx + c", 10, 20, C.azulOscuro, 15, "left", "alphabetic", true);
+    function pasoBonito(rango) { var p = Math.pow(10, Math.floor(Math.log10(rango / 4))), r = rango / p; return r > 20 ? 5 * p : r > 8 ? 2 * p : p; }
+    var px = pasoBonito(x1 - x0), py = pasoBonito(ymax - ymin), k;
+    for (k = Math.ceil(x0 / px) * px; k <= x1; k += px) { linea(g, X(k), arr, X(k), abj, C.grisClaro, 1); texto(g, f(k, 2), X(k), abj + 16, C.gris, 11, "center"); }
+    for (k = Math.ceil(ymin / py) * py; k <= ymax; k += py) { linea(g, izq, Y(k), der, Y(k), C.grisClaro, 1); texto(g, f(k, 2), izq - 4, Y(k) + 4, C.gris, 11, "right"); }
+    linea(g, izq, Y(0), der, Y(0), C.gris, 1.8);
+    if (x0 < 0 && x1 > 0) linea(g, X(0), arr, X(0), abj, C.gris, 1.2);
+    texto(g, "x", der - 2, Y(0) - 5, C.tinta, 13, "right", "alphabetic", true);
+    g.save(); g.strokeStyle = C.azul; g.lineWidth = 3; g.beginPath();
+    for (k = 0; k <= 200; k++) { var xx = x0 + (x1 - x0) * k / 200; if (k === 0) g.moveTo(X(xx), Y(F(xx))); else g.lineTo(X(xx), Y(F(xx))); }
+    g.stroke(); g.restore();
+    linea(g, X(xv), arr, X(xv), abj, C.oro, 1.5, [4, 4]);
+    punto(g, X(xv), Y(yv), C.oro, 5);
+    etiqueta(g, "vértice x = " + f(xv, 2), X(xv) + 6, Math.min(abj - 8, Math.max(arr + 30, Y(yv) + (a > 0 ? 22 : -10))), C.oroTexto, "left", 12);
+    if (prog2.disc >= 0) {
+      punto(g, X(prog2.x1.re), Y(0), C.verde, 7);
+      punto(g, X(prog2.x2.re), Y(0), C.verde, 7);
+      etiqueta(g, prog2.disc === 0 ? "toca el eje x una vez" : "cruza el eje x dos veces", izq + 6, arr + 14, C.verde, "left", 13);
+    } else {
+      etiqueta(g, "no cruza el eje x", izq + 6, arr + 14, C.guinda, "left", 13);
+    }
+  }
+
+  // ================================================================ general
+  function dibujarTodo() { dibujarPlano(); dibujarRaices(); dibujarParabola(); }
+  window.addEventListener("resize", function () { if (!est.anim) dibujarTodo(); });
+  actualizar1(true);
+  actualizar2();
+  // Abrir directamente una vista con #v1 o #v2 al final de la liga
+  var inicial = location.hash.slice(1);
+  if (/^v[12]$/.test(inicial)) { abrirVista(inicial); window.addEventListener("load", function () { window.scrollTo(0, 0); }); }
+})();
+</script>
+<div id="qr-sitio" class="qr-capa" hidden>
+  <div class="qr-caja" role="dialog" aria-modal="true" aria-label="Código QR de esta página">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 45" role="img" aria-label="Código QR de https://memosanchezg.github.io/programacion-basica-interactivos/semana-13-plano-complejo.html" shape-rendering="crispEdges"><rect width="45" height="45" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM10 2h3v1h-3zM16 2h1v1h-1zM19 2h2v1h-2zM24 2h3v1h-3zM28 2h4v1h-4zM36 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM13 3h2v1h-2zM17 3h3v1h-3zM21 3h1v1h-1zM30 3h2v1h-2zM33 3h1v1h-1zM36 3h1v1h-1zM42 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM11 4h2v1h-2zM15 4h1v1h-1zM23 4h1v1h-1zM25 4h1v1h-1zM27 4h1v1h-1zM29 4h1v1h-1zM31 4h1v1h-1zM33 4h2v1h-2zM36 4h1v1h-1zM38 4h3v1h-3zM42 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h1v1h-1zM12 5h1v1h-1zM15 5h1v1h-1zM19 5h2v1h-2zM23 5h3v1h-3zM28 5h1v1h-1zM30 5h1v1h-1zM32 5h3v1h-3zM36 5h1v1h-1zM38 5h3v1h-3zM42 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM20 6h1v1h-1zM22 6h4v1h-4zM27 6h6v1h-6zM36 6h1v1h-1zM38 6h3v1h-3zM42 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h1v1h-1zM13 7h2v1h-2zM16 7h1v1h-1zM21 7h1v1h-1zM23 7h1v1h-1zM26 7h3v1h-3zM30 7h1v1h-1zM33 7h1v1h-1zM36 7h1v1h-1zM42 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM30 8h1v1h-1zM32 8h1v1h-1zM34 8h1v1h-1zM36 8h7v1h-7zM10 9h3v1h-3zM14 9h2v1h-2zM17 9h1v1h-1zM19 9h1v1h-1zM23 9h2v1h-2zM28 9h1v1h-1zM30 9h5v1h-5zM2 10h1v1h-1zM6 10h1v1h-1zM8 10h4v1h-4zM13 10h3v1h-3zM18 10h2v1h-2zM21 10h1v1h-1zM23 10h2v1h-2zM31 10h1v1h-1zM33 10h7v1h-7zM42 10h1v1h-1zM5 11h1v1h-1zM9 11h1v1h-1zM11 11h3v1h-3zM15 11h3v1h-3zM19 11h2v1h-2zM25 11h1v1h-1zM28 11h3v1h-3zM32 11h1v1h-1zM35 11h5v1h-5zM42 11h1v1h-1zM3 12h2v1h-2zM6 12h3v1h-3zM10 12h2v1h-2zM14 12h1v1h-1zM17 12h1v1h-1zM19 12h2v1h-2zM22 12h5v1h-5zM29 12h1v1h-1zM34 12h1v1h-1zM38 12h1v1h-1zM42 12h1v1h-1zM3 13h2v1h-2zM6 13h2v1h-2zM11 13h3v1h-3zM17 13h4v1h-4zM23 13h1v1h-1zM25 13h2v1h-2zM28 13h1v1h-1zM30 13h2v1h-2zM33 13h5v1h-5zM39 13h1v1h-1zM3 14h3v1h-3zM8 14h1v1h-1zM10 14h6v1h-6zM17 14h1v1h-1zM19 14h1v1h-1zM23 14h2v1h-2zM26 14h1v1h-1zM31 14h1v1h-1zM34 14h2v1h-2zM37 14h1v1h-1zM2 15h4v1h-4zM7 15h1v1h-1zM14 15h4v1h-4zM19 15h4v1h-4zM24 15h1v1h-1zM27 15h2v1h-2zM32 15h1v1h-1zM34 15h1v1h-1zM36 15h3v1h-3zM42 15h1v1h-1zM5 16h1v1h-1zM8 16h6v1h-6zM17 16h1v1h-1zM20 16h1v1h-1zM22 16h1v1h-1zM24 16h1v1h-1zM29 16h2v1h-2zM34 16h3v1h-3zM38 16h1v1h-1zM40 16h1v1h-1zM42 16h1v1h-1zM7 17h1v1h-1zM11 17h3v1h-3zM18 17h2v1h-2zM23 17h1v1h-1zM26 17h1v1h-1zM28 17h2v1h-2zM31 17h4v1h-4zM38 17h2v1h-2zM41 17h2v1h-2zM8 18h1v1h-1zM10 18h2v1h-2zM13 18h2v1h-2zM16 18h1v1h-1zM19 18h1v1h-1zM21 18h3v1h-3zM25 18h1v1h-1zM29 18h1v1h-1zM31 18h2v1h-2zM34 18h1v1h-1zM37 18h1v1h-1zM39 18h1v1h-1zM41 18h1v1h-1zM3 19h1v1h-1zM5 19h3v1h-3zM11 19h1v1h-1zM14 19h5v1h-5zM20 19h1v1h-1zM23 19h1v1h-1zM25 19h8v1h-8zM35 19h4v1h-4zM40 19h1v1h-1zM42 19h1v1h-1zM3 20h1v1h-1zM5 20h2v1h-2zM8 20h5v1h-5zM14 20h4v1h-4zM19 20h1v1h-1zM25 20h2v1h-2zM29 20h1v1h-1zM31 20h1v1h-1zM35 20h3v1h-3zM39 20h1v1h-1zM41 20h2v1h-2zM2 21h1v1h-1zM5 21h3v1h-3zM9 21h2v1h-2zM16 21h5v1h-5zM22 21h1v1h-1zM24 21h3v1h-3zM28 21h2v1h-2zM31 21h1v1h-1zM33 21h5v1h-5zM39 21h1v1h-1zM41 21h1v1h-1zM5 22h1v1h-1zM7 22h2v1h-2zM10 22h1v1h-1zM15 22h1v1h-1zM18 22h1v1h-1zM20 22h1v1h-1zM22 22h1v1h-1zM24 22h5v1h-5zM31 22h1v1h-1zM33 22h3v1h-3zM5 23h2v1h-2zM9 23h3v1h-3zM14 23h3v1h-3zM18 23h2v1h-2zM25 23h1v1h-1zM29 23h2v1h-2zM35 23h4v1h-4zM42 23h1v1h-1zM2 24h1v1h-1zM5 24h1v1h-1zM8 24h1v1h-1zM12 24h1v1h-1zM14 24h1v1h-1zM17 24h1v1h-1zM19 24h1v1h-1zM22 24h1v1h-1zM25 24h5v1h-5zM31 24h2v1h-2zM34 24h1v1h-1zM36 24h2v1h-2zM39 24h2v1h-2zM42 24h1v1h-1zM2 25h3v1h-3zM6 25h1v1h-1zM9 25h1v1h-1zM11 25h1v1h-1zM14 25h1v1h-1zM16 25h1v1h-1zM19 25h1v1h-1zM21 25h1v1h-1zM23 25h1v1h-1zM25 25h2v1h-2zM29 25h9v1h-9zM39 25h1v1h-1zM42 25h1v1h-1zM3 26h7v1h-7zM11 26h1v1h-1zM14 26h6v1h-6zM21 26h3v1h-3zM25 26h2v1h-2zM30 26h2v1h-2zM34 26h2v1h-2zM39 26h1v1h-1zM41 26h2v1h-2zM2 27h1v1h-1zM6 27h1v1h-1zM9 27h1v1h-1zM11 27h2v1h-2zM18 27h2v1h-2zM25 27h1v1h-1zM28 27h3v1h-3zM32 27h1v1h-1zM34 27h1v1h-1zM36 27h3v1h-3zM40 27h1v1h-1zM42 27h1v1h-1zM2 28h1v1h-1zM4 28h1v1h-1zM7 28h3v1h-3zM12 28h1v1h-1zM14 28h1v1h-1zM16 28h2v1h-2zM19 28h1v1h-1zM22 28h1v1h-1zM24 28h2v1h-2zM27 28h3v1h-3zM31 28h1v1h-1zM34 28h1v1h-1zM36 28h1v1h-1zM42 28h1v1h-1zM2 29h2v1h-2zM5 29h2v1h-2zM9 29h1v1h-1zM13 29h11v1h-11zM25 29h1v1h-1zM28 29h1v1h-1zM31 29h4v1h-4zM36 29h2v1h-2zM39 29h1v1h-1zM42 29h1v1h-1zM6 30h1v1h-1zM8 30h1v1h-1zM10 30h1v1h-1zM16 30h4v1h-4zM21 30h5v1h-5zM29 30h1v1h-1zM31 30h1v1h-1zM34 30h2v1h-2zM41 30h2v1h-2zM2 31h1v1h-1zM4 31h4v1h-4zM9 31h6v1h-6zM17 31h1v1h-1zM19 31h3v1h-3zM23 31h1v1h-1zM26 31h1v1h-1zM28 31h5v1h-5zM36 31h1v1h-1zM38 31h2v1h-2zM41 31h2v1h-2zM4 32h1v1h-1zM6 32h1v1h-1zM8 32h4v1h-4zM13 32h1v1h-1zM15 32h3v1h-3zM20 32h2v1h-2zM23 32h1v1h-1zM25 32h5v1h-5zM32 32h1v1h-1zM35 32h1v1h-1zM38 32h2v1h-2zM42 32h1v1h-1zM4 33h2v1h-2zM10 33h1v1h-1zM12 33h2v1h-2zM15 33h3v1h-3zM19 33h5v1h-5zM25 33h1v1h-1zM29 33h1v1h-1zM31 33h3v1h-3zM35 33h1v1h-1zM38 33h2v1h-2zM41 33h1v1h-1zM2 34h4v1h-4zM7 34h4v1h-4zM13 34h1v1h-1zM15 34h2v1h-2zM19 34h2v1h-2zM22 34h3v1h-3zM26 34h1v1h-1zM29 34h1v1h-1zM31 34h1v1h-1zM34 34h6v1h-6zM41 34h2v1h-2zM10 35h3v1h-3zM16 35h1v1h-1zM19 35h2v1h-2zM24 35h3v1h-3zM28 35h3v1h-3zM34 35h1v1h-1zM38 35h3v1h-3zM42 35h1v1h-1zM2 36h7v1h-7zM10 36h2v1h-2zM14 36h5v1h-5zM20 36h1v1h-1zM23 36h7v1h-7zM31 36h4v1h-4zM36 36h1v1h-1zM38 36h1v1h-1zM40 36h1v1h-1zM42 36h1v1h-1zM2 37h1v1h-1zM8 37h1v1h-1zM11 37h2v1h-2zM14 37h1v1h-1zM23 37h1v1h-1zM25 37h1v1h-1zM27 37h1v1h-1zM30 37h2v1h-2zM33 37h2v1h-2zM38 37h2v1h-2zM42 37h1v1h-1zM2 38h1v1h-1zM4 38h3v1h-3zM8 38h1v1h-1zM10 38h1v1h-1zM12 38h1v1h-1zM14 38h2v1h-2zM18 38h1v1h-1zM21 38h2v1h-2zM26 38h2v1h-2zM31 38h1v1h-1zM33 38h7v1h-7zM41 38h1v1h-1zM2 39h1v1h-1zM4 39h3v1h-3zM8 39h1v1h-1zM11 39h2v1h-2zM17 39h2v1h-2zM20 39h1v1h-1zM23 39h10v1h-10zM34 39h1v1h-1zM37 39h1v1h-1zM41 39h1v1h-1zM2 40h1v1h-1zM4 40h3v1h-3zM8 40h1v1h-1zM12 40h2v1h-2zM16 40h2v1h-2zM20 40h1v1h-1zM22 40h1v1h-1zM25 40h1v1h-1zM27 40h1v1h-1zM29 40h1v1h-1zM31 40h2v1h-2zM34 40h2v1h-2zM39 40h1v1h-1zM42 40h1v1h-1zM2 41h1v1h-1zM8 41h1v1h-1zM11 41h2v1h-2zM14 41h1v1h-1zM16 41h4v1h-4zM23 41h2v1h-2zM26 41h1v1h-1zM28 41h2v1h-2zM31 41h2v1h-2zM34 41h4v1h-4zM39 41h1v1h-1zM41 41h2v1h-2zM2 42h7v1h-7zM10 42h1v1h-1zM14 42h3v1h-3zM18 42h2v1h-2zM22 42h5v1h-5zM29 42h1v1h-1zM31 42h1v1h-1zM34 42h1v1h-1zM36 42h3v1h-3zM41 42h1v1h-1z"/></svg>
+    <p class="qr-texto">Escanea con la cámara del celular para abrir esta página</p>
+    <p class="qr-url">https://memosanchezg.github.io/programacion-basica-interactivos/semana-13-plano-complejo.html</p>
+    <button type="button" class="qr-cerrar">Cerrar</button>
+  </div>
+</div>
+<style>
+  .qr-capa { position:fixed; top:0; right:0; bottom:0; left:0; z-index:10000; display:flex; align-items:center;
+             justify-content:center; padding:16px; background:#fff; }
+  .qr-capa[hidden] { display:none; }
+  .qr-caja { max-width:100%; text-align:center; color:#0A2A57; font:16px/1.4 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .qr-caja svg { display:block; width:min(62vh, 84vw); height:auto; margin:0 auto; }
+  .qr-texto { margin:12px 0 2px; font-size:1.15rem; font-weight:bold; }
+  .qr-url { margin:0 0 12px; color:#5B6472; word-break:break-all; }
+  .qr-cerrar { font:inherit; padding:6px 20px; border:2px solid #00408F; border-radius:4px; background:#fff;
+               color:#00408F; cursor:pointer; }
+</style>
+<script>
+  (function () {
+    var capa = document.getElementById("qr-sitio");
+    document.querySelectorAll("a.qr-abrir").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        capa.hidden = false;
+        capa.querySelector(".qr-cerrar").focus();
+      });
+    });
+    capa.addEventListener("click", function (e) {
+      if (e.target === capa || e.target.classList.contains("qr-cerrar")) capa.hidden = true;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !capa.hidden) capa.hidden = true;
+    });
+  })();
+</script>
+</body>
+</html>

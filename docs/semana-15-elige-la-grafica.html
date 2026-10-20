@@ -1,0 +1,1270 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="tipo" content="simulador">
+<title>Elige la gráfica</title>
+
+<style>
+  :root {
+    --azul:#00408F; --azul-oscuro:#0A2A57; --guinda:#8C1D35; --oro:#B8975A; --oro-texto:#8A6A2E;
+    --azul-claro:#E8EEF7; --oro-claro:#F7F1E6; --guinda-claro:#F5E6EA; --verde:#2F7D5B;
+    --tinta:#1B1F2A; --gris:#5B6472; --gris-claro:#E9ECF1; --borde:#D9DEE6; --fondo:#FFFFFF;
+    --cmd-fondo:#0C0C0C; --cmd-texto:#E6E6E6;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--fondo); color:var(--tinta);
+         font:16px/1.45 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .franja { height:8px; background:var(--azul); border-bottom:3px solid var(--oro); }
+  header { max-width:1280px; margin:0 auto; padding:12px 18px 4px; }
+  .semana { color:var(--guinda); font-weight:bold; letter-spacing:.04em; font-size:.85rem; text-transform:uppercase; }
+  h1 { font-family:Cambria,Georgia,serif; color:var(--azul-oscuro); font-size:1.7rem; margin:2px 0 2px; }
+  .sub { color:var(--gris); margin:0; }
+  main { max-width:1280px; margin:0 auto; padding:8px 18px 24px; }
+  .panel { background:#fff; border:1px solid var(--borde); border-radius:10px; padding:12px 14px; min-width:0; }
+  .panel h2 { font-size:1.02rem; color:var(--azul-oscuro); margin:0 0 8px; }
+  button.accion { font:inherit; font-weight:bold; border-radius:8px; padding:7px 12px; margin:8px 6px 0 0;
+                  border:1px solid var(--azul); background:#fff; color:var(--azul); cursor:pointer; }
+  button.accion:hover, button.accion:focus-visible { background:var(--azul); color:#fff; outline:none; }
+  canvas { width:100%; display:block; border:1px solid var(--borde); border-radius:4px; background:#fff; }
+  .lectura { background:var(--oro-claro); border-left:4px solid var(--oro); border-radius:8px; padding:10px 12px;
+             margin-top:12px; line-height:1.55; }
+  .lectura b { color:var(--azul-oscuro); }
+  .ok { color:var(--verde); font-weight:bold; }
+  .mal { color:var(--guinda); font-weight:bold; }
+  .preguntas { background:var(--azul-claro); border-radius:8px; padding:10px 14px; margin-top:12px; }
+  .preguntas h3 { margin:0 0 4px; font-size:.95rem; color:var(--azul-oscuro); }
+  .preguntas ol { margin:0; padding-left:20px; }
+  /* Código Python con los colores del curso (minted, estilo borland). */
+  .codigo { border:1px solid var(--tinta); background:#fff; font:15px/1.5 Consolas,"Courier New",monospace;
+            overflow-x:auto; margin:8px 0; }
+  .codigo ol { margin:0; padding:8px 12px 8px 3.4em; }
+  .codigo li { white-space:pre; }
+  .codigo li::marker { color:var(--gris); font:11px Cambria,Georgia,serif; }
+  .codigo .kw { color:#000080; font-weight:bold; }
+  .codigo .str, .codigo .num { color:#0000FF; }
+  .codigo .com { color:#008800; font-style:italic; }
+  footer { max-width:1280px; margin:0 auto; padding:6px 18px 18px; color:var(--gris); font-size:.85rem; }
+  footer a { color:var(--azul); }
+
+  /* Propios de este juego */
+  .marcador { display:flex; flex-wrap:wrap; align-items:center; gap:8px 18px; margin-bottom:8px; }
+  .marcador .cuenta { font-weight:bold; color:var(--azul-oscuro); }
+  .marcador .puntos { font-weight:bold; color:var(--guinda); }
+  .puntitos { display:flex; gap:6px; flex-wrap:wrap; }
+  .puntitos span { width:14px; height:14px; border-radius:50%; background:var(--gris-claro); border:2px solid var(--gris-claro); }
+  .puntitos span.acierto { background:var(--verde); border-color:var(--verde); }
+  .puntitos span.error { background:var(--guinda); border-color:var(--guinda); }
+  .puntitos span.actual { border-color:var(--azul); background:#fff; }
+  #pregunta { font-family:Cambria,Georgia,serif; color:var(--azul-oscuro); font-size:1.35rem; margin:4px 0 2px; }
+  #contexto { color:var(--gris); margin:0 0 4px; }
+  .codigo.datos { font-size:14px; }
+  .opciones { display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:10px; margin-top:10px; }
+  .opciones button { font:inherit; display:flex; flex-direction:column; align-items:center; gap:4px; padding:10px 6px;
+                     border:2px solid var(--borde); border-radius:10px; background:#fff; color:var(--azul-oscuro);
+                     cursor:pointer; font-weight:bold; min-width:0; }
+  .opciones button svg { width:56px; height:40px; }
+  .opciones button small { font-weight:normal; color:var(--gris); font-family:Consolas,"Courier New",monospace; font-size:.85rem; }
+  .opciones button .tecla { font-weight:normal; color:var(--gris); font-size:.8rem; }
+  .opciones button:hover:not(:disabled), .opciones button:focus-visible { border-color:var(--azul); background:var(--azul-claro); outline:none; }
+  .opciones button:disabled { cursor:default; opacity:.55; }
+  .opciones button.elegida { opacity:1; border-color:var(--guinda); background:var(--guinda-claro); }
+  .opciones button.correcta { opacity:1; border-color:var(--verde); background:#E7F3EC; }
+  .veredicto { margin-top:12px; padding:10px 12px; border-radius:8px; border-left:5px solid var(--gris); background:var(--gris-claro); }
+  .veredicto.v-bien { border-left-color:var(--verde); background:#E7F3EC; }
+  .veredicto.v-mal { border-left-color:var(--guinda); background:var(--guinda-claro); }
+  .veredicto h3 { margin:0 0 4px; font-size:1.1rem; }
+  .veredicto.v-bien h3 { color:var(--verde); }
+  .veredicto.v-mal h3 { color:var(--guinda); }
+  .comparacion { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:12px; }
+  .comparacion figure { margin:0; min-width:0; }
+  .comparacion figcaption { font-weight:bold; color:var(--azul-oscuro); margin-bottom:6px; }
+  .comparacion figcaption .etq { display:inline-block; font-size:.8rem; letter-spacing:.04em; text-transform:uppercase;
+                                 padding:1px 8px; border-radius:10px; margin-right:6px; color:#fff; background:var(--gris); }
+  .comparacion figcaption .etq.bien { background:var(--verde); }
+  .comparacion figcaption .etq.mal { background:var(--guinda); }
+  .comparacion .porque { margin:6px 0 0; color:var(--tinta); }
+  .marco-lienzo { display:flex; justify-content:center; }
+  #siguiente { margin-top:14px; }
+  table.resumen { width:100%; border-collapse:collapse; margin-top:10px; }
+  table.resumen th, table.resumen td { border:1px solid var(--borde); padding:6px 8px; text-align:left; vertical-align:top; }
+  table.resumen th { background:var(--gris-claro); color:var(--azul-oscuro); }
+  .grande { font-size:1.5rem; font-family:Cambria,Georgia,serif; color:var(--azul-oscuro); margin:4px 0; }
+  .nota { color:var(--gris); font-size:.93rem; margin:6px 0 0; }
+  code { font-family:Consolas,"Courier New",monospace; color:var(--azul); }
+  @media (max-width: 900px) { .comparacion { grid-template-columns:1fr; } .opciones { grid-template-columns:repeat(3, minmax(0, 1fr)); } }
+  @media (max-width: 480px) {
+    header { padding:10px 12px 4px; } main { padding:8px 10px 20px; } footer { padding:6px 12px 16px; }
+    .panel { padding:10px; } h1 { font-size:1.45rem; } #pregunta { font-size:1.2rem; }
+    .opciones { grid-template-columns:repeat(2, minmax(0, 1fr)); } .codigo { font-size:13px; }
+  }
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header>
+  <div class="semana">Semana 15 · Día 2 · Gráficas de datos</div>
+  <h1>Elige la gráfica</h1>
+  <p class="sub">Diez preguntas con sus datos. Elige la gráfica que responde cada pregunta y compárala con la adecuada, dibujadas con los mismos datos.</p>
+</header>
+<main>
+  <section class="panel" id="juego" aria-labelledby="pregunta">
+    <div class="marcador">
+      <span class="cuenta" id="cuenta">Pregunta 1 de 10</span>
+      <span class="puntos" id="puntos">Puntos: 0</span>
+      <div class="puntitos" id="puntitos" aria-hidden="true"></div>
+    </div>
+    <h2 id="pregunta"></h2>
+    <p id="contexto"></p>
+    <div id="datos"></div>
+    <div class="opciones" id="opciones" role="group" aria-label="¿Qué gráfica responde la pregunta? Teclas 1 a 5">
+      <button type="button" data-tipo="barras">
+        <svg viewBox="0 0 56 40" aria-hidden="true"><g fill="currentColor"><rect x="6" y="18" width="9" height="20"/><rect x="19" y="6" width="9" height="32"/><rect x="32" y="24" width="9" height="14"/><rect x="45" y="13" width="9" height="25"/></g></svg>
+        Barras<small>plt.bar</small><span class="tecla">tecla 1</span>
+      </button>
+      <button type="button" data-tipo="histograma">
+        <svg viewBox="0 0 56 40" aria-hidden="true"><g fill="currentColor" stroke="#fff" stroke-width="1"><rect x="4" y="30" width="8" height="8"/><rect x="12" y="18" width="8" height="20"/><rect x="20" y="6" width="8" height="32"/><rect x="28" y="10" width="8" height="28"/><rect x="36" y="22" width="8" height="16"/><rect x="44" y="32" width="8" height="6"/></g></svg>
+        Histograma<small>plt.hist</small><span class="tecla">tecla 2</span>
+      </button>
+      <button type="button" data-tipo="dispersion">
+        <svg viewBox="0 0 56 40" aria-hidden="true"><g fill="currentColor"><circle cx="8" cy="31" r="3"/><circle cx="15" cy="27" r="3"/><circle cx="21" cy="30" r="3"/><circle cx="27" cy="20" r="3"/><circle cx="33" cy="23" r="3"/><circle cx="39" cy="14" r="3"/><circle cx="46" cy="16" r="3"/><circle cx="50" cy="8" r="3"/></g></svg>
+        Dispersión<small>plt.scatter</small><span class="tecla">tecla 3</span>
+      </button>
+      <button type="button" data-tipo="lineas">
+        <svg viewBox="0 0 56 40" aria-hidden="true"><polyline points="4,30 12,24 20,27 28,14 36,18 44,8 52,12" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/></svg>
+        Líneas<small>plt.plot</small><span class="tecla">tecla 4</span>
+      </button>
+      <button type="button" data-tipo="pastel">
+        <svg viewBox="0 0 56 40" aria-hidden="true"><circle cx="28" cy="20" r="17" fill="currentColor" opacity=".35"/><path d="M28 20 L45 20 A17 17 0 0 0 19.5 5.3 Z" fill="currentColor"/></svg>
+        Pastel<small>plt.pie</small><span class="tecla">tecla 5</span>
+      </button>
+    </div>
+    <div id="respuesta" hidden>
+      <div class="veredicto" id="veredicto" role="status" aria-live="polite"></div>
+      <div class="comparacion">
+        <figure>
+          <figcaption id="cap1"></figcaption>
+          <div class="marco-lienzo"><canvas id="lienzo1" aria-label="La gráfica que elegiste, dibujada con los datos de la pregunta."></canvas></div>
+          <div id="cod1"></div>
+          <p class="porque" id="por1"></p>
+        </figure>
+        <figure>
+          <figcaption id="cap2"></figcaption>
+          <div class="marco-lienzo"><canvas id="lienzo2" aria-label="La gráfica adecuada, dibujada con los mismos datos."></canvas></div>
+          <div id="cod2"></div>
+          <p class="porque" id="por2"></p>
+        </figure>
+      </div>
+      <button type="button" class="accion" id="siguiente">Siguiente pregunta →</button>
+    </div>
+  </section>
+
+  <section class="panel" id="final" hidden aria-labelledby="titulo-final">
+    <h2 id="titulo-final" tabindex="-1">Resultado</h2>
+    <p class="grande" id="resultado"></p>
+    <p id="mensaje"></p>
+    <table class="resumen" id="tabla-final"></table>
+    <div class="lectura"><b>Para recordar:</b> barras para comparar categorías; histograma para ver cómo se reparten muchos valores; dispersión para ver si dos variables se relacionan; líneas para ver un cambio en el tiempo; pastel solo para partes de un todo con pocas categorías.</div>
+    <button type="button" class="accion" id="otra-vez">Jugar otra vez</button>
+  </section>
+
+  <div class="preguntas">
+    <h3>Para explorar</h3>
+    <ol>
+      <li>Al terminar, agrupa las diez preguntas por el tipo de gráfica que las responde. ¿Qué tienen en común las de cada grupo?</li>
+      <li>¿Por qué <code>plt.bar(dias, tmax)</code> no sirve para ver qué máximas fueron típicas, aunque muestra todos los datos?</li>
+      <li>En la pregunta 3, ¿por qué <code>plt.plot(tmax, lluvia)</code> sale como una maraña?</li>
+      <li>¿En qué pregunta la gráfica de pastel engaña más? ¿Por qué?</li>
+    </ol>
+  </div>
+</main>
+<footer>
+  Datos del clima: Monterrey, septiembre de 2026 (Open-Meteo), el archivo clima_septiembre.json del Tema 12. Los demás datos son ilustrativos. Las gráficas imitan el estilo por omisión de matplotlib 3.
+  Programación Básica · FCFM-UANL · funciona sin internet.
+  <a href="index.html">Índice de simuladores</a> · <a href="#qr-sitio" class="qr-abrir">Abrir en el celular (QR)</a>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+  // ===================== Figura al estilo de matplotlib (inicio) =====================
+  // Dibuja en un <canvas> lo mismo que matplotlib 3.x con su estilo por omisión: figura en
+  // pulgadas a 100 dpi, ejes en [0.125, 0.9] x [0.11, 0.88] de la figura, márgenes de 5 %,
+  // marcas del localizador automático (MaxNLocator), números del ScalarFormatter, ciclo de
+  // colores C0, C1, ..., letra DejaVu Sans (o Verdana, con medidas casi iguales) y leyenda
+  // en la posición "best". MPL.dibujar(canvas, figura) regresa la geometría de cada parte.
+  var MPL = (function () {
+    var CICLO = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
+                 "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"];
+    var PT = 100 / 72;                          // píxeles por punto (1/72 de pulgada) a 100 dpi
+    var LETRA = '"DejaVu Sans", "Bitstream Vera Sans", Verdana, Geneva, sans-serif';
+    var TAM = 10 * PT;                          // font.size = 10 puntos
+    var ASC = 1556 / 2048, DESC = 492 / 2048;   // ascenso y descenso de DejaVu Sans (em)
+    var PASOS = [0.1 * 1, 0.1 * 2, 0.1 * 2.5, 0.1 * 5, 1, 2, 2.5, 5, 10, 20];
+    var GUIONES = { "--": [3.7, 1.6], ":": [1, 1.65], "-.": [6.4, 1.6, 1, 1.6] };
+
+    // ---------- Aritmética igual a la de Python y numpy ----------
+    function divmod(a, b) {                       // divmod() de Python para floats
+      var mod = a % b, div = (a - mod) / b, fd;
+      if (mod) { if ((b < 0) !== (mod < 0)) { mod += b; div -= 1; } }
+      else mod = b < 0 ? -0 : 0;
+      if (div) { fd = Math.floor(div); if (div - fd > 0.5) fd += 1; }
+      else fd = (a / b < 0) ? -0 : 0;
+      return [fd, mod];
+    }
+    function pot10(k) { return Number("1e" + k); }
+    function rint(v) {                            // redondeo al par, como numpy.rint
+      var f = Math.floor(v), d = v - f;
+      return d > 0.5 ? f + 1 : d < 0.5 ? f : (f % 2 === 0 ? f : f + 1);
+    }
+    function redondear(x, d) { var p = pot10(d); return rint(x * p) / p; }   // numpy.round(x, d)
+    // Exponente E tal que |x| = M * 2^E con M impar (x finito, distinto de cero)
+    function exponente2(x) {
+      var a = Math.abs(x), e = 0;
+      while (a !== Math.floor(a)) { a *= 2; e--; }
+      while (a % 2 === 0) { a /= 2; e++; }
+      return e;
+    }
+    // "%.{d}f" % x de Python: redondeo correcto y, en un empate exacto, al dígito par
+    function fijo(x, d) {
+      var s = x.toFixed(d);
+      if (x !== 0 && isFinite(x) && exponente2(x) === -(d + 1)) {
+        var u = s.charCodeAt(s.length - 1) - 48;
+        if (u % 2 === 1) s = s.slice(0, -1) + String(u - 1);
+      }
+      return s;
+    }
+    function menos(s) { return String(s).replace(/-/g, "−"); }   // signo menos tipográfico
+
+    // ---------- MaxNLocator (localizador automático de marcas) ----------
+    function noSingular(v0, v1, expansor, minimo) {
+      if (!isFinite(v0) || !isFinite(v1)) return [-expansor, expansor];
+      if (v1 < v0) { var t = v0; v0 = v1; v1 = t; }
+      var maxabs = Math.max(Math.abs(v0), Math.abs(v1));
+      if (maxabs < (1e6 / minimo) * 2.2250738585072014e-308) { v0 = -expansor; v1 = expansor; }
+      else if (v1 - v0 <= maxabs * minimo) {
+        if (v1 === 0 && v0 === 0) { v0 = -expansor; v1 = expansor; }
+        else { v0 -= expansor * Math.abs(v0); v1 += expansor * Math.abs(v1); }
+      }
+      return [v0, v1];
+    }
+    function cerca(ms, borde, paso, offset) {
+      var tol = 1e-10;
+      if (offset > 0) tol = Math.min(0.4999, Math.max(1e-10, Math.pow(10, Math.log10(offset / paso) - 12)));
+      return Math.abs(ms - borde) < tol;
+    }
+    function marcasCrudas(vmin, vmax, nbins) {
+      var dv = Math.abs(vmax - vmin), media = (vmax + vmin) / 2, offset = 0;
+      if (!(Math.abs(media) / dv < 100)) offset = (media < 0 ? -1 : 1) * pot10(Math.floor(Math.log10(Math.abs(media))));
+      var escala = pot10(Math.floor(Math.log10(dv / nbins)));
+      var v0 = vmin - offset, v1 = vmax - offset, pasos = PASOS.map(function (s) { return s * escala; });
+      var crudo = (v1 - v0) / nbins, i0 = pasos.length - 1, marcas = [], i, k;
+      for (i = 0; i < pasos.length; i++) if (pasos[i] >= crudo) { i0 = i; break; }
+      for (i = i0; i >= 0; i--) {
+        var paso = pasos[i], base = divmod(v0, paso)[0] * paso, off = Math.abs(offset);
+        var dm = divmod(v0 - base, paso), bajo = cerca(dm[1] / paso, 1, paso, off) ? dm[0] + 1 : dm[0];
+        dm = divmod(v1 - base, paso);
+        var alto = cerca(dm[1] / paso, 0, paso, off) ? dm[0] : dm[0] + 1;
+        marcas = [];
+        for (k = bajo; k <= alto; k++) marcas.push(k * paso + base);
+        var dentro = marcas.filter(function (t) { return t <= v1 && t >= v0; }).length;
+        if (dentro >= 2) break;
+      }
+      return marcas.map(function (t) { return t + offset; });
+    }
+    function marcas(vmin, vmax, nbins) {
+      var ns = noSingular(vmin, vmax, 1e-13, 1e-14);
+      return marcasCrudas(ns[0], ns[1], nbins);
+    }
+    function visibles(locs, lim) {
+      var a = Math.min(lim[0], lim[1]), b = Math.max(lim[0], lim[1]), tol = (b - a) * 1e-10;
+      return locs.filter(function (t) { return a - tol <= t && t <= b + tol; });
+    }
+
+    // ---------- ScalarFormatter (los números de las marcas) ----------
+    function piso10(x) { return Math.floor(Math.log10(x)); }
+    function formatoDato(v) {                     // ScalarFormatter.format_data (para el offset)
+      var e = piso10(Math.abs(v)), s = Math.round(v / pot10(e) * 1e10) / 1e10;
+      var sig = s % 1 === 0 ? String(s) : String(Number(s.toPrecision(10)));
+      return e === 0 ? sig : sig + "e" + e;
+    }
+    function formatear(locs, lim) {
+      if (!locs.length) return { etiquetas: [], extra: "" };
+      var a = Math.min(lim[0], lim[1]), b = Math.max(lim[0], lim[1]);
+      var vis = locs.filter(function (t) { return a <= t && t <= b; }), offset = 0, oom = 0, o;
+      if (vis.length) {
+        var lmin = Math.min.apply(null, vis), lmax = Math.max.apply(null, vis);
+        if (!(lmin === lmax || (lmin <= 0 && 0 <= lmax))) {
+          var amin = Math.min(Math.abs(lmin), Math.abs(lmax)), amax = Math.max(Math.abs(lmin), Math.abs(lmax));
+          var omax = Math.ceil(Math.log10(amax)), om = omax;
+          for (o = omax; o > omax - 400; o--) {
+            if (divmod(amin, pot10(o))[0] !== divmod(amax, pot10(o))[0]) { om = o + 1; break; }
+          }
+          if ((amax - amin) / pot10(om) <= 1e-2) {
+            for (o = omax; o > omax - 400; o--) {
+              if (divmod(amax, pot10(o))[0] - divmod(amin, pot10(o))[0] > 1) { om = o + 1; break; }
+            }
+          }
+          var q = divmod(amax, pot10(om))[0];
+          offset = q >= 1000 ? (lmin < 0 ? -1 : 1) * q * pot10(om) : 0;
+        }
+        var oo;
+        if (offset) oo = Math.floor(Math.log10(b - a));
+        else { var val = Math.max.apply(null, vis.map(Math.abs)); oo = val === 0 ? 0 : piso10(val); }
+        oom = (oo <= -5 || oo >= 6) ? oo : 0;
+      }
+      var esc = pot10(oom), base = locs.length < 2 ? locs.concat([lim[0], lim[1]]) : locs;
+      var L = base.map(function (t) { return (t - offset) / esc; });
+      var rango = Math.max.apply(null, L) - Math.min.apply(null, L);
+      if (rango === 0) rango = Math.max.apply(null, L.map(Math.abs));
+      if (rango === 0) rango = 1;
+      if (locs.length < 2) L = L.slice(0, -2);
+      var room = piso10(rango), sig = Math.max(0, 3 - room), umbral = 1e-3 * pot10(room);
+      while (sig >= 0) {
+        var err = 0;
+        L.forEach(function (l) { err = Math.max(err, Math.abs(l - redondear(l, sig))); });
+        if (err < umbral) sig -= 1; else break;
+      }
+      sig += 1;
+      var etiquetas = locs.map(function (t) {
+        var xp = (t - offset) / esc;
+        if (Math.abs(xp) < 1e-8) xp = 0;
+        return menos(fijo(xp, sig));
+      });
+      var extra = "";
+      if (oom || offset) {
+        extra = (oom ? "1e" + oom : "") + (offset ? (offset > 0 ? "+" : "") + formatoDato(offset) : "");
+      }
+      return { etiquetas: etiquetas, extra: menos(extra) };
+    }
+
+    // ---------- Histograma (numpy.histogram) ----------
+    function linspace(a, b, n) {
+      var div = n - 1, delta = b - a, y = [], i;
+      if (div > 0) {
+        var paso = delta / div;
+        for (i = 0; i < n; i++) y.push(paso === 0 ? (i / div) * delta + a : i * paso + a);
+        y[n - 1] = b;
+      } else for (i = 0; i < n; i++) y.push(i * delta + a);
+      return y;
+    }
+    function histograma(datos, bins) {
+      var v = datos.filter(isFinite), bordes, cuentas, i, j;
+      if (typeof bins === "number") {
+        var lo = Math.min.apply(null, v), hi = Math.max.apply(null, v);
+        if (!v.length) { lo = 0; hi = 1; }
+        if (lo === hi) { lo -= 0.5; hi += 0.5; }
+        bordes = linspace(lo, hi, bins + 1);
+      } else bordes = bins.slice();
+      cuentas = bordes.slice(1).map(function () { return 0; });
+      var n = cuentas.length;
+      v.forEach(function (x) {
+        if (x < bordes[0] || x > bordes[n]) return;
+        if (x === bordes[n]) { cuentas[n - 1]++; return; }
+        for (j = 0; j < n; j++) if (x >= bordes[j] && x < bordes[j + 1]) { cuentas[j]++; return; }
+      });
+      return { bordes: bordes, cuentas: cuentas };
+    }
+
+    // ---------- Texto ----------
+    function fuente(tam) { return tam + "px " + LETRA; }
+    function medir(g, s, tam) {
+      g.font = fuente(tam);
+      var m = g.measureText(s), a = m.actualBoundingBoxAscent, d = m.actualBoundingBoxDescent;
+      if (!(a >= 0)) a = 0;
+      if (!(d >= 0)) d = 0;
+      return { w: m.width, a: Math.max(a, ASC * tam), d: Math.max(d, DESC * tam) };
+    }
+    // Texto alineado como en matplotlib (ha: left, center, right; va: top, bottom, center,
+    // baseline, center_baseline). Regresa la caja que ocupa.
+    function texto(g, s, x, y, o) {
+      var tam = o.tam || TAM, m = medir(g, s, tam), va = o.va || "baseline", ha = o.ha || "left", base;
+      if (va === "top") base = y + m.a;
+      else if (va === "bottom") base = y - m.d;
+      else if (va === "center") base = y + (m.a - m.d) / 2;
+      else if (va === "center_baseline") base = y + m.a / 2;
+      else base = y;
+      var x0 = ha === "left" ? x : ha === "right" ? x - m.w : x - m.w / 2;
+      g.fillStyle = o.color || "#000000";
+      g.textAlign = "left"; g.textBaseline = "alphabetic"; g.font = fuente(tam);
+      g.fillText(s, x0, base);
+      return { x0: x0, y0: base - m.a, x1: x0 + m.w, y1: base + m.d };
+    }
+
+    // ---------- Marcadores ----------
+    function marcador(g, tipo, x, y, tam, color, grosorX) {
+      var r = tam * PT / 2;
+      g.beginPath();
+      if (tipo === "o" || tipo === ".") {
+        g.arc(x, y, tipo === "." ? r / 2 : r, 0, 2 * Math.PI);
+      } else if (tipo === "s") {
+        g.rect(x - r, y - r, 2 * r, 2 * r);
+      } else if (tipo === "^") {
+        g.moveTo(x, y - r); g.lineTo(x - r, y + r); g.lineTo(x + r, y + r); g.closePath();
+      } else if (tipo === "x") {
+        g.moveTo(x - r, y - r); g.lineTo(x + r, y + r); g.moveTo(x - r, y + r); g.lineTo(x + r, y - r);
+        g.lineWidth = (grosorX || 1) * PT; g.strokeStyle = color; g.lineCap = "butt"; g.stroke();
+        return;
+      } else return;
+      g.fillStyle = color; g.fill();
+      g.lineWidth = PT; g.strokeStyle = color; g.lineJoin = "round"; g.stroke();
+    }
+
+    // ---------- Geometría para la leyenda "best" ----------
+    function segmentoCruza(m1x, m1y, m2x, m2y, cx, cy, w, h) {
+      return Math.abs(m1x + m2x - 2 * cx) < Math.abs(m1x - m2x) + w &&
+             Math.abs(m1y + m2y - 2 * cy) < Math.abs(m1y - m2y) + h &&
+             2 * Math.abs((m1x - cx) * (m1y - m2y) - (m1y - cy) * (m1x - m2x)) <
+               w * Math.abs(m1y - m2y) + h * Math.abs(m1x - m2x);
+    }
+    function lineaCruzaCaja(pts, c) {
+      var cx = (c.x0 + c.x1) / 2, cy = (c.y0 + c.y1) / 2, w = c.x1 - c.x0, h = c.y1 - c.y0, i, ant = null;
+      for (i = 0; i < pts.length; i++) {
+        var p = pts[i];
+        if (!p) continue;
+        if (ant === null) {
+          if (2 * Math.abs(p[0] - cx) <= w && 2 * Math.abs(p[1] - cy) <= h) return true;
+        } else if (segmentoCruza(ant[0], ant[1], p[0], p[1], cx, cy, w, h)) return true;
+        ant = p;
+      }
+      return false;
+    }
+
+    function distSeg(px, py, a, b) {
+      var dx = b[0] - a[0], dy = b[1] - a[1], L = dx * dx + dy * dy, t = 0;
+      if (L > 0) t = Math.max(0, Math.min(1, ((px - a[0]) * dx + (py - a[1]) * dy) / L));
+      var qx = a[0] + t * dx - px, qy = a[1] + t * dy - py;
+      return Math.sqrt(qx * qx + qy * qy);
+    }
+    function dentro(c, x, y, m) {
+      m = m || 0;
+      return c && x >= c.x0 - m && x <= c.x1 + m && y >= c.y0 - m && y <= c.y1 + m;
+    }
+    function unir(a, b) {
+      if (!a) return b;
+      if (!b) return a;
+      return { x0: Math.min(a.x0, b.x0), y0: Math.min(a.y0, b.y0), x1: Math.max(a.x1, b.x1), y1: Math.max(a.y1, b.y1) };
+    }
+
+    // ---------- La figura ----------
+    // figura = { figsize: [6.4, 4.8], titulo, xlabel, ylabel, grid, xlim, ylim (con null = automático),
+    //   xcats: ["S1", ...] (eje x de categorías en las posiciones 0, 1, ...), leyenda: true/false,
+    //   resaltar: id de una parte, series: [
+    //     {tipo: "plot", x, y, color, lw, ls, marker, ms, label},
+    //     {tipo: "bar", x, h, ancho, color, borde, label},
+    //     {tipo: "hist", datos, bins, color, borde, label},
+    //     {tipo: "scatter", x, y, s, color, marker, label},
+    //     {tipo: "axhline", y, color, lw, ls}, {tipo: "axvline", x, color, lw, ls},
+    //     {tipo: "pie", valores, etiquetas, autopct: "%1.0f%%"}] }
+    function dibujar(cv, f) {
+      if (f.tight && !f.subplot) {                // plt.tight_layout(): mide, ajusta y vuelve a dibujar
+        var copia = {}, k0;
+        for (k0 in f) if (Object.prototype.hasOwnProperty.call(f, k0)) copia[k0] = f[k0];
+        copia.tight = false; copia.resaltar = null;
+        var sub = ajusteApretado(dibujar(cv, copia));
+        copia.resaltar = f.resaltar;
+        if (sub) copia.subplot = sub;
+        var geo0 = dibujar(cv, copia);
+        geo0.apretado = !!sub;
+        return geo0;
+      }
+      var fs = f.figsize || [6.4, 4.8], W = fs[0] * 100, H = fs[1] * 100;
+      var cssW = f.ancho || cv.clientWidth || W, esc = cssW / W, dpr = window.devicePixelRatio || 1, K = esc * dpr;
+      cv.style.height = (H * esc) + "px";
+      cv.width = Math.max(1, Math.round(cssW * dpr));
+      cv.height = Math.max(1, Math.round(H * esc * dpr));
+      var g = cv.getContext("2d");
+      g.setTransform(K, 0, 0, K, 0, 0);
+      g.fillStyle = "#ffffff"; g.fillRect(0, 0, W, H);
+      function ajustar(v, lw) {                   // alinea líneas y rectángulos a los píxeles
+        var d = v * K;
+        if (!lw) return Math.round(d) / K;
+        var n = Math.max(1, Math.round(lw * K));
+        return (n % 2 === 1 ? Math.floor(d) + 0.5 : Math.round(d)) / K;
+      }
+
+      // Colores de los ciclos (plot e hist usan el de líneas; bar, scatter y pie, el de parches)
+      var cl = 0, cp = 0, hayPastel = false;
+      var S = (f.series || []).map(function (s0, i) {
+        var s = {}, k;
+        for (k in s0) if (Object.prototype.hasOwnProperty.call(s0, k)) s[k] = s0[k];
+        s.id = "serie" + i;
+        if (s.tipo === "plot" || s.tipo === "hist") { if (!s.color) s.color = CICLO[cl++ % 10]; }
+        else if (s.tipo === "bar" || s.tipo === "scatter") { if (!s.color) s.color = CICLO[cp++ % 10]; }
+        else if (s.tipo === "axhline" || s.tipo === "axvline") { if (!s.color) s.color = CICLO[0]; }
+        if (s.tipo === "pie") hayPastel = true;
+        if (s.tipo === "hist") {
+          var hh = histograma(s.datos, s.bins === undefined ? 10 : s.bins);
+          s.x = []; s.h = []; s.anchos = [];
+          for (k = 0; k < hh.cuentas.length; k++) {
+            var wd = hh.bordes[k + 1] - hh.bordes[k];
+            s.x.push(hh.bordes[k] + wd / 2); s.h.push(hh.cuentas[k]); s.anchos.push(wd);
+          }
+          s.hist = hh;
+        } else if (s.tipo === "bar") {
+          s.anchos = s.x.map(function () { return s.ancho === undefined ? 0.8 : s.ancho; });
+        }
+        return s;
+      });
+
+      // Ejes (coordenadas del canvas: y crece hacia abajo)
+      var sp = f.subplot || { left: 0.125, right: 0.9, bottom: 0.11, top: 0.88 };
+      var E = { x0: sp.left * W, x1: sp.right * W, y0: (1 - sp.top) * H, y1: (1 - sp.bottom) * H };
+      var geo = { W: W, H: H, esc: esc, ejes: E, cajas: {}, series: [] };
+      if (hayPastel) {
+        var lado = Math.min(E.x1 - E.x0, E.y1 - E.y0), cx = (E.x0 + E.x1) / 2, cy = (E.y0 + E.y1) / 2;
+        E = { x0: cx - lado / 2, x1: cx + lado / 2, y0: cy - lado / 2, y1: cy + lado / 2 };
+        geo.ejes = E;
+      }
+
+      // Límites de los datos, márgenes de 5 % y bordes "pegajosos" (las barras empiezan en 0)
+      var dx = [Infinity, -Infinity], dy = [Infinity, -Infinity], pegY = [];
+      function incluir(l, v) { if (v < l[0]) l[0] = v; if (v > l[1]) l[1] = v; }
+      S.forEach(function (s) {
+        var i;
+        if (s.tipo === "plot" || s.tipo === "scatter") {
+          for (i = 0; i < s.x.length; i++) {
+            if (isFinite(s.x[i]) && isFinite(s.y[i])) { incluir(dx, s.x[i]); incluir(dy, s.y[i]); }
+          }
+        } else if (s.tipo === "bar" || s.tipo === "hist") {
+          for (i = 0; i < s.x.length; i++) {
+            incluir(dx, s.x[i] - s.anchos[i] / 2); incluir(dx, s.x[i] + s.anchos[i] / 2);
+            incluir(dy, Math.min(0, s.h[i])); incluir(dy, Math.max(0, s.h[i]));
+            pegY.push(0);
+          }
+        } else if (s.tipo === "axhline") incluir(dy, s.y);
+        else if (s.tipo === "axvline") incluir(dx, s.x);
+      });
+      function autoescala(l, pegajosos) {
+        if (!(l[0] <= l[1])) return [0, 1];
+        var ns = noSingular(l[0], l[1], 0.05, 1e-15), x0 = ns[0], x1 = ns[1];
+        var tol = 1e-5 * Math.max(Math.abs(x0), Math.abs(x1), Math.abs(x1 - x0)), b0 = null, b1 = null, i;
+        var p = pegajosos.slice().sort(function (a, b) { return a - b; });
+        for (i = p.length - 1; i >= 0; i--) if (p[i] < x0 + tol) { b0 = p[i]; break; }
+        for (i = 0; i < p.length; i++) if (p[i] >= x1 - tol) { b1 = p[i]; break; }
+        var d = (x1 - x0) * 0.05;
+        if (!isFinite(d)) d = 0;
+        x0 -= d; x1 += d;
+        if (b0 !== null) x0 = Math.max(x0, b0);
+        if (b1 !== null) x1 = Math.min(x1, b1);
+        return noSingular(x0, x1, 0.001, 1e-15);
+      }
+      var xlim = hayPastel ? [-1.25, 1.25] : autoescala(dx, []);
+      var ylim = hayPastel ? [-1.25, 1.25] : autoescala(dy, pegY);
+      if (f.xlim) xlim = [f.xlim[0] === null ? xlim[0] : f.xlim[0], f.xlim[1] === null ? xlim[1] : f.xlim[1]];
+      if (f.ylim) ylim = [f.ylim[0] === null ? ylim[0] : f.ylim[0], f.ylim[1] === null ? ylim[1] : f.ylim[1]];
+      geo.xlim = xlim; geo.ylim = ylim;
+      function X(x) { return E.x0 + (x - xlim[0]) / (xlim[1] - xlim[0]) * (E.x1 - E.x0); }
+      function Y(y) { return E.y1 - (y - ylim[0]) / (ylim[1] - ylim[0]) * (E.y1 - E.y0); }
+      geo.X = X; geo.Y = Y;
+
+      // Marcas y sus números
+      var mx = { pos: [], et: [], extra: "" }, my = { pos: [], et: [], extra: "" };
+      if (!hayPastel) {
+        var nbx = Math.max(1, Math.min(9, Math.floor((E.x1 - E.x0) / PT / 30)));
+        var nby = Math.max(1, Math.min(9, Math.floor((E.y1 - E.y0) / PT / 20)));
+        if (f.xcats) {
+          mx.pos = f.xcats.map(function (c, i) { return i; }); mx.et = f.xcats.slice();
+          var vxc = visibles(mx.pos, xlim);
+          mx.et = mx.et.filter(function (c, i) { return vxc.indexOf(i) >= 0; }); mx.pos = vxc;
+        } else {
+          var tx = marcas(xlim[0], xlim[1], nbx), fx = formatear(tx, xlim), vx = visibles(tx, xlim);
+          mx.pos = vx; mx.et = vx.map(function (t) { return fx.etiquetas[tx.indexOf(t)]; }); mx.extra = fx.extra;
+        }
+        var ty = marcas(ylim[0], ylim[1], nby), fy = formatear(ty, ylim), vy = visibles(ty, ylim);
+        my.pos = vy; my.et = vy.map(function (t) { return fy.etiquetas[ty.indexOf(t)]; }); my.extra = fy.extra;
+      }
+      geo.marcasX = mx; geo.marcasY = my;
+
+      // Trazo de una serie de puntos (null corta la línea)
+      function poligonal(pts, color, lw, ls) {
+        if (ls === "None" || ls === "" || ls === " ") return;
+        g.save();
+        g.beginPath();
+        var abierto = false;
+        pts.forEach(function (p) {
+          if (!p) { abierto = false; return; }
+          if (!abierto) { g.moveTo(p[0], p[1]); abierto = true; } else g.lineTo(p[0], p[1]);
+        });
+        g.lineWidth = lw * PT; g.strokeStyle = color; g.lineJoin = "round";
+        var patron = GUIONES[ls];
+        if (patron) { g.setLineDash(patron.map(function (v) { return v * lw * PT; })); g.lineCap = "butt"; }
+        else g.lineCap = "square";
+        g.stroke();
+        g.restore();
+      }
+      function recortar() { g.save(); g.beginPath(); g.rect(E.x0, E.y0, E.x1 - E.x0, E.y1 - E.y0); g.clip(); }
+
+      // 1) Parches (barras, histogramas, pastel) y colecciones (scatter): zorder 1
+      S.forEach(function (s) {
+        var i, info = { id: s.id, tipo: s.tipo, label: s.label };
+        if (s.tipo === "bar" || s.tipo === "hist") {
+          recortar();
+          info.rects = [];
+          for (i = 0; i < s.x.length; i++) {
+            var xa = ajustar(X(s.x[i] - s.anchos[i] / 2), 0), xb = ajustar(X(s.x[i] + s.anchos[i] / 2), 0);
+            var ya = ajustar(Y(Math.max(0, s.h[i])), 0), yb = ajustar(Y(Math.min(0, s.h[i])), 0);
+            g.fillStyle = s.color; g.fillRect(xa, ya, xb - xa, yb - ya);
+            if (s.borde) { g.lineWidth = PT; g.strokeStyle = s.borde; g.strokeRect(xa, ya, xb - xa, yb - ya); }
+            info.rects.push({ x0: xa, y0: ya, x1: xb, y1: yb });
+          }
+          g.restore();
+        } else if (s.tipo === "scatter") {
+          recortar();
+          info.puntos = [];
+          var tam = Math.sqrt(s.s === undefined ? 36 : s.s);
+          for (i = 0; i < s.x.length; i++) {
+            if (!isFinite(s.x[i]) || !isFinite(s.y[i])) continue;
+            marcador(g, s.marker || "o", X(s.x[i]), Y(s.y[i]), tam, s.color, 1.5);
+            info.puntos.push([X(s.x[i]), Y(s.y[i])]);
+          }
+          info.radio = tam * PT / 2 + PT / 2;
+          g.restore();
+        } else if (s.tipo === "pie") {
+          var tot = s.valores.reduce(function (a, b) { return a + b; }, 0), t1 = 0;
+          var cxp = X(0), cyp = Y(0), r = X(1) - X(0);
+          info.cuñas = []; info.centro = [cxp, cyp]; info.radio = r;
+          s.valores.forEach(function (v, k) {
+            var t2 = t1 + v / tot, a1 = 2 * Math.PI * t1, a2 = 2 * Math.PI * t2, am = (a1 + a2) / 2;
+            g.beginPath(); g.moveTo(cxp, cyp); g.arc(cxp, cyp, r, -a1, -a2, true); g.closePath();
+            g.fillStyle = CICLO[(cp + k) % 10]; g.fill();
+            info.cuñas.push([a1, a2]);
+            if (s.etiquetas) {
+              var xt = 1.1 * Math.cos(am), yt = 1.1 * Math.sin(am);
+              texto(g, s.etiquetas[k], X(xt), Y(yt), { ha: xt > 0 ? "left" : "right", va: "center" });
+            }
+            if (s.autopct) {
+              var pct = fijo(100 * v / tot, Number((/%1?\.(\d+)f/.exec(s.autopct) || [0, 0])[1])) + "%";
+              texto(g, pct, X(0.6 * Math.cos(am)), Y(0.6 * Math.sin(am)), { ha: "center", va: "center" });
+            }
+            t1 = t2;
+          });
+        }
+        if (s.tipo !== "plot" && s.tipo !== "axhline" && s.tipo !== "axvline") geo.series.push(info);
+      });
+
+      // 2) Cuadrícula, marcas y sus números (zorder 1.5)
+      var lwEje = 0.8 * PT;
+      if (f.grid && !hayPastel) {
+        g.save(); g.strokeStyle = "#b0b0b0"; g.lineWidth = lwEje; g.lineCap = "square"; g.beginPath();
+        mx.pos.forEach(function (t) { var x = ajustar(X(t), lwEje); g.moveTo(x, E.y0); g.lineTo(x, E.y1); });
+        my.pos.forEach(function (t) { var y = ajustar(Y(t), lwEje); g.moveTo(E.x0, y); g.lineTo(E.x1, y); });
+        g.stroke(); g.restore();
+      }
+      var cajaEjeX = null, cajaEjeY = null, numerosX = null, numerosY = null;
+      if (!hayPastel) {
+        g.save(); g.strokeStyle = "#000000"; g.lineWidth = lwEje; g.beginPath();
+        mx.pos.forEach(function (t) { var x = ajustar(X(t), lwEje); g.moveTo(x, E.y1); g.lineTo(x, E.y1 + 3.5 * PT); });
+        my.pos.forEach(function (t) { var y = ajustar(Y(t), lwEje); g.moveTo(E.x0 - 3.5 * PT, y); g.lineTo(E.x0, y); });
+        g.stroke(); g.restore();
+        mx.pos.forEach(function (t, i) {
+          numerosX = unir(numerosX, texto(g, mx.et[i], X(t), E.y1 + 7 * PT, { ha: "center", va: "top" }));
+        });
+        my.pos.forEach(function (t, i) {
+          numerosY = unir(numerosY, texto(g, my.et[i], E.x0 - 7 * PT, Y(t), { ha: "right", va: "center_baseline" }));
+        });
+        cajaEjeX = numerosX; cajaEjeY = numerosY;
+        if (my.extra) cajaEjeY = unir(cajaEjeY, texto(g, my.extra, E.x0, E.y0 - 3 * PT, { ha: "left", va: "baseline" }));
+        if (mx.extra) cajaEjeX = unir(cajaEjeX, texto(g, mx.extra, E.x1, (numerosX ? numerosX.y1 : E.y1) + 3 * PT, { ha: "right", va: "top" }));
+      }
+      geo.cajas.ejex = cajaEjeX ? unir(cajaEjeX, { x0: E.x0, y0: E.y1, x1: E.x1, y1: E.y1 + 7 * PT }) : null;
+      geo.cajas.ejey = cajaEjeY ? unir(cajaEjeY, { x0: E.x0 - 7 * PT, y0: E.y0, x1: E.x0, y1: E.y1 }) : null;
+
+      // 3) Líneas (zorder 2): plot, axhline, axvline
+      var lineasPx = [];
+      S.forEach(function (s) {
+        var i, pts = [], info = { id: s.id, tipo: s.tipo, label: s.label };
+        if (s.tipo === "plot") {
+          for (i = 0; i < s.x.length; i++) pts.push(isFinite(s.x[i]) && isFinite(s.y[i]) ? [X(s.x[i]), Y(s.y[i])] : null);
+          recortar();
+          poligonal(pts, s.color, s.lw === undefined ? 1.5 : s.lw, s.ls === undefined ? "-" : s.ls);
+          if (s.marker) pts.forEach(function (p) { if (p) marcador(g, s.marker, p[0], p[1], s.ms === undefined ? 6 : s.ms, s.color); });
+          g.restore();
+        } else if (s.tipo === "axhline" || s.tipo === "axvline") {
+          if (s.tipo === "axhline") { var yy = ajustar(Y(s.y), (s.lw || 1.5) * PT); pts = [[E.x0, yy], [E.x1, yy]]; }
+          else { var xx = ajustar(X(s.x), (s.lw || 1.5) * PT); pts = [[xx, E.y0], [xx, E.y1]]; }
+          recortar();
+          poligonal(pts, s.color, s.lw === undefined ? 1.5 : s.lw, s.ls === undefined ? "-" : s.ls);
+          g.restore();
+        } else return;
+        info.puntos = pts; info.marker = s.marker; info.ls = s.ls;
+        lineasPx.push(pts);
+        geo.series.push(info);
+      });
+
+      // 4) Marco de los ejes (zorder 2.5)
+      if (!hayPastel) {
+        g.save(); g.strokeStyle = "#000000"; g.lineWidth = lwEje; g.lineCap = "square";
+        var l = ajustar(E.x0, lwEje), r2 = ajustar(E.x1, lwEje), t = ajustar(E.y0, lwEje), b = ajustar(E.y1, lwEje);
+        g.strokeRect(l, t, r2 - l, b - t);
+        g.restore();
+      }
+
+      // 5) Título y nombres de los ejes
+      if (f.titulo) geo.cajas.titulo = texto(g, f.titulo, (E.x0 + E.x1) / 2, E.y0 - 6 * PT, { ha: "center", va: "baseline", tam: 12 * PT });
+      if (f.xlabel) {
+        var yx = (numerosX ? Math.max(numerosX.y1, E.y1) : E.y1) + 4 * PT;
+        geo.cajas.xlabel = texto(g, f.xlabel, (E.x0 + E.x1) / 2, yx, { ha: "center", va: "top" });
+      }
+      if (f.ylabel) {
+        var xy = (numerosY ? Math.min(numerosY.x0, E.x0) : E.x0) - 4 * PT, m = medir(g, f.ylabel, TAM), ym = (E.y0 + E.y1) / 2;
+        g.save(); g.translate(xy, ym); g.rotate(-Math.PI / 2);
+        g.fillStyle = "#000000"; g.textAlign = "left"; g.textBaseline = "alphabetic"; g.font = fuente(TAM);
+        g.fillText(f.ylabel, -m.w / 2, -m.d);
+        g.restore();
+        geo.cajas.ylabel = { x0: xy - m.a - m.d, y0: ym - m.w / 2, x1: xy, y1: ym + m.w / 2 };
+      }
+
+      // 6) Leyenda (zorder 5), en la posición con menos datos encima ("best")
+      geo.entradas = 0;
+      if (f.leyenda && !hayPastel) {
+        var ent = S.filter(function (s) { return typeof s.label === "string" && s.label !== "" && s.label.charAt(0) !== "_" && s.tipo !== "pie"; });
+        geo.entradas = ent.length;
+        if (ent.length) {
+          var pad = 0.4 * TAM, sep = 0.5 * TAM, hl = 2 * TAM, hh = 0.7 * TAM, htp = 0.8 * TAM, bap = 0.5 * TAM;
+          var med = ent.map(function (s) { return medir(g, s.label, TAM); });
+          var filas = med.map(function (mm) { return Math.max(hh, mm.a) + mm.d; });
+          var anchoL = 2 * pad + hl + htp + Math.max.apply(null, med.map(function (mm) { return mm.w; }));
+          var altoL = 2 * pad + filas.reduce(function (a, b2) { return a + b2; }, 0) + sep * (ent.length - 1);
+          var C = { x0: E.x0 + bap, x1: E.x1 - bap, y0: E.y0 + bap, y1: E.y1 - bap };
+          var cx2 = (C.x0 + C.x1) / 2 - anchoL / 2, cy2 = (C.y0 + C.y1) / 2 - altoL / 2;
+          var pos = [null, [C.x1 - anchoL, C.y0], [C.x0, C.y0], [C.x0, C.y1 - altoL], [C.x1 - anchoL, C.y1 - altoL],
+                     [C.x1 - anchoL, cy2], [C.x0, cy2], [C.x1 - anchoL, cy2], [cx2, C.y1 - altoL], [cx2, C.y0], [cx2, cy2]];
+          var rects = [], ofs = [];
+          geo.series.forEach(function (info) {
+            if (info.rects) rects = rects.concat(info.rects);
+            if (info.tipo === "scatter") ofs = ofs.concat(info.puntos);
+          });
+          var mejor = null;
+          for (var idx = 1; idx <= 10; idx++) {
+            var c = { x0: pos[idx][0], y0: pos[idx][1], x1: pos[idx][0] + anchoL, y1: pos[idx][1] + altoL }, malo = 0;
+            lineasPx.forEach(function (pts) {
+              pts.forEach(function (p) { if (p && p[0] > c.x0 && p[0] < c.x1 && p[1] > c.y0 && p[1] < c.y1) malo++; });
+              if (lineaCruzaCaja(pts, c)) malo++;
+            });
+            ofs.forEach(function (p) { if (p[0] > c.x0 && p[0] < c.x1 && p[1] > c.y0 && p[1] < c.y1) malo++; });
+            rects.forEach(function (q) { if (q.x0 < c.x1 && c.x0 < q.x1 && q.y0 < c.y1 && c.y0 < q.y1) malo++; });
+            if (!mejor || malo < mejor.malo) mejor = { malo: malo, c: c };
+            if (malo === 0) break;
+          }
+          var L = mejor.c, rad = 0.2 * TAM;
+          g.save();
+          g.globalAlpha = 0.8;
+          g.beginPath();
+          g.moveTo(L.x0 + rad, L.y0); g.arcTo(L.x1, L.y0, L.x1, L.y1, rad); g.arcTo(L.x1, L.y1, L.x0, L.y1, rad);
+          g.arcTo(L.x0, L.y1, L.x0, L.y0, rad); g.arcTo(L.x0, L.y0, L.x1, L.y0, rad); g.closePath();
+          g.fillStyle = "#ffffff"; g.fill(); g.lineWidth = PT; g.strokeStyle = "#cccccc"; g.stroke();
+          g.restore();
+          var yb2 = L.y0 + pad;
+          ent.forEach(function (s, k) {
+            var base = yb2 + Math.max(hh, med[k].a), hx0 = L.x0 + pad, hx1 = hx0 + hl;
+            if (s.tipo === "plot" || s.tipo === "axhline" || s.tipo === "axvline") {
+              poligonal([[hx0, base - hh / 2], [hx1, base - hh / 2]], s.color, s.lw === undefined ? 1.5 : s.lw, s.ls === undefined ? "-" : s.ls);
+              if (s.marker) marcador(g, s.marker, (hx0 + hx1) / 2, base - hh / 2, s.ms === undefined ? 6 : s.ms, s.color);
+            } else if (s.tipo === "scatter") {
+              marcador(g, s.marker || "o", (hx0 + hx1) / 2, base - hh * 0.6875, Math.sqrt(s.s === undefined ? 36 : s.s), s.color, 1.5);
+            } else {
+              g.fillStyle = s.color; g.fillRect(hx0, base - hh, hl, hh);
+              if (s.borde) { g.lineWidth = PT; g.strokeStyle = s.borde; g.strokeRect(hx0, base - hh, hl, hh); }
+            }
+            texto(g, s.label, hx1 + htp, base, { va: "baseline" });
+            yb2 += filas[k] + sep;
+          });
+          geo.cajas.leyenda = L;
+        }
+      }
+
+      // 7) Resaltado de una o varias partes
+      if (f.resaltar) [].concat(f.resaltar).forEach(function (id) { resaltar(g, geo, id); });
+      return geo;
+    }
+
+    // Márgenes de plt.tight_layout(): todo lo que rodea a los ejes, más 1.08 veces la letra
+    function ajusteApretado(geo) {
+      var E = geo.ejes, bb = { x0: E.x0, y0: E.y0, x1: E.x1, y1: E.y1 }, pad = 1.08 * TAM;
+      ["titulo", "xlabel", "ylabel", "ejex", "ejey"].forEach(function (k) { bb = unir(bb, geo.cajas[k]); });
+      var ml = (Math.max(E.x0 - bb.x0, 0) + pad) / geo.W, mr = (Math.max(bb.x1 - E.x1, 0) + pad) / geo.W;
+      var mt = (Math.max(E.y0 - bb.y0, 0) + pad) / geo.H, mb = (Math.max(bb.y1 - E.y1, 0) + pad) / geo.H;
+      if (ml + mr >= 1 || mt + mb >= 1) return null;
+      return { left: ml, right: 1 - mr, bottom: mb, top: 1 - mt };
+    }
+    // ¿Algún texto se sale de la figura? (en tu computadora se vería cortado)
+    function cortados(geo) {
+      var r = [];
+      ["titulo", "xlabel", "ylabel", "ejex", "ejey"].forEach(function (k) {
+        var c = geo.cajas[k];
+        if (c && (c.x0 < -0.5 || c.y0 < -0.5 || c.x1 > geo.W + 0.5 || c.y1 > geo.H + 0.5)) r.push(k);
+      });
+      return r;
+    }
+
+    var ORO = "#B8975A";
+    function marcoResaltado(g, c, m) {
+      g.save();
+      g.fillStyle = "rgba(184, 151, 90, 0.18)";
+      g.fillRect(c.x0 - m, c.y0 - m, c.x1 - c.x0 + 2 * m, c.y1 - c.y0 + 2 * m);
+      g.setLineDash([5, 3]); g.lineWidth = 2; g.strokeStyle = ORO;
+      g.strokeRect(c.x0 - m, c.y0 - m, c.x1 - c.x0 + 2 * m, c.y1 - c.y0 + 2 * m);
+      g.restore();
+    }
+    function resaltar(g, geo, id) {
+      var E = geo.ejes;
+      if (id === "figura") {
+        g.save(); g.setLineDash([8, 4]); g.lineWidth = 4; g.strokeStyle = ORO;
+        g.strokeRect(2, 2, geo.W - 4, geo.H - 4); g.restore();
+        return;
+      }
+      if (id === "grid" || id === "ejes") { marcoResaltado(g, E, 2); return; }
+      if (geo.cajas[id]) { marcoResaltado(g, geo.cajas[id], 3); return; }
+      var info = geo.series.filter(function (s) { return s.id === id; })[0];
+      if (!info) return;
+      g.save();
+      g.beginPath(); g.rect(E.x0, E.y0, E.x1 - E.x0, E.y1 - E.y0); g.clip();
+      g.strokeStyle = "rgba(184, 151, 90, 0.55)"; g.fillStyle = "rgba(184, 151, 90, 0.35)";
+      if (info.rects) {
+        g.lineWidth = 4;
+        info.rects.forEach(function (q) { g.strokeRect(q.x0 - 2, q.y0 - 2, q.x1 - q.x0 + 4, q.y1 - q.y0 + 4); });
+      } else if (info.tipo === "scatter") {
+        info.puntos.forEach(function (p) { g.beginPath(); g.arc(p[0], p[1], info.radio + 4, 0, 2 * Math.PI); g.fill(); });
+      } else if (info.puntos) {
+        g.lineWidth = 10; g.lineJoin = "round"; g.lineCap = "round"; g.beginPath();
+        var ab = false;
+        info.puntos.forEach(function (p) {
+          if (!p) { ab = false; return; }
+          if (!ab) { g.moveTo(p[0], p[1]); ab = true; } else g.lineTo(p[0], p[1]);
+        });
+        g.stroke();
+      }
+      g.restore();
+    }
+
+    // Qué parte de la figura está bajo el punto (x, y) en píxeles CSS del canvas
+    function parteEn(geo, x, y) {
+      var fx = x / geo.esc, fy = y / geo.esc, E = geo.ejes, tol = 6 / geo.esc, i, j;
+      if (dentro(geo.cajas.leyenda, fx, fy)) return "leyenda";
+      if (dentro(geo.cajas.titulo, fx, fy, 3)) return "titulo";
+      if (dentro(geo.cajas.xlabel, fx, fy, 3)) return "xlabel";
+      if (dentro(geo.cajas.ylabel, fx, fy, 3)) return "ylabel";
+      var enEjes = dentro(E, fx, fy);
+      if (enEjes) {
+        for (i = geo.series.length - 1; i >= 0; i--) {
+          var s = geo.series[i];
+          if (s.puntos && s.tipo !== "scatter") {
+            for (j = 0; j < s.puntos.length; j++) {
+              var p = s.puntos[j], q = s.puntos[j + 1];
+              if (p && q && distSeg(fx, fy, p, q) < tol) return s.id;
+              if (p && s.marker && Math.abs(p[0] - fx) < tol && Math.abs(p[1] - fy) < tol) return s.id;
+            }
+          }
+        }
+        for (i = geo.series.length - 1; i >= 0; i--) {
+          var t = geo.series[i];
+          if (t.tipo === "scatter") {
+            for (j = 0; j < t.puntos.length; j++) {
+              if (Math.abs(t.puntos[j][0] - fx) < t.radio + tol / 2 && Math.abs(t.puntos[j][1] - fy) < t.radio + tol / 2) return t.id;
+            }
+          }
+          if (t.rects) for (j = 0; j < t.rects.length; j++) if (dentro(t.rects[j], fx, fy, 1)) return t.id;
+          if (t.cuñas) {
+            var ddx = fx - t.centro[0], ddy = t.centro[1] - fy;
+            if (ddx * ddx + ddy * ddy <= t.radio * t.radio) return t.id;
+          }
+        }
+      }
+      if (dentro(geo.cajas.ejex, fx, fy, 2)) return "ejex";
+      if (dentro(geo.cajas.ejey, fx, fy, 2)) return "ejey";
+      if (enEjes) return "ejes";
+      return "figura";
+    }
+
+    return { dibujar: dibujar, parteEn: parteEn, cortados: cortados, marcas: marcas, visibles: visibles, formatear: formatear,
+             linspace: linspace, histograma: histograma, fijo: fijo, divmod: divmod, CICLO: CICLO, PT: PT };
+  })();
+  // ===================== Figura al estilo de matplotlib (fin) =====================
+
+  function $(id) { return document.getElementById(id); }
+  function esc(t) {
+    return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  var PY_KW = /^(False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)$/;
+  function pyResaltar(linea) {
+    var html = "", i = 0, m, resto;
+    while (i < linea.length) {
+      resto = linea.slice(i);
+      if ((m = /^#.*/.exec(resto))) { html += '<span class="com">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[rRbBfFuU]{0,2}("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/.exec(resto))) { html += '<span class="str">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[A-Za-z_\u00C0-\u024F][\w\u00C0-\u024F]*/.exec(resto))) { html += PY_KW.test(m[0]) ? '<span class="kw">' + m[0] + "</span>" : esc(m[0]); }
+      else if ((m = /^(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?j?/.exec(resto))) { html += '<span class="num">' + m[0] + "</span>"; }
+      else { m = [resto[0]]; html += esc(m[0]); }
+      i += m[0].length;
+    }
+    return html;
+  }
+  function mostrarCodigo(el, lineas, clase) {
+    el.innerHTML = '<div class="codigo' + (clase ? " " + clase : "") + '"><ol>' + lineas.map(function (l) {
+      return "<li>" + (pyResaltar(l) || " ") + "</li>";
+    }).join("") + "</ol></div>";
+  }
+
+  // ---------- Datos reales: clima de Monterrey, septiembre de 2026 (Open-Meteo) ----------
+  var TMAX = [35.0, 36.5, 38.0, 34.1, 32.2, 30.2, 34.0, 33.3, 34.9, 35.1, 37.2, 35.0, 35.2, 35.8, 35.9,
+              35.0, 34.7, 33.5, 34.5, 35.4, 35.4, 32.8, 31.8, 31.5, 33.3, 33.9, 34.2, 33.7, 33.2, 30.9];
+  var LLUVIA = [1.7, 0.7, 0.2, 0.7, 6.9, 0.7, 0.0, 0.3, 0.6, 0.8, 0.2, 0.8, 0.2, 0.2, 0.0,
+                0.0, 1.9, 2.7, 0.0, 0.0, 0.0, 2.9, 3.2, 0.5, 0.9, 0.7, 2.7, 2.6, 0.3, 8.8];
+  function rango(a, b) { var r = []; for (var i = a; i <= b; i++) r.push(i); return r; }
+  var DIAS = rango(1, 30);
+
+  // ---------- Datos ilustrativos (generados en Python con semilla fija) ----------
+  // 200 estaturas (cm), 40 alumnos (horas de estudio por semana y calificación) y 250 días hábiles
+  // de tipo de cambio (pesos por dólar). No son datos reales.
+  var ESTATURAS = [172.5, 172.0, 151.2, 164.9, 170.3, 169.2, 158.3, 160.3, 168.0, 156.8, 164.4, 153.3, 166.1, 156.0, 166.7,
+                   176.3, 176.6, 174.9, 152.9, 170.3, 161.5, 155.6, 167.4, 171.5, 183.1, 163.8, 176.2, 137.8, 163.0, 165.7,
+                   160.8, 174.1, 163.8, 174.0, 174.4, 157.8, 164.5, 165.2, 164.3, 159.1, 159.3, 169.6, 158.4, 161.5, 172.6,
+                   172.0, 166.0, 155.8, 149.3, 166.9, 165.6, 173.8, 173.7, 162.2, 164.3, 165.8, 166.6, 169.9, 177.2, 169.5,
+                   168.6, 163.7, 159.9, 160.1, 160.6, 166.6, 173.9, 159.1, 157.9, 168.3, 186.0, 156.5, 156.8, 163.3, 162.9,
+                   160.4, 168.7, 157.6, 150.6, 168.1, 160.3, 168.6, 165.8, 167.9, 160.3, 157.6, 157.2, 168.4, 149.1, 167.1,
+                   165.5, 174.6, 152.0, 165.0, 169.4, 157.0, 177.8, 158.2, 159.2, 181.3, 175.3, 172.6, 168.0, 157.2, 147.4,
+                   171.7, 180.1, 163.1, 163.3, 166.4, 165.1, 174.8, 176.2, 173.1, 159.0, 170.3, 166.2, 166.0, 150.8, 157.6,
+                   177.6, 172.6, 166.1, 176.4, 166.2, 147.2, 160.8, 156.7, 169.7, 171.4, 154.9, 159.6, 174.3, 163.3, 165.3,
+                   162.0, 167.7, 175.8, 180.8, 162.0, 162.9, 165.9, 157.4, 150.7, 169.5, 149.7, 163.3, 173.3, 169.2, 157.5,
+                   166.4, 167.2, 178.3, 175.7, 172.6, 168.2, 158.2, 176.2, 174.8, 167.4, 163.0, 171.6, 164.2, 169.4, 175.3,
+                   162.9, 167.5, 161.9, 158.1, 165.0, 160.8, 174.7, 164.8, 163.4, 162.0, 168.9, 168.0, 164.9, 152.2, 162.0,
+                   154.0, 169.7, 170.5, 176.9, 168.8, 163.3, 153.1, 163.5, 147.3, 164.0, 173.7, 178.2, 159.9, 171.0, 163.4,
+                   167.6, 163.7, 172.5, 165.3, 174.8];
+  var HORAS = [9.5, 4.2, 6.0, 9.7, 9.9, 11.5, 10.6, 9.5, 10.3, 4.5, 2.3, 6.7, 1.8, 7.0, 3.0, 6.9, 1.7, 2.5, 8.4, 2.6,
+               7.7, 10.1, 3.8, 1.2, 5.2, 5.3, 0.7, 1.9, 8.4, 4.5, 9.5, 7.6, 11.1, 5.8, 11.8, 10.4, 8.3, 11.4, 4.6, 0.8];
+  var CALIF = [78, 70, 82, 94, 89, 87, 84, 79, 78, 52, 51, 71, 56, 67, 61, 81, 56, 78, 81, 50, 73, 86, 63, 61, 79, 63,
+               56, 59, 66, 60, 76, 71, 88, 76, 100, 80, 86, 88, 67, 47];
+  var TIPO_CAMBIO = [20.58, 20.52, 20.64, 20.59, 20.67, 20.73, 20.63, 20.75, 20.65, 20.6, 20.48, 20.43, 20.51, 20.56, 20.57,
+                     20.57, 20.49, 20.56, 20.52, 20.49, 20.42, 20.38, 20.34, 20.38, 20.33, 20.36, 20.41, 20.46, 20.36, 20.21,
+                     20.2, 20.15, 20.17, 20.23, 20.29, 20.3, 20.24, 20.25, 20.19, 20.36, 20.24, 20.17, 20.09, 20.09, 20.2,
+                     20.2, 20.21, 20.33, 20.34, 20.28, 20.29, 20.3, 20.4, 20.4, 20.52, 20.49, 20.6, 20.47, 20.55, 20.51,
+                     20.69, 20.65, 20.66, 20.79, 20.73, 20.75, 20.67, 20.73, 20.63, 20.6, 20.61, 20.5, 20.53, 20.61, 20.66,
+                     20.73, 20.79, 20.67, 20.66, 20.5, 20.47, 20.32, 20.34, 20.33, 20.27, 20.19, 20.13, 19.84, 19.9, 19.9,
+                     19.94, 19.85, 19.68, 19.62, 19.51, 19.67, 19.58, 19.6, 19.66, 19.74, 19.83, 19.87, 19.81, 19.84, 19.91,
+                     19.89, 19.87, 19.79, 19.75, 19.81, 19.67, 19.81, 19.82, 19.89, 19.94, 19.9, 19.77, 19.75, 19.78, 19.61,
+                     19.83, 19.76, 19.76, 19.8, 19.79, 19.83, 19.85, 19.92, 19.71, 19.66, 19.63, 19.6, 19.52, 19.56, 19.55,
+                     19.57, 19.51, 19.47, 19.54, 19.51, 19.57, 19.46, 19.37, 19.43, 19.38, 19.32, 19.35, 19.33, 19.19, 19.19,
+                     19.17, 19.12, 19.12, 19.12, 19.15, 19.13, 19.09, 19.11, 19.13, 19.09, 19.07, 19.16, 19.09, 19.24, 19.2,
+                     19.06, 19.04, 19.08, 19.11, 19.06, 19.05, 19.0, 19.03, 18.97, 19.01, 18.95, 19.04, 19.13, 19.1, 19.06,
+                     19.04, 19.17, 19.09, 19.2, 19.13, 19.13, 19.07, 19.02, 19.1, 19.06, 19.09, 19.11, 19.01, 19.02, 19.11,
+                     19.1, 19.04, 18.96, 18.88, 18.74, 18.87, 18.79, 18.9, 18.86, 18.81, 18.8, 18.76, 18.82, 18.92, 18.85,
+                     18.92, 18.91, 18.89, 18.93, 18.86, 18.78, 18.79, 18.7, 18.75, 18.7, 18.75, 18.75, 18.84, 18.91, 18.87,
+                     18.85, 18.84, 18.89, 18.83, 18.9, 18.95, 18.95, 18.88, 18.84, 18.85, 18.84, 18.82, 18.85, 18.77, 18.71,
+                     18.65, 18.72, 18.66, 18.53, 18.5, 18.48, 18.47, 18.54, 18.58, 18.66];
+  // ---------- fin de los datos ilustrativos ----------
+
+  // ---------- Las diez preguntas ----------
+  // forma "cat": categorías y un valor por categoría; "num": dos listas numéricas x, y
+  // (x es el día, el número de alumno o una variable); el histograma usa la lista y.
+  var TIPOS = ["barras", "histograma", "dispersion", "lineas", "pastel"];
+  var NOMBRE = { barras: "Barras", histograma: "Histograma", dispersion: "Dispersión", lineas: "Líneas", pastel: "Pastel" };
+  var P = [
+    { pregunta: "¿Qué semana de septiembre llovió más?",
+      contexto: "Lluvia total de cada semana de septiembre de 2026 en Monterrey (clima_septiembre.json).",
+      datos: ['semanas = ["1-7", "8-14", "15-21", "22-28", "29-30"]', "totales = [10.9, 3.1, 4.6, 13.5, 9.1]  # mm de lluvia"],
+      forma: "cat", cats: ["1-7", "8-14", "15-21", "22-28", "29-30"], y: [10.9, 3.1, 4.6, 13.5, 9.1], nx: "semanas", ny: "totales",
+      ejes: ["Días del mes", "Lluvia total (mm)"], ejesHist: ["Lluvia total (mm)", "Número de semanas"],
+      correcta: "barras", trampa: "pastel",
+      por: { barras: "Comparas un total por categoría (cada semana): la barra más alta, 22-28 con 13.5 mm, se ve de inmediato.",
+             histograma: "Un histograma cuenta cuántos valores caen en cada intervalo. Con 5 totales salen barras de altura 1 y ya no sabes qué semana es cuál.",
+             dispersion: "Los puntos muestran los totales, pero comparar alturas de barras que empiezan en 0 es más directo.",
+             lineas: "La línea une las semanas como si hubiera valores entre una y otra; cada semana es un total aparte.",
+             pastel: "El pastel muestra qué parte de la lluvia del mes cayó en cada semana, pero comparar ángulos (10.9 contra 9.1) es difícil." } },
+    { pregunta: "¿Qué temperaturas máximas fueron las más comunes en septiembre?",
+      contexto: "Las 30 máximas diarias de septiembre de 2026 en Monterrey.",
+      datos: ['# clima: la lista que leíste de clima_septiembre.json (Tema 12)', 'dias = [int(r["fecha"][-2:]) for r in clima]   # 1, 2, ..., 30', 'tmax = [r["tmax"] for r in clima]              # 30 máximas (°C)'],
+      forma: "num", x: DIAS, y: TMAX, nx: "dias", ny: "tmax", bins: [30, 32, 34, 36, 38, 40], binsTxt: "[30, 32, 34, 36, 38, 40]",
+      ejes: ["Día del mes", "Máxima (°C)"], ejesHist: ["Temperatura máxima (°C)", "Número de días"],
+      correcta: "histograma", trampa: "barras",
+      por: { histograma: "El histograma agrupa las 30 máximas en intervalos de 2 °C y cuenta los días de cada uno: 15 días estuvieron entre 34 y 36 °C.",
+             barras: "Una barra por día muestra cada valor, no cuántos días tuvieron máximas parecidas. Además, desde 0 todas se ven casi iguales.",
+             dispersion: "Ves la máxima de cada día, pero para saber qué valores se repiten tendrías que contar puntos a ojo.",
+             lineas: "La línea responde cómo cambió la máxima día a día, no qué valores fueron los típicos.",
+             pastel: "30 rebanadas casi iguales: el pastel no sirve para ver cómo se reparten valores numéricos." } },
+    { pregunta: "¿Llueve más los días más calurosos?",
+      contexto: "La máxima y la lluvia de cada uno de los 30 días de septiembre de 2026.",
+      datos: ['# clima: la lista que leíste de clima_septiembre.json (Tema 12)', 'tmax = [r["tmax"] for r in clima]          # 30 máximas (°C)', 'lluvia = [r["lluvia_mm"] for r in clima]   # 30 lluvias (mm)'],
+      forma: "num", x: TMAX, y: LLUVIA, nx: "tmax", ny: "lluvia",
+      ejes: ["Máxima (°C)", "Lluvia (mm)"], ejesHist: ["Lluvia (mm)", "Número de días"],
+      correcta: "dispersion", trampa: "lineas",
+      por: { dispersion: "Cada punto es un día (máxima, lluvia). Si llovieran más los días calurosos, la nube subiría hacia la derecha; no lo hace: los dos días más lluviosos (6.9 y 8.8 mm) fueron de los más frescos.",
+             lineas: "plt.plot une los puntos en el orden de las listas (por fecha), no de menor a mayor temperatura: sale una maraña.",
+             barras: "Con x numérica cada barra mide 0.8 °C de ancho y se encima con las de temperaturas cercanas.",
+             histograma: "Un histograma usa una sola variable (aquí, la lluvia): para ver una relación necesitas las dos.",
+             pastel: "El pastel no puede mostrar la relación entre dos variables." } },
+    { pregunta: "¿Cómo cambió la temperatura máxima a lo largo de septiembre?",
+      contexto: "Las 30 máximas diarias, en orden de fecha.",
+      datos: ['# clima: la lista que leíste de clima_septiembre.json (Tema 12)', 'dias = [int(r["fecha"][-2:]) for r in clima]   # 1, 2, ..., 30', 'tmax = [r["tmax"] for r in clima]              # 30 máximas (°C)'],
+      forma: "num", x: DIAS, y: TMAX, nx: "dias", ny: "tmax", marcador: true,
+      ejes: ["Día del mes", "Máxima (°C)"], ejesHist: ["Máxima (°C)", "Número de días"],
+      correcta: "lineas", trampa: "barras",
+      por: { lineas: "Una línea sigue el orden de los días: se ve el pico del 3 de septiembre (38 °C) y que el mes terminó más fresco.",
+             barras: "Las barras empiezan en 0: entre 30 y 38 °C casi no se nota la diferencia y la tendencia se pierde.",
+             dispersion: "Se ven los valores, pero sin la línea cuesta seguir el cambio de un día al siguiente.",
+             histograma: "Pierde el orden de los días: dice qué máximas hubo, no cuándo.",
+             pastel: "30 rebanadas: no hay forma de ver un cambio en el tiempo." } },
+    { pregunta: "Promedio final de cinco grupos: ¿cuál tuvo el mejor promedio?",
+      contexto: "Un promedio por grupo (datos ilustrativos).",
+      datos: ['grupos = ["Gpo 1", "Gpo 2", "Gpo 3", "Gpo 4", "Gpo 5"]', "promedios = [82.4, 76.9, 88.1, 79.5, 84.0]"],
+      forma: "cat", cats: ["Gpo 1", "Gpo 2", "Gpo 3", "Gpo 4", "Gpo 5"], y: [82.4, 76.9, 88.1, 79.5, 84.0], nx: "grupos", ny: "promedios",
+      ejes: ["Grupo", "Promedio final"], ejesHist: ["Promedio final", "Número de grupos"],
+      correcta: "barras", trampa: "lineas",
+      por: { barras: "Cinco grupos, un promedio cada uno: con barras el grupo 3 sobresale de inmediato.",
+             lineas: "Los grupos no tienen un orden: la línea sugiere una tendencia del grupo 1 al 5 que no existe.",
+             dispersion: "Funciona, pero las barras se comparan más rápido.",
+             histograma: "Con 5 promedios, el histograma solo cuenta cuántos caen en cada intervalo: pierdes el nombre del grupo.",
+             pastel: "Los promedios no son partes de un todo: sumarlos no significa nada." } },
+    { pregunta: "Estaturas de 200 alumnos: ¿qué estaturas son las más comunes?",
+      contexto: "Una lista con 200 estaturas en cm (datos ilustrativos).",
+      datos: ["# estaturas: 200 valores en cm; los primeros son", "# 172.5, 172.0, 151.2, 164.9, 170.3, 169.2, 158.3, 160.3",
+              "alumnos = list(range(1, 201))   # número de lista"],
+      forma: "num", x: rango(1, 200), y: ESTATURAS, nx: "alumnos", ny: "estaturas",
+      bins: [135, 140, 145, 150, 155, 160, 165, 170, 175, 180, 185, 190], binsTxt: "range(135, 195, 5)",
+      ejes: ["Número de lista", "Estatura (cm)"], ejesHist: ["Estatura (cm)", "Número de alumnos"],
+      correcta: "histograma", trampa: "barras",
+      por: { histograma: "El histograma reparte las 200 estaturas en intervalos de 5 cm: se ve dónde se concentran (la mitad está entre 160 y 171 cm) y qué tan dispersas están.",
+             barras: "200 barras, una por alumno, todas parecidas: un bloque que no dice qué estaturas se repiten.",
+             dispersion: "Una nube de 200 puntos contra el número de lista, que no significa nada.",
+             lineas: "La línea une alumnos que no tienen orden: un zigzag.",
+             pastel: "200 rebanadas casi iguales." } },
+    { pregunta: "Horas de estudio y calificación de 40 alumnos: ¿los que estudian más sacan mejor calificación?",
+      contexto: "Para cada alumno, sus horas de estudio a la semana y su calificación final (datos ilustrativos).",
+      datos: ["# horas: 40 valores de 0.5 a 12 (horas de estudio por semana)", "# calificacion: 40 valores de 0 a 100, en el mismo orden",
+              "# por ejemplo, el primer alumno estudió 9.5 horas y sacó 78"],
+      forma: "num", x: HORAS, y: CALIF, nx: "horas", ny: "calificacion",
+      ejes: ["Horas de estudio por semana", "Calificación"], ejesHist: ["Calificación", "Número de alumnos"],
+      correcta: "dispersion", trampa: "lineas",
+      por: { dispersion: "La nube sube hacia la derecha: en general, más horas de estudio van con mejor calificación (es una relación, no una garantía).",
+             lineas: "plt.plot une a los alumnos en el orden de la lista: una maraña.",
+             barras: "Barras de 0.8 horas de ancho sobre una x numérica: se enciman y tapan unas a otras.",
+             histograma: "Solo muestra cómo se reparten las calificaciones; las horas se pierden.",
+             pastel: "No muestra la relación entre dos variables." } },
+    { pregunta: "Tipo de cambio del dólar en 250 días hábiles: ¿cómo cambió durante el año?",
+      contexto: "Pesos por dólar, un valor por día hábil (datos ilustrativos).",
+      datos: ["# tipo_cambio: 250 valores, uno por día hábil, en orden", "# empieza en 20.58 y termina en 18.66 pesos por dólar",
+              "dias = list(range(1, 251))"],
+      forma: "num", x: rango(1, 250), y: TIPO_CAMBIO, nx: "dias", ny: "tipo_cambio",
+      ejes: ["Día hábil", "Pesos por dólar"], ejesHist: ["Pesos por dólar", "Número de días"],
+      correcta: "lineas", trampa: "barras",
+      por: { lineas: "Un valor por día, en orden: la línea muestra la tendencia (bajó de 20.58 a 18.66 pesos) y los altibajos, como el repunte cerca del día 64.",
+             barras: "250 barras desde 0: un bloque casi parejo; la caída de 2 pesos casi no se nota.",
+             dispersion: "Con tantos puntos se adivina la tendencia, pero la línea la muestra más limpia y deja ver el orden.",
+             histograma: "Dice qué valores fueron frecuentes, no cuándo subió o bajó.",
+             pastel: "250 rebanadas sin sentido." } },
+    { pregunta: "¿Qué parte de septiembre fue seca, qué parte tuvo llovizna y qué parte tuvo lluvia?",
+      contexto: "Días de septiembre de 2026 con 0 mm, con menos de 1 mm y con 1 mm o más de lluvia.",
+      datos: ['tipos = ["Sin lluvia", "Menos de 1 mm", "1 mm o más"]', "dias = [6, 15, 9]   # suman los 30 días del mes"],
+      forma: "cat", cats: ["Sin lluvia", "Menos de 1 mm", "1 mm o más"], y: [6, 15, 9], nx: "tipos", ny: "dias", autopct: true,
+      ejes: ["Tipo de día", "Número de días"], ejesHist: ["Número de días", "Número de tipos"],
+      correcta: "pastel", tambien: ["barras"], trampa: "histograma",
+      por: { pastel: "Tres partes que juntas forman el mes: el pastel muestra la proporción. La mitad de los días tuvo llovizna.",
+             barras: "También sirve: las barras comparan los tres grupos. El pastel deja ver además que juntos son el mes completo.",
+             histograma: "Tres números no forman una distribución: el histograma de [6, 15, 9] no dice nada.",
+             dispersion: "Tres puntos sueltos; no se ve que son partes de un todo.",
+             lineas: "Los tipos de día no son una secuencia en el tiempo." } },
+    { pregunta: "Gastos de la Semana de la Ciencia en 8 rubros: ¿en cuál se gastó más y en cuál menos?",
+      contexto: "Lo que se gastó en cada rubro, en pesos (datos ilustrativos).",
+      datos: ['rubros = ["Comida", "Renta", "Audio", "Lonas", "Ropa", "Premios", "Viajes", "Otros"]', "montos = [4200, 3900, 2600, 1100, 2400, 1500, 2800, 900]"],
+      forma: "cat", cats: ["Comida", "Renta", "Audio", "Lonas", "Ropa", "Premios", "Viajes", "Otros"], y: [4200, 3900, 2600, 1100, 2400, 1500, 2800, 900],
+      nx: "rubros", ny: "montos",
+      ejes: ["Rubro", "Gasto (pesos)"], ejesHist: ["Gasto (pesos)", "Número de rubros"],
+      correcta: "barras", trampa: "pastel",
+      por: { barras: "Ocho rubros comparados: con barras se ve de inmediato que Comida (4200) supera a Renta (3900) y que Otros es el menor.",
+             pastel: "Con 8 rebanadas, Comida y Renta se ven casi iguales: comparar ángulos es difícil. Evita el pastel con muchas categorías.",
+             histograma: "Agrupa los montos en intervalos y pierde el nombre de cada rubro.",
+             dispersion: "Funciona a medias: las barras se comparan mejor.",
+             lineas: "Los rubros no tienen orden: la línea inventa una tendencia." } }
+  ];
+
+  // ---------- La figura de un tipo de gráfica con los datos de una pregunta ----------
+  function figuraDe(q, tipo) {
+    var f = { series: [] }, cod = [], adecuada = tipo === q.correcta, ejes = q.ejes;
+    if (tipo === "pastel") {
+      var s = { tipo: "pie", valores: q.y };
+      var args = [q.ny];
+      if (q.forma === "cat") { s.etiquetas = q.cats; args.push("labels=" + q.nx); }
+      if (q.autopct) { s.autopct = "%1.0f%%"; args.push('autopct="%1.0f%%"'); }
+      f.series.push(s);
+      cod.push("plt.pie(" + args.join(", ") + ")");
+    } else if (tipo === "histograma") {
+      var h = { tipo: "hist", datos: q.y }, ah = [q.ny];
+      if (adecuada && q.bins) { h.bins = q.bins; h.borde = "#000000"; ah.push("bins=" + q.binsTxt, 'edgecolor="black"'); }
+      f.series.push(h);
+      cod.push("plt.hist(" + ah.join(", ") + ")");
+      ejes = q.ejesHist;
+    } else {
+      var x = q.forma === "cat" ? q.cats.map(function (c, i) { return i; }) : q.x;
+      if (q.forma === "cat") f.xcats = q.cats;
+      if (tipo === "barras") { f.series.push({ tipo: "bar", x: x, h: q.y }); cod.push("plt.bar(" + q.nx + ", " + q.ny + ")"); }
+      else if (tipo === "dispersion") { f.series.push({ tipo: "scatter", x: x, y: q.y }); cod.push("plt.scatter(" + q.nx + ", " + q.ny + ")"); }
+      else {
+        var conMarca = adecuada && q.marcador;
+        f.series.push({ tipo: "plot", x: x, y: q.y, marker: conMarca ? "o" : undefined });
+        cod.push("plt.plot(" + q.nx + ", " + q.ny + (conMarca ? ', marker="o"' : "") + ")");
+      }
+    }
+    if (tipo !== "pastel") {
+      f.xlabel = ejes[0]; f.ylabel = ejes[1];
+      cod.push('plt.xlabel("' + ejes[0] + '")', 'plt.ylabel("' + ejes[1] + '")');
+    }
+    cod.push("plt.show()");
+    return { figura: f, codigo: cod };
+  }
+
+  // ---------- El juego ----------
+  var k = 0, puntos = 0, respuestas = [], actual = null;
+  function esBuena(q, tipo) { return tipo === q.correcta || (q.tambien || []).indexOf(tipo) >= 0; }
+  function pintarPuntitos() {
+    $("puntitos").innerHTML = P.map(function (q, i) {
+      var c = i < respuestas.length ? (respuestas[i].bien ? "acierto" : "error") : (i === k ? "actual" : "");
+      return '<span class="' + c + '"></span>';
+    }).join("");
+    $("cuenta").textContent = "Pregunta " + Math.min(k + 1, P.length) + " de " + P.length;
+    $("puntos").textContent = "Puntos: " + puntos;
+  }
+  function mostrarPregunta() {
+    var q = P[k];
+    $("pregunta").textContent = (k + 1) + ". " + q.pregunta;
+    $("contexto").textContent = q.contexto;
+    mostrarCodigo($("datos"), q.datos, "datos");
+    document.querySelectorAll("#opciones button").forEach(function (b) {
+      b.disabled = false; b.classList.remove("elegida", "correcta"); b.removeAttribute("aria-pressed");
+    });
+    $("respuesta").hidden = true;
+    actual = null;
+    pintarPuntitos();
+  }
+  function elegir(tipo) {
+    var q = P[k];
+    if (actual || !q) return;
+    var bien = esBuena(q, tipo), tambien = bien && tipo !== q.correcta;
+    if (bien) puntos++;
+    respuestas.push({ elegida: tipo, bien: bien });
+    var otra = bien ? (tambien ? q.correcta : q.trampa) : q.correcta;
+    actual = { q: q, tipo: tipo, otra: otra, bien: bien, tambien: tambien };
+    document.querySelectorAll("#opciones button").forEach(function (b) {
+      b.disabled = true;
+      if (b.dataset.tipo === tipo) { b.classList.add(bien ? "correcta" : "elegida"); b.setAttribute("aria-pressed", "true"); }
+      else if (b.dataset.tipo === q.correcta && !bien) b.classList.add("correcta");
+    });
+    var v = $("veredicto");
+    v.className = "veredicto " + (bien ? "v-bien" : "v-mal");
+    v.innerHTML = bien ?
+      "<h3>✓ " + (tambien ? "¡Sirve! " : "¡Bien! ") + NOMBRE[tipo] + "</h3><p style=\"margin:0\">" + esc(q.por[tipo]) + "</p>" :
+      "<h3>✗ " + NOMBRE[tipo] + " no responde esta pregunta</h3><p style=\"margin:0\">La adecuada es <b>" + NOMBRE[q.correcta].toLowerCase() + "</b>. " + esc(q.por[q.correcta]) + "</p>";
+    $("cap1").innerHTML = '<span class="etq ' + (bien ? "bien" : "mal") + '">Tu elección</span>' + NOMBRE[tipo];
+    $("cap2").innerHTML = bien ?
+      (tambien ? '<span class="etq bien">La más clara</span>' + NOMBRE[otra] : '<span class="etq mal">Así se vería con</span>' + NOMBRE[otra]) :
+      '<span class="etq bien">La adecuada</span>' + NOMBRE[otra];
+    $("por1").textContent = bien ? "" : q.por[tipo];
+    $("por2").textContent = bien ? q.por[otra] : "";
+    $("respuesta").hidden = false;
+    $("siguiente").textContent = k === P.length - 1 ? "Ver el resultado →" : "Siguiente pregunta →";
+    dibujarComparacion();
+    pintarPuntitos();
+    $("siguiente").focus({ preventScroll: true });
+    $("veredicto").scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+  function dibujarComparacion() {
+    if (!actual) return;
+    [[actual.tipo, "lienzo1", "cod1"], [actual.otra, "lienzo2", "cod2"]].forEach(function (par) {
+      var r = figuraDe(actual.q, par[0]), cv = $(par[1]);
+      var disponible = cv.parentNode.clientWidth || 560;
+      r.figura.ancho = Math.min(disponible, 640);
+      cv.style.width = r.figura.ancho + "px";
+      MPL.dibujar(cv, r.figura);
+      cv.setAttribute("aria-label", NOMBRE[par[0]] + " con los datos de la pregunta " + (k + 1) + ". Código: " + r.codigo.join("; "));
+      mostrarCodigo($(par[2]), r.codigo);
+    });
+  }
+  function siguiente() {
+    if (!actual) return;
+    k++;
+    if (k >= P.length) { final(); return; }
+    mostrarPregunta();
+    $("pregunta").scrollIntoView({ block: "nearest", behavior: "smooth" });
+    var primero = document.querySelector("#opciones button");
+    if (primero) primero.focus({ preventScroll: true });
+  }
+  function final() {
+    $("juego").hidden = true;
+    $("final").hidden = false;
+    $("resultado").textContent = "Obtuviste " + puntos + " de " + P.length + ".";
+    $("mensaje").textContent = puntos === P.length ? "¡Perfecto! Eliges la gráfica según la pregunta." :
+      puntos >= 8 ? "Muy bien. Revisa abajo las que fallaste y por qué." :
+      puntos >= 5 ? "Vas bien. Repasa en qué caso se usa cada tipo de gráfica y vuelve a jugar." :
+      "Repasa la regla de abajo y vuelve a jugar: primero piensa qué quieres mostrar.";
+    $("tabla-final").innerHTML = "<thead><tr><th scope=\"col\">Pregunta</th><th scope=\"col\">Tu respuesta</th><th scope=\"col\">La adecuada</th></tr></thead><tbody>" +
+      P.map(function (q, i) {
+        var r = respuestas[i];
+        return "<tr><td>" + (i + 1) + ". " + esc(q.pregunta) + "</td><td class=\"" + (r.bien ? "ok" : "mal") + "\">" + (r.bien ? "✓ " : "✗ ") + NOMBRE[r.elegida] +
+               "</td><td>" + NOMBRE[q.correcta] + ((q.tambien || []).length ? " (o " + q.tambien.map(function (t) { return NOMBRE[t].toLowerCase(); }).join(", ") + ")" : "") + "</td></tr>";
+      }).join("") + "</tbody>";
+    $("titulo-final").focus();
+  }
+  function reiniciar() {
+    k = 0; puntos = 0; respuestas = []; actual = null;
+    $("final").hidden = true; $("juego").hidden = false;
+    mostrarPregunta();
+    $("pregunta").scrollIntoView({ block: "nearest" });
+  }
+
+  document.querySelectorAll("#opciones button").forEach(function (b) {
+    b.addEventListener("click", function () { elegir(b.dataset.tipo); });
+  });
+  $("siguiente").addEventListener("click", siguiente);
+  $("otra-vez").addEventListener("click", reiniciar);
+  document.addEventListener("keydown", function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey || $("juego").hidden) return;
+    var t = e.target && e.target.tagName;
+    if (t === "INPUT" || t === "TEXTAREA" || t === "SELECT") return;
+    var n = Number(e.key);
+    if (!actual && n >= 1 && n <= 5) { e.preventDefault(); elegir(TIPOS[n - 1]); }
+  });
+  var temporizador = null;
+  window.addEventListener("resize", function () { clearTimeout(temporizador); temporizador = setTimeout(dibujarComparacion, 80); });
+
+  mostrarPregunta();
+})();
+</script>
+<div id="qr-sitio" class="qr-capa" hidden>
+  <div class="qr-caja" role="dialog" aria-modal="true" aria-label="Código QR de esta página">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 45" role="img" aria-label="Código QR de https://memosanchezg.github.io/programacion-basica-interactivos/semana-15-elige-la-grafica.html" shape-rendering="crispEdges"><rect width="45" height="45" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM13 2h1v1h-1zM15 2h3v1h-3zM19 2h9v1h-9zM30 2h1v1h-1zM33 2h2v1h-2zM36 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM13 3h2v1h-2zM16 3h1v1h-1zM18 3h2v1h-2zM22 3h2v1h-2zM28 3h5v1h-5zM34 3h1v1h-1zM36 3h1v1h-1zM42 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM10 4h1v1h-1zM12 4h3v1h-3zM17 4h1v1h-1zM19 4h2v1h-2zM23 4h2v1h-2zM26 4h1v1h-1zM28 4h3v1h-3zM33 4h2v1h-2zM36 4h1v1h-1zM38 4h3v1h-3zM42 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h1v1h-1zM13 5h4v1h-4zM18 5h1v1h-1zM21 5h1v1h-1zM23 5h1v1h-1zM26 5h3v1h-3zM31 5h1v1h-1zM33 5h2v1h-2zM36 5h1v1h-1zM38 5h3v1h-3zM42 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM17 6h1v1h-1zM20 6h2v1h-2zM24 6h2v1h-2zM30 6h5v1h-5zM36 6h1v1h-1zM38 6h3v1h-3zM42 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h2v1h-2zM13 7h2v1h-2zM16 7h2v1h-2zM22 7h1v1h-1zM26 7h1v1h-1zM29 7h2v1h-2zM34 7h1v1h-1zM36 7h1v1h-1zM42 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM30 8h1v1h-1zM32 8h1v1h-1zM34 8h1v1h-1zM36 8h7v1h-7zM10 9h1v1h-1zM13 9h1v1h-1zM16 9h3v1h-3zM20 9h1v1h-1zM23 9h1v1h-1zM25 9h2v1h-2zM28 9h1v1h-1zM33 9h2v1h-2zM2 10h1v1h-1zM4 10h5v1h-5zM11 10h1v1h-1zM13 10h1v1h-1zM15 10h1v1h-1zM17 10h3v1h-3zM22 10h1v1h-1zM24 10h1v1h-1zM27 10h3v1h-3zM31 10h1v1h-1zM36 10h5v1h-5zM2 11h3v1h-3zM10 11h1v1h-1zM12 11h3v1h-3zM16 11h1v1h-1zM19 11h5v1h-5zM25 11h1v1h-1zM27 11h1v1h-1zM30 11h1v1h-1zM32 11h3v1h-3zM36 11h3v1h-3zM40 11h3v1h-3zM4 12h2v1h-2zM8 12h1v1h-1zM11 12h2v1h-2zM14 12h1v1h-1zM17 12h1v1h-1zM22 12h2v1h-2zM29 12h4v1h-4zM34 12h2v1h-2zM37 12h1v1h-1zM5 13h1v1h-1zM7 13h1v1h-1zM10 13h2v1h-2zM13 13h1v1h-1zM23 13h2v1h-2zM28 13h1v1h-1zM32 13h5v1h-5zM38 13h2v1h-2zM41 13h1v1h-1zM2 14h3v1h-3zM8 14h1v1h-1zM12 14h1v1h-1zM16 14h1v1h-1zM19 14h1v1h-1zM21 14h2v1h-2zM24 14h1v1h-1zM26 14h4v1h-4zM31 14h1v1h-1zM33 14h1v1h-1zM37 14h1v1h-1zM39 14h2v1h-2zM42 14h1v1h-1zM2 15h2v1h-2zM6 15h1v1h-1zM9 15h3v1h-3zM15 15h1v1h-1zM18 15h1v1h-1zM20 15h1v1h-1zM23 15h2v1h-2zM30 15h1v1h-1zM32 15h11v1h-11zM2 16h1v1h-1zM5 16h1v1h-1zM8 16h3v1h-3zM12 16h3v1h-3zM18 16h2v1h-2zM22 16h5v1h-5zM29 16h1v1h-1zM31 16h2v1h-2zM34 16h2v1h-2zM37 16h1v1h-1zM40 16h1v1h-1zM2 17h1v1h-1zM7 17h1v1h-1zM12 17h7v1h-7zM23 17h3v1h-3zM28 17h3v1h-3zM36 17h2v1h-2zM39 17h1v1h-1zM41 17h1v1h-1zM3 18h2v1h-2zM6 18h1v1h-1zM8 18h2v1h-2zM12 18h1v1h-1zM15 18h5v1h-5zM25 18h1v1h-1zM27 18h3v1h-3zM31 18h3v1h-3zM35 18h1v1h-1zM37 18h1v1h-1zM40 18h1v1h-1zM3 19h2v1h-2zM6 19h2v1h-2zM10 19h1v1h-1zM13 19h1v1h-1zM15 19h1v1h-1zM20 19h3v1h-3zM25 19h3v1h-3zM30 19h1v1h-1zM32 19h3v1h-3zM36 19h4v1h-4zM41 19h2v1h-2zM2 20h2v1h-2zM5 20h1v1h-1zM7 20h2v1h-2zM11 20h2v1h-2zM15 20h1v1h-1zM18 20h1v1h-1zM20 20h1v1h-1zM24 20h1v1h-1zM28 20h3v1h-3zM32 20h1v1h-1zM35 20h1v1h-1zM38 20h2v1h-2zM41 20h1v1h-1zM4 21h1v1h-1zM10 21h1v1h-1zM14 21h2v1h-2zM18 21h1v1h-1zM22 21h1v1h-1zM29 21h2v1h-2zM33 21h3v1h-3zM38 21h2v1h-2zM41 21h2v1h-2zM3 22h2v1h-2zM7 22h5v1h-5zM13 22h1v1h-1zM18 22h1v1h-1zM20 22h2v1h-2zM23 22h4v1h-4zM29 22h1v1h-1zM31 22h2v1h-2zM37 22h1v1h-1zM39 22h3v1h-3zM2 23h2v1h-2zM5 23h2v1h-2zM9 23h1v1h-1zM12 23h1v1h-1zM14 23h1v1h-1zM16 23h4v1h-4zM21 23h3v1h-3zM25 23h1v1h-1zM27 23h1v1h-1zM30 23h1v1h-1zM32 23h3v1h-3zM36 23h3v1h-3zM41 23h2v1h-2zM4 24h1v1h-1zM8 24h1v1h-1zM11 24h3v1h-3zM15 24h4v1h-4zM20 24h1v1h-1zM22 24h1v1h-1zM24 24h1v1h-1zM27 24h4v1h-4zM34 24h1v1h-1zM37 24h1v1h-1zM39 24h1v1h-1zM10 25h4v1h-4zM16 25h1v1h-1zM18 25h1v1h-1zM20 25h2v1h-2zM23 25h2v1h-2zM29 25h1v1h-1zM33 25h3v1h-3zM37 25h2v1h-2zM42 25h1v1h-1zM3 26h2v1h-2zM7 26h2v1h-2zM12 26h1v1h-1zM19 26h1v1h-1zM25 26h7v1h-7zM33 26h1v1h-1zM40 26h1v1h-1zM42 26h1v1h-1zM2 27h5v1h-5zM9 27h2v1h-2zM15 27h1v1h-1zM17 27h1v1h-1zM19 27h1v1h-1zM21 27h3v1h-3zM25 27h1v1h-1zM27 27h1v1h-1zM30 27h1v1h-1zM32 27h2v1h-2zM35 27h5v1h-5zM41 27h2v1h-2zM5 28h2v1h-2zM8 28h1v1h-1zM10 28h1v1h-1zM13 28h1v1h-1zM16 28h1v1h-1zM18 28h1v1h-1zM20 28h1v1h-1zM22 28h1v1h-1zM26 28h5v1h-5zM32 28h1v1h-1zM34 28h2v1h-2zM37 28h2v1h-2zM2 29h1v1h-1zM4 29h1v1h-1zM6 29h1v1h-1zM10 29h1v1h-1zM12 29h1v1h-1zM14 29h4v1h-4zM21 29h4v1h-4zM26 29h1v1h-1zM28 29h1v1h-1zM30 29h1v1h-1zM33 29h2v1h-2zM38 29h2v1h-2zM2 30h4v1h-4zM8 30h2v1h-2zM11 30h1v1h-1zM13 30h1v1h-1zM15 30h1v1h-1zM17 30h1v1h-1zM19 30h1v1h-1zM24 30h2v1h-2zM27 30h2v1h-2zM30 30h2v1h-2zM33 30h1v1h-1zM39 30h2v1h-2zM42 30h1v1h-1zM2 31h2v1h-2zM11 31h2v1h-2zM14 31h3v1h-3zM18 31h1v1h-1zM20 31h1v1h-1zM22 31h1v1h-1zM26 31h2v1h-2zM30 31h7v1h-7zM38 31h1v1h-1zM40 31h1v1h-1zM42 31h1v1h-1zM2 32h1v1h-1zM4 32h1v1h-1zM8 32h3v1h-3zM14 32h1v1h-1zM16 32h2v1h-2zM21 32h1v1h-1zM23 32h2v1h-2zM27 32h3v1h-3zM31 32h1v1h-1zM35 32h3v1h-3zM39 32h1v1h-1zM2 33h1v1h-1zM4 33h2v1h-2zM10 33h1v1h-1zM12 33h1v1h-1zM14 33h1v1h-1zM17 33h2v1h-2zM21 33h4v1h-4zM26 33h1v1h-1zM29 33h1v1h-1zM33 33h5v1h-5zM39 33h1v1h-1zM41 33h2v1h-2zM2 34h1v1h-1zM5 34h1v1h-1zM8 34h1v1h-1zM13 34h3v1h-3zM17 34h5v1h-5zM24 34h1v1h-1zM26 34h3v1h-3zM31 34h1v1h-1zM34 34h5v1h-5zM40 34h1v1h-1zM42 34h1v1h-1zM10 35h1v1h-1zM13 35h1v1h-1zM16 35h1v1h-1zM18 35h6v1h-6zM25 35h3v1h-3zM30 35h2v1h-2zM33 35h2v1h-2zM38 35h1v1h-1zM41 35h2v1h-2zM2 36h7v1h-7zM11 36h1v1h-1zM15 36h3v1h-3zM19 36h1v1h-1zM22 36h2v1h-2zM27 36h5v1h-5zM33 36h2v1h-2zM36 36h1v1h-1zM38 36h1v1h-1zM40 36h1v1h-1zM2 37h1v1h-1zM8 37h1v1h-1zM10 37h4v1h-4zM16 37h1v1h-1zM19 37h2v1h-2zM22 37h3v1h-3zM26 37h2v1h-2zM32 37h3v1h-3zM38 37h2v1h-2zM2 38h1v1h-1zM4 38h3v1h-3zM8 38h1v1h-1zM10 38h1v1h-1zM12 38h4v1h-4zM18 38h1v1h-1zM23 38h1v1h-1zM26 38h1v1h-1zM28 38h2v1h-2zM31 38h1v1h-1zM34 38h5v1h-5zM40 38h1v1h-1zM2 39h1v1h-1zM4 39h3v1h-3zM8 39h1v1h-1zM10 39h2v1h-2zM15 39h1v1h-1zM18 39h1v1h-1zM20 39h3v1h-3zM24 39h3v1h-3zM30 39h4v1h-4zM35 39h1v1h-1zM37 39h1v1h-1zM39 39h2v1h-2zM2 40h1v1h-1zM4 40h3v1h-3zM8 40h1v1h-1zM10 40h1v1h-1zM12 40h1v1h-1zM14 40h1v1h-1zM16 40h3v1h-3zM20 40h1v1h-1zM22 40h1v1h-1zM24 40h1v1h-1zM26 40h2v1h-2zM29 40h2v1h-2zM34 40h6v1h-6zM2 41h1v1h-1zM8 41h1v1h-1zM11 41h3v1h-3zM15 41h3v1h-3zM23 41h1v1h-1zM25 41h1v1h-1zM28 41h3v1h-3zM34 41h2v1h-2zM38 41h2v1h-2zM41 41h1v1h-1zM2 42h7v1h-7zM10 42h1v1h-1zM14 42h4v1h-4zM19 42h1v1h-1zM21 42h1v1h-1zM24 42h5v1h-5zM31 42h1v1h-1zM33 42h1v1h-1zM35 42h4v1h-4zM40 42h1v1h-1z"/></svg>
+    <p class="qr-texto">Escanea con la cámara del celular para abrir esta página</p>
+    <p class="qr-url">https://memosanchezg.github.io/programacion-basica-interactivos/semana-15-elige-la-grafica.html</p>
+    <button type="button" class="qr-cerrar">Cerrar</button>
+  </div>
+</div>
+<style>
+  .qr-capa { position:fixed; top:0; right:0; bottom:0; left:0; z-index:10000; display:flex; align-items:center;
+             justify-content:center; padding:16px; background:#fff; }
+  .qr-capa[hidden] { display:none; }
+  .qr-caja { max-width:100%; text-align:center; color:#0A2A57; font:16px/1.4 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .qr-caja svg { display:block; width:min(62vh, 84vw); height:auto; margin:0 auto; }
+  .qr-texto { margin:12px 0 2px; font-size:1.15rem; font-weight:bold; }
+  .qr-url { margin:0 0 12px; color:#5B6472; word-break:break-all; }
+  .qr-cerrar { font:inherit; padding:6px 20px; border:2px solid #00408F; border-radius:4px; background:#fff;
+               color:#00408F; cursor:pointer; }
+</style>
+<script>
+  (function () {
+    var capa = document.getElementById("qr-sitio");
+    document.querySelectorAll("a.qr-abrir").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        capa.hidden = false;
+        capa.querySelector(".qr-cerrar").focus();
+      });
+    });
+    capa.addEventListener("click", function (e) {
+      if (e.target === capa || e.target.classList.contains("qr-cerrar")) capa.hidden = true;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !capa.hidden) capa.hidden = true;
+    });
+  })();
+</script>
+</body>
+</html>

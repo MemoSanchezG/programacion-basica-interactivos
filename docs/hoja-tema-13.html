@@ -1,0 +1,499 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tema 13 · Hoja del estudiante</title>
+<style>
+:root {
+  --azul: #00408F; --azul-osc: #0A2A57; --guinda: #8C1D35; --oro: #B8975A;
+  --azul-claro: #E8EEF7; --oro-claro: #F7F1E6; --tinta: #1B1F2A; --gris: #5B6472; --borde: #D9DEE6;
+  --cmd-fondo: #0C0C0C; --cmd-texto: #E6E6E6;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: #FFFFFF; color: var(--tinta);
+  font-family: Calibri, "Segoe UI", system-ui, -apple-system, sans-serif; font-size: 17px; line-height: 1.55; }
+a { color: var(--azul); font-weight: 600; }
+.wrap { max-width: 940px; margin: 0 auto; padding: 0 16px; }
+header { border-left: 14px solid var(--azul); box-shadow: inset 3px 0 0 var(--oro); padding: 34px 0 24px; }
+.eyebrow { color: var(--guinda); font-weight: 700; letter-spacing: .05em; font-size: 15px;
+  font-family: Cambria, Georgia, serif; }
+h1 { font-family: Cambria, Georgia, serif; color: var(--azul-osc); font-size: clamp(30px, 5vw, 44px);
+  margin: 4px 0 6px; line-height: 1.15; }
+.sub { color: var(--gris); margin: 0 0 8px; }
+.subtitulo { color: var(--azul); font-style: italic; font-size: 19px; margin: 0 0 6px; }
+nav.dias { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+nav.dias a { border: 1px solid var(--borde); color: var(--azul-osc); text-decoration: none; padding: 5px 14px;
+  border-radius: 999px; font-size: 15px; }
+nav.dias a:hover { border-color: var(--oro); background: var(--oro-claro); }
+.franja { height: 7px; background: var(--azul); border-bottom: 3px solid var(--oro); }
+main { padding: 4px 0 48px; }
+section { padding-top: 26px; }
+h2 { font-family: Cambria, Georgia, serif; color: var(--azul-osc); font-size: 28px; margin: 0 0 4px; line-height: 1.2; }
+h3 { color: var(--azul-osc); font-size: 19px; margin: 22px 0 8px; }
+.dia { border-top: 1px solid var(--borde); margin-top: 28px; }
+.dia .num { color: var(--guinda); font-family: Cambria, Georgia, serif; font-weight: 700; font-size: 20px; }
+.chip { display: inline-block; color: var(--guinda); font-family: Cambria, Georgia, serif; font-weight: 700;
+  font-size: 17px; margin-left: 8px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.card { border: 1.5px solid var(--oro); border-radius: 10px; padding: 14px 16px; }
+.card b { display: block; margin-bottom: 4px; color: var(--azul-osc); }
+.card small { color: var(--guinda); font-weight: 700; }
+ul.links { padding-left: 20px; margin: 6px 0; }
+ul.links li { margin: 4px 0; }
+ol.tareas li { margin: 6px 0; }
+.pista { background: var(--oro-claro); border: 1px solid var(--oro); border-radius: 10px; padding: 10px 14px; }
+.pista b { color: var(--guinda); }
+.bloque { margin: 10px 0; }
+code, .mono { font-family: Consolas, "Courier New", monospace; color: var(--azul); }
+.highlight table { border-collapse: collapse; }
+.highlight td { padding: 0; vertical-align: top; }
+.highlight td.linenos pre { margin: 0; padding: 10px 8px 10px 0; text-align: right; color: var(--gris);
+  font-family: Cambria, Georgia, serif; font-size: 11px; line-height: 21px; background: transparent; }
+.highlight td.code { width: 100%; }
+.highlight td.code pre { margin: 0; padding: 10px 14px; border: 1px solid var(--tinta); background: #FFFFFF;
+  font-family: Consolas, "Courier New", monospace; font-size: 15px; line-height: 21px !important; overflow-x: auto; }
+.highlight { overflow-x: auto; }
+.prompt { background: var(--azul-claro); border-radius: 10px; padding: 14px 16px; margin: 0; font-style: italic; }
+.acciones { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 8px 0 0; }
+button.copiar { font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; border: 0; border-radius: 999px;
+  padding: 6px 14px; background: var(--azul); color: #fff; }
+button.copiar:hover { background: var(--azul-osc); }
+.entrega { border: 1px dashed var(--oro); border-radius: 10px; padding: 10px 14px; }
+table.chuleta { border-collapse: collapse; width: 100%; font-size: 15px; }
+table.chuleta th { background: var(--azul-osc); color: #fff; text-align: left; padding: 7px 10px; }
+table.chuleta td { padding: 6px 10px; border-bottom: 1px solid var(--borde); }
+table.chuleta tr:nth-child(even) td { background: var(--azul-claro); }
+footer { color: var(--gris); font-size: 14px; border-top: 1px solid var(--borde); margin-top: 36px; padding-top: 14px; }
+textarea.crudo { display: none; }
+@media print {
+  nav.dias, button.copiar { display: none; }
+  .dia { page-break-before: always; }
+}
+</style></head><body><div class="franja"></div>
+<header><div class="wrap">
+<div class="eyebrow">TEMA 13 · SEMANA 13 · HOJA DEL ESTUDIANTE</div>
+<h1>Matemáticas con Python</h1>
+<p class="sub">Programación Básica 2026 · FCFM · UANL. Aquí están los enlaces a PythonTutor, el código de los ejemplos que se corren en tu computadora, el código de partida y los prompts sugeridos de cada ejercicio, listos para copiar.</p>
+<nav class="dias"><a href="#dia1">Día 1</a><a href="#dia2">Día 2</a><a href="#dia3">Día 3</a><a href="#dia4">Día 4</a><a href="#dia5">Día 5</a><a href="#chuleta">Chuleta</a><a href="#interactivos">Simuladores</a><a href="#recursos">Recursos</a></nav>
+</div></header><main class="wrap">
+<section><h2>Cómo usar la IA esta semana</h2>
+<p class="sub">Matemáticas con IA sin que piense por ti</p><ul>
+<li>Las IA también se equivocan en aritmética y en estadística: pueden darte una media o una desviación que no corresponde a tus datos.</li>
+<li>Primero tú: calcula a mano un caso pequeño (3 o 4 datos) y compáralo con lo que da tu programa.</li>
+<li>Después la IA: pídele que te explique por qué 0.1 + 0.2 no da 0.3, qué mide una desviación estándar o cuándo conviene la mediana.</li>
+<li>Temario (Fase 3): la IA puede proponer mejoras al análisis, pero tú debes poder explicar cada número que reportas.</li>
+</ul><h3>Ejemplo de prompt</h3><div class="bloque">
+<p class="prompt">Mi programa dice que la máxima de septiembre tiene media 34.2 °C, mediana 34.35 °C y desviación 1.77 °C. No me des código: pregúntame qué me dicen esos tres números y cómo verificaría la media a mano.</p><textarea class="crudo" id="prompt-ia">Mi programa dice que la máxima de septiembre tiene media 34.2 °C, mediana 34.35 °C y desviación 1.77 °C. No me des código: pregúntame qué me dicen esos tres números y cómo verificaría la media a mano.</textarea>
+<div class="acciones"><button class="copiar" data-copiar="prompt-ia">Copiar prompt</button></div></div>
+</section>
+<section><h2>Tu ejercicio cuenta si pasa el checkpoint</h2><div class="cards">
+<div class="card"><b>Palabra clave</b>Al iniciar el checkpoint el profesor dice una palabra en voz alta. Escríbela como comentario en la línea 1 de tu archivo.<br><small>Demuestra que estuviste en clase</small></div>
+<div class="card"><b>Cambio sorpresa, sin IA</b>Al terminar el tiempo del ejercicio se proyecta un cambio. Tienes 5 minutos para aplicarlo tú solo.<br><small>Demuestra que entiendes tu código</small></div>
+<div class="card"><b>Entrega antes de salir</b>Subes tu archivo .py a la tarea de Teams del día. La tarea se cierra al terminar la clase.<br><small>Demuestra que lo hiciste en clase</small></div>
+<div class="card"><b>Defensa rápida</b>El profesor elige 2–3 personas al azar para explicar una línea de su código en 1 minuto.<br><small>Demuestra que el código es tuyo</small></div>
+</div>
+<p class="sub">La IA sí se permite durante el ejercicio (con el prompt sugerido). El cambio sorpresa y la defensa son sin IA.</p>
+</section>
+<section class="dia" id="dia1"><div class="num">DÍA 1</div>
+<h2>Fracciones: aritmética exacta</h2><p class="sub">Por qué los float son aproximados y cómo calcular con fracciones exactas (Fraction)</p>
+<h3>Ejemplos de la clase</h3><ul class="links">
+<li>El error se acumula — <a href="https://pythontutor.com/visualize.html#code=import%20math%0A%0Atotal%20%3D%200%0Afor%20_%20in%20range%2810%29%3A%0A%20%20%20%20total%20%3D%20total%20%2B%200.1%0A%0Aprint%28total%29%0Aprint%28total%20%3D%3D%201.0%29%0Aprint%28math.isclose%28total%2C%201.0%29%29%0Aprint%28f%22%7Btotal%3A.2f%7D%22%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">PythonTutor »</a></li>
+<li>Fraction(0.1) no es lo mismo que Fraction(&quot;0.1&quot;) (así no: desde el float 0.1) — <a href="https://pythontutor.com/visualize.html#code=from%20fractions%20import%20Fraction%0A%0Af%20%3D%20Fraction%280.1%29%0Aprint%28f%29%0Aprint%28f%20%3D%3D%20Fraction%281%2C%2010%29%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">PythonTutor »</a></li>
+<li>Fraction(0.1) no es lo mismo que Fraction(&quot;0.1&quot;) (así sí: desde texto, o limit_denominator) — <a href="https://pythontutor.com/visualize.html#code=from%20fractions%20import%20Fraction%0A%0Af%20%3D%20Fraction%28%220.1%22%29%0Aprint%28f%29%0Aprint%28Fraction%280.1%29.limit_denominator%28%29%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">PythonTutor »</a></li>
+</ul>
+<h3>Reto: probabilidades exactas con dos dados<span class="chip">20 min</span></h3><ol class="tareas">
+<li>Recorre los 36 resultados de lanzar dos dados (dos for anidados, del 1 al 6) y cuenta en un diccionario cuántas veces sale cada suma (patrón contador, Tema 4).</li>
+<li>Para cada suma del 2 al 12 imprime su probabilidad como Fraction(veces, 36) y como float con 3 decimales.</li>
+<li>Suma todas las probabilidades dos veces: con Fraction y con float. ¿Cuál da exactamente 1? Imprime ambas sumas y compáralas con 1 usando ==.</li>
+</ol>
+<p class="pista"><b>Pista:</b> Fraction(6, 36) se simplifica sola a 1/6. Para el total exacto empieza con total = Fraction(0); para el otro, total_float = 0.0.</p>
+<h3>Código de partida</h3><div class="bloque">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">4</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">from</span><span style="color: #BBB"> </span>fractions<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">import</span> Fraction
+
+conteo = {}
+<span style="color: #080; font-style: italic"># completa: dos ciclos for anidados (dado1 y dado2, del 1 al 6)</span>
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="codigo-1">from fractions import Fraction
+
+conteo = {}
+# completa: dos ciclos for anidados (dado1 y dado2, del 1 al 6)</textarea>
+<div class="acciones"><button class="copiar" data-copiar="codigo-1">Copiar código</button><a href="https://pythontutor.com/visualize.html#code=from%20fractions%20import%20Fraction%0A%0Aconteo%20%3D%20%7B%7D%0A%23%20completa%3A%20dos%20ciclos%20for%20anidados%20%28dado1%20y%20dado2%2C%20del%201%20al%206%29%0A&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">Abrir en PythonTutor »</a></div></div>
+<h3>Prompt sugerido para la IA</h3><div class="bloque">
+<p class="prompt">Estoy aprendiendo a usar Fraction en Python con las probabilidades de dos dados. No me des el código: pregúntame cuántos resultados posibles hay, cómo los recorrería con dos for y cómo contaría cuántas veces sale cada suma.</p><textarea class="crudo" id="prompt-1">Estoy aprendiendo a usar Fraction en Python con las probabilidades de dos dados. No me des el código: pregúntame cuántos resultados posibles hay, cómo los recorrería con dos for y cómo contaría cuántas veces sale cada suma.</textarea>
+<div class="acciones"><button class="copiar" data-copiar="prompt-1">Copiar prompt</button><span class="sub">Si la IA te da el código completo, pídele que mejor te haga una pregunta.</span></div></div>
+<h3>Checkpoint y entrega</h3><div class="entrega"><ol>
+<li>Escribe la <b>palabra clave</b> que diga el profesor como comentario en la línea 1: <code># clave: ______</code></li>
+<li>Aplica el <b>cambio sorpresa</b> que se proyectará al terminar el ejercicio (sin IA, 5 min).</li>
+<li>Sube <b>S13D1_matricula.py</b> a la tarea de Teams del día antes de salir: la tarea cierra al terminar la clase.</li>
+<li>Prepárate: el profesor puede pedirte que expliques una línea de tu código.</li>
+</ol></div>
+</section>
+<section class="dia" id="dia2"><div class="num">DÍA 2</div>
+<h2>Números complejos</h2><p class="sub">Trabajar con números complejos: el tipo complex, sus operaciones y el módulo cmath</p>
+<h3>Ejemplos de la clase</h3><ul class="links">
+<li>Operaciones con complejos — <a href="https://pythontutor.com/visualize.html#code=z1%20%3D%203%20%2B%204j%0Az2%20%3D%201%20-%202j%0A%0Aprint%28z1%20%2B%20z2%29%0Aprint%28z1%20%2A%20z2%29%0Aprint%28z1%20/%20z2%29%0Aprint%281j%20%2A%201j%29%0Aprint%28z1%20%2A%20z1.conjugate%28%29%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">PythonTutor »</a></li>
+<li>Raíces de x² + 2x + 5 = 0 — <a href="https://pythontutor.com/visualize.html#code=import%20cmath%0A%0Aa%2C%20b%2C%20c%20%3D%201%2C%202%2C%205%0Adisc%20%3D%20b%2A%2A2%20-%204%2Aa%2Ac%0Ax1%20%3D%20%28-b%20%2B%20cmath.sqrt%28disc%29%29%20/%20%282%2Aa%29%0Ax2%20%3D%20%28-b%20-%20cmath.sqrt%28disc%29%29%20/%20%282%2Aa%29%0A%0Aprint%28%22Discriminante%3A%22%2C%20disc%29%0Aprint%28%22x1%20%3D%22%2C%20x1%29%0Aprint%28%22x2%20%3D%22%2C%20x2%29%0Aprint%28%22Comprobaci%C3%B3n%3A%22%2C%20a%2Ax1%2A%2A2%20%2B%20b%2Ax1%20%2B%20c%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">PythonTutor »</a></li>
+</ul>
+<h3>Reto: resuelve cualquier ecuación cuadrática<span class="chip">20 min</span></h3><ol class="tareas">
+<li>Escribe resolver(a, b, c) que calcule el discriminante y regrese (disc, x1, x2) con la fórmula general y cmath.sqrt.</li>
+<li>Clasifica cada ecuación según el discriminante: dos raíces reales distintas, una real doble o dos complejas conjugadas.</li>
+<li>Comprueba cada raíz sustituyéndola: abs(a*x**2 + b*x + c) &lt; 1e-9. Prueba con las tres ecuaciones del código de partida.</li>
+</ol>
+<p class="pista"><b>Pista:</b> cmath.sqrt siempre regresa complex, incluso con discriminante positivo: (2+0j). Usa el signo de disc para clasificar y abs() para comprobar.</p>
+<h3>Código de partida</h3><div class="bloque">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">4</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>cmath
+
+<span style="color: #080; font-style: italic"># (a, b, c) de a·x² + b·x + c = 0</span>
+ecuaciones = [(<span style="color: #00F">1</span>, -<span style="color: #00F">3</span>, <span style="color: #00F">2</span>), (<span style="color: #00F">1</span>, <span style="color: #00F">2</span>, <span style="color: #00F">1</span>), (<span style="color: #00F">1</span>, <span style="color: #00F">2</span>, <span style="color: #00F">5</span>)]
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="codigo-2">import cmath
+
+# (a, b, c) de a·x² + b·x + c = 0
+ecuaciones = [(1, -3, 2), (1, 2, 1), (1, 2, 5)]</textarea>
+<div class="acciones"><button class="copiar" data-copiar="codigo-2">Copiar código</button><a href="https://pythontutor.com/visualize.html#code=import%20cmath%0A%0A%23%20%28a%2C%20b%2C%20c%29%20de%20a%C2%B7x%C2%B2%20%2B%20b%C2%B7x%20%2B%20c%20%3D%200%0Aecuaciones%20%3D%20%5B%281%2C%20-3%2C%202%29%2C%20%281%2C%202%2C%201%29%2C%20%281%2C%202%2C%205%29%5D%0A&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">Abrir en PythonTutor »</a></div></div>
+<h3>Prompt sugerido para la IA</h3><div class="bloque">
+<p class="prompt">Estoy resolviendo ecuaciones cuadráticas en Python con cmath.sqrt. No me des el código: pregúntame qué me dice el signo del discriminante sobre las raíces y cómo comprobaría que un número complejo sí es raíz de la ecuación.</p><textarea class="crudo" id="prompt-2">Estoy resolviendo ecuaciones cuadráticas en Python con cmath.sqrt. No me des el código: pregúntame qué me dice el signo del discriminante sobre las raíces y cómo comprobaría que un número complejo sí es raíz de la ecuación.</textarea>
+<div class="acciones"><button class="copiar" data-copiar="prompt-2">Copiar prompt</button><span class="sub">Si la IA te da el código completo, pídele que mejor te haga una pregunta.</span></div></div>
+<h3>Checkpoint y entrega</h3><div class="entrega"><ol>
+<li>Escribe la <b>palabra clave</b> que diga el profesor como comentario en la línea 1: <code># clave: ______</code></li>
+<li>Aplica el <b>cambio sorpresa</b> que se proyectará al terminar el ejercicio (sin IA, 5 min).</li>
+<li>Sube <b>S13D2_matricula.py</b> a la tarea de Teams del día antes de salir: la tarea cierra al terminar la clase.</li>
+<li>Prepárate: el profesor puede pedirte que expliques una línea de tu código.</li>
+</ol></div>
+</section>
+<section class="dia" id="dia3"><div class="num">DÍA 3</div>
+<h2>Estadística básica: centro y dispersión</h2><p class="sub">Medidas de tendencia central y de dispersión: media, mediana, moda y desviación estándar</p>
+<h3>Ejemplos de la clase</h3><ul class="links">
+<li>Media, mediana y moda a mano — <a href="https://pythontutor.com/visualize.html#code=datos%20%3D%20%5B8%2C%209%2C%207%2C%2010%2C%206%2C%209%2C%208%2C%208%2C%207%2C%209%5D%0A%0Amedia%20%3D%20sum%28datos%29%20/%20len%28datos%29%0A%0Aorden%20%3D%20sorted%28datos%29%0An%20%3D%20len%28orden%29%0Aif%20n%20%25%202%20%3D%3D%201%3A%0A%20%20%20%20mediana%20%3D%20orden%5Bn%20//%202%5D%0Aelse%3A%0A%20%20%20%20mediana%20%3D%20%28orden%5Bn%20//%202%20-%201%5D%20%2B%20orden%5Bn%20//%202%5D%29%20/%202%0A%0Aconteo%20%3D%20%7B%7D%0Afor%20x%20in%20datos%3A%0A%20%20%20%20conteo%5Bx%5D%20%3D%20conteo.get%28x%2C%200%29%20%2B%201%0Amaximo%20%3D%20max%28conteo.values%28%29%29%0Amodas%20%3D%20%5Bx%20for%20x%20in%20conteo%20if%20conteo%5Bx%5D%20%3D%3D%20maximo%5D%0A%0Aprint%28%22Media%3A%22%2C%20media%29%0Aprint%28%22Mediana%3A%22%2C%20mediana%29%0Aprint%28%22Moda%28s%29%3A%22%2C%20modas%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">PythonTutor »</a></li>
+</ul>
+<h3>Ejemplos para correr en tu computadora</h3>
+<p class="sub">PythonTutor no puede correr estos ejemplos: copia cada uno a un archivo .py y ejecútalo con Python.</p>
+<div class="bloque"><b>El clima de septiembre en números</b> <span class="sub">(PythonTutor no puede importar statistics.)</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 7</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 8</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 9</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">10</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">11</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">12</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>statistics<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">as</span><span style="color: #BBB"> </span>st
+
+tmax = [<span style="color: #00F">35.0</span>, <span style="color: #00F">36.5</span>, <span style="color: #00F">38.0</span>, <span style="color: #00F">34.1</span>, <span style="color: #00F">32.2</span>, <span style="color: #00F">30.2</span>, <span style="color: #00F">34.0</span>, <span style="color: #00F">33.3</span>, <span style="color: #00F">34.9</span>, <span style="color: #00F">35.1</span>,
+        <span style="color: #00F">37.2</span>, <span style="color: #00F">35.0</span>, <span style="color: #00F">35.2</span>, <span style="color: #00F">35.8</span>, <span style="color: #00F">35.9</span>, <span style="color: #00F">35.0</span>, <span style="color: #00F">34.7</span>, <span style="color: #00F">33.5</span>, <span style="color: #00F">34.5</span>, <span style="color: #00F">35.4</span>,
+        <span style="color: #00F">35.4</span>, <span style="color: #00F">32.8</span>, <span style="color: #00F">31.8</span>, <span style="color: #00F">31.5</span>, <span style="color: #00F">33.3</span>, <span style="color: #00F">33.9</span>, <span style="color: #00F">34.2</span>, <span style="color: #00F">33.7</span>, <span style="color: #00F">33.2</span>, <span style="color: #00F">30.9</span>]
+
+print(<span style="color: #00F">&quot;Días:&quot;</span>, len(tmax))
+print(<span style="color: #00F">&quot;Media:&quot;</span>, round(st.mean(tmax), <span style="color: #00F">2</span>))
+print(<span style="color: #00F">&quot;Mediana:&quot;</span>, st.median(tmax))
+print(<span style="color: #00F">&quot;Moda:&quot;</span>, st.mode(tmax))
+print(<span style="color: #00F">&quot;Rango:&quot;</span>, round(max(tmax) - min(tmax), <span style="color: #00F">1</span>))
+print(<span style="color: #00F">&quot;Desviación estándar:&quot;</span>, round(st.stdev(tmax), <span style="color: #00F">2</span>))
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="ejemplo-3-1">import statistics as st
+
+tmax = [35.0, 36.5, 38.0, 34.1, 32.2, 30.2, 34.0, 33.3, 34.9, 35.1,
+        37.2, 35.0, 35.2, 35.8, 35.9, 35.0, 34.7, 33.5, 34.5, 35.4,
+        35.4, 32.8, 31.8, 31.5, 33.3, 33.9, 34.2, 33.7, 33.2, 30.9]
+
+print(&quot;Días:&quot;, len(tmax))
+print(&quot;Media:&quot;, round(st.mean(tmax), 2))
+print(&quot;Mediana:&quot;, st.median(tmax))
+print(&quot;Moda:&quot;, st.mode(tmax))
+print(&quot;Rango:&quot;, round(max(tmax) - min(tmax), 1))
+print(&quot;Desviación estándar:&quot;, round(st.stdev(tmax), 2))</textarea>
+<div class="acciones"><button class="copiar" data-copiar="ejemplo-3-1">Copiar código</button></div></div>
+<h3>Reto: resumen estadístico de la lluvia<span class="chip">20 min</span></h3><ol class="tareas">
+<li>Con statistics calcula la media, la mediana, la desviación estándar (stdev) y el rango de la lluvia diaria del 1 al 15 de octubre de 2026.</li>
+<li>Calcula también la media a mano (sum / len) y comprueba con math.isclose que coincide con statistics.mean.</li>
+<li>Imprime cuántos días llovió más que la media y una conclusión: ¿qué describe mejor un día típico, la media o la mediana? ¿Por qué?</li>
+</ol>
+<p class="pista"><b>Pista:</b> Del 1 al 3 de octubre hubo tormentas fuertes. Compara la media y la mediana: si están lejos, hay datos atípicos.</p>
+<h3>Código de partida</h3><div class="bloque">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">5</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>math
+<span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>statistics<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">as</span><span style="color: #BBB"> </span>st
+
+lluvia = [<span style="color: #00F">28.8</span>, <span style="color: #00F">70.2</span>, <span style="color: #00F">20.1</span>, <span style="color: #00F">10.9</span>, <span style="color: #00F">10.8</span>, <span style="color: #00F">0.6</span>, <span style="color: #00F">1.4</span>, <span style="color: #00F">2.1</span>,
+          <span style="color: #00F">0.7</span>, <span style="color: #00F">0.0</span>, <span style="color: #00F">3.3</span>, <span style="color: #00F">0.8</span>, <span style="color: #00F">0.9</span>, <span style="color: #00F">0.7</span>, <span style="color: #00F">2.1</span>]   <span style="color: #080; font-style: italic"># mm, 1 al 15 de octubre</span>
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="codigo-3">import math
+import statistics as st
+
+lluvia = [28.8, 70.2, 20.1, 10.9, 10.8, 0.6, 1.4, 2.1,
+          0.7, 0.0, 3.3, 0.8, 0.9, 0.7, 2.1]   # mm, 1 al 15 de octubre</textarea>
+<div class="acciones"><button class="copiar" data-copiar="codigo-3">Copiar código</button><span class="sub">Solo en tu computadora: PythonTutor no puede importar statistics.</span></div></div>
+<h3>Prompt sugerido para la IA</h3><div class="bloque">
+<p class="prompt">Estoy calculando media, mediana y desviación estándar de la lluvia diaria con statistics en Python. Mi media y mi mediana son muy distintas. No me des el código: pregúntame qué días podrían explicar la diferencia y cuál de las dos medidas debería reportar.</p><textarea class="crudo" id="prompt-3">Estoy calculando media, mediana y desviación estándar de la lluvia diaria con statistics en Python. Mi media y mi mediana son muy distintas. No me des el código: pregúntame qué días podrían explicar la diferencia y cuál de las dos medidas debería reportar.</textarea>
+<div class="acciones"><button class="copiar" data-copiar="prompt-3">Copiar prompt</button><span class="sub">Si la IA te da el código completo, pídele que mejor te haga una pregunta.</span></div></div>
+<h3>Checkpoint y entrega</h3><div class="entrega"><ol>
+<li>Escribe la <b>palabra clave</b> que diga el profesor como comentario en la línea 1: <code># clave: ______</code></li>
+<li>Aplica el <b>cambio sorpresa</b> que se proyectará al terminar el ejercicio (sin IA, 5 min).</li>
+<li>Sube <b>S13D3_matricula.py</b> a la tarea de Teams del día antes de salir: la tarea cierra al terminar la clase.</li>
+<li>Prepárate: el profesor puede pedirte que expliques una línea de tu código.</li>
+</ol></div>
+</section>
+<section class="dia" id="dia4"><div class="num">DÍA 4</div>
+<h2>Tablas de frecuencia</h2><p class="sub">Construir tablas de frecuencia absoluta, relativa y acumulada, con dict y con Counter</p>
+<h3>Ejemplos de la clase</h3><ul class="links">
+<li>Tabla de frecuencias completa — <a href="https://pythontutor.com/visualize.html#code=from%20collections%20import%20Counter%0A%0Acalifs%20%3D%20%5B8%2C%209%2C%207%2C%2010%2C%206%2C%209%2C%208%2C%208%2C%207%2C%209%2C%208%2C%2010%2C%209%2C%207%2C%208%5D%0An%20%3D%20len%28califs%29%0Afrec%20%3D%20Counter%28califs%29%0A%0Aprint%28f%22%7B%27Valor%27%3A%3E5%7D%20%7B%27f%27%3A%3E2%7D%20%7B%27%25%27%3A%3E5%7D%20%7B%27F%27%3A%3E3%7D%22%29%0Aacumulada%20%3D%200%0Afor%20valor%2C%20f%20in%20sorted%28frec.items%28%29%29%3A%0A%20%20%20%20acumulada%20%3D%20acumulada%20%2B%20f%0A%20%20%20%20print%28f%22%7Bvalor%3A%3E5%7D%20%7Bf%3A%3E2%7D%20%7Bf%20/%20n%3A%3E5.0%25%7D%20%7Bacumulada%3A%3E3%7D%20%20%7B%27%2A%27%20%2A%20f%7D%22%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">PythonTutor »</a></li>
+<li>Las máximas de septiembre en intervalos — <a href="https://pythontutor.com/visualize.html#code=tmax%20%3D%20%5B35.0%2C%2036.5%2C%2038.0%2C%2034.1%2C%2032.2%2C%2030.2%2C%2034.0%2C%2033.3%2C%2034.9%2C%2035.1%2C%0A%20%20%20%20%20%20%20%2037.2%2C%2035.0%2C%2035.2%2C%2035.8%2C%2035.9%2C%2035.0%2C%2034.7%2C%2033.5%2C%2034.5%2C%2035.4%2C%0A%20%20%20%20%20%20%20%2035.4%2C%2032.8%2C%2031.8%2C%2031.5%2C%2033.3%2C%2033.9%2C%2034.2%2C%2033.7%2C%2033.2%2C%2030.9%5D%0Aancho%20%3D%202%0Aclases%20%3D%20%7B%7D%0Afor%20x%20in%20tmax%3A%0A%20%20%20%20ini%20%3D%20int%28x%20//%20ancho%29%20%2A%20ancho%0A%20%20%20%20clases%5Bini%5D%20%3D%20clases.get%28ini%2C%200%29%20%2B%201%0A%0Afor%20ini%20in%20sorted%28clases%29%3A%0A%20%20%20%20f%20%3D%20clases%5Bini%5D%0A%20%20%20%20print%28f%22%5B%7Bini%7D%2C%20%7Bini%20%2B%20ancho%7D%29%20%7Bf%3A%3E3%7D%20%20%7B%27%2A%27%20%2A%20f%7D%22%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">PythonTutor »</a></li>
+</ul>
+<h3>Reto: tabla de frecuencias de una encuesta<span class="chip">20 min</span></h3><ol class="tareas">
+<li>Con Counter construye la tabla de frecuencias de las horas de sueño de 30 estudiantes: valor, absoluta, relativa (%) y acumulada.</li>
+<li>Agrega una columna con un histograma de texto (un * por persona) e imprime la moda con .most_common(1).</li>
+<li>Imprime qué porcentaje del grupo duerme menos de 7 horas.</li>
+</ol>
+<p class="pista"><b>Pista:</b> Recorre sorted(frec.items()) y ve sumando la acumulada. Para &quot;menos de 7&quot; suma las frecuencias de los valores menores que 7.</p>
+<h3>Código de partida</h3><div class="bloque">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">5</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">from</span><span style="color: #BBB"> </span>collections<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">import</span> Counter
+
+<span style="color: #080; font-style: italic"># Encuesta del grupo (datos de ejemplo)</span>
+horas = [<span style="color: #00F">7</span>, <span style="color: #00F">6</span>, <span style="color: #00F">8</span>, <span style="color: #00F">5</span>, <span style="color: #00F">7</span>, <span style="color: #00F">6</span>, <span style="color: #00F">7</span>, <span style="color: #00F">9</span>, <span style="color: #00F">6</span>, <span style="color: #00F">5</span>, <span style="color: #00F">7</span>, <span style="color: #00F">8</span>, <span style="color: #00F">6</span>, <span style="color: #00F">4</span>, <span style="color: #00F">7</span>,
+         <span style="color: #00F">6</span>, <span style="color: #00F">8</span>, <span style="color: #00F">7</span>, <span style="color: #00F">5</span>, <span style="color: #00F">6</span>, <span style="color: #00F">7</span>, <span style="color: #00F">6</span>, <span style="color: #00F">8</span>, <span style="color: #00F">7</span>, <span style="color: #00F">9</span>, <span style="color: #00F">6</span>, <span style="color: #00F">7</span>, <span style="color: #00F">5</span>, <span style="color: #00F">6</span>, <span style="color: #00F">7</span>]
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="codigo-4">from collections import Counter
+
+# Encuesta del grupo (datos de ejemplo)
+horas = [7, 6, 8, 5, 7, 6, 7, 9, 6, 5, 7, 8, 6, 4, 7,
+         6, 8, 7, 5, 6, 7, 6, 8, 7, 9, 6, 7, 5, 6, 7]</textarea>
+<div class="acciones"><button class="copiar" data-copiar="codigo-4">Copiar código</button><a href="https://pythontutor.com/visualize.html#code=from%20collections%20import%20Counter%0A%0A%23%20Encuesta%20del%20grupo%20%28datos%20de%20ejemplo%29%0Ahoras%20%3D%20%5B7%2C%206%2C%208%2C%205%2C%207%2C%206%2C%207%2C%209%2C%206%2C%205%2C%207%2C%208%2C%206%2C%204%2C%207%2C%0A%20%20%20%20%20%20%20%20%206%2C%208%2C%207%2C%205%2C%206%2C%207%2C%206%2C%208%2C%207%2C%209%2C%206%2C%207%2C%205%2C%206%2C%207%5D%0A&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">Abrir en PythonTutor »</a></div></div>
+<h3>Prompt sugerido para la IA</h3><div class="bloque">
+<p class="prompt">Estoy haciendo una tabla de frecuencias con Counter en Python: absoluta, relativa y acumulada. No me des el código: pregúntame cómo se calcula cada columna a partir de la anterior y cómo imprimiría la tabla alineada.</p><textarea class="crudo" id="prompt-4">Estoy haciendo una tabla de frecuencias con Counter en Python: absoluta, relativa y acumulada. No me des el código: pregúntame cómo se calcula cada columna a partir de la anterior y cómo imprimiría la tabla alineada.</textarea>
+<div class="acciones"><button class="copiar" data-copiar="prompt-4">Copiar prompt</button><span class="sub">Si la IA te da el código completo, pídele que mejor te haga una pregunta.</span></div></div>
+<h3>Checkpoint y entrega</h3><div class="entrega"><ol>
+<li>Escribe la <b>palabra clave</b> que diga el profesor como comentario en la línea 1: <code># clave: ______</code></li>
+<li>Aplica el <b>cambio sorpresa</b> que se proyectará al terminar el ejercicio (sin IA, 5 min).</li>
+<li>Sube <b>S13D4_matricula.py</b> a la tarea de Teams del día antes de salir: la tarea cierra al terminar la clase.</li>
+<li>Prepárate: el profesor puede pedirte que expliques una línea de tu código.</li>
+</ol></div>
+</section>
+<section class="dia" id="dia5"><div class="num">DÍA 5</div>
+<h2>Errores comunes y un análisis completo</h2><p class="sub">Errores comunes al calcular y un análisis completo con estadística, frecuencias y fracciones</p>
+<h3>Ejemplos de la clase</h3><ul class="links">
+<li>¿Llovió 10.9 mm en los primeros 6 días? (así no: comparar floats con ==) — <a href="https://pythontutor.com/visualize.html#code=lluvia%20%3D%20%5B1.7%2C%200.7%2C%200.2%2C%200.7%2C%206.9%2C%200.7%5D%0Atotal%20%3D%20sum%28lluvia%29%0A%0Aprint%28total%29%0Aprint%28total%20%3D%3D%2010.9%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">PythonTutor »</a></li>
+<li>¿Llovió 10.9 mm en los primeros 6 días? (así sí: isclose, o exacto con Fraction) — <a href="https://pythontutor.com/visualize.html#code=import%20math%0Afrom%20fractions%20import%20Fraction%0A%0Alluvia%20%3D%20%5B1.7%2C%200.7%2C%200.2%2C%200.7%2C%206.9%2C%200.7%5D%0Aprint%28math.isclose%28sum%28lluvia%29%2C%2010.9%29%29%0Aexacta%20%3D%20sum%28Fraction%28str%28x%29%29%20for%20x%20in%20lluvia%29%0Aprint%28exacta%2C%20exacta%20%3D%3D%20Fraction%28%2210.9%22%29%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">PythonTutor »</a></li>
+</ul>
+<h3>Ejemplos para correr en tu computadora</h3>
+<p class="sub">PythonTutor no puede correr estos ejemplos: copia cada uno a un archivo .py y ejecútalo con Python.</p>
+<div class="bloque"><b>Reporte del clima de septiembre</b> <span class="sub">(PythonTutor no puede importar statistics.)</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 7</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 8</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 9</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">10</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">11</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">12</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">13</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">14</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">15</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">16</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">17</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">18</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">19</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">20</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>statistics<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">as</span><span style="color: #BBB"> </span>st
+<span style="color: #000080; font-weight: bold">from</span><span style="color: #BBB"> </span>fractions<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">import</span> Fraction
+
+tmax = [<span style="color: #00F">35.0</span>, <span style="color: #00F">36.5</span>, <span style="color: #00F">38.0</span>, <span style="color: #00F">34.1</span>, <span style="color: #00F">32.2</span>, <span style="color: #00F">30.2</span>, <span style="color: #00F">34.0</span>, <span style="color: #00F">33.3</span>, <span style="color: #00F">34.9</span>, <span style="color: #00F">35.1</span>,
+        <span style="color: #00F">37.2</span>, <span style="color: #00F">35.0</span>, <span style="color: #00F">35.2</span>, <span style="color: #00F">35.8</span>, <span style="color: #00F">35.9</span>, <span style="color: #00F">35.0</span>, <span style="color: #00F">34.7</span>, <span style="color: #00F">33.5</span>, <span style="color: #00F">34.5</span>, <span style="color: #00F">35.4</span>,
+        <span style="color: #00F">35.4</span>, <span style="color: #00F">32.8</span>, <span style="color: #00F">31.8</span>, <span style="color: #00F">31.5</span>, <span style="color: #00F">33.3</span>, <span style="color: #00F">33.9</span>, <span style="color: #00F">34.2</span>, <span style="color: #00F">33.7</span>, <span style="color: #00F">33.2</span>, <span style="color: #00F">30.9</span>]
+lluvia = [<span style="color: #00F">1.7</span>, <span style="color: #00F">0.7</span>, <span style="color: #00F">0.2</span>, <span style="color: #00F">0.7</span>, <span style="color: #00F">6.9</span>, <span style="color: #00F">0.7</span>, <span style="color: #00F">0.0</span>, <span style="color: #00F">0.3</span>, <span style="color: #00F">0.6</span>, <span style="color: #00F">0.8</span>,
+          <span style="color: #00F">0.2</span>, <span style="color: #00F">0.8</span>, <span style="color: #00F">0.2</span>, <span style="color: #00F">0.2</span>, <span style="color: #00F">0.0</span>, <span style="color: #00F">0.0</span>, <span style="color: #00F">1.9</span>, <span style="color: #00F">2.7</span>, <span style="color: #00F">0.0</span>, <span style="color: #00F">0.0</span>,
+          <span style="color: #00F">0.0</span>, <span style="color: #00F">2.9</span>, <span style="color: #00F">3.2</span>, <span style="color: #00F">0.5</span>, <span style="color: #00F">0.9</span>, <span style="color: #00F">0.7</span>, <span style="color: #00F">2.7</span>, <span style="color: #00F">2.6</span>, <span style="color: #00F">0.3</span>, <span style="color: #00F">8.8</span>]
+
+<span style="color: #000080; font-weight: bold">def</span><span style="color: #BBB"> </span>resumen(datos):
+    <span style="color: #000080; font-weight: bold">return</span> {<span style="color: #00F">&quot;media&quot;</span>: st.mean(datos), <span style="color: #00F">&quot;mediana&quot;</span>: st.median(datos),
+            <span style="color: #00F">&quot;desv&quot;</span>: st.stdev(datos)}
+
+r = resumen(tmax)
+print(<span style="color: #00F">f&quot;Media {</span>r[<span style="color: #00F">&#39;media&#39;</span>]<span style="color: #00F">:.1f} °C, mediana {</span>r[<span style="color: #00F">&#39;mediana&#39;</span>]<span style="color: #00F">:.2f} °C&quot;</span>)
+print(<span style="color: #00F">f&quot;Desviación estándar: {</span>r[<span style="color: #00F">&#39;desv&#39;</span>]<span style="color: #00F">:.2f} °C&quot;</span>)
+dias = len([x <span style="color: #000080; font-weight: bold">for</span> x <span style="font-weight: bold">in</span> lluvia <span style="color: #000080; font-weight: bold">if</span> x &gt;= <span style="color: #00F">1.0</span>])
+p = Fraction(dias, len(lluvia))
+print(<span style="color: #00F">f&quot;Llovió {</span>dias<span style="color: #00F">} de {</span>len(lluvia)<span style="color: #00F">} días: {</span>p<span style="color: #00F">} = {</span>float(p)<span style="color: #00F">:.0%}&quot;</span>)
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="ejemplo-5-1">import statistics as st
+from fractions import Fraction
+
+tmax = [35.0, 36.5, 38.0, 34.1, 32.2, 30.2, 34.0, 33.3, 34.9, 35.1,
+        37.2, 35.0, 35.2, 35.8, 35.9, 35.0, 34.7, 33.5, 34.5, 35.4,
+        35.4, 32.8, 31.8, 31.5, 33.3, 33.9, 34.2, 33.7, 33.2, 30.9]
+lluvia = [1.7, 0.7, 0.2, 0.7, 6.9, 0.7, 0.0, 0.3, 0.6, 0.8,
+          0.2, 0.8, 0.2, 0.2, 0.0, 0.0, 1.9, 2.7, 0.0, 0.0,
+          0.0, 2.9, 3.2, 0.5, 0.9, 0.7, 2.7, 2.6, 0.3, 8.8]
+
+def resumen(datos):
+    return {&quot;media&quot;: st.mean(datos), &quot;mediana&quot;: st.median(datos),
+            &quot;desv&quot;: st.stdev(datos)}
+
+r = resumen(tmax)
+print(f&quot;Media {r[&#x27;media&#x27;]:.1f} °C, mediana {r[&#x27;mediana&#x27;]:.2f} °C&quot;)
+print(f&quot;Desviación estándar: {r[&#x27;desv&#x27;]:.2f} °C&quot;)
+dias = len([x for x in lluvia if x &gt;= 1.0])
+p = Fraction(dias, len(lluvia))
+print(f&quot;Llovió {dias} de {len(lluvia)} días: {p} = {float(p):.0%}&quot;)</textarea>
+<div class="acciones"><button class="copiar" data-copiar="ejemplo-5-1">Copiar código</button></div></div>
+<h3>Reto integrador: el clima de septiembre<span class="chip">20 min</span></h3><ol class="tareas">
+<li>Escribe resumen(datos) que regrese un dict con n, media, mediana, desviación estándar (stdev), mínimo y máximo, e imprímelo para tmax, tmin y lluvia con 1 decimal.</li>
+<li>Calcula la oscilación de cada día (tmax − tmin) con zip y reporta su media.</li>
+<li>Imprime la tabla de frecuencias de tmax en intervalos de 2 °C y la proporción exacta (Fraction) de días con lluvia de 1 mm o más.</li>
+</ol>
+<p class="pista"><b>Pista:</b> Escribe primero resumen y pruébalo con una lista corta cuyo resultado sepas a mano. Para la oscilación: [a - b for a, b in zip(tmax, tmin)].</p>
+<h3>Código de partida</h3><div class="bloque">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 7</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 8</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 9</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">10</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">11</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">12</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>statistics<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">as</span><span style="color: #BBB"> </span>st
+<span style="color: #000080; font-weight: bold">from</span><span style="color: #BBB"> </span>fractions<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">import</span> Fraction
+
+tmax = [<span style="color: #00F">35.0</span>, <span style="color: #00F">36.5</span>, <span style="color: #00F">38.0</span>, <span style="color: #00F">34.1</span>, <span style="color: #00F">32.2</span>, <span style="color: #00F">30.2</span>, <span style="color: #00F">34.0</span>, <span style="color: #00F">33.3</span>, <span style="color: #00F">34.9</span>, <span style="color: #00F">35.1</span>,
+        <span style="color: #00F">37.2</span>, <span style="color: #00F">35.0</span>, <span style="color: #00F">35.2</span>, <span style="color: #00F">35.8</span>, <span style="color: #00F">35.9</span>, <span style="color: #00F">35.0</span>, <span style="color: #00F">34.7</span>, <span style="color: #00F">33.5</span>, <span style="color: #00F">34.5</span>, <span style="color: #00F">35.4</span>,
+        <span style="color: #00F">35.4</span>, <span style="color: #00F">32.8</span>, <span style="color: #00F">31.8</span>, <span style="color: #00F">31.5</span>, <span style="color: #00F">33.3</span>, <span style="color: #00F">33.9</span>, <span style="color: #00F">34.2</span>, <span style="color: #00F">33.7</span>, <span style="color: #00F">33.2</span>, <span style="color: #00F">30.9</span>]
+tmin = [<span style="color: #00F">23.4</span>, <span style="color: #00F">23.7</span>, <span style="color: #00F">25.0</span>, <span style="color: #00F">25.2</span>, <span style="color: #00F">23.6</span>, <span style="color: #00F">22.3</span>, <span style="color: #00F">22.3</span>, <span style="color: #00F">21.8</span>, <span style="color: #00F">21.9</span>, <span style="color: #00F">22.3</span>,
+        <span style="color: #00F">22.4</span>, <span style="color: #00F">23.6</span>, <span style="color: #00F">23.4</span>, <span style="color: #00F">23.6</span>, <span style="color: #00F">23.0</span>, <span style="color: #00F">22.6</span>, <span style="color: #00F">24.0</span>, <span style="color: #00F">23.0</span>, <span style="color: #00F">22.4</span>, <span style="color: #00F">22.0</span>,
+        <span style="color: #00F">23.1</span>, <span style="color: #00F">22.6</span>, <span style="color: #00F">21.8</span>, <span style="color: #00F">22.0</span>, <span style="color: #00F">22.8</span>, <span style="color: #00F">23.6</span>, <span style="color: #00F">24.1</span>, <span style="color: #00F">23.5</span>, <span style="color: #00F">23.4</span>, <span style="color: #00F">23.9</span>]
+lluvia = [<span style="color: #00F">1.7</span>, <span style="color: #00F">0.7</span>, <span style="color: #00F">0.2</span>, <span style="color: #00F">0.7</span>, <span style="color: #00F">6.9</span>, <span style="color: #00F">0.7</span>, <span style="color: #00F">0.0</span>, <span style="color: #00F">0.3</span>, <span style="color: #00F">0.6</span>, <span style="color: #00F">0.8</span>,
+          <span style="color: #00F">0.2</span>, <span style="color: #00F">0.8</span>, <span style="color: #00F">0.2</span>, <span style="color: #00F">0.2</span>, <span style="color: #00F">0.0</span>, <span style="color: #00F">0.0</span>, <span style="color: #00F">1.9</span>, <span style="color: #00F">2.7</span>, <span style="color: #00F">0.0</span>, <span style="color: #00F">0.0</span>,
+          <span style="color: #00F">0.0</span>, <span style="color: #00F">2.9</span>, <span style="color: #00F">3.2</span>, <span style="color: #00F">0.5</span>, <span style="color: #00F">0.9</span>, <span style="color: #00F">0.7</span>, <span style="color: #00F">2.7</span>, <span style="color: #00F">2.6</span>, <span style="color: #00F">0.3</span>, <span style="color: #00F">8.8</span>]
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="codigo-5">import statistics as st
+from fractions import Fraction
+
+tmax = [35.0, 36.5, 38.0, 34.1, 32.2, 30.2, 34.0, 33.3, 34.9, 35.1,
+        37.2, 35.0, 35.2, 35.8, 35.9, 35.0, 34.7, 33.5, 34.5, 35.4,
+        35.4, 32.8, 31.8, 31.5, 33.3, 33.9, 34.2, 33.7, 33.2, 30.9]
+tmin = [23.4, 23.7, 25.0, 25.2, 23.6, 22.3, 22.3, 21.8, 21.9, 22.3,
+        22.4, 23.6, 23.4, 23.6, 23.0, 22.6, 24.0, 23.0, 22.4, 22.0,
+        23.1, 22.6, 21.8, 22.0, 22.8, 23.6, 24.1, 23.5, 23.4, 23.9]
+lluvia = [1.7, 0.7, 0.2, 0.7, 6.9, 0.7, 0.0, 0.3, 0.6, 0.8,
+          0.2, 0.8, 0.2, 0.2, 0.0, 0.0, 1.9, 2.7, 0.0, 0.0,
+          0.0, 2.9, 3.2, 0.5, 0.9, 0.7, 2.7, 2.6, 0.3, 8.8]</textarea>
+<div class="acciones"><button class="copiar" data-copiar="codigo-5">Copiar código</button><span class="sub">Solo en tu computadora: PythonTutor no puede importar statistics.</span></div></div>
+<h3>Prompt sugerido para la IA</h3><div class="bloque">
+<p class="prompt">Estoy haciendo un análisis estadístico del clima con statistics y Fraction en Python: un resumen por variable, una tabla de frecuencias y una proporción. No me des el código: ayúdame a decidir qué funciones escribir, qué recibe y qué regresa cada una.</p><textarea class="crudo" id="prompt-5">Estoy haciendo un análisis estadístico del clima con statistics y Fraction en Python: un resumen por variable, una tabla de frecuencias y una proporción. No me des el código: ayúdame a decidir qué funciones escribir, qué recibe y qué regresa cada una.</textarea>
+<div class="acciones"><button class="copiar" data-copiar="prompt-5">Copiar prompt</button><span class="sub">Si la IA te da el código completo, pídele que mejor te haga una pregunta.</span></div></div>
+<h3>Checkpoint y entrega</h3><div class="entrega"><ol>
+<li>Escribe la <b>palabra clave</b> que diga el profesor como comentario en la línea 1: <code># clave: ______</code></li>
+<li>Aplica el <b>cambio sorpresa</b> que se proyectará al terminar el ejercicio (sin IA, 5 min).</li>
+<li>Sube <b>S13D5_matricula.py</b> a la tarea de Teams del día antes de salir: la tarea cierra al terminar la clase.</li>
+<li>Prepárate: el profesor puede pedirte que expliques una línea de tu código.</li>
+</ol></div>
+</section>
+<section class="dia" id="chuleta"><h2>Chuleta: fracciones, complejos y estadística</h2>
+<p class="sub">fractions, cmath, statistics y collections ya vienen con Python (statistics no funciona en PythonTutor).</p>
+<table class="chuleta"><tr><th>Instrucción</th><th>Qué hace</th><th>Ejemplo</th><th>Resultado</th></tr>
+<tr><td class="mono">Fraction(a, b)</td><td>Fracción exacta a/b</td><td class="mono">Fraction(6, 8)</td><td class="mono">3/4</td></tr>
+<tr><td class="mono">Fraction(&quot;0.1&quot;)</td><td>Desde texto: exacta</td><td class="mono">Fraction(&quot;0.1&quot;) * 3</td><td class="mono">3/10</td></tr>
+<tr><td class="mono">f.limit_denominator()</td><td>Fracción simple más cercana</td><td class="mono">Fraction(0.1).limit_denominator()</td><td class="mono">1/10</td></tr>
+<tr><td class="mono">math.isclose(a, b)</td><td>¿Casi iguales?</td><td class="mono">math.isclose(0.1 + 0.2, 0.3)</td><td class="mono">True</td></tr>
+<tr><td class="mono">3 + 4j</td><td>Número complejo</td><td class="mono">(3 + 4j) * 1j</td><td class="mono">(-4+3j)</td></tr>
+<tr><td class="mono">z.real  z.imag  abs(z)</td><td>Partes y módulo</td><td class="mono">abs(3 + 4j)</td><td class="mono">5.0</td></tr>
+<tr><td class="mono">cmath.sqrt(x)</td><td>Raíz que acepta negativos</td><td class="mono">cmath.sqrt(-16)</td><td class="mono">4j</td></tr>
+<tr><td class="mono">st.mean  st.median</td><td>Media y mediana</td><td class="mono">st.median([1, 5, 9, 2])</td><td class="mono">3.5</td></tr>
+<tr><td class="mono">st.multimode(d)</td><td>Todas las modas</td><td class="mono">st.multimode([1, 1, 2, 2])</td><td class="mono">[1, 2]</td></tr>
+<tr><td class="mono">st.stdev  st.pstdev</td><td>Desviación: muestra / población</td><td class="mono">st.pstdev([5, 11, 6, 10])</td><td class="mono">2.549...</td></tr>
+<tr><td class="mono">Counter(datos)</td><td>Tabla de frecuencias</td><td class="mono">Counter(&quot;aab&quot;)[&quot;a&quot;]</td><td class="mono">2</td></tr>
+<tr><td class="mono">c.most_common(n)</td><td>Los n más frecuentes</td><td class="mono">Counter(&quot;aab&quot;).most_common(1)</td><td class="mono">[(&#x27;a&#x27;, 2)]</td></tr>
+</table></section>
+<section class="dia" id="interactivos"><h2>Simuladores y ejercicios de la semana</h2>
+<p class="sub">Funcionan en el navegador del celular o de la computadora, sin instalar nada. Los de todas las semanas están en <a href="https://memosanchezg.github.io/programacion-basica-interactivos/" target="_blank" rel="noopener">memosanchezg.github.io/programacion-basica-interactivos/</a>.</p>
+<ul class="links">
+<li><a href="https://memosanchezg.github.io/programacion-basica-interactivos/semana-13-float-vs-fraction.html" target="_blank" rel="noopener">Float contra Fraction</a> <span class="sub">· Simulador</span><br><span class="sub">Suma un decimal muchas veces, mira cómo guarda la computadora un float y calcula con fracciones exactas.</span></li>
+<li><a href="https://memosanchezg.github.io/programacion-basica-interactivos/semana-13-plano-complejo.html" target="_blank" rel="noopener">El plano complejo</a> <span class="sub">· Simulador</span><br><span class="sub">Arrastra z1 y z2 para ver la suma, el producto, el conjugado y la forma polar, y resuelve cuadráticas con raíces complejas.</span></li>
+<li><a href="https://memosanchezg.github.io/programacion-basica-interactivos/semana-13-estadistica-en-vivo.html" target="_blank" rel="noopener">Estadística en vivo</a> <span class="sub">· Simulador</span><br><span class="sub">Arrastra, agrega o quita datos y mira cómo cambian la media, la mediana, la desviación estándar y la tabla de frecuencias.</span></li>
+</ul></section>
+<section class="dia" id="recursos"><h2>Recursos</h2><ul class="links">
+<li><a href="https://docs.python.org/es/3/tutorial/floatingpoint.html" target="_blank" rel="noopener">Aritmética de punto flotante: problemas y limitaciones</a><br><span class="sub">Tutorial oficial de Python: por qué 0.1 + 0.2 no es 0.3 y cómo trabajar con ello.</span></li>
+<li><a href="https://docs.python.org/es/3/library/fractions.html" target="_blank" rel="noopener">Documentación del módulo fractions</a><br><span class="sub">Fraction, limit_denominator y cómo se combinan con int y float.</span></li>
+<li><a href="https://docs.python.org/es/3/library/cmath.html" target="_blank" rel="noopener">Documentación del módulo cmath</a><br><span class="sub">Raíces, fase, forma polar y funciones matemáticas para números complejos.</span></li>
+<li><a href="https://docs.python.org/es/3/library/statistics.html" target="_blank" rel="noopener">Documentación del módulo statistics</a><br><span class="sub">mean, median, mode, multimode, stdev, pstdev, variance y quantiles, con ejemplos.</span></li>
+<li><a href="https://docs.python.org/es/3/library/collections.html" target="_blank" rel="noopener">Counter en el módulo collections</a><br><span class="sub">Contar elementos, most_common y operaciones entre contadores.</span></li>
+<li><a href="https://pythontutor.com/python-compiler.html" target="_blank" rel="noopener">PythonTutor: visualiza tu propio código</a><br><span class="sub">Fracciones, complejos y Counter sí funcionan ahí; statistics no.</span></li>
+</ul></section>
+<footer>Hoja del estudiante del Tema 13 · Programación Básica · FCFM-UANL. <a href="index.html">Índice de simuladores</a> · <a href="#qr-sitio" class="qr-abrir">Abrir en el celular (QR)</a></footer>
+</main><script>
+document.querySelectorAll('button.copiar').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var el = document.getElementById(btn.getAttribute('data-copiar'));
+    var texto = el.value !== undefined ? el.value : el.textContent;
+    var listo = function () {
+      var antes = btn.textContent;
+      btn.textContent = 'Copiado \u2713';
+      setTimeout(function () { btn.textContent = antes; }, 1500);
+    };
+    var respaldo = function () {
+      var t = document.createElement('textarea');
+      t.value = texto; document.body.appendChild(t); t.select();
+      try { document.execCommand('copy'); listo(); } catch (e) {}
+      document.body.removeChild(t);
+    };
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(texto).then(listo, respaldo);
+    } else { respaldo(); }
+  });
+});
+</script><div id="qr-sitio" class="qr-capa" hidden>
+  <div class="qr-caja" role="dialog" aria-modal="true" aria-label="Código QR de esta página">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 41 41" role="img" aria-label="Código QR de https://memosanchezg.github.io/programacion-basica-interactivos/hoja-tema-13.html" shape-rendering="crispEdges"><rect width="41" height="41" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM10 2h1v1h-1zM12 2h3v1h-3zM16 2h2v1h-2zM19 2h2v1h-2zM22 2h2v1h-2zM25 2h1v1h-1zM27 2h1v1h-1zM29 2h2v1h-2zM32 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM12 3h2v1h-2zM15 3h1v1h-1zM17 3h1v1h-1zM19 3h1v1h-1zM21 3h1v1h-1zM26 3h1v1h-1zM28 3h1v1h-1zM30 3h1v1h-1zM32 3h1v1h-1zM38 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM12 4h3v1h-3zM16 4h6v1h-6zM23 4h2v1h-2zM28 4h1v1h-1zM30 4h1v1h-1zM32 4h1v1h-1zM34 4h3v1h-3zM38 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h4v1h-4zM16 5h1v1h-1zM18 5h1v1h-1zM20 5h1v1h-1zM27 5h4v1h-4zM32 5h1v1h-1zM34 5h3v1h-3zM38 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h2v1h-2zM17 6h1v1h-1zM19 6h2v1h-2zM24 6h2v1h-2zM27 6h4v1h-4zM32 6h1v1h-1zM34 6h3v1h-3zM38 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h1v1h-1zM12 7h3v1h-3zM18 7h2v1h-2zM21 7h2v1h-2zM26 7h2v1h-2zM32 7h1v1h-1zM38 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM30 8h1v1h-1zM32 8h7v1h-7zM10 9h5v1h-5zM17 9h1v1h-1zM19 9h1v1h-1zM21 9h1v1h-1zM23 9h1v1h-1zM25 9h2v1h-2zM2 10h1v1h-1zM6 10h1v1h-1zM8 10h4v1h-4zM13 10h2v1h-2zM16 10h1v1h-1zM19 10h1v1h-1zM21 10h1v1h-1zM23 10h1v1h-1zM26 10h1v1h-1zM29 10h1v1h-1zM31 10h5v1h-5zM38 10h1v1h-1zM2 11h4v1h-4zM9 11h4v1h-4zM14 11h3v1h-3zM18 11h1v1h-1zM20 11h1v1h-1zM22 11h1v1h-1zM25 11h1v1h-1zM28 11h3v1h-3zM34 11h1v1h-1zM37 11h1v1h-1zM2 12h1v1h-1zM4 12h3v1h-3zM8 12h4v1h-4zM13 12h1v1h-1zM15 12h2v1h-2zM18 12h1v1h-1zM20 12h1v1h-1zM22 12h2v1h-2zM25 12h2v1h-2zM29 12h1v1h-1zM32 12h2v1h-2zM35 12h1v1h-1zM2 13h2v1h-2zM9 13h2v1h-2zM12 13h3v1h-3zM19 13h2v1h-2zM23 13h1v1h-1zM26 13h1v1h-1zM29 13h2v1h-2zM33 13h2v1h-2zM36 13h2v1h-2zM3 14h1v1h-1zM5 14h4v1h-4zM10 14h1v1h-1zM12 14h2v1h-2zM15 14h3v1h-3zM19 14h1v1h-1zM21 14h1v1h-1zM23 14h3v1h-3zM31 14h3v1h-3zM36 14h3v1h-3zM2 15h2v1h-2zM9 15h7v1h-7zM17 15h3v1h-3zM23 15h1v1h-1zM25 15h1v1h-1zM28 15h3v1h-3zM34 15h2v1h-2zM5 16h2v1h-2zM8 16h2v1h-2zM13 16h1v1h-1zM15 16h1v1h-1zM17 16h1v1h-1zM19 16h1v1h-1zM23 16h1v1h-1zM25 16h2v1h-2zM29 16h1v1h-1zM31 16h6v1h-6zM2 17h3v1h-3zM7 17h1v1h-1zM11 17h2v1h-2zM17 17h3v1h-3zM23 17h1v1h-1zM25 17h1v1h-1zM28 17h3v1h-3zM33 17h2v1h-2zM36 17h1v1h-1zM3 18h2v1h-2zM6 18h8v1h-8zM15 18h5v1h-5zM21 18h1v1h-1zM23 18h4v1h-4zM31 18h3v1h-3zM35 18h3v1h-3zM3 19h2v1h-2zM11 19h1v1h-1zM14 19h1v1h-1zM22 19h1v1h-1zM24 19h2v1h-2zM27 19h1v1h-1zM29 19h2v1h-2zM33 19h2v1h-2zM37 19h1v1h-1zM2 20h2v1h-2zM6 20h1v1h-1zM8 20h4v1h-4zM16 20h2v1h-2zM22 20h1v1h-1zM24 20h2v1h-2zM28 20h3v1h-3zM33 20h1v1h-1zM36 20h1v1h-1zM3 21h5v1h-5zM9 21h2v1h-2zM12 21h2v1h-2zM17 21h3v1h-3zM22 21h4v1h-4zM28 21h1v1h-1zM30 21h1v1h-1zM36 21h2v1h-2zM6 22h4v1h-4zM12 22h2v1h-2zM16 22h1v1h-1zM19 22h1v1h-1zM23 22h1v1h-1zM25 22h2v1h-2zM31 22h3v1h-3zM35 22h2v1h-2zM5 23h3v1h-3zM13 23h2v1h-2zM16 23h3v1h-3zM20 23h1v1h-1zM25 23h1v1h-1zM27 23h1v1h-1zM29 23h2v1h-2zM33 23h2v1h-2zM3 24h2v1h-2zM7 24h2v1h-2zM11 24h1v1h-1zM14 24h1v1h-1zM17 24h1v1h-1zM19 24h2v1h-2zM22 24h2v1h-2zM25 24h5v1h-5zM32 24h6v1h-6zM2 25h2v1h-2zM6 25h2v1h-2zM10 25h1v1h-1zM12 25h4v1h-4zM18 25h2v1h-2zM21 25h4v1h-4zM26 25h1v1h-1zM30 25h5v1h-5zM36 25h3v1h-3zM2 26h1v1h-1zM5 26h1v1h-1zM8 26h4v1h-4zM15 26h1v1h-1zM19 26h1v1h-1zM22 26h3v1h-3zM26 26h1v1h-1zM30 26h4v1h-4zM35 26h3v1h-3zM2 27h1v1h-1zM4 27h2v1h-2zM7 27h1v1h-1zM13 27h2v1h-2zM18 27h1v1h-1zM20 27h1v1h-1zM22 27h2v1h-2zM25 27h1v1h-1zM28 27h4v1h-4zM34 27h1v1h-1zM8 28h4v1h-4zM14 28h1v1h-1zM18 28h2v1h-2zM22 28h1v1h-1zM25 28h3v1h-3zM29 28h1v1h-1zM32 28h3v1h-3zM5 29h3v1h-3zM10 29h3v1h-3zM19 29h2v1h-2zM23 29h2v1h-2zM26 29h1v1h-1zM29 29h1v1h-1zM36 29h1v1h-1zM2 30h4v1h-4zM7 30h2v1h-2zM10 30h1v1h-1zM13 30h1v1h-1zM15 30h1v1h-1zM17 30h1v1h-1zM19 30h1v1h-1zM21 30h6v1h-6zM30 30h5v1h-5zM36 30h1v1h-1zM38 30h1v1h-1zM10 31h3v1h-3zM15 31h6v1h-6zM22 31h1v1h-1zM25 31h1v1h-1zM28 31h3v1h-3zM34 31h1v1h-1zM2 32h7v1h-7zM10 32h1v1h-1zM13 32h3v1h-3zM17 32h1v1h-1zM19 32h2v1h-2zM22 32h2v1h-2zM25 32h1v1h-1zM27 32h2v1h-2zM30 32h1v1h-1zM32 32h1v1h-1zM34 32h1v1h-1zM2 33h1v1h-1zM8 33h1v1h-1zM11 33h3v1h-3zM16 33h8v1h-8zM26 33h1v1h-1zM28 33h1v1h-1zM30 33h1v1h-1zM34 33h3v1h-3zM38 33h1v1h-1zM2 34h1v1h-1zM4 34h3v1h-3zM8 34h1v1h-1zM10 34h1v1h-1zM13 34h1v1h-1zM15 34h1v1h-1zM19 34h1v1h-1zM22 34h5v1h-5zM30 34h8v1h-8zM2 35h1v1h-1zM4 35h3v1h-3zM8 35h1v1h-1zM11 35h1v1h-1zM14 35h1v1h-1zM19 35h2v1h-2zM23 35h1v1h-1zM25 35h3v1h-3zM29 35h5v1h-5zM36 35h3v1h-3zM2 36h1v1h-1zM4 36h3v1h-3zM8 36h1v1h-1zM12 36h1v1h-1zM14 36h1v1h-1zM16 36h5v1h-5zM22 36h7v1h-7zM31 36h2v1h-2zM36 36h1v1h-1zM2 37h1v1h-1zM8 37h1v1h-1zM13 37h1v1h-1zM16 37h2v1h-2zM19 37h2v1h-2zM22 37h2v1h-2zM28 37h2v1h-2zM34 37h1v1h-1zM36 37h2v1h-2zM2 38h7v1h-7zM10 38h4v1h-4zM15 38h3v1h-3zM19 38h1v1h-1zM22 38h3v1h-3zM26 38h1v1h-1zM28 38h2v1h-2zM32 38h2v1h-2zM36 38h3v1h-3z"/></svg>
+    <p class="qr-texto">Escanea con la cámara del celular para abrir esta página</p>
+    <p class="qr-url">https://memosanchezg.github.io/programacion-basica-interactivos/hoja-tema-13.html</p>
+    <button type="button" class="qr-cerrar">Cerrar</button>
+  </div>
+</div>
+<style>
+  .qr-capa { position:fixed; top:0; right:0; bottom:0; left:0; z-index:10000; display:flex; align-items:center;
+             justify-content:center; padding:16px; background:#fff; }
+  .qr-capa[hidden] { display:none; }
+  .qr-caja { max-width:100%; text-align:center; color:#0A2A57; font:16px/1.4 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .qr-caja svg { display:block; width:min(62vh, 84vw); height:auto; margin:0 auto; }
+  .qr-texto { margin:12px 0 2px; font-size:1.15rem; font-weight:bold; }
+  .qr-url { margin:0 0 12px; color:#5B6472; word-break:break-all; }
+  .qr-cerrar { font:inherit; padding:6px 20px; border:2px solid #00408F; border-radius:4px; background:#fff;
+               color:#00408F; cursor:pointer; }
+</style>
+<script>
+  (function () {
+    var capa = document.getElementById("qr-sitio");
+    document.querySelectorAll("a.qr-abrir").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        capa.hidden = false;
+        capa.querySelector(".qr-cerrar").focus();
+      });
+    });
+    capa.addEventListener("click", function (e) {
+      if (e.target === capa || e.target.classList.contains("qr-cerrar")) capa.hidden = true;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !capa.hidden) capa.hidden = true;
+    });
+  })();
+</script>
+</body></html>

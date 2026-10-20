@@ -1,0 +1,1416 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="tipo" content="simulador">
+<title>¿Qué celdas toca?</title>
+
+<style>
+  :root {
+    --azul:#00408F; --azul-oscuro:#0A2A57; --guinda:#8C1D35; --oro:#B8975A; --oro-texto:#8A6A2E;
+    --azul-claro:#E8EEF7; --oro-claro:#F7F1E6; --guinda-claro:#F5E6EA; --verde:#2F7D5B;
+    --tinta:#1B1F2A; --gris:#5B6472; --gris-claro:#E9ECF1; --borde:#D9DEE6; --fondo:#FFFFFF;
+    --cmd-fondo:#0C0C0C; --cmd-texto:#E6E6E6;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--fondo); color:var(--tinta);
+         font:16px/1.45 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .franja { height:8px; background:var(--azul); border-bottom:3px solid var(--oro); }
+  header { max-width:1280px; margin:0 auto; padding:12px 18px 4px; }
+  .semana { color:var(--guinda); font-weight:bold; letter-spacing:.04em; font-size:.85rem; text-transform:uppercase; }
+  h1 { font-family:Cambria,Georgia,serif; color:var(--azul-oscuro); font-size:1.7rem; margin:2px 0 2px; }
+  .sub { color:var(--gris); margin:0; }
+  main { max-width:1280px; margin:0 auto; padding:8px 18px 24px; }
+  nav.pestanas { display:flex; gap:4px; flex-wrap:wrap; border-bottom:2px solid var(--gris-claro); margin:6px 0 12px; }
+  nav.pestanas button { font:inherit; font-weight:bold; border:none; background:none; color:var(--gris);
+                        padding:8px 14px; cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; }
+  nav.pestanas button.activo { color:var(--azul-oscuro); border-bottom-color:var(--azul); }
+  nav.pestanas button:focus-visible { outline:2px solid var(--azul); }
+  section.vista { display:none; }
+  section.vista.activo { display:block; }
+  .panel { background:#fff; border:1px solid var(--borde); border-radius:10px; padding:12px 14px; }
+  .panel h2 { font-size:1.02rem; color:var(--azul-oscuro); margin:0 0 8px; }
+  label { display:block; font-weight:bold; color:var(--azul-oscuro); margin-top:10px; }
+  label small { font-weight:normal; color:var(--gris); }
+  input[type=number], input[type=text], select, textarea { font:inherit; padding:4px 6px; border:1px solid var(--borde);
+                        border-radius:6px; }
+  input.mono, textarea.mono { font-family:Consolas,"Courier New",monospace; }
+  button.accion { font:inherit; font-weight:bold; border-radius:8px; padding:7px 12px; margin:8px 6px 0 0;
+                  border:1px solid var(--azul); background:#fff; color:var(--azul); cursor:pointer; }
+  button.accion:hover, button.accion:focus-visible { background:var(--azul); color:#fff; outline:none; }
+  .lectura { background:var(--oro-claro); border-left:4px solid var(--oro); border-radius:8px; padding:10px 12px;
+             margin-top:12px; line-height:1.55; }
+  .lectura b { color:var(--azul-oscuro); }
+  .ok { color:var(--verde); font-weight:bold; }
+  .mal { color:var(--guinda); font-weight:bold; }
+  .preguntas { background:var(--azul-claro); border-radius:8px; padding:10px 14px; margin-top:12px; }
+  .preguntas h3 { margin:0 0 4px; font-size:.95rem; color:var(--azul-oscuro); }
+  .preguntas ol { margin:0; padding-left:20px; }
+  /* Código Python con los colores del curso (minted, estilo borland) y salida de consola (cmd). */
+  .codigo { border:1px solid var(--tinta); background:#fff; font:15px/1.5 Consolas,"Courier New",monospace;
+            overflow-x:auto; margin:8px 0; }
+  .codigo ol { margin:0; padding:8px 12px 8px 3.4em; }
+  .codigo li { white-space:pre; }
+  .codigo li::marker { color:var(--gris); font:11px Cambria,Georgia,serif; }
+  .codigo .kw { color:#000080; font-weight:bold; }
+  .codigo .str, .codigo .num { color:#0000FF; }
+  .codigo .com { color:#008800; font-style:italic; }
+  footer { max-width:1280px; margin:0 auto; padding:6px 18px 18px; color:var(--gris); font-size:.85rem; }
+  footer a { color:var(--azul); }
+
+  /* Propios de este juego */
+  [hidden] { display:none !important; }
+  /* Hoja de cálculo como en Excel: encabezados grises, rejilla, pestañas, filtros y paneles. */
+  .xl { border:1px solid #C6C6C6; background:#fff; max-width:100%; }
+  .xl-rejilla { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  table.xl-t { border-collapse:collapse; table-layout:fixed; font:14.667px/1.2 Calibri,Carlito,"Segoe UI",Arial,sans-serif;
+               color:#000; background:#fff; }
+  table.xl-t th { background:#F3F3F3; color:#5B6472; font:12px/1 Calibri,Carlito,"Segoe UI",Arial,sans-serif;
+                  border:1px solid #D4D4D4; height:20px; padding:0; text-align:center; }
+  table.xl-t th.xl-enc-sel { background:#E1E1E1; color:#217346; font-weight:bold; box-shadow:inset 0 -2px 0 #217346; }
+  table.xl-t tbody th.xl-enc-sel { box-shadow:inset -2px 0 0 #217346; }
+  table.xl-t td { border:1px solid #D4D4D4; height:20px; padding:0 3px; white-space:nowrap; overflow:hidden;
+                  vertical-align:bottom; position:static; }
+  table.xl-t td .xl-c { display:flex; align-items:flex-end; height:19px; overflow:hidden; pointer-events:none;
+                        white-space:pre; }
+  table.xl-t td.xl-left .xl-c { justify-content:flex-start; }
+  table.xl-t td.xl-right .xl-c { justify-content:flex-end; }
+  table.xl-t td.xl-center .xl-c { justify-content:center; }
+  table.xl-t td.xl-desborda { overflow:visible; }
+  table.xl-t td.xl-desborda .xl-c { width:var(--ancho); }
+  table.xl-t td.xl-b { font-weight:bold; }
+  table.xl-t td.xl-i { font-style:italic; }
+  table.xl-t td.xl-congela-f { border-bottom:2px solid #9A9A9A; }
+  table.xl-t td.xl-congela-c { border-right:2px solid #9A9A9A; }
+  table.xl-t td.xl-sel { outline:2px solid #217346; outline-offset:-2px; }
+  table.xl-t td:focus { outline:2px solid #217346; outline-offset:-2px; }
+  table.xl-t td:focus-visible { outline:3px solid var(--guinda); outline-offset:-3px; }
+  table.xl-t .xl-formula { color:#5B6472; font-style:italic; }
+  table.xl-t .xl-filtro { float:right; width:15px; height:15px; margin:2px -1px 0 2px; border:1px solid #A6A6A6;
+                          background:#fff; color:#5B6472; font-size:10px; line-height:13px; text-align:center;
+                          pointer-events:none; }
+  table.xl-t td.xl-triangulo { background-image:linear-gradient(135deg, #1E8E3E 0, #1E8E3E 5px, transparent 5px); }
+  table.xl-t .xl-orden { float:left; font:bold 11px/1 Calibri,"Segoe UI",sans-serif; color:var(--guinda);
+                         background:rgba(255,255,255,.85); border-radius:3px; padding:0 2px; margin:1px 2px 0 -2px;
+                         pointer-events:none; }
+  .xl-pestanas { display:flex; gap:2px; background:#F3F3F3; border-top:1px solid #D4D4D4; padding:0 8px; overflow-x:auto; }
+  .xl-pestanas button { font:13px Calibri,Carlito,"Segoe UI",Arial,sans-serif; border:none; background:none; color:#5B6472;
+                        padding:4px 14px 3px; cursor:pointer; border-bottom:3px solid transparent; white-space:nowrap; }
+  .xl-pestanas button.activa { background:#fff; color:#217346; font-weight:bold; border-bottom-color:#217346; }
+  .xl-pestanas button:focus-visible { outline:2px solid var(--guinda); outline-offset:-2px; }
+  .oculto { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+  code { font-family:Consolas,"Courier New",monospace; color:var(--azul-oscuro); }
+  .juego { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.1fr); gap:16px; align-items:start; }
+  .juego > * { min-width:0; }
+  .marcador { display:flex; flex-wrap:wrap; justify-content:space-between; gap:4px 12px; color:var(--gris); font-weight:bold; }
+  .marcador .puntos { color:var(--guinda); }
+  .progreso { height:6px; background:var(--gris-claro); border-radius:3px; margin:6px 0 10px; overflow:hidden; }
+  .progreso div { height:100%; background:var(--oro); width:0; transition:width .3s; }
+  .pide { margin:4px 0 0; font-weight:bold; color:var(--azul-oscuro); }
+  .instruccion { font:bold 1.15rem/1.4 Consolas,"Courier New",monospace; background:#fff; border:1px solid var(--tinta);
+                 padding:8px 12px; margin:8px 0; overflow-x:auto; white-space:pre; }
+  .instruccion .str, .instruccion .num { color:#0000FF; }
+  .instruccion .kw { color:#000080; }
+  .botones { display:flex; flex-wrap:wrap; align-items:center; gap:6px 6px; }
+  .botones button.accion { margin:0; }
+  button.accion.primaria { background:var(--azul); color:#fff; }
+  button.accion.primaria:hover, button.accion.primaria:focus-visible { background:var(--azul-oscuro); }
+  button.accion:disabled { opacity:.45; cursor:default; }
+  .casilla { display:flex; gap:8px; align-items:center; font-weight:normal; color:var(--tinta); margin:4px 0 0; cursor:pointer; }
+  .casilla input { width:18px; height:18px; margin:0; flex:none; }
+  .escrita { margin:6px 0 10px; }
+  .escrita label { margin:0 0 4px; }
+  .escrita input { width:12em; max-width:100%; font-size:1.1rem; }
+  .nota { color:var(--gris); font-size:.92rem; margin:6px 0 0; }
+  .leyenda { display:flex; flex-wrap:wrap; gap:4px 14px; color:var(--gris); font-size:.9rem; margin:8px 0 0; }
+  .leyenda span.sin::before { display:none; }
+  .leyenda span::before { content:""; display:inline-block; width:16px; height:12px; vertical-align:middle; margin-right:5px;
+                          background:var(--c); border:2px var(--e, solid) var(--b, var(--c)); }
+  .opciones { display:grid; gap:8px; margin:10px 0 0; }
+  .opciones button { font:15px/1.4 Consolas,"Courier New",monospace; text-align:left; border:1px solid var(--borde);
+                     border-left:4px solid var(--azul); border-radius:8px; background:#fff; color:var(--tinta);
+                     padding:8px 10px; cursor:pointer; overflow-wrap:anywhere; }
+  .opciones button:hover:not(:disabled), .opciones button:focus-visible { border-color:var(--azul); background:var(--gris-claro); outline:none; }
+  .opciones button.correcta { border-color:var(--verde); border-left-color:var(--verde); background:#E2F0E8; }
+  .opciones button.incorrecta { border-color:var(--guinda); border-left-color:var(--guinda); background:var(--guinda-claro); }
+  .opciones button:disabled { cursor:default; color:var(--tinta); }
+  .opciones button .por { display:block; font:13px Calibri,"Segoe UI",sans-serif; color:var(--gris); margin-top:2px; }
+  .resumen table { width:100%; border-collapse:collapse; margin-top:8px; font-size:.95rem; }
+  .resumen th, .resumen td { border:1px solid var(--borde); padding:4px 8px; text-align:left; vertical-align:top; }
+  .resumen th { background:var(--gris-claro); color:var(--azul-oscuro); }
+  .resumen td:first-child { font-family:Consolas,"Courier New",monospace; overflow-wrap:anywhere; }
+  .resumen .gran { font-size:1.3rem; font-weight:bold; color:var(--azul-oscuro); margin:4px 0; }
+  .hoja-juego { user-select:none; -webkit-user-select:none; }
+  table.xl-t td.xl-elegida { background:#FBEFD5; box-shadow:inset 0 0 0 2px var(--oro); }
+  table.xl-t td.xl-ancla { box-shadow:inset 0 0 0 3px var(--guinda); }
+  table.xl-t td.xl-bien { background:#E2F0E8; box-shadow:inset 0 0 0 2px var(--verde); }
+  table.xl-t td.xl-falta { background:repeating-linear-gradient(45deg, var(--guinda-claro) 0 4px, #fff 4px 8px);
+                           box-shadow:inset 0 0 0 2px var(--guinda); }
+  table.xl-t td.xl-sobra { background:var(--guinda-claro); box-shadow:inset 0 0 0 2px var(--guinda); }
+  table.xl-t td.xl-meta { background:#FBEFD5; box-shadow:inset 0 0 0 2px var(--oro); }
+  details.panel { margin-top:14px; }
+  details.panel summary { cursor:pointer; font-weight:bold; color:var(--azul-oscuro); }
+  @media (max-width: 860px) { .juego { grid-template-columns:1fr; } }
+  @media (max-width: 480px) {
+    header { padding:10px 12px 4px; }
+    main { padding:8px 10px 20px; }
+    footer { padding:6px 12px 16px; }
+    .panel { padding:10px; }
+    h1 { font-size:1.45rem; }
+    nav.pestanas button { padding:8px 10px; }
+    .instruccion { font-size:1rem; }
+    .codigo { font-size:13px; }
+    .codigo ol { padding-left:2.9em; }
+  }
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header>
+  <div class="semana">Semana 14 · Días 1 y 2 · Excel y reportes</div>
+  <h1>¿Qué celdas toca?</h1>
+  <p class="sub">Un juego de coordenadas con openpyxl: marca las celdas que toca cada instrucción, o elige la instrucción que recorre las celdas marcadas.</p>
+</header>
+<main>
+  <nav class="pestanas" role="tablist">
+    <button type="button" class="activo" data-vista="v1" role="tab" aria-selected="true">1 · Marca las celdas</button>
+    <button type="button" data-vista="v2" role="tab" aria-selected="false">2 · Elige la instrucción</button>
+  </nav>
+
+  
+  <section class="vista activo" id="v1" role="tabpanel">
+    <div class="juego">
+      <div class="panel">
+        <div class="marcador"><span id="ronda1"></span><span class="puntos" id="puntos1"></span></div>
+        <div class="progreso" aria-hidden="true"><div id="barra1"></div></div>
+        <div id="jugando1">
+          <p class="pide" id="pide1"></p>
+          <div class="instruccion" id="ins1"></div>
+          <div class="escrita" id="escrita1" hidden>
+            <label for="resp1">Tu respuesta <small>(lo que regresa Python)</small></label>
+            <input type="text" id="resp1" class="mono" autocomplete="off" spellcheck="false">
+          </div>
+          <div class="botones">
+            <button type="button" class="accion primaria" id="comprobar1">Comprobar</button>
+            <button type="button" class="accion" id="borrar1">Borrar marcas</button>
+            <button type="button" class="accion" id="siguiente1" hidden>Siguiente ▶</button>
+          </div>
+          <label class="casilla" id="rangoCaja1"><input type="checkbox" id="rango1"> Marcar un rango: toca la primera y la última celda</label>
+          <div class="lectura" id="resultado1" hidden></div>
+        </div>
+        <div class="resumen" id="resumen1" hidden aria-live="polite"></div>
+      </div>
+      <div class="panel">
+        <h2>Hoja "Clima" (1 al 7 de septiembre de 2026)</h2>
+        <div class="hoja-juego" id="hoja1"></div>
+        <p class="nota" id="ayuda1">Haz clic en una celda para marcarla o desmarcarla; arrastra para marcar varias (en el celular, usa "Marcar un rango"). Con el teclado: flechas para moverte, barra espaciadora para marcar, Mayús + flecha para extender.</p>
+        <div class="leyenda" aria-hidden="true">
+          <span style="--c:#FBEFD5;--b:#B8975A">tu marca</span>
+          <span style="--c:#E2F0E8;--b:#2F7D5B">bien</span>
+          <span style="--c:#fff;--b:#8C1D35;--e:dashed">te faltó</span>
+          <span style="--c:var(--guinda-claro);--b:var(--guinda)">sobró</span>
+          <span class="sin">1, 2, 3... orden del recorrido</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  
+  <section class="vista" id="v2" role="tabpanel">
+    <div class="juego">
+      <div class="panel">
+        <div class="marcador"><span id="ronda2"></span><span class="puntos" id="puntos2"></span></div>
+        <div class="progreso" aria-hidden="true"><div id="barra2"></div></div>
+        <div id="jugando2">
+          <p class="pide">¿Qué instrucción regresa las celdas marcadas, en ese orden?</p>
+          <p class="nota" id="describe2" aria-live="polite"></p>
+          <div class="opciones" id="opciones2" role="group" aria-label="Opciones"></div>
+          <div class="botones"><button type="button" class="accion" id="siguiente2" hidden>Siguiente ▶</button></div>
+          <div class="lectura" id="resultado2" hidden aria-live="polite"></div>
+        </div>
+        <div class="resumen" id="resumen2" hidden aria-live="polite"></div>
+      </div>
+      <div class="panel">
+        <h2>Hoja "Clima" (1 al 7 de septiembre de 2026)</h2>
+        <div class="hoja-juego" id="hoja2"></div>
+        <p class="nota">Los números indican el orden en que Python recorre las celdas.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="preguntas">
+    <h3>Para explorar</h3>
+    <ol>
+      <li>¿Por qué <code>hoja["B"]</code> incluye B9 si esa celda está vacía?</li>
+      <li><code>hoja.iter_rows(min_col=2, max_col=3)</code> y <code>hoja["B:C"]</code> tocan las mismas 20 celdas. ¿En qué se distinguen?</li>
+      <li>Si alguien escribe <code>hoja["F20"] = "x"</code>, ¿cuánto valen <code>hoja.max_row</code> y <code>hoja.max_column</code>? ¿Hasta dónde llega <code>hoja["B"]</code>? ¿Y si solo hubiera leído <code>hoja["F20"].value</code>?</li>
+    </ol>
+  </div>
+  <details class="panel">
+    <summary>¿Cómo se hizo esta hoja?</summary>
+    <div id="codigoHoja"></div>
+  </details>
+</main>
+<footer>
+  Programación Básica · FCFM-UANL · funciona sin internet. Las celdas que toca cada instrucción son las que da openpyxl con esta misma hoja.
+  <a href="index.html">Índice de simuladores</a> · <a href="#qr-sitio" class="qr-abrir">Abrir en el celular (QR)</a>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+  // ==== NÚCLEO EXCEL (puro: sin DOM) ====
+  // Valores como en Python: int (número entero de JS), float (número con decimales o PyFloat),
+  // str, bool, None (null), date (Fecha) y datetime (FechaHora).
+  function PyFloat(valor) { this.valor = valor; }
+  function Fecha(a, m, d) { this.a = a; this.m = m; this.d = d; }
+  function FechaHora(a, m, d, h, mi, s) { this.a = a; this.m = m; this.d = d; this.h = h || 0; this.mi = mi || 0; this.s = s || 0; }
+  function Tupla(items) { this.items = items; }
+  function ErrorExcel(codigo) { this.codigo = codigo; }
+
+  function esc(t) {
+    return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  function esNumero(v) { return (typeof v === "number") || (v instanceof PyFloat); }
+  function num(v) { return v instanceof PyFloat ? v.valor : v; }
+  function esFecha(v) { return v instanceof Fecha || v instanceof FechaHora; }
+
+  // repr() de un float de Python: la representación más corta que vuelve al mismo número.
+  function pyFloat(x) {
+    if (Number.isNaN(x)) return "nan";
+    if (x === Infinity) return "inf";
+    if (x === -Infinity) return "-inf";
+    if (x === 0) return Object.is(x, -0) ? "-0.0" : "0.0";
+    var partes = Math.abs(x).toExponential().split("e");
+    var digitos = partes[0].replace(".", "");
+    var exp = parseInt(partes[1], 10);
+    var decpt = exp + 1, signo = x < 0 ? "-" : "";
+    if (decpt > 16 || decpt < -3) {
+      var mant = digitos.length > 1 ? digitos[0] + "." + digitos.slice(1) : digitos[0];
+      return signo + mant + "e" + (exp < 0 ? "-" : "+") + (Math.abs(exp) < 10 ? "0" : "") + Math.abs(exp);
+    }
+    if (decpt <= 0) return signo + "0." + "0".repeat(-decpt) + digitos;
+    if (decpt >= digitos.length) return signo + digitos + "0".repeat(decpt - digitos.length) + ".0";
+    return signo + digitos.slice(0, decpt) + "." + digitos.slice(decpt);
+  }
+
+  // repr() de un texto: comillas simples, o dobles si el texto trae ' y no trae ".
+  function pyStr(s) {
+    var q = (s.indexOf("'") >= 0 && s.indexOf('"') < 0) ? '"' : "'";
+    var r = "";
+    for (var i = 0; i < s.length; i++) {
+      var c = s[i], code = s.charCodeAt(i);
+      if (c === "\\") r += "\\\\";
+      else if (c === q) r += "\\" + q;
+      else if (c === "\n") r += "\\n";
+      else if (c === "\r") r += "\\r";
+      else if (c === "\t") r += "\\t";
+      else if (code < 32 || code === 127) r += "\\x" + (code < 16 ? "0" : "") + code.toString(16);
+      else r += c;
+    }
+    return q + r + q;
+  }
+
+  // repr() de un valor: None, True/False, int, float, str, list, tuple, dict, date y datetime.
+  function pyRepr(v) {
+    if (v === null || v === undefined) return "None";
+    if (v === true) return "True";
+    if (v === false) return "False";
+    if (v instanceof PyFloat) return pyFloat(v.valor);
+    if (typeof v === "number") return Number.isInteger(v) ? String(v) : pyFloat(v);
+    if (typeof v === "string") return pyStr(v);
+    if (v instanceof Fecha) return "datetime.date(" + v.a + ", " + v.m + ", " + v.d + ")";
+    if (v instanceof FechaHora) {
+      return "datetime.datetime(" + [v.a, v.m, v.d, v.h, v.mi].concat(v.s ? [v.s] : []).join(", ") + ")";
+    }
+    if (v instanceof Tupla) return "(" + v.items.map(pyRepr).join(", ") + (v.items.length === 1 ? ",)" : ")");
+    if (typeof v.repr === "function") return v.repr();
+    if (Array.isArray(v)) return "[" + v.map(pyRepr).join(", ") + "]";
+    return "{" + Object.keys(v).map(function (k) { return pyStr(k) + ": " + pyRepr(v[k]); }).join(", ") + "}";
+  }
+
+  // ---------- Coordenadas ----------
+  function letraColumna(n) {
+    var s = "";
+    while (n > 0) { var r = (n - 1) % 26; s = String.fromCharCode(65 + r) + s; n = Math.floor((n - 1) / 26); }
+    return s;
+  }
+  function indiceColumna(letras) {
+    var n = 0;
+    for (var i = 0; i < letras.length; i++) n = n * 26 + (letras.charCodeAt(i) - 64);
+    return n;
+  }
+  function partirCoord(coord) {
+    var m = /^([A-Z]{1,3})(\d+)$/.exec(coord);
+    return { col: indiceColumna(m[1]), fila: parseInt(m[2], 10) };
+  }
+  function coord(fila, col) { return letraColumna(col) + fila; }
+
+  // ---------- Cómo muestra Excel un valor ----------
+  // El ancho de la columna se calcula en píxeles de Excel a 150 % (como el Excel con el que se
+  // calibró); lo que cabe se mide en píxeles a 100 % (px / 1.5) con los anchos de Calibri 11.
+  var XL_DIGITO = 11, XL_KG = 4.5;
+  var XL_ANCHOS = { ".": 4, ",": 4, "-": 5, "%": 11, "$": 7, "E": 7, "+": 7, ":": 3, "/": 5, " ": 3 };
+  function pxColumna(ancho) {
+    if (ancho === null || ancho === undefined) return 96;
+    return Math.trunc((256 * ancho + Math.trunc(128 / XL_DIGITO)) / 256 * XL_DIGITO);
+  }
+  function anchoTexto(t) {
+    var s = 0;
+    for (var i = 0; i < t.length; i++) {
+      var c = t[i];
+      s += (c >= "0" && c <= "9") ? 7 : (XL_ANCHOS[c] !== undefined ? XL_ANCHOS[c] : 7);
+    }
+    return s;
+  }
+  function gatos(px) { return "#".repeat(Math.max(1, Math.floor((px / 1.5 - 4.5) / 7))); }
+  function cabe(t, px) { return anchoTexto(t) <= px / 1.5 - 4.5; }
+
+  // El número con 15 cifras significativas (lo que guarda Excel), como dígitos y posición del punto.
+  function dec15(x) {
+    if (x === 0) return { neg: false, dig: "0", punto: 1 };
+    var m = /^(\d)\.(\d+)e([+-]\d+)$/.exec(Math.abs(x).toExponential(14));
+    return { neg: x < 0, dig: (m[1] + m[2]).replace(/0+$/, "") || "0", punto: parseInt(m[3], 10) + 1 };
+  }
+  // Suma 1 a un entero escrito en decimal.
+  function masUno(s) {
+    var a = s.split(""), i = a.length - 1;
+    while (i >= 0) {
+      if (a[i] === "9") { a[i] = "0"; i--; } else { a[i] = String(+a[i] + 1); break; }
+    }
+    return i < 0 ? "1" + a.join("") : a.join("");
+  }
+  // Redondea (mitad hacia arriba, sobre el decimal de 15 cifras) a nd decimales; escala = potencia de 10.
+  function redondear(x, nd, escala) {
+    var d = dec15(x);
+    var punto = d.punto + (escala || 0);
+    var entero, frac;
+    if (punto <= 0) { entero = "0"; frac = "0".repeat(-punto) + d.dig; }
+    else if (punto >= d.dig.length) { entero = d.dig + "0".repeat(punto - d.dig.length); frac = ""; }
+    else { entero = d.dig.slice(0, punto); frac = d.dig.slice(punto); }
+    if (d.dig === "0") { entero = "0"; frac = ""; }
+    frac = frac + "0".repeat(nd + 1);
+    var sube = frac[nd] >= "5";
+    var todo = (entero + frac.slice(0, nd)).replace(/^0+(?=\d)/, "");
+    if (sube) todo = masUno(todo);
+    while (todo.length < nd + 1) todo = "0" + todo;
+    var e = todo.slice(0, todo.length - nd), f = todo.slice(todo.length - nd);
+    return { neg: d.neg, entero: e, frac: f, cero: /^0*$/.test(e + f) };
+  }
+  function miles(entero) { return entero.replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
+
+  // Notación científica de Excel: 1.23457E+11 (mantisa con nd decimales, exponente de 2 cifras).
+  function cientifico(x, nd) {
+    var d = dec15(x);
+    var exp = d.punto - 1;
+    var dig = (d.dig + "0".repeat(nd + 2)).slice(0, nd + 2);
+    var todo = dig.slice(0, nd + 1);
+    if (dig[nd + 1] >= "5") todo = masUno(todo);
+    if (todo.length > nd + 1) { todo = todo.slice(0, nd + 1); exp += 1; }
+    var mant = todo[0] + (nd > 0 ? "." + todo.slice(1) : "");
+    if (mant.indexOf(".") >= 0) mant = mant.replace(/0+$/, "").replace(/\.$/, "");
+    return (x < 0 ? "-" : "") + mant + "E" + (exp >= 0 ? "+" : "-") + (Math.abs(exp) < 10 ? "0" : "") + Math.abs(exp);
+  }
+
+  // Formato General: caben tantas cifras como el ancho permita (máximo 11, sin contar el signo).
+  function formatoGeneral(x, px) {
+    if (x === 0) return "0";
+    var neg = x < 0, signo = neg ? "-" : "", a = Math.abs(x), nd, t, c;
+    var n = Math.min(11, Math.max(neg ? 0 : 1, Math.floor((px / 1.5 - XL_KG - (neg ? 5 : 0)) / 7)));
+    if (n < 1) return gatos(px);
+    if (a >= 1e11 || a < 1e-9) {
+      for (nd = 5; nd >= 0; nd--) { t = cientifico(a, nd); if (t.length <= n) return signo + t; }
+      return a < 1 ? signo + "0" : gatos(px);
+    }
+    for (nd = 10; nd >= 0; nd--) {
+      var r = redondear(a, nd);
+      t = r.entero + (nd > 0 ? "." + r.frac : "");
+      if (t.indexOf(".") >= 0) t = t.replace(/0+$/, "").replace(/\.$/, "");
+      if (t.length <= n) {
+        if (t === "0" && a < 1) {
+          for (var nd2 = 4; nd2 >= 0; nd2--) { c = cientifico(a, nd2); if (c.length <= n) return signo + c; }
+        }
+        return signo + t;
+      }
+    }
+    for (nd = 4; nd >= 0; nd--) { t = cientifico(a, nd); if (t.length <= n) return signo + t; }
+    return gatos(px);
+  }
+
+  // Serial de Excel (días desde el 30/12/1899, con el 29/02/1900 que Excel cree que existió).
+  function diasCivil(a, m, d) {   // días desde 1970-01-01
+    return Math.round(Date.UTC(a, m - 1, d) / 86400000);
+  }
+  var DIAS_EPOCA = diasCivil(1899, 12, 30);
+  function serialDe(v) {
+    if (v instanceof Fecha || v instanceof FechaHora) {
+      var s = diasCivil(v.a, v.m, v.d) - DIAS_EPOCA;
+      if (s < 61) s -= 1;    // antes del 1/03/1900 Excel cuenta un día menos
+      if (v instanceof FechaHora) s += (v.h * 3600 + v.mi * 60 + v.s) / 86400;
+      return s;
+    }
+    return num(v);
+  }
+  function fechaDeSerial(x) {
+    var dias = Math.floor(x), frac = x - dias;
+    var seg = Math.floor(frac * 86400 + 0.5), min = Math.floor(seg / 60);
+    var a, m, d;
+    if (dias === 0) { a = 1900; m = 1; d = 0; }
+    else if (dias === 60) { a = 1900; m = 2; d = 29; }
+    else {
+      var f = new Date(Date.UTC(1899, 11, dias < 60 ? 31 : 30) + dias * 86400000);
+      a = f.getUTCFullYear(); m = f.getUTCMonth() + 1; d = f.getUTCDate();
+    }
+    return { a: a, m: m, d: d, h: Math.floor(min / 60) % 24, mi: min % 60, s: seg % 60 };
+  }
+  function dos(n) { return (n < 10 ? "0" : "") + n; }
+  var MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+  var MESES_L = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre",
+                 "octubre", "noviembre", "diciembre"];
+
+  function esFormatoFecha(f) {
+    var sin = f.replace(/"[^"]*"/g, "").replace(/\[[^\]]*\]/g, "");
+    return /[dy]/i.test(sin) || /h/i.test(sin) && /m/i.test(sin) || /(^|[^0#?])s/i.test(sin) && /:/.test(sin);
+  }
+
+  function formatoFecha(x, f, px) {
+    if (x < 0 || x >= 2958466) return gatos(px);
+    var p = fechaDeSerial(x);
+    var codigo = f.replace(/\[[^\]]*\]/g, "");
+    var tokens = codigo.match(/"[^"]*"|\\.|yyyy|yy|mmmm|mmm|mm|m|dddd|ddd|dd|d|hh|h|ss|s|AM\/PM|am\/pm|./gi) || [];
+    var out = [];
+    tokens.forEach(function (t) {
+      var low = t.toLowerCase();
+      if (t[0] === '"') out.push({ t: t.slice(1, -1) });
+      else if (t[0] === "\\") out.push({ t: t.slice(1) });
+      else if (/^(yyyy|yy|mmmm|mmm|mm|m|dddd|ddd|dd|d|hh|h|ss|s|am\/pm)$/.test(low)) out.push({ tok: low });
+      else out.push({ t: t });
+    });
+    // "m" o "mm" junto a horas o segundos son minutos
+    for (var i = 0; i < out.length; i++) {
+      if (out[i].tok === "m" || out[i].tok === "mm") {
+        var antes = null, despues = null, j;
+        for (j = i - 1; j >= 0; j--) if (out[j].tok && /^[hdmys]/.test(out[j].tok)) { antes = out[j].tok; break; }
+        for (j = i + 1; j < out.length; j++) if (out[j].tok && /^[hdmys]/.test(out[j].tok)) { despues = out[j].tok; break; }
+        if ((antes && antes[0] === "h") || (despues && despues[0] === "s")) out[i].minutos = true;
+      }
+    }
+    var ampm = out.some(function (o) { return o.tok === "am/pm"; });
+    var s = out.map(function (o) {
+      if (o.t !== undefined) return o.t;
+      var k = o.tok;
+      if (k === "yyyy") return String(p.a);
+      if (k === "yy") return dos(p.a % 100);
+      if (k === "mmmm") return MESES_L[p.m - 1];
+      if (k === "mmm") return MESES[p.m - 1];
+      if (k === "mm") return o.minutos ? dos(p.mi) : dos(p.m);
+      if (k === "m") return o.minutos ? String(p.mi) : String(p.m);
+      if (k === "dd") return dos(p.d);
+      if (k === "d") return String(p.d);
+      if (k === "dddd" || k === "ddd") return String(p.d);
+      var h = ampm ? ((p.h + 11) % 12) + 1 : p.h;
+      if (k === "hh") return dos(h);
+      if (k === "h") return String(h);
+      if (k === "ss") return dos(p.s);
+      if (k === "s") return String(p.s);
+      if (k === "am/pm") return p.h < 12 ? "AM" : "PM";
+      return k;
+    }).join("");
+    return cabe(s, px) ? s : gatos(px);
+  }
+
+  // Formato de número con una sección: 0, 0.0, #,##0.00, 0%, "$"#,##0.00, 0.0 "°C"...
+  function formatoNumero(x, f, px) {
+    var secciones = f.split(";");
+    var sec = secciones[0], negSeccion = false;
+    if (x < 0 && secciones.length > 1 && secciones[1] !== "") { sec = secciones[1]; negSeccion = true; }
+    if (x === 0 && secciones.length > 2 && secciones[2] !== "") sec = secciones[2];
+    sec = sec.replace(/\[[^\]]*\]/g, "");
+    var limpio = sec.replace(/"[^"]*"/g, "").replace(/\\./g, "");
+    var pct = (limpio.match(/%/g) || []).length;
+    var mm = /[0#?]\.([0#?]+)/.exec(limpio);
+    var nd = mm ? mm[1].replace(/[^0]/g, "").length : 0;
+    var conMiles = /[0#?],[0#?]/.test(limpio);
+    var r = redondear(x, nd, 2 * pct);
+    var ent = r.entero.replace(/^0+(?=\d)/, "");
+    if (!/0/.test(limpio.split(".")[0]) && ent === "0") ent = "";
+    var numero = (conMiles ? miles(ent) : ent) + (nd > 0 ? "." + r.frac : "");
+    // Literales antes y después de los dígitos
+    var partes = sec.match(/"[^"]*"|\\.|[0#?,.]+|./g) || [];
+    var antes = "", despues = "", visto = false;
+    partes.forEach(function (t) {
+      if (/^[0#?,.]+$/.test(t)) { visto = true; return; }
+      var lit = t[0] === '"' ? t.slice(1, -1) : (t[0] === "\\" ? t.slice(1) : t);
+      if (lit === "_" || lit === "*") lit = "";
+      if (visto) despues += lit; else antes += lit;
+    });
+    var signo = (r.neg && !r.cero && !negSeccion) ? "-" : "";
+    var s = signo + antes + numero + despues;
+    return cabe(s, px) ? s : gatos(px);
+  }
+
+  // Lo que muestra Excel en una celda: {texto, derecha (números), centro (errores y booleanos)}.
+  function mostrarValor(v, fmt, px) {
+    var f = fmt || "General";
+    if (v === null || v === undefined || v === "") return { texto: "", tipo: "vacia" };
+    if (v instanceof ErrorExcel) return { texto: v.codigo, tipo: "error" };
+    if (v === true || v === false) return { texto: v ? "TRUE" : "FALSE", tipo: "bool" };
+    if (typeof v === "string") return { texto: v, tipo: "texto" };
+    var x = serialDe(v);
+    if (f === "General") return { texto: formatoGeneral(x, px), tipo: "numero" };
+    if (esFormatoFecha(f)) return { texto: formatoFecha(x, f, px), tipo: "numero" };
+    return { texto: formatoNumero(x, f, px), tipo: "numero" };
+  }
+  // ==== FIN NÚCLEO EXCEL ====
+  // ---------- Fórmulas sencillas, como las calcula Excel al abrir el archivo ----------
+  // buscarValor(hojaTitulo|null, fila, col) regresa el valor guardado de la celda (o null).
+  // Regresa un número, texto, booleano, ErrorExcel, null (celda vacía) o NO_EVALUABLE.
+  var NO_EVALUABLE = { noEvaluable: true };
+  function evaluarFormula(texto, buscarValor, profundidad) {
+    profundidad = profundidad || 0;
+    if (profundidad > 30) return new ErrorExcel("#REF!");
+    var s = texto.slice(1), i = 0;
+    function espacios() { while (i < s.length && s[i] === " ") i++; }
+    function falla() { throw NO_EVALUABLE; }
+    function valorCelda(hoja, fila, col) {
+      var v = buscarValor(hoja, fila, col);
+      if (typeof v === "string" && v.length > 1 && v[0] === "=") {
+        return evaluarFormula(v, function (h, f, c) { return buscarValor(h === null ? hoja : h, f, c); }, profundidad + 1);
+      }
+      return v;
+    }
+    function referencia() {
+      // [Hoja!]A1 o [Hoja!]A1:B5
+      var m = /^(?:'((?:[^']|'')+)'!|([A-Za-z_À-ɏ][\w.À-ɏ]*)!)?\$?([A-Z]{1,3})\$?(\d+)(?::\$?([A-Z]{1,3})\$?(\d+))?/.exec(s.slice(i));
+      if (!m) return null;
+      var despues = s.slice(i + m[0].length);
+      if (/^[A-Za-z_(]/.test(despues)) return null;
+      i += m[0].length;
+      var hoja = m[1] ? m[1].replace(/''/g, "'") : (m[2] || null);
+      var c1 = indiceColumna(m[3]), f1 = parseInt(m[4], 10);
+      if (!m[5]) return { celda: true, hoja: hoja, fila: f1, col: c1 };
+      var c2 = indiceColumna(m[5]), f2 = parseInt(m[6], 10), vals = [];
+      for (var f = Math.min(f1, f2); f <= Math.max(f1, f2); f++) {
+        for (var c = Math.min(c1, c2); c <= Math.max(c1, c2); c++) vals.push(valorCelda(hoja, f, c));
+      }
+      return { rango: vals };
+    }
+    function aNumero(v) {
+      if (v instanceof ErrorExcel) throw v;
+      if (v === null || v === undefined) return 0;
+      if (v === true) return 1;
+      if (v === false) return 0;
+      if (typeof v === "string") {
+        var t = v.trim();
+        if (t !== "" && !isNaN(Number(t))) return Number(t);
+        throw new ErrorExcel("#VALUE!");
+      }
+      return serialDe(v);
+    }
+    function primario() {
+      espacios();
+      if (s[i] === "(") { i++; var v = expresion(); espacios(); if (s[i] !== ")") falla(); i++; return v; }
+      if (s[i] === '"') {
+        var fin = s.indexOf('"', i + 1); if (fin < 0) falla();
+        var txt = s.slice(i + 1, fin); i = fin + 1; return txt;
+      }
+      var mn = /^\d+(\.\d+)?([eE][+-]?\d+)?|^\.\d+/.exec(s.slice(i));
+      if (mn) { i += mn[0].length; return Number(mn[0]); }
+      var mf = /^([A-Za-z][A-Za-z0-9.]*)\(/.exec(s.slice(i));
+      if (mf) { i += mf[0].length; return funcion(mf[1].toUpperCase()); }
+      var r = referencia();
+      if (r) return r.celda ? valorCelda(r.hoja, r.fila, r.col) : r;
+      var mb = /^(TRUE|FALSE)\b/i.exec(s.slice(i));
+      if (mb) { i += mb[0].length; return mb[0].toUpperCase() === "TRUE"; }
+      falla();
+    }
+    function argumentos() {
+      var args = [];
+      espacios();
+      if (s[i] === ")") { i++; return args; }
+      while (true) {
+        espacios();
+        var r = null, guardado = i;
+        r = referencia();
+        espacios();
+        if (r && (s[i] === "," || s[i] === ")")) args.push(r.celda ? { rango: [valorCelda(r.hoja, r.fila, r.col)], unaCelda: true } : r);
+        else { i = guardado; args.push(expresion()); }
+        espacios();
+        if (s[i] === ",") { i++; continue; }
+        if (s[i] === ")") { i++; return args; }
+        falla();
+      }
+    }
+    function numerosDe(args) {
+      var res = [];
+      args.forEach(function (a) {
+        if (a && a.rango) {
+          a.rango.forEach(function (v) {
+            if (v instanceof ErrorExcel) throw v;
+            if (esNumero(v) || esFecha(v)) res.push(serialDe(v));
+          });
+        } else res.push(aNumero(a));
+      });
+      return res;
+    }
+    function funcion(nombre) {
+      var args = argumentos(), xs, k, media;
+      switch (nombre) {
+        case "SUM": return numerosDe(args).reduce(function (a, b) { return a + b; }, 0);
+        case "AVERAGE":
+          xs = numerosDe(args);
+          if (!xs.length) return new ErrorExcel("#DIV/0!");
+          return xs.reduce(function (a, b) { return a + b; }, 0) / xs.length;
+        case "MAX": xs = numerosDe(args); return xs.length ? Math.max.apply(null, xs) : 0;
+        case "MIN": xs = numerosDe(args); return xs.length ? Math.min.apply(null, xs) : 0;
+        case "COUNT":
+          k = 0;
+          args.forEach(function (a) {
+            if (a && a.rango) a.rango.forEach(function (v) { if (esNumero(v) || esFecha(v)) k++; });
+            else if (esNumero(a)) k++;
+          });
+          return k;
+        case "COUNTA":
+          k = 0;
+          args.forEach(function (a) {
+            if (a && a.rango) a.rango.forEach(function (v) { if (v !== null && v !== undefined) k++; });
+            else k++;
+          });
+          return k;
+        case "MEDIAN":
+          xs = numerosDe(args).sort(function (a, b) { return a - b; });
+          if (!xs.length) return new ErrorExcel("#NUM!");
+          return xs.length % 2 ? xs[(xs.length - 1) / 2] : (xs[xs.length / 2 - 1] + xs[xs.length / 2]) / 2;
+        case "STDEV": case "STDEV.S": case "STDEVP": case "STDEV.P":
+          xs = numerosDe(args);
+          var pob = nombre === "STDEVP" || nombre === "STDEV.P";
+          if (xs.length < (pob ? 1 : 2)) return new ErrorExcel("#DIV/0!");
+          media = xs.reduce(function (a, b) { return a + b; }, 0) / xs.length;
+          return Math.sqrt(xs.reduce(function (a, b) { return a + (b - media) * (b - media); }, 0) / (xs.length - (pob ? 0 : 1)));
+        case "ROUND":
+          if (args.length < 1) falla();
+          var x = aNumero(args[0] && args[0].rango ? args[0].rango[0] : args[0]);
+          var nd = args.length > 1 ? Math.trunc(aNumero(args[1])) : 0;
+          if (nd < 0) { var p10 = Math.pow(10, -nd); return Math.sign(x) * Math.round(Math.abs(x) / p10) * p10; }
+          var rr = redondear(x, nd);
+          return Number((rr.neg && !rr.cero ? "-" : "") + rr.entero + (nd > 0 ? "." + rr.frac : ""));
+        case "ABS": return Math.abs(aNumero(args[0] && args[0].rango ? args[0].rango[0] : args[0]));
+        case "SQRT":
+          var y = aNumero(args[0] && args[0].rango ? args[0].rango[0] : args[0]);
+          return y < 0 ? new ErrorExcel("#NUM!") : Math.sqrt(y);
+        default: falla();
+      }
+    }
+    function unario() {
+      espacios();
+      if (s[i] === "-") { i++; return -aNumero(unario()); }
+      if (s[i] === "+") { i++; return unario(); }
+      var v = primario();
+      if (v && v.rango) { if (v.rango.length === 1) return v.rango[0]; falla(); }
+      return v;
+    }
+    function potencia() {
+      var a = unario(); espacios();
+      while (s[i] === "^") { i++; a = Math.pow(aNumero(a), aNumero(unario())); espacios(); }
+      return a;
+    }
+    function termino() {
+      var a = potencia(); espacios();
+      while (s[i] === "*" || s[i] === "/") {
+        var op = s[i]; i++;
+        var b = aNumero(potencia()), x = aNumero(a);
+        if (op === "/" && b === 0) throw new ErrorExcel("#DIV/0!");
+        a = op === "*" ? x * b : x / b; espacios();
+      }
+      return a;
+    }
+    function expresion() {
+      var a = termino(); espacios();
+      while (s[i] === "+" || s[i] === "-") {
+        var op = s[i]; i++;
+        var b = aNumero(termino()); a = op === "+" ? aNumero(a) + b : aNumero(a) - b; espacios();
+      }
+      return a;
+    }
+    try {
+      var v = expresion(); espacios();
+      if (i < s.length) return NO_EVALUABLE;
+      if (typeof v === "number" && !isFinite(v)) return new ErrorExcel("#NUM!");
+      return v;
+    } catch (e) {
+      if (e instanceof ErrorExcel) return e;
+      return NO_EVALUABLE;
+    }
+  }
+  // ---------- Dibujo de una hoja como en Excel (HTML) ----------
+  // datos: {titulo, celdas: {"A1": {v, fmt, b, i, color, relleno, alin}}, anchos: {"D": 12}, freeze, filtro}
+  // o: {filas, cols, buscar(hoja, fila, col) para las fórmulas, marcas: {"B2": "clase"}, numeros: {"B2": 1},
+  //     sel: "B2" (celda activa), pestanas: [títulos], vista: título de la hoja que se ve, foco: true si la
+  //     rejilla recibe el foco del teclado, etiqueta: texto para lectores de pantalla, elegidas: {"B2": true}
+  //     (celdas seleccionadas, para aria-selected), anchoCss: ancho en pantalla de todas las columnas}
+  var XL_ANCHO_ENC = 34;
+  function pxCss(ancho) { return pxColumna(ancho) / 1.5; }
+  function rangoA(ref) {
+    var p = ref.split(":"), a = partirCoord(p[0]), b = partirCoord(p[1] || p[0]);
+    return { f0: Math.min(a.fila, b.fila), f1: Math.max(a.fila, b.fila), c0: Math.min(a.col, b.col), c1: Math.max(a.col, b.col) };
+  }
+  // El valor que se ve en la celda (las fórmulas, calculadas como Excel).
+  function valorVisible(celda, buscar) {
+    if (!celda) return null;
+    var v = celda.v;
+    if (typeof v === "string" && v.length > 1 && v[0] === "=") {
+      var r = buscar ? evaluarFormula(v, buscar) : NO_EVALUABLE;
+      return r === NO_EVALUABLE ? { formula: v } : (r === null ? 0 : r);
+    }
+    return v;
+  }
+  function vacia(celda) { return !celda || celda.v === null || celda.v === undefined || celda.v === ""; }
+
+  function htmlHoja(datos, o) {
+    o = o || {};
+    var filas = o.filas || 10, cols = o.cols || 5, celdas = datos ? datos.celdas : {};
+    var anchos = [], total = XL_ANCHO_ENC, c, f;
+    for (c = 1; c <= cols; c++) {
+      var w = datos && datos.anchos && datos.anchos[letraColumna(c)];
+      anchos[c] = { px: pxColumna(w === undefined ? null : w), css: o.anchoCss || pxCss(w === undefined ? null : w) };
+      total += anchos[c].css;
+    }
+    var fz = datos && datos.freeze ? partirCoord(datos.freeze) : null;
+    var filtro = datos && datos.filtro ? rangoA(datos.filtro) : null;
+    var selP = o.sel ? partirCoord(o.sel) : null;
+    var h = '<div class="xl">';
+    h += '<div class="xl-rejilla"><table class="xl-t" role="grid" aria-label="' + esc(o.etiqueta || ("Hoja " + (datos ? datos.titulo : ""))) +
+         '" style="width:' + total + 'px"><colgroup><col style="width:' + XL_ANCHO_ENC + 'px">';
+    for (c = 1; c <= cols; c++) h += '<col style="width:' + anchos[c].css + 'px">';
+    h += '</colgroup><thead><tr><th class="xl-esq" scope="col"><span class="oculto">Fila</span></th>';
+    for (c = 1; c <= cols; c++) {
+      h += '<th scope="col"' + (selP && selP.col === c ? ' class="xl-enc-sel"' : "") + ">" + letraColumna(c) + "</th>";
+    }
+    h += "</tr></thead><tbody>";
+    for (f = 1; f <= filas; f++) {
+      h += '<tr><th scope="row"' + (selP && selP.fila === f ? ' class="xl-enc-sel"' : "") + ">" + f + "</th>";
+      for (c = 1; c <= cols; c++) {
+        var k = coord(f, c), celda = celdas[k], clases = [], estilo = "", contenido = "", titulo = "";
+        var vis = valorVisible(celda, o.buscar), al = celda && celda.alin, d;
+        if (vis && vis.formula) {
+          contenido = '<span class="xl-formula">' + esc(vis.formula) + "</span>";
+          titulo = "Excel calcula esta fórmula al abrir el archivo";
+          al = al || "left";
+        } else {
+          d = mostrarValor(vis, celda ? celda.fmt : "General", anchos[c].px);
+          contenido = esc(d.texto);
+          if (!al || al === "general") al = d.tipo === "numero" ? "right" : (d.tipo === "error" || d.tipo === "bool" ? "center" : "left");
+          if (d.tipo === "texto" && al === "left" && d.texto !== "") {
+            // El texto que no cabe se ve sobre las celdas vacías de la derecha
+            var extra = 0;
+            for (var c2 = c + 1; c2 <= cols && vacia(celdas[coord(f, c2)]); c2++) extra += anchos[c2].css;
+            if (extra > 0) { clases.push("xl-desborda"); estilo += "--ancho:" + (anchos[c].css + extra - 6) + "px;"; }
+          }
+          if (o.numeroComoTexto && d.tipo === "texto" && /^\s*-?\d+(\.\d+)?\s*$/.test(d.texto)) {
+            clases.push("xl-triangulo");
+            titulo = "Número almacenado como texto";
+          }
+        }
+        clases.push("xl-" + al);
+        if (celda && celda.b) clases.push("xl-b");
+        if (celda && celda.i) clases.push("xl-i");
+        if (celda && celda.relleno) estilo += "background:#" + celda.relleno + ";";
+        if (celda && celda.color) estilo += "color:#" + celda.color + ";";
+        if (fz && f === fz.fila - 1) clases.push("xl-congela-f");
+        if (fz && c === fz.col - 1) clases.push("xl-congela-c");
+        if (o.marcas && o.marcas[k]) clases.push(o.marcas[k]);
+        if (o.sel === k) clases.push("xl-sel");
+        if (o.elegidas && o.elegidas[k]) clases.push("xl-elegida");
+        var flecha = filtro && f === filtro.f0 && c >= filtro.c0 && c <= filtro.c1;
+        var num = o.numeros && o.numeros[k] ? '<span class="xl-orden">' + o.numeros[k] + "</span>" : "";
+        h += '<td data-c="' + k + '"' + (o.foco ? ' tabindex="' + (o.sel === k || (!o.sel && k === "A1") ? 0 : -1) + '"' : "") +
+             ' class="' + clases.join(" ") + '"' + (estilo ? ' style="' + estilo + '"' : "") +
+             (titulo ? ' title="' + esc(titulo) + '"' : "") +
+             (o.elegidas ? ' aria-selected="' + !!o.elegidas[k] + '"' : "") +
+             ' aria-label="' + k + (contenido ? ": " + esc(vis && vis.formula ? vis.formula : d.texto) : ", vacía") + '">' +
+             num + (flecha ? '<span class="xl-filtro" aria-hidden="true">▾</span>' : "") +
+             '<div class="xl-c">' + contenido + "</div></td>";
+      }
+      h += "</tr>";
+    }
+    h += "</tbody></table></div>";
+    if (o.pestanas) {
+      h += '<div class="xl-pestanas" role="tablist" aria-label="Hojas del libro">';
+      o.pestanas.forEach(function (t) {
+        var activa = t === o.vista;
+        h += '<button type="button" role="tab" aria-selected="' + activa + '" data-hoja="' + esc(t) + '"' +
+             (activa ? ' class="activa"' : "") + ">" + esc(t) + "</button>";
+      });
+      h += "</div>";
+    }
+    return h + "</div>";
+  }
+
+  // Mueve el foco con las flechas dentro de una rejilla (tabindex móvil).
+  function moverEnRejilla(e, alElegir) {
+    var td = e.target.closest && e.target.closest("td[data-c]");
+    if (!td) return;
+    var p = partirCoord(td.dataset.c), f = p.fila, c = p.col;
+    if (e.key === "ArrowUp") f--; else if (e.key === "ArrowDown") f++;
+    else if (e.key === "ArrowLeft") c--; else if (e.key === "ArrowRight") c++;
+    else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); alElegir(td.dataset.c, e); return; }
+    else return;
+    e.preventDefault();
+    var otro = td.closest("table").querySelector('td[data-c="' + coord(Math.max(1, f), Math.max(1, c)) + '"]');
+    if (otro) {
+      td.setAttribute("tabindex", "-1");
+      otro.setAttribute("tabindex", "0");
+      otro.focus();
+      if (e.shiftKey) alElegir(otro.dataset.c, e);
+    }
+  }
+  // ==== DATOS DEL JUEGO ====
+  // La hoja del juego (la misma que crea CODIGO_HOJA en Python).
+  var CODIGO_HOJA = [
+    "from openpyxl import Workbook",
+    "from openpyxl.styles import Font",
+    "from openpyxl.utils import column_index_from_string, get_column_letter",
+    "",
+    "tmax = [35.0, 36.5, 38.0, 34.1, 32.2, 30.2, 34.0]",
+    "tmin = [23.4, 23.7, 25.0, 25.2, 23.6, 22.3, 22.3]",
+    "lluvia = [1.7, 0.7, 0.2, 0.7, 6.9, 0.7, 0.0]",
+    "libro = Workbook()",
+    "hoja = libro.active",
+    "hoja.title = \"Clima\"",
+    "hoja.append([\"Día\", \"Máxima\", \"Mínima\", \"Lluvia\"])",
+    "for dia in range(7):",
+    "    hoja.append([dia + 1, tmax[dia], tmin[dia], lluvia[dia]])",
+    "hoja[\"A10\"] = \"Mediana\"",
+    "hoja[\"B10\"] = \"=MEDIAN(B2:B8)\"",
+    "for celda in hoja[1]:",
+    "    celda.font = Font(bold=True)",
+    "for fila in hoja.iter_rows(min_row=2, max_row=8, min_col=2):",
+    "    for celda in fila:",
+    "        celda.number_format = \"0.0\"",
+    "hoja[\"B10\"].number_format = \"0.0\""
+  ];
+  function hojaDelJuego() {
+    var tmax = [35.0, 36.5, 38.0, 34.1, 32.2, 30.2, 34.0], tmin = [23.4, 23.7, 25.0, 25.2, 23.6, 22.3, 22.3],
+        lluvia = [1.7, 0.7, 0.2, 0.7, 6.9, 0.7, 0.0];
+    var h = { titulo: "Clima", celdas: {}, anchos: {}, freeze: null, filtro: null };
+    function poner(c, v, fmt, b) { h.celdas[c] = { v: v, fmt: fmt || "General", b: !!b, i: false, color: null, relleno: null, alin: null }; }
+    ["Día", "Máxima", "Mínima", "Lluvia"].forEach(function (t, i) { poner(letraColumna(i + 1) + "1", t, null, true); });
+    for (var d = 0; d < 7; d++) {
+      poner("A" + (d + 2), d + 1);
+      poner("B" + (d + 2), fl(tmax[d]), "0.0");
+      poner("C" + (d + 2), fl(tmin[d]), "0.0");
+      poner("D" + (d + 2), fl(lluvia[d]), "0.0");
+    }
+    poner("A10", "Mediana");
+    poner("B10", "=MEDIAN(B2:B8)", "0.0");
+    return h;
+  }
+  function fl(x) { return Number.isInteger(x) ? new PyFloat(x) : x; }
+  function rango(a, b, porColumnas) {
+    var p = partirCoord(a), q = partirCoord(b), res = [], f, c;
+    if (porColumnas) { for (c = p.col; c <= q.col; c++) for (f = p.fila; f <= q.fila; f++) res.push(coord(f, c)); }
+    else { for (f = p.fila; f <= q.fila; f++) for (c = p.col; c <= q.col; c++) res.push(coord(f, c)); }
+    return res;
+  }
+
+  // Modo 1: la instrucción y el alumno marca las celdas (o escribe el valor).
+  var INSTRUCCIONES = [
+    { nivel: 1, codigo: "hoja[\"C5\"]", celdas: ["C5"],
+      regresa: "una celda: <Cell 'Clima'.C5>; su .value es 25.2",
+      explica: "Letra y número, como en Excel: C es la columna y 5 la fila. Es la mínima del día 4." },
+    { nivel: 1, codigo: "hoja.cell(row=3, column=2)", celdas: ["B3"],
+      regresa: "una celda: <Cell 'Clima'.B3>; su .value es 36.5",
+      explica: "row es la fila (3) y column la columna (2 = B). Filas y columnas empiezan en 1." },
+    { nivel: 1, codigo: "hoja.cell(3, 2)", celdas: ["B3"],
+      regresa: "una celda: <Cell 'Clima'.B3>",
+      explica: "Sin nombres, el primer número es la fila y el segundo la columna: (3, 2) es B3, no C2. Al revés que (x, y) en una gráfica." },
+    { nivel: 1, codigo: "hoja[\"A1:C3\"]", celdas: rango("A1", "C3"),
+      regresa: "una tupla de 3 filas, cada una con 3 celdas",
+      explica: "Un rango va de la esquina de arriba a la izquierda (A1) a la de abajo a la derecha (C3): 9 celdas, fila por fila." },
+    { nivel: 1, codigo: "hoja.max_row", escrita: "10", acepta: ["10"],
+      regresa: "el int 10",
+      explica: "Es la fila más grande que tiene celdas: la 10, por \"Mediana\" y su fórmula. Que la fila 9 esté vacía no importa." },
+    { nivel: 1, codigo: "get_column_letter(4)", escrita: "D", acepta: ["D", "'D'", "\"D\""],
+      regresa: "el texto 'D'",
+      explica: "Convierte el número de columna en su letra: 1 → \"A\", 2 → \"B\", 3 → \"C\", 4 → \"D\". Viene de openpyxl.utils." },
+    { nivel: 2, codigo: "hoja[2]", celdas: rango("A2", "D2"),
+      regresa: "una tupla con las 4 celdas de la fila 2",
+      explica: "Un número entre corchetes es una fila completa, de la columna A hasta max_column (D). Así se recorre el encabezado: for celda in hoja[1]." },
+    { nivel: 2, codigo: "hoja[\"B\"]", celdas: rango("B1", "B10"),
+      regresa: "una tupla con 10 celdas, de B1 a B10",
+      explica: "Una letra es una columna completa: de la fila 1 hasta max_row (10). Incluye B9, que está vacía (openpyxl la crea al recorrerla)." },
+    { nivel: 2, codigo: "hoja.iter_rows(min_row=2, max_row=4, max_col=2)", celdas: rango("A2", "B4"),
+      regresa: "un generador: cada vuelta da una fila (una tupla de 2 celdas)",
+      explica: "Filas 2 a 4 y columnas de 1 (min_col no se dio) a 2. iter_rows recorre fila por fila: A2, B2, A3, B3, A4, B4." },
+    { nivel: 2, codigo: "hoja.cell(row=2, column=4)", celdas: ["D2"],
+      regresa: "una celda: <Cell 'Clima'.D2>; su .value es 1.7",
+      explica: "Fila 2, columna 4 (D): la lluvia del día 1." },
+    { nivel: 2, codigo: "column_index_from_string(\"C\")", escrita: "3", acepta: ["3"],
+      regresa: "el int 3",
+      explica: "La operación contraria a get_column_letter: \"C\" es la columna 3. También viene de openpyxl.utils." },
+    { nivel: 2, codigo: "hoja.max_column", escrita: "4", acepta: ["4"],
+      regresa: "el int 4",
+      explica: "La columna más grande con celdas: la 4 (D). Es un número, no una letra." },
+    { nivel: 3, codigo: "hoja[\"B:C\"]", celdas: rango("B1", "C10", true),
+      regresa: "una tupla con 2 columnas: B1 a B10 y C1 a C10",
+      explica: "Dos columnas completas, cada una de la fila 1 hasta max_row (10). Regresa columna por columna." },
+    { nivel: 3, codigo: "hoja.iter_cols(min_col=2, max_col=3, max_row=3)", celdas: rango("B1", "C3", true),
+      regresa: "un generador: cada vuelta da una COLUMNA (una tupla de 3 celdas)",
+      explica: "iter_cols recorre por columnas: B1, B2, B3 y después C1, C2, C3. min_row no se dio, así que empieza en la fila 1." },
+    { nivel: 3, codigo: "hoja.iter_rows(min_row=2, min_col=2)", celdas: rango("B2", "D10"),
+      regresa: "un generador con 9 filas de 3 celdas",
+      explica: "Sin max_row ni max_col llega hasta max_row (10) y max_column (4): de B2 a D10, con la fila 9 vacía. Es el recorrido del Día 3 para dar formato a los números." },
+    { nivel: 3, codigo: "hoja[hoja.max_row]", celdas: rango("A10", "D10"),
+      regresa: "una tupla con las 4 celdas de la fila 10",
+      explica: "Primero se evalúa hoja.max_row, que vale 10; queda hoja[10]: la fila 10 completa, de A a D (C10 y D10 están vacías)." },
+    { nivel: 3, codigo: "hoja.cell(row=hoja.max_row, column=2)", celdas: ["B10"],
+      regresa: "una celda: <Cell 'Clima'.B10>; su .value es '=MEDIAN(B2:B8)'",
+      explica: "La fila es hoja.max_row (10) y la columna 2: B10, la fórmula de la mediana. Su .value es el texto de la fórmula." }
+  ];
+
+  // Modo 2: se marcan celdas (con el orden en que se recorren) y el alumno elige la instrucción.
+  var RONDAS_B = [
+    { celdas: ["B3"], opciones: ["hoja.cell(row=3, column=2)", "hoja.cell(row=2, column=3)", "hoja[\"B2\"]", "hoja.cell(3, 3)"],
+      explica: "row es la fila y column la columna: B3 es fila 3, columna 2." },
+    { celdas: ["C5"], opciones: ["hoja[\"C5\"]", "hoja.cell(row=3, column=5)", "hoja.cell(5, 2)", "hoja.cell(row=5, column=4)"],
+      explica: "Con letra y número la columna va primero: C5. Con cell, la fila va primero: sería hoja.cell(5, 3)." },
+    { celdas: rango("A2", "D2"), opciones: ["hoja[2]", "hoja[\"A2:B2\"]", "hoja[3]", "hoja[\"B\"]"],
+      explica: "hoja[2] es la fila 2 completa, hasta max_column." },
+    { celdas: rango("B1", "B10"), opciones: ["hoja[\"B\"]", "hoja[\"B1:B8\"]", "hoja[\"B2:B10\"]", "hoja[2]"],
+      explica: "La columna completa llega hasta max_row (10), no solo hasta los datos (8)." },
+    { celdas: rango("A1", "C3"), opciones: ["hoja[\"A1:C3\"]", "hoja[\"A1:B3\"]", "hoja.iter_rows(max_row=3)", "hoja[\"A1:C2\"]"],
+      explica: "Un rango de A1 a C3. Ojo: iter_rows(max_row=3) llega hasta max_column, la columna D." },
+    { celdas: rango("A2", "B4"), opciones: ["hoja.iter_rows(min_row=2, max_row=4, max_col=2)", "hoja.iter_rows(min_row=2, max_row=4, min_col=2)",
+                                            "hoja.iter_rows(max_row=4, max_col=2)", "hoja[\"A2:B5\"]"],
+      explica: "max_col=2 corta en la columna B y min_col vale 1 si no se da. Con min_col=2 serían las columnas B a D." },
+    { celdas: rango("B1", "C3", true), opciones: ["hoja.iter_cols(min_col=2, max_col=3, max_row=3)", "hoja.iter_rows(min_col=2, max_col=3, max_row=3)",
+                                                  "hoja.iter_cols(min_col=2, max_col=3)", "hoja.iter_cols(max_col=3, max_row=3)"],
+      explica: "Mira el orden: B1, B2, B3 y luego C1... es por columnas, así que es iter_cols. iter_rows recorre las mismas celdas, pero fila por fila." },
+    { celdas: rango("B2", "D10"), opciones: ["hoja.iter_rows(min_row=2, min_col=2)", "hoja.iter_rows(min_row=2, max_col=2)",
+                                             "hoja[\"B2:D8\"]", "hoja.iter_rows(min_col=2)"],
+      explica: "Sin max_row ni max_col, iter_rows llega hasta max_row (10) y max_column (4)." },
+    { celdas: rango("A10", "D10"), opciones: ["hoja[hoja.max_row]", "hoja[hoja.max_column]", "hoja[\"A10:B10\"]", "hoja[8]"],
+      explica: "hoja.max_row es 10: hoja[10] es la fila 10 completa. hoja[hoja.max_column] sería hoja[4]." },
+    { celdas: ["D10"], opciones: ["hoja.cell(row=hoja.max_row, column=hoja.max_column)", "hoja.cell(row=hoja.max_column, column=hoja.max_row)",
+                                  "hoja[\"D8\"]", "hoja.cell(row=10, column=3)"],
+      explica: "La última fila (10) y la última columna (4 = D): D10, aunque esté vacía." },
+    { celdas: rango("A1", "D1"), opciones: ["hoja[1]", "hoja[\"A\"]", "hoja.iter_rows(max_row=1, max_col=3)", "hoja[\"A1:D2\"]"],
+      explica: "hoja[1] es la fila del encabezado: el recorrido de for celda in hoja[1] para darle estilo." },
+    { celdas: rango("B1", "C10", true), opciones: ["hoja[\"B:C\"]", "hoja.iter_rows(min_col=2, max_col=3)", "hoja[\"B2:C10\"]", "hoja[\"B\"]"],
+      explica: "Dos columnas completas, en orden de columnas. iter_rows(min_col=2, max_col=3) da las mismas celdas, pero fila por fila." },
+    { celdas: rango("A1", "A10"), opciones: ["hoja[\"A\"]", "hoja[1]", "hoja[\"A1:A8\"]", "hoja.iter_cols(max_col=1, min_row=2)"],
+      explica: "La columna A completa, hasta max_row (10)." },
+    { celdas: ["B10"], opciones: ["hoja.cell(row=hoja.max_row, column=2)", "hoja.cell(row=2, column=hoja.max_row)", "hoja[\"B8\"]", "hoja.cell(row=10, column=1)"],
+      explica: "Fila hoja.max_row (10), columna 2: la fórmula de la mediana." }
+  ];
+  // Qué celdas toca una instrucción (las mismas formas que usa el juego), sobre una hoja que va de
+  // A1 a maxCol/maxFila. Regresa {celdas: [...]} en el orden en que se recorren, o {valor: "..."}.
+  function evaluarInstruccion(texto, maxFila, maxCol) {
+    var t = texto.replace(/\s+/g, "");
+    function numero(e) {
+      if (e === "hoja.max_row") return maxFila;
+      if (e === "hoja.max_column") return maxCol;
+      if (/^\d+$/.test(e)) return parseInt(e, 10);
+      throw new Error("No entiendo " + e);
+    }
+    function argumentos(s) {
+      var res = { pos: [], nom: {} };
+      if (s === "") return res;
+      s.split(",").forEach(function (a) {
+        var m = /^(\w+)=(.+)$/.exec(a);
+        if (m) res.nom[m[1]] = numero(m[2]); else res.pos.push(numero(a));
+      });
+      return res;
+    }
+    function rect(f0, f1, c0, c1, porColumnas) {
+      var res = [], f, c;
+      if (porColumnas) { for (c = c0; c <= c1; c++) for (f = f0; f <= f1; f++) res.push(coord(f, c)); }
+      else { for (f = f0; f <= f1; f++) for (c = c0; c <= c1; c++) res.push(coord(f, c)); }
+      return res;
+    }
+    var m;
+    if (t === "hoja.max_row") return { valor: String(maxFila) };
+    if (t === "hoja.max_column") return { valor: String(maxCol) };
+    if ((m = /^get_column_letter\((\d+)\)$/.exec(t))) return { valor: letraColumna(parseInt(m[1], 10)) };
+    if ((m = /^column_index_from_string\(["']([A-Z]+)["']\)$/.exec(t))) return { valor: String(indiceColumna(m[1])) };
+    if ((m = /^hoja\[["']([A-Z]+)(\d+)["']\]$/.exec(t))) return { celdas: [m[1] + m[2]] };
+    if ((m = /^hoja\[["']([A-Z]+)(\d+):([A-Z]+)(\d+)["']\]$/.exec(t))) {
+      return { celdas: rect(+m[2], +m[4], indiceColumna(m[1]), indiceColumna(m[3])) };
+    }
+    if ((m = /^hoja\[["']([A-Z]+)(?::([A-Z]+))?["']\]$/.exec(t))) {
+      return { celdas: rect(1, maxFila, indiceColumna(m[1]), indiceColumna(m[2] || m[1]), true) };
+    }
+    if ((m = /^hoja\[([\w.]+)\]$/.exec(t))) { var n = numero(m[1]); return { celdas: rect(n, n, 1, maxCol) }; }
+    if ((m = /^hoja\.cell\((.*)\)$/.exec(t))) {
+      var a = argumentos(m[1]);
+      var fila = a.nom.row !== undefined ? a.nom.row : a.pos[0], col = a.nom.column !== undefined ? a.nom.column : a.pos[1];
+      return { celdas: [coord(fila, col)] };
+    }
+    if ((m = /^hoja\.iter_(rows|cols)\((.*)\)$/.exec(t))) {
+      var o = argumentos(m[2]).nom;
+      return { celdas: rect(o.min_row || 1, o.max_row || maxFila, o.min_col || 1, o.max_col || maxCol, m[1] === "cols") };
+    }
+    throw new Error("No entiendo " + texto);
+  }
+  // ==== FIN DATOS DEL JUEGO ====
+
+  // ---------- Código Python con los colores del curso ----------
+  var PY_KW = /^(False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)$/;
+  function pyResaltar(linea) {
+    var html = "", i = 0, m, resto;
+    while (i < linea.length) {
+      resto = linea.slice(i);
+      if ((m = /^#.*/.exec(resto))) { html += '<span class="com">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[rRbBfFuU]{0,2}("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/.exec(resto))) { html += '<span class="str">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[A-Za-z_\u00C0-\u024F][\w\u00C0-\u024F]*/.exec(resto))) { html += PY_KW.test(m[0]) ? '<span class="kw">' + m[0] + "</span>" : esc(m[0]); }
+      else if ((m = /^(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?j?/.exec(resto))) { html += '<span class="num">' + m[0] + "</span>"; }
+      else { m = [resto[0]]; html += esc(m[0]); }
+      i += m[0].length;
+    }
+    return html;
+  }
+  function mostrarCodigo(el, lineas) {
+    el.innerHTML = '<div class="codigo"><ol>' + lineas.map(function (l) {
+      return "<li>" + (pyResaltar(l) || " ") + "</li>";
+    }).join("") + "</ol></div>";
+  }
+
+  var $ = function (id) { return document.getElementById(id); };
+  var HOJA = hojaDelJuego(), FILAS = 12, COLS = 6, MAXF = 10, MAXC = 4;
+  function buscar(t, f, c) { var x = HOJA.celdas[coord(f, c)]; return x ? x.v : null; }
+  function barajar(a) {
+    a = a.slice();
+    for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; }
+    return a;
+  }
+  // Ancho de las columnas en pantalla: el de Excel o más angosto en un celular
+  function anchoColumna(el) {
+    var w = (el.clientWidth || 600) - XL_ANCHO_ENC - 4;
+    return Math.max(44, Math.min(64, Math.floor(w / COLS)));
+  }
+  // "de A1 a C3 (9 celdas, fila por fila)"
+  function describir(celdas) {
+    if (celdas.length === 1) return celdas[0];
+    var p = partirCoord(celdas[0]), q = partirCoord(celdas[celdas.length - 1]);
+    var porFilas = JSON.stringify(rango(celdas[0], celdas[celdas.length - 1])) === JSON.stringify(celdas);
+    var porCols = JSON.stringify(rango(celdas[0], celdas[celdas.length - 1], true)) === JSON.stringify(celdas);
+    var orden = p.fila === q.fila ? "" : (p.col === q.col ? "" : (porFilas ? ", fila por fila" : ", columna por columna"));
+    if (porFilas || porCols) return "de " + celdas[0] + " a " + celdas[celdas.length - 1] + " (" + celdas.length + " celdas" + orden + ")";
+    return celdas.join(", ");
+  }
+
+  // ===================================================== Pestañas
+  document.querySelectorAll("nav.pestanas button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      document.querySelectorAll("nav.pestanas button").forEach(function (x) { x.classList.remove("activo"); x.setAttribute("aria-selected", "false"); });
+      document.querySelectorAll("section.vista").forEach(function (x) { x.classList.remove("activo"); });
+      b.classList.add("activo"); b.setAttribute("aria-selected", "true");
+      $(b.dataset.vista).classList.add("activo");
+      if (b.dataset.vista === "v1") pintar1(); else pintar2();
+    });
+  });
+
+  // ===================================================== Modo 1: marca las celdas
+  var j1 = null;
+  function nuevoJuego1() {
+    var rondas = [];
+    [1, 2, 3].forEach(function (nivel) {
+      var del = INSTRUCCIONES.filter(function (x) { return x.nivel === nivel; });
+      var escritas = barajar(del.filter(function (x) { return x.escrita; }));
+      var celdas = barajar(del.filter(function (x) { return !x.escrita; }));
+      var elegidas = escritas.length ? [escritas[0]].concat(celdas.slice(0, 3)) : celdas.slice(0, 4);
+      rondas = rondas.concat(barajar(elegidas));
+    });
+    j1 = { rondas: rondas, k: 0, puntos: 0, historial: [], sel: {}, cursor: "A1", comprobado: false, ancla: null };
+    $("resumen1").hidden = true; $("jugando1").hidden = false;
+    pintar1();
+  }
+  function rondaActual1() { return j1.rondas[j1.k]; }
+  function pintar1() {
+    var r = rondaActual1(), total = j1.rondas.length;
+    $("ronda1").textContent = "Ronda " + Math.min(j1.k + 1, total) + " de " + total;
+    $("puntos1").textContent = "Puntos: " + j1.puntos;
+    $("barra1").style.width = (100 * j1.historial.length / total) + "%";
+    if (!r) return;
+    $("ins1").innerHTML = pyResaltar(r.codigo);
+    $("pide1").textContent = r.escrita ? "¿Qué valor regresa esta instrucción?" : "¿Qué celdas toca esta instrucción? Márcalas en la hoja.";
+    $("escrita1").hidden = !r.escrita;
+    $("rangoCaja1").hidden = !!r.escrita;
+    $("borrar1").hidden = !!r.escrita;
+    $("ayuda1").hidden = !!r.escrita;
+    $("comprobar1").hidden = j1.comprobado;
+    $("siguiente1").hidden = !j1.comprobado;
+    $("borrar1").disabled = j1.comprobado;
+    $("resp1").disabled = j1.comprobado;
+    pintarHoja1();
+  }
+  function pintarHoja1() {
+    var r = rondaActual1(), marcas = {}, numeros = null;
+    if (r && !r.escrita) {
+      if (!j1.comprobado) {
+        Object.keys(j1.sel).forEach(function (c) { marcas[c] = "xl-elegida"; });
+        if (j1.ancla) marcas[j1.ancla] = (marcas[j1.ancla] ? marcas[j1.ancla] + " " : "") + "xl-ancla";
+      } else {
+        numeros = {};
+        r.celdas.forEach(function (c, i) { numeros[c] = i + 1; marcas[c] = j1.sel[c] ? "xl-bien" : "xl-falta"; });
+        Object.keys(j1.sel).forEach(function (c) { if (!marcas[c]) marcas[c] = "xl-sobra"; });
+      }
+    }
+    $("hoja1").innerHTML = htmlHoja(HOJA, { filas: FILAS, cols: COLS, buscar: buscar, marcas: marcas, numeros: numeros,
+      sel: j1.cursor, foco: true, elegidas: (r && !r.escrita && !j1.comprobado) ? j1.sel : null, anchoCss: anchoColumna($("hoja1")),
+      etiqueta: "Hoja Clima: marca las celdas que toca la instrucción" });
+  }
+  // Marcar sin volver a dibujar (para arrastrar)
+  function refrescarMarcas1() {
+    $("hoja1").querySelectorAll("td[data-c]").forEach(function (td) {
+      var c = td.dataset.c, si = !!j1.sel[c];
+      td.classList.toggle("xl-elegida", si);
+      td.classList.toggle("xl-ancla", j1.ancla === c);
+      td.setAttribute("aria-selected", si ? "true" : "false");
+    });
+  }
+  function puedeMarcar() { var r = rondaActual1(); return r && !r.escrita && !j1.comprobado; }
+  function marcarRect(a, b, valor) {
+    var p = partirCoord(a), q = partirCoord(b);
+    for (var f = Math.min(p.fila, q.fila); f <= Math.max(p.fila, q.fila); f++) {
+      for (var c = Math.min(p.col, q.col); c <= Math.max(p.col, q.col); c++) {
+        if (valor) j1.sel[coord(f, c)] = true; else delete j1.sel[coord(f, c)];
+      }
+    }
+  }
+  var arrastre = null, ignorarClic = false;
+  $("hoja1").addEventListener("mousedown", function (e) {
+    var td = e.target.closest("td[data-c]");
+    if (!td || !puedeMarcar() || e.button !== 0 || $("rango1").checked) return;
+    e.preventDefault();
+    var c = td.dataset.c;
+    arrastre = { inicio: c, valor: !j1.sel[c], base: JSON.parse(JSON.stringify(j1.sel)) };
+    marcarRect(c, c, arrastre.valor);
+    j1.cursor = c;
+    refrescarMarcas1();
+    ignorarClic = true;
+  });
+  $("hoja1").addEventListener("mouseover", function (e) {
+    if (!arrastre) return;
+    var td = e.target.closest("td[data-c]");
+    if (!td) return;
+    j1.sel = JSON.parse(JSON.stringify(arrastre.base));
+    marcarRect(arrastre.inicio, td.dataset.c, arrastre.valor);
+    refrescarMarcas1();
+  });
+  document.addEventListener("mouseup", function () { arrastre = null; });
+  $("hoja1").addEventListener("click", function (e) {
+    var td = e.target.closest("td[data-c]");
+    if (ignorarClic) { ignorarClic = false; if (td) enfocar1(td.dataset.c); return; }
+    if (!td || !puedeMarcar()) return;
+    var c = td.dataset.c;
+    if ($("rango1").checked) {
+      if (!j1.ancla) j1.ancla = c;
+      else { marcarRect(j1.ancla, c, true); j1.ancla = null; }
+    } else if (j1.sel[c]) delete j1.sel[c]; else j1.sel[c] = true;
+    j1.cursor = c;
+    refrescarMarcas1();
+  });
+  function enfocar1(c) {
+    var td = $("hoja1").querySelector('td[data-c="' + c + '"]');
+    if (td) {
+      $("hoja1").querySelectorAll("td[tabindex='0']").forEach(function (x) { x.setAttribute("tabindex", "-1"); });
+      td.setAttribute("tabindex", "0");
+      td.focus();
+    }
+  }
+  $("hoja1").addEventListener("keydown", function (e) {
+    var td = e.target.closest && e.target.closest("td[data-c]");
+    if (!td) return;
+    var p = partirCoord(td.dataset.c), f = p.fila, c = p.col;
+    if (e.key === "ArrowUp") f--; else if (e.key === "ArrowDown") f++;
+    else if (e.key === "ArrowLeft") c--; else if (e.key === "ArrowRight") c++;
+    else if (e.key === " " || e.key === "Enter") {
+      e.preventDefault();
+      if (puedeMarcar()) { if (j1.sel[td.dataset.c]) delete j1.sel[td.dataset.c]; else j1.sel[td.dataset.c] = true; refrescarMarcas1(); }
+      return;
+    } else return;
+    e.preventDefault();
+    f = Math.min(FILAS, Math.max(1, f)); c = Math.min(COLS, Math.max(1, c));
+    j1.cursor = coord(f, c);
+    if (e.shiftKey && puedeMarcar()) { j1.sel[td.dataset.c] = true; j1.sel[j1.cursor] = true; refrescarMarcas1(); }
+    enfocar1(j1.cursor);
+  });
+  $("borrar1").addEventListener("click", function () { j1.sel = {}; j1.ancla = null; refrescarMarcas1(); });
+  $("rango1").addEventListener("change", function () { j1.ancla = null; refrescarMarcas1(); });
+  $("resp1").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); comprobar1(); } });
+  $("comprobar1").addEventListener("click", comprobar1);
+  function comprobar1() {
+    var r = rondaActual1();
+    if (!r || j1.comprobado) return;
+    var bien, texto;
+    if (r.escrita) {
+      var dada = $("resp1").value.trim();
+      if (dada === "") { $("resultado1").hidden = false; $("resultado1").innerHTML = "Escribe tu respuesta antes de comprobar."; $("resp1").focus(); return; }
+      bien = r.acepta.indexOf(dada) >= 0;
+      var casi = !bien && r.acepta.some(function (a) { return a.toLowerCase() === dada.toLowerCase(); });
+      texto = (bien ? '<span class="ok">¡Correcto!</span> ' : '<span class="mal">' + (casi ? "Casi: fíjate en las mayúsculas." : "No.") + "</span> ") +
+              "<code>" + esc(r.codigo) + "</code> regresa " + esc(r.regresa) + ". " + esc(r.explica);
+    } else {
+      var esperadas = {};
+      r.celdas.forEach(function (c) { esperadas[c] = true; });
+      var marcadas = Object.keys(j1.sel);
+      if (!marcadas.length) { $("resultado1").hidden = false; $("resultado1").innerHTML = "Marca al menos una celda antes de comprobar."; return; }
+      var faltan = r.celdas.filter(function (c) { return !j1.sel[c]; }).length;
+      var sobran = marcadas.filter(function (c) { return !esperadas[c]; }).length;
+      bien = !faltan && !sobran;
+      texto = (bien ? '<span class="ok">¡Exacto!</span> ' : '<span class="mal">' +
+               [faltan === 1 ? "Te faltó 1 celda" : (faltan ? "Te faltaron " + faltan + " celdas" : ""),
+                sobran === 1 ? "sobró 1" : (sobran ? "sobraron " + sobran : "")]
+               .filter(Boolean).join(" y ").replace(/^s/, "S") + ".</span> ") +
+              "Toca " + esc(describir(r.celdas)) + ". Regresa " + esc(r.regresa) + ". " + esc(r.explica);
+    }
+    j1.comprobado = true;
+    if (bien) j1.puntos++;
+    j1.historial.push({ codigo: r.codigo, bien: bien });
+    $("resultado1").hidden = false;
+    $("resultado1").innerHTML = texto;
+    pintar1();
+    $("siguiente1").focus();
+  }
+  $("siguiente1").addEventListener("click", function () {
+    j1.k++; j1.sel = {}; j1.ancla = null; j1.comprobado = false;
+    $("resultado1").hidden = true; $("resp1").value = "";
+    if (j1.k >= j1.rondas.length) { resumen(1, j1); return; }
+    pintar1();
+    if (rondaActual1().escrita) $("resp1").focus(); else enfocar1(j1.cursor);
+  });
+
+  function resumen(n, j) {
+    var total = j.rondas.length;
+    $("jugando" + n).hidden = true;
+    $("ronda" + n).textContent = "Terminaste";
+    $("puntos" + n).textContent = "Puntos: " + j.puntos;
+    $("barra" + n).style.width = "100%";
+    var frase = j.puntos === total ? "¡Perfecto! Ya dominas las coordenadas de openpyxl." :
+                j.puntos >= total * 0.75 ? "Muy bien. Repasa las que fallaste (abajo)." :
+                j.puntos >= total / 2 ? "Vas bien. Fíjate en el orden fila-columna y en max_row." :
+                "Vuelve a intentarlo: lee con calma la explicación después de cada respuesta.";
+    var html = '<p class="gran">' + j.puntos + " de " + total + "</p><p>" + frase + "</p>" +
+      '<table><thead><tr><th scope="col">Instrucción</th><th scope="col">Resultado</th></tr></thead><tbody>' +
+      j.historial.map(function (h) {
+        return "<tr><td>" + esc(h.codigo) + "</td><td>" + (h.bien ? '<span class="ok">✓ bien</span>' : '<span class="mal">✗ revisar</span>') + "</td></tr>";
+      }).join("") + "</tbody></table>" +
+      '<button type="button" class="accion primaria" id="otra' + n + '">Jugar otra vez</button>';
+    $("resumen" + n).innerHTML = html;
+    $("resumen" + n).hidden = false;
+    $("otra" + n).addEventListener("click", function () { if (n === 1) nuevoJuego1(); else nuevoJuego2(); });
+    $("otra" + n).focus();
+    if (n === 1) pintarHoja1Final(); else pintarHoja2Final();
+  }
+  function pintarHoja1Final() {
+    $("hoja1").innerHTML = htmlHoja(HOJA, { filas: FILAS, cols: COLS, buscar: buscar, anchoCss: anchoColumna($("hoja1")) });
+  }
+
+  // ===================================================== Modo 2: elige la instrucción
+  var j2 = null;
+  function nuevoJuego2() {
+    j2 = { rondas: barajar(RONDAS_B).slice(0, 12), k: 0, puntos: 0, historial: [], respondida: null };
+    j2.rondas.forEach(function (r) { r.orden = barajar([0, 1, 2, 3]); });
+    $("resumen2").hidden = true; $("jugando2").hidden = false;
+    pintar2();
+  }
+  function pintar2() {
+    var r = j2.rondas[j2.k], total = j2.rondas.length;
+    if (j2.k >= total) return;
+    $("ronda2").textContent = "Ronda " + (j2.k + 1) + " de " + total;
+    $("puntos2").textContent = "Puntos: " + j2.puntos;
+    $("barra2").style.width = (100 * j2.historial.length / total) + "%";
+    $("describe2").textContent = "Celdas marcadas: " + describir(r.celdas) + ".";
+    var marcas = {}, numeros = {};
+    r.celdas.forEach(function (c, i) { marcas[c] = "xl-meta"; numeros[c] = i + 1; });
+    $("hoja2").innerHTML = htmlHoja(HOJA, { filas: FILAS, cols: COLS, buscar: buscar, marcas: marcas, numeros: numeros,
+      anchoCss: anchoColumna($("hoja2")), etiqueta: "Hoja Clima con las celdas marcadas: " + describir(r.celdas) });
+    $("opciones2").innerHTML = r.orden.map(function (i) {
+      var op = r.opciones[i], cl = "", por = "";
+      if (j2.respondida !== null) {
+        if (i === 0) cl = "correcta";
+        else if (i === j2.respondida) cl = "incorrecta";
+        if (i !== 0 && (i === j2.respondida)) {
+          var res = evaluarInstruccion(op, MAXF, MAXC).celdas;
+          por = '<span class="por">Esta toca ' + esc(describir(res)) + ".</span>";
+        }
+      }
+      return '<button type="button" data-i="' + i + '"' + (cl ? ' class="' + cl + '"' : "") + (j2.respondida !== null ? " disabled" : "") +
+             ">" + pyResaltar(op) + por + "</button>";
+    }).join("");
+    $("siguiente2").hidden = j2.respondida === null;
+  }
+  $("opciones2").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-i]");
+    if (!b || j2.respondida !== null) return;
+    var r = j2.rondas[j2.k], i = Number(b.dataset.i), bien = i === 0;
+    j2.respondida = i;
+    if (bien) j2.puntos++;
+    j2.historial.push({ codigo: r.opciones[0], bien: bien });
+    $("resultado2").hidden = false;
+    $("resultado2").innerHTML = (bien ? '<span class="ok">¡Correcto!</span> ' : '<span class="mal">No es esa.</span> La correcta es <code>' +
+      esc(r.opciones[0]) + "</code>. ") + esc(r.explica);
+    pintar2();
+    $("siguiente2").focus();
+  });
+  $("siguiente2").addEventListener("click", function () {
+    j2.k++; j2.respondida = null; $("resultado2").hidden = true;
+    if (j2.k >= j2.rondas.length) { resumen(2, j2); return; }
+    pintar2();
+    var b = $("opciones2").querySelector("button");
+    if (b) b.focus();
+  });
+  function pintarHoja2Final() {
+    $("hoja2").innerHTML = htmlHoja(HOJA, { filas: FILAS, cols: COLS, buscar: buscar, anchoCss: anchoColumna($("hoja2")) });
+  }
+
+  mostrarCodigo($("codigoHoja"), CODIGO_HOJA);
+  window.addEventListener("resize", function () {
+    if (!$("resumen1").hidden) pintarHoja1Final(); else pintarHoja1();
+    if (!$("resumen2").hidden) pintarHoja2Final(); else pintar2();
+  });
+  nuevoJuego1();
+  nuevoJuego2();
+})();
+</script>
+<div id="qr-sitio" class="qr-capa" hidden>
+  <div class="qr-caja" role="dialog" aria-modal="true" aria-label="Código QR de esta página">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 45" role="img" aria-label="Código QR de https://memosanchezg.github.io/programacion-basica-interactivos/semana-14-coordenadas.html" shape-rendering="crispEdges"><rect width="45" height="45" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM10 2h1v1h-1zM12 2h4v1h-4zM23 2h9v1h-9zM36 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM11 3h2v1h-2zM14 3h1v1h-1zM16 3h3v1h-3zM20 3h2v1h-2zM23 3h2v1h-2zM27 3h2v1h-2zM30 3h1v1h-1zM33 3h1v1h-1zM36 3h1v1h-1zM42 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM14 4h1v1h-1zM17 4h1v1h-1zM19 4h4v1h-4zM24 4h2v1h-2zM28 4h2v1h-2zM31 4h4v1h-4zM36 4h1v1h-1zM38 4h3v1h-3zM42 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h1v1h-1zM13 5h1v1h-1zM16 5h1v1h-1zM19 5h1v1h-1zM21 5h1v1h-1zM23 5h1v1h-1zM25 5h1v1h-1zM30 5h1v1h-1zM32 5h3v1h-3zM36 5h1v1h-1zM38 5h3v1h-3zM42 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h2v1h-2zM15 6h1v1h-1zM22 6h2v1h-2zM25 6h1v1h-1zM27 6h1v1h-1zM29 6h4v1h-4zM36 6h1v1h-1zM38 6h3v1h-3zM42 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h1v1h-1zM12 7h4v1h-4zM21 7h1v1h-1zM23 7h1v1h-1zM26 7h3v1h-3zM30 7h1v1h-1zM33 7h1v1h-1zM36 7h1v1h-1zM42 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM30 8h1v1h-1zM32 8h1v1h-1zM34 8h1v1h-1zM36 8h7v1h-7zM10 9h3v1h-3zM14 9h1v1h-1zM17 9h1v1h-1zM19 9h1v1h-1zM23 9h2v1h-2zM28 9h1v1h-1zM30 9h5v1h-5zM2 10h1v1h-1zM6 10h1v1h-1zM8 10h3v1h-3zM12 10h5v1h-5zM18 10h2v1h-2zM21 10h1v1h-1zM23 10h2v1h-2zM31 10h1v1h-1zM33 10h7v1h-7zM42 10h1v1h-1zM2 11h2v1h-2zM5 11h1v1h-1zM11 11h2v1h-2zM15 11h1v1h-1zM17 11h1v1h-1zM19 11h2v1h-2zM25 11h1v1h-1zM28 11h3v1h-3zM32 11h1v1h-1zM35 11h5v1h-5zM42 11h1v1h-1zM3 12h1v1h-1zM6 12h6v1h-6zM13 12h2v1h-2zM19 12h2v1h-2zM22 12h5v1h-5zM29 12h1v1h-1zM34 12h3v1h-3zM38 12h1v1h-1zM42 12h1v1h-1zM2 13h1v1h-1zM4 13h3v1h-3zM11 13h2v1h-2zM14 13h1v1h-1zM17 13h1v1h-1zM19 13h2v1h-2zM23 13h1v1h-1zM25 13h2v1h-2zM28 13h1v1h-1zM30 13h2v1h-2zM33 13h2v1h-2zM37 13h1v1h-1zM39 13h1v1h-1zM41 13h1v1h-1zM2 14h1v1h-1zM4 14h2v1h-2zM7 14h6v1h-6zM15 14h1v1h-1zM17 14h3v1h-3zM22 14h3v1h-3zM31 14h1v1h-1zM34 14h1v1h-1zM37 14h1v1h-1zM41 14h2v1h-2zM3 15h3v1h-3zM14 15h1v1h-1zM16 15h1v1h-1zM20 15h2v1h-2zM24 15h1v1h-1zM26 15h3v1h-3zM30 15h1v1h-1zM32 15h1v1h-1zM36 15h3v1h-3zM42 15h1v1h-1zM5 16h6v1h-6zM13 16h1v1h-1zM15 16h1v1h-1zM18 16h1v1h-1zM21 16h1v1h-1zM23 16h1v1h-1zM25 16h2v1h-2zM30 16h1v1h-1zM35 16h2v1h-2zM38 16h1v1h-1zM40 16h1v1h-1zM42 16h1v1h-1zM2 17h1v1h-1zM6 17h2v1h-2zM12 17h1v1h-1zM14 17h1v1h-1zM19 17h1v1h-1zM21 17h5v1h-5zM28 17h1v1h-1zM31 17h2v1h-2zM34 17h1v1h-1zM38 17h2v1h-2zM41 17h2v1h-2zM3 18h1v1h-1zM5 18h4v1h-4zM13 18h2v1h-2zM16 18h1v1h-1zM18 18h2v1h-2zM22 18h2v1h-2zM29 18h1v1h-1zM31 18h4v1h-4zM37 18h1v1h-1zM39 18h1v1h-1zM41 18h1v1h-1zM6 19h2v1h-2zM9 19h1v1h-1zM11 19h1v1h-1zM13 19h4v1h-4zM19 19h2v1h-2zM25 19h2v1h-2zM28 19h5v1h-5zM35 19h4v1h-4zM40 19h1v1h-1zM42 19h1v1h-1zM3 20h2v1h-2zM6 20h1v1h-1zM8 20h2v1h-2zM11 20h3v1h-3zM16 20h2v1h-2zM20 20h1v1h-1zM22 20h8v1h-8zM31 20h2v1h-2zM35 20h3v1h-3zM39 20h1v1h-1zM41 20h2v1h-2zM2 21h1v1h-1zM5 21h3v1h-3zM9 21h1v1h-1zM12 21h2v1h-2zM15 21h3v1h-3zM21 21h3v1h-3zM25 21h3v1h-3zM29 21h1v1h-1zM31 21h1v1h-1zM33 21h5v1h-5zM39 21h1v1h-1zM41 21h1v1h-1zM5 22h1v1h-1zM7 22h2v1h-2zM13 22h1v1h-1zM15 22h4v1h-4zM22 22h1v1h-1zM25 22h3v1h-3zM32 22h4v1h-4zM37 22h1v1h-1zM2 23h1v1h-1zM4 23h3v1h-3zM9 23h1v1h-1zM11 23h1v1h-1zM14 23h2v1h-2zM18 23h3v1h-3zM24 23h2v1h-2zM28 23h3v1h-3zM32 23h1v1h-1zM35 23h6v1h-6zM42 23h1v1h-1zM3 24h4v1h-4zM8 24h3v1h-3zM12 24h1v1h-1zM14 24h1v1h-1zM17 24h1v1h-1zM19 24h1v1h-1zM22 24h1v1h-1zM25 24h5v1h-5zM31 24h2v1h-2zM34 24h1v1h-1zM36 24h1v1h-1zM39 24h1v1h-1zM42 24h1v1h-1zM7 25h1v1h-1zM9 25h4v1h-4zM14 25h2v1h-2zM19 25h1v1h-1zM21 25h1v1h-1zM23 25h1v1h-1zM25 25h2v1h-2zM29 25h9v1h-9zM39 25h1v1h-1zM41 25h1v1h-1zM2 26h2v1h-2zM5 26h4v1h-4zM14 26h2v1h-2zM17 26h3v1h-3zM21 26h3v1h-3zM25 26h2v1h-2zM30 26h2v1h-2zM34 26h2v1h-2zM39 26h1v1h-1zM42 26h1v1h-1zM4 27h1v1h-1zM9 27h3v1h-3zM16 27h4v1h-4zM25 27h1v1h-1zM28 27h3v1h-3zM32 27h1v1h-1zM34 27h1v1h-1zM36 27h3v1h-3zM40 27h1v1h-1zM42 27h1v1h-1zM3 28h1v1h-1zM8 28h1v1h-1zM12 28h1v1h-1zM16 28h2v1h-2zM19 28h1v1h-1zM22 28h1v1h-1zM24 28h2v1h-2zM27 28h3v1h-3zM31 28h1v1h-1zM34 28h1v1h-1zM42 28h1v1h-1zM3 29h1v1h-1zM7 29h1v1h-1zM14 29h4v1h-4zM19 29h5v1h-5zM25 29h1v1h-1zM28 29h1v1h-1zM31 29h5v1h-5zM37 29h1v1h-1zM39 29h1v1h-1zM42 29h1v1h-1zM3 30h2v1h-2zM7 30h4v1h-4zM13 30h2v1h-2zM16 30h2v1h-2zM19 30h1v1h-1zM21 30h1v1h-1zM23 30h4v1h-4zM29 30h3v1h-3zM35 30h1v1h-1zM41 30h1v1h-1zM2 31h4v1h-4zM7 31h1v1h-1zM9 31h4v1h-4zM15 31h1v1h-1zM18 31h1v1h-1zM20 31h4v1h-4zM28 31h1v1h-1zM31 31h2v1h-2zM36 31h1v1h-1zM38 31h2v1h-2zM41 31h2v1h-2zM4 32h1v1h-1zM6 32h1v1h-1zM8 32h3v1h-3zM14 32h7v1h-7zM22 32h2v1h-2zM27 32h3v1h-3zM32 32h1v1h-1zM35 32h1v1h-1zM38 32h2v1h-2zM42 32h1v1h-1zM4 33h4v1h-4zM10 33h1v1h-1zM12 33h1v1h-1zM18 33h2v1h-2zM23 33h1v1h-1zM26 33h1v1h-1zM29 33h4v1h-4zM35 33h1v1h-1zM38 33h2v1h-2zM41 33h1v1h-1zM2 34h10v1h-10zM13 34h1v1h-1zM16 34h1v1h-1zM19 34h1v1h-1zM21 34h6v1h-6zM31 34h1v1h-1zM34 34h6v1h-6zM41 34h2v1h-2zM10 35h3v1h-3zM15 35h1v1h-1zM17 35h1v1h-1zM20 35h1v1h-1zM23 35h1v1h-1zM25 35h7v1h-7zM34 35h1v1h-1zM38 35h3v1h-3zM42 35h1v1h-1zM2 36h7v1h-7zM10 36h1v1h-1zM12 36h1v1h-1zM17 36h1v1h-1zM19 36h1v1h-1zM22 36h1v1h-1zM25 36h2v1h-2zM29 36h1v1h-1zM32 36h3v1h-3zM36 36h1v1h-1zM38 36h1v1h-1zM40 36h1v1h-1zM42 36h1v1h-1zM2 37h1v1h-1zM8 37h1v1h-1zM11 37h1v1h-1zM13 37h3v1h-3zM18 37h4v1h-4zM24 37h2v1h-2zM28 37h1v1h-1zM30 37h1v1h-1zM33 37h2v1h-2zM38 37h2v1h-2zM42 37h1v1h-1zM2 38h1v1h-1zM4 38h3v1h-3zM8 38h1v1h-1zM10 38h5v1h-5zM17 38h2v1h-2zM20 38h3v1h-3zM24 38h1v1h-1zM26 38h3v1h-3zM33 38h7v1h-7zM41 38h1v1h-1zM2 39h1v1h-1zM4 39h3v1h-3zM8 39h1v1h-1zM11 39h2v1h-2zM16 39h3v1h-3zM23 39h1v1h-1zM25 39h3v1h-3zM29 39h4v1h-4zM34 39h1v1h-1zM37 39h1v1h-1zM40 39h2v1h-2zM2 40h1v1h-1zM4 40h3v1h-3zM8 40h1v1h-1zM12 40h2v1h-2zM16 40h2v1h-2zM19 40h2v1h-2zM22 40h1v1h-1zM25 40h1v1h-1zM27 40h1v1h-1zM29 40h1v1h-1zM31 40h2v1h-2zM34 40h2v1h-2zM42 40h1v1h-1zM2 41h1v1h-1zM8 41h1v1h-1zM11 41h2v1h-2zM14 41h1v1h-1zM17 41h3v1h-3zM23 41h2v1h-2zM26 41h1v1h-1zM28 41h2v1h-2zM31 41h2v1h-2zM34 41h4v1h-4zM39 41h1v1h-1zM41 41h2v1h-2zM2 42h7v1h-7zM10 42h2v1h-2zM15 42h1v1h-1zM19 42h2v1h-2zM22 42h5v1h-5zM29 42h1v1h-1zM31 42h1v1h-1zM34 42h1v1h-1zM36 42h4v1h-4zM41 42h1v1h-1z"/></svg>
+    <p class="qr-texto">Escanea con la cámara del celular para abrir esta página</p>
+    <p class="qr-url">https://memosanchezg.github.io/programacion-basica-interactivos/semana-14-coordenadas.html</p>
+    <button type="button" class="qr-cerrar">Cerrar</button>
+  </div>
+</div>
+<style>
+  .qr-capa { position:fixed; top:0; right:0; bottom:0; left:0; z-index:10000; display:flex; align-items:center;
+             justify-content:center; padding:16px; background:#fff; }
+  .qr-capa[hidden] { display:none; }
+  .qr-caja { max-width:100%; text-align:center; color:#0A2A57; font:16px/1.4 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .qr-caja svg { display:block; width:min(62vh, 84vw); height:auto; margin:0 auto; }
+  .qr-texto { margin:12px 0 2px; font-size:1.15rem; font-weight:bold; }
+  .qr-url { margin:0 0 12px; color:#5B6472; word-break:break-all; }
+  .qr-cerrar { font:inherit; padding:6px 20px; border:2px solid #00408F; border-radius:4px; background:#fff;
+               color:#00408F; cursor:pointer; }
+</style>
+<script>
+  (function () {
+    var capa = document.getElementById("qr-sitio");
+    document.querySelectorAll("a.qr-abrir").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        capa.hidden = false;
+        capa.querySelector(".qr-cerrar").focus();
+      });
+    });
+    capa.addEventListener("click", function (e) {
+      if (e.target === capa || e.target.classList.contains("qr-cerrar")) capa.hidden = true;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !capa.hidden) capa.hidden = true;
+    });
+  })();
+</script>
+</body>
+</html>

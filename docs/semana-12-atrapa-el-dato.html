@@ -1,0 +1,989 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="tipo" content="simulador">
+<title>Atrapa el dato</title>
+
+<style>
+  :root {
+    --azul:#00408F; --azul-oscuro:#0A2A57; --guinda:#8C1D35; --oro:#B8975A; --oro-texto:#8A6A2E;
+    --azul-claro:#E8EEF7; --oro-claro:#F7F1E6; --guinda-claro:#F5E6EA; --verde:#2F7D5B;
+    --tinta:#1B1F2A; --gris:#5B6472; --gris-claro:#E9ECF1; --borde:#D9DEE6; --fondo:#FFFFFF;
+    --cmd-fondo:#0C0C0C; --cmd-texto:#E6E6E6;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--fondo); color:var(--tinta);
+         font:16px/1.45 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .franja { height:8px; background:var(--azul); border-bottom:3px solid var(--oro); }
+  header { max-width:1280px; margin:0 auto; padding:12px 18px 4px; }
+  .semana { color:var(--guinda); font-weight:bold; letter-spacing:.04em; font-size:.85rem; text-transform:uppercase; }
+  h1 { font-family:Cambria,Georgia,serif; color:var(--azul-oscuro); font-size:1.7rem; margin:2px 0 2px; }
+  .sub { color:var(--gris); margin:0; }
+  main { max-width:1280px; margin:0 auto; padding:8px 18px 24px; }
+  .fila { display:grid; grid-template-columns:minmax(260px,360px) minmax(0,1fr); gap:16px; align-items:start; }
+  .panel { background:#fff; border:1px solid var(--borde); border-radius:10px; padding:12px 14px; }
+  .panel h2 { font-size:1.02rem; color:var(--azul-oscuro); margin:0 0 8px; }
+  label { display:block; font-weight:bold; color:var(--azul-oscuro); margin-top:10px; }
+  label small { font-weight:normal; color:var(--gris); }
+  input[type=number], input[type=text], select, textarea { font:inherit; padding:4px 6px; border:1px solid var(--borde);
+                        border-radius:6px; }
+  input.mono, textarea.mono { font-family:Consolas,"Courier New",monospace; }
+  button.accion { font:inherit; font-weight:bold; border-radius:8px; padding:7px 12px; margin:8px 6px 0 0;
+                  border:1px solid var(--azul); background:#fff; color:var(--azul); cursor:pointer; }
+  button.accion:hover, button.accion:focus-visible { background:var(--azul); color:#fff; outline:none; }
+  .lectura { background:var(--oro-claro); border-left:4px solid var(--oro); border-radius:8px; padding:10px 12px;
+             margin-top:12px; line-height:1.55; }
+  .lectura b { color:var(--azul-oscuro); }
+  .ok { color:var(--verde); font-weight:bold; }
+  .mal { color:var(--guinda); font-weight:bold; }
+  .preguntas { background:var(--azul-claro); border-radius:8px; padding:10px 14px; margin-top:12px; }
+  .preguntas h3 { margin:0 0 4px; font-size:.95rem; color:var(--azul-oscuro); }
+  .preguntas ol { margin:0; padding-left:20px; }
+  .consola { background:var(--cmd-fondo); color:var(--cmd-texto); font:15px/1.45 Consolas,"Courier New",monospace;
+             white-space:pre-wrap; word-break:break-word; padding:8px 12px; border-radius:4px; margin:8px 0; min-height:2.2em; }
+  footer { max-width:1280px; margin:0 auto; padding:6px 18px 18px; color:var(--gris); font-size:.85rem; }
+  footer a { color:var(--azul); }
+  @media (max-width: 820px) { .fila { grid-template-columns:1fr; } }
+
+  /* Propios de este juego */
+  .fila > * { min-width:0; }
+  .fila.juego { grid-template-columns:minmax(280px,420px) minmax(0,1fr); }
+  @media (max-width: 820px) { .fila.juego { grid-template-columns:1fr; } }
+  code, .mono { font-family:Consolas,"Courier New",monospace; }
+  .marcador { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:4px 12px; }
+  .marcador .ronda { font-weight:bold; color:var(--guinda); text-transform:uppercase; letter-spacing:.04em; font-size:.85rem; }
+  .marcador .puntos { font-weight:bold; color:var(--azul-oscuro); }
+  .puntos-grande { font:bold 1.15rem Cambria,Georgia,serif; color:var(--azul-oscuro); }
+  .rondas { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 4px; padding:0; list-style:none; }
+  .rondas button { width:30px; height:30px; border-radius:50%; border:2px solid var(--borde); background:#fff;
+                   font:bold 13px Calibri,"Segoe UI",sans-serif; color:var(--gris); cursor:pointer; padding:0; }
+  .rondas button.actual { border-color:var(--azul); color:var(--azul-oscuro); }
+  .rondas button.atrapada { background:var(--verde); border-color:var(--verde); color:#fff; }
+  .rondas button.saltada { border-color:var(--guinda); color:var(--guinda); }
+  .rondas button:focus-visible { outline:2px solid var(--azul); outline-offset:2px; }
+  .pregunta { font:bold 1.12rem/1.35 Cambria,Georgia,serif; color:var(--azul-oscuro); margin:10px 0 6px; }
+  .fuente { color:var(--gris); font-size:.9rem; margin:0; overflow-wrap:anywhere; }
+  .entrada { display:flex; gap:6px; align-items:stretch; margin-top:4px; }
+  .entrada input { flex:1; min-width:0; font:16px Consolas,"Courier New",monospace; padding:7px 8px; border:1px solid var(--tinta); border-radius:6px; }
+  .entrada input:focus-visible { outline:2px solid var(--azul); }
+  .entrada button.accion { margin:0; }
+  button.accion.primaria { background:var(--azul); color:#fff; }
+  button.accion.primaria:hover, button.accion.primaria:focus-visible { background:var(--azul-oscuro); }
+  button.accion:disabled { opacity:.45; cursor:not-allowed; }
+  .consola .error { color:#FF8A80; }
+  .consola .prompt { color:#9AA0A6; }
+  .tutor { margin-top:4px; }
+  .tutor.bien { background:#EAF4EF; border-left-color:var(--verde); }
+  .tutor.mal { font-weight:normal; color:var(--tinta); background:var(--guinda-claro); border-left-color:var(--guinda); }
+  .tipo { font:bold 12px/1.4 Calibri,"Segoe UI",sans-serif; border:1px solid; border-radius:9px; padding:0 7px; white-space:nowrap; }
+  .t-dict { color:var(--azul-oscuro); border-color:var(--azul-oscuro); }
+  .t-list { color:var(--guinda); border-color:var(--guinda); }
+  .t-str { color:var(--verde); border-color:var(--verde); }
+  .t-int, .t-float { color:var(--oro-texto); border-color:var(--oro); }
+  .t-bool, .t-NoneType { color:var(--gris); border-color:var(--gris); }
+  .pistas { margin:8px 0 0; padding-left:20px; }
+  .pistas li { margin:4px 0; }
+  .historial { margin:10px 0 0; padding:0; list-style:none; font-size:.92rem; }
+  .historial li { padding:3px 0; border-top:1px solid var(--gris-claro); overflow-wrap:anywhere; }
+  .historial code { color:var(--azul-oscuro); }
+  details.reglas { margin-top:12px; }
+  details.reglas summary { cursor:pointer; font-weight:bold; color:var(--azul-oscuro); }
+  .json { border:1px solid var(--tinta); background:#fff; font:14px/1.5 Consolas,"Courier New",monospace;
+          overflow:auto; max-height:70vh; margin:6px 0 0; }
+  .json ol { margin:0; padding:8px 12px 8px 3.6em; }
+  .json li { white-space:pre; }
+  .json li::marker { color:var(--gris); font:11px Cambria,Georgia,serif; }
+  .j-clave { color:#000080; }
+  .j-str, .j-num { color:#0000FF; }
+  .j-kw { color:#000080; font-weight:bold; }
+  .nota { color:var(--gris); font-size:.9rem; margin:4px 0 0; }
+  table.resumen { border-collapse:collapse; width:100%; margin-top:8px; font-size:.95rem; }
+  table.resumen th, table.resumen td { border-bottom:1px solid var(--gris-claro); padding:5px 6px; text-align:left; vertical-align:top; }
+  table.resumen th { color:var(--azul-oscuro); }
+  table.resumen td.n { text-align:right; white-space:nowrap; }
+  .tabla-scroll { overflow-x:auto; }
+  [hidden] { display:none !important; }
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header>
+  <div class="semana">Semana 12 · APIs y consumo de datos</div>
+  <h1>Atrapa el dato</h1>
+  <p class="sub">Diez respuestas reales de APIs y una pregunta en cada una: escribe la ruta en Python que llega al dato y la página te contesta como Python.</p>
+</header>
+<main>
+  <div class="fila juego" id="vista-juego">
+    <div class="panel">
+      <div class="marcador">
+        <span class="ronda" id="txt-ronda">Ronda 1 de 10</span>
+        <span class="puntos" id="txt-puntos">0 puntos</span>
+      </div>
+      <ul class="rondas" id="rondas" aria-label="Rondas"></ul>
+      <p class="pregunta" id="pregunta"></p>
+      <label for="expr">Tu expresión <small>(empieza con <code>datos</code>; Enter para probar)</small></label>
+      <div class="entrada">
+        <input id="expr" type="text" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off"
+               placeholder='datos["..."]'>
+        <button type="button" class="accion primaria" id="probar">Probar</button>
+      </div>
+      <div class="consola" id="consola" aria-live="polite" aria-label="Respuesta de Python"></div>
+      <div class="lectura tutor" id="tutor" aria-live="polite" hidden></div>
+      <div>
+        <button type="button" class="accion" id="pista">Pista (−3)</button>
+        <button type="button" class="accion" id="saltar">Saltar</button>
+        <button type="button" class="accion primaria" id="siguiente" hidden>Siguiente ronda</button>
+      </div>
+      <ol class="pistas" id="lista-pistas" aria-live="polite"></ol>
+      <ul class="historial" id="historial" aria-label="Tus intentos en esta ronda"></ul>
+      <details class="reglas">
+        <summary>Cómo se juega</summary>
+        <p>Escribe una expresión de Python que empiece con <code>datos</code> (la respuesta ya convertida con <code>r.json()</code>) y use corchetes con una clave entre comillas (<code>["name"]</code> o <code>['name']</code>) o con una posición entera, también negativa (<code>[0]</code>, <code>[-1]</code>). También puedes usar <code>len(...)</code>.</p>
+        <p>La página la evalúa como Python 3.12 y te contesta como la consola interactiva: el valor y su tipo, o el error exacto. Cuenta el <b>valor</b>: si dos rutas llegan al mismo dato, las dos valen.</p>
+        <p>Cada ronda vale 10 puntos: cada intento fallido resta 1 y cada pista 3 (si lo atrapas te llevas al menos 2). Llegar a un diccionario o a una lista para explorar no cuenta como intento. Tu avance se guarda en este navegador.</p>
+      </details>
+      <button type="button" class="accion" id="reiniciar">Empezar de nuevo</button>
+    </div>
+    <div class="panel">
+      <h2><code>datos</code> <small class="nota" style="font-weight:normal">(JSON con sangría y números de línea)</small></h2>
+      <p class="fuente" id="fuente"></p>
+      <div class="json" id="json" tabindex="0" role="region" aria-label="El JSON de esta ronda"></div>
+    </div>
+  </div>
+
+  <div class="panel" id="vista-resumen" hidden>
+    <h2>Resumen</h2>
+    <p class="puntos-grande" id="total"></p>
+    <div class="tabla-scroll"><table class="resumen" id="tabla-resumen"></table></div>
+    <div>
+      <button type="button" class="accion primaria" id="faltantes">Intentar las que faltan</button>
+      <button type="button" class="accion" id="otra-vez">Jugar otra vez</button>
+    </div>
+    <div class="preguntas">
+      <h3>Para pensar</h3>
+      <ol>
+        <li>¿Qué error te salió más veces? Explica con tus palabras qué significa.</li>
+        <li>¿Por qué <code>'-68.6102'</code> no es un float y <code>531.0</code> no es un int?</li>
+        <li>Cuando el JSON empieza con <code>[</code>, ¿qué va primero en la ruta: una clave o una posición?</li>
+      </ol>
+    </div>
+  </div>
+</main>
+<footer>
+  Programación Básica · FCFM-UANL · funciona sin internet. Respuestas reales de JSONPlaceholder y Open-Meteo (19/10/2026).
+  <a href="index.html">Índice de simuladores</a> · <a href="#qr-sitio" class="qr-abrir">Abrir en el celular (QR)</a>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+
+  function esc(t) {
+    return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  // ---------- Mostrar valores como los imprime Python ----------
+  // PyFloat marca un número que en Python es float aunque valga un entero (531.0, 35.0).
+  function PyFloat(valor) { this.valor = valor; }
+
+  // repr() de un float de Python: la representación más corta que vuelve al mismo número.
+  function pyFloat(x) {
+    if (Number.isNaN(x)) return "nan";
+    if (x === Infinity) return "inf";
+    if (x === -Infinity) return "-inf";
+    if (x === 0) return Object.is(x, -0) ? "-0.0" : "0.0";
+    var partes = Math.abs(x).toExponential().split("e");
+    var digitos = partes[0].replace(".", "");
+    var exp = parseInt(partes[1], 10);
+    var decpt = exp + 1, signo = x < 0 ? "-" : "";
+    if (decpt > 16 || decpt < -3) {
+      var mant = digitos.length > 1 ? digitos[0] + "." + digitos.slice(1) : digitos[0];
+      return signo + mant + "e" + (exp < 0 ? "-" : "+") + (Math.abs(exp) < 10 ? "0" : "") + Math.abs(exp);
+    }
+    if (decpt <= 0) return signo + "0." + "0".repeat(-decpt) + digitos;
+    if (decpt >= digitos.length) return signo + digitos + "0".repeat(decpt - digitos.length) + ".0";
+    return signo + digitos.slice(0, decpt) + "." + digitos.slice(decpt);
+  }
+
+  function hexa(n, ancho) { var s = n.toString(16); while (s.length < ancho) s = "0" + s; return s; }
+  // Caracteres que Python no considera imprimibles (repr los escribe como \x.., \u.. o \U........)
+  var NO_IMPRIMIBLE = /[\p{Cc}\p{Cf}\p{Cs}\p{Co}\p{Cn}\p{Zl}\p{Zp}\p{Zs}]/u;
+  function escaparCaracter(c, comilla) {
+    var code = c.codePointAt(0);
+    if (c === "\\") return "\\\\";
+    if (c === comilla) return "\\" + comilla;
+    if (c === "\n") return "\\n";
+    if (c === "\r") return "\\r";
+    if (c === "\t") return "\\t";
+    if (code < 32 || code === 127) return "\\x" + hexa(code, 2);
+    if (code > 127 && NO_IMPRIMIBLE.test(c)) {
+      return code <= 0xff ? "\\x" + hexa(code, 2) : code <= 0xffff ? "\\u" + hexa(code, 4) : "\\U" + hexa(code, 8);
+    }
+    return c;
+  }
+
+  // repr() de un texto: comillas simples, o dobles si el texto trae ' y no trae ".
+  function pyStr(s) {
+    var q = (s.indexOf("'") >= 0 && s.indexOf('"') < 0) ? '"' : "'";
+    var r = "";
+    for (var c of s) r += escaparCaracter(c, q);
+    return q + r + q;
+  }
+
+  // repr() de un valor: None, True/False, int (number o BigInt), float (PyFloat), str, list y dict (Map).
+  function pyRepr(v) {
+    if (v === null || v === undefined) return "None";
+    if (v === true) return "True";
+    if (v === false) return "False";
+    if (v instanceof PyFloat) return pyFloat(v.valor);
+    if (typeof v === "bigint") return v.toString();
+    if (typeof v === "number") return Number.isInteger(v) ? String(v) : pyFloat(v);
+    if (typeof v === "string") return pyStr(v);
+    if (Array.isArray(v)) return "[" + v.map(pyRepr).join(", ") + "]";
+    if (v instanceof Map) {
+      var partes = [];
+      v.forEach(function (x, k) { partes.push(pyRepr(k) + ": " + pyRepr(x)); });
+      return "{" + partes.join(", ") + "}";
+    }
+    return "{" + Object.keys(v).map(function (k) { return pyStr(k) + ": " + pyRepr(v[k]); }).join(", ") + "}";
+  }
+
+  // type(v).__name__
+  function pyTipo(v) {
+    if (v === null || v === undefined) return "NoneType";
+    if (typeof v === "boolean") return "bool";
+    if (v instanceof PyFloat) return "float";
+    if (typeof v === "bigint") return "int";
+    if (typeof v === "number") return Number.isInteger(v) ? "int" : "float";
+    if (typeof v === "string") return "str";
+    if (Array.isArray(v)) return "list";
+    return "dict";
+  }
+
+  // ---------- json.loads de Python ----------
+  // Regresa nodos {t: tipo de Python, v: valor, crudo: texto original (datos sueltos), hijos}.
+  // Los dict son Map (conservan el orden de las claves); los enteros grandes, BigInt.
+  function ErrorJSON(msg, doc, pos) {
+    var antes = Array.from(doc.slice(0, pos)), linea = 1, ultimo = -1;
+    for (var k = 0; k < antes.length; k++) if (antes[k] === "\n") { linea++; ultimo = k; }
+    this.msg = msg;
+    this.pos = antes.length;
+    this.texto = msg + ": line " + linea + " column " + (antes.length - ultimo) + " (char " + antes.length + ")";
+  }
+
+  var NUMERO_JSON = /-?(?:0|[1-9][0-9]*)(\.[0-9]+)?([eE][-+]?[0-9]+)?/y;
+  var MAX_SEGURO = BigInt(Number.MAX_SAFE_INTEGER);
+
+  function analizarJSON(s) {
+    var n = s.length, i = 0;
+    var ESCAPES = { '"': '"', "\\": "\\", "/": "/", b: "\b", f: "\f", n: "\n", r: "\r", t: "\t" };
+    function falla(msg, pos) { throw new ErrorJSON(msg, s, pos); }
+    function espacios() {
+      while (i < n) {
+        var c = s.charCodeAt(i);
+        if (c === 32 || c === 9 || c === 10 || c === 13) i++; else break;
+      }
+    }
+    function esHex4(t) { return /^[0-9a-fA-F]{4}$/.test(t); }
+    function cadena(desde) {                    // desde = posición después de la comilla
+      var inicio = desde - 1, texto = "", j = desde;
+      for (;;) {
+        var k = j, c = "";
+        for (; k < n; k++) {
+          c = s[k];
+          if (c === '"' || c === "\\") break;
+          if (s.charCodeAt(k) <= 0x1f) falla("Invalid control character at", k);
+        }
+        if (k >= n) falla("Unterminated string starting at", inicio);
+        texto += s.slice(j, k);
+        k++;
+        if (c === '"') { j = k; break; }
+        if (k >= n) falla("Unterminated string starting at", inicio);
+        c = s[k];
+        if (c !== "u") {
+          if (!Object.prototype.hasOwnProperty.call(ESCAPES, c)) falla("Invalid \\escape", k - 1);
+          texto += ESCAPES[c];
+          j = k + 1;
+        } else {
+          k++;
+          var fin = k + 4;
+          if (fin >= n) falla("Invalid \\uXXXX escape", k - 1);
+          if (!esHex4(s.slice(k, fin))) falla("Invalid \\uXXXX escape", fin - 5);
+          var cp = parseInt(s.slice(k, fin), 16);
+          if (cp >= 0xd800 && cp <= 0xdbff && fin + 6 < n && s[fin] === "\\" && s[fin + 1] === "u") {
+            if (!esHex4(s.slice(fin + 2, fin + 6))) falla("Invalid \\uXXXX escape", fin + 1);
+            var cp2 = parseInt(s.slice(fin + 2, fin + 6), 16);
+            if (cp2 >= 0xdc00 && cp2 <= 0xdfff) { cp = 0x10000 + ((cp - 0xd800) << 10) + (cp2 - 0xdc00); fin += 6; }
+          }
+          texto += String.fromCodePoint(cp);
+          j = fin;
+        }
+      }
+      i = j;
+      return { t: "str", v: texto, crudo: s.slice(inicio, j) };
+    }
+    function objeto(desde) {
+      var mapa = new Map(), hijos = [];
+      i = desde; espacios();
+      if (i < n && s[i] === "}") { i++; return { t: "dict", v: mapa, hijos: hijos }; }
+      for (;;) {
+        if (i >= n || s[i] !== '"') falla("Expecting property name enclosed in double quotes", i);
+        var clave = cadena(i + 1);
+        espacios();
+        if (i >= n || s[i] !== ":") falla("Expecting ':' delimiter", i);
+        i++; espacios();
+        var nodo = valor(i);
+        if (mapa.has(clave.v)) {
+          hijos.forEach(function (h) { if (h[0] === clave.v) h[1] = nodo; });
+        } else {
+          hijos.push([clave.v, nodo, clave.crudo]);
+        }
+        mapa.set(clave.v, nodo.v);
+        espacios();
+        if (i < n && s[i] === "}") { i++; break; }
+        if (i >= n || s[i] !== ",") falla("Expecting ',' delimiter", i);
+        i++; espacios();
+      }
+      return { t: "dict", v: mapa, hijos: hijos };
+    }
+    function arreglo(desde) {
+      var lista = [], hijos = [];
+      i = desde; espacios();
+      if (i < n && s[i] === "]") { i++; return { t: "list", v: lista, hijos: hijos }; }
+      for (;;) {
+        var nodo = valor(i);
+        hijos.push(nodo); lista.push(nodo.v);
+        espacios();
+        if (i < n && s[i] === "]") { i++; break; }
+        if (i >= n || s[i] !== ",") falla("Expecting ',' delimiter", i);
+        i++; espacios();
+      }
+      return { t: "list", v: lista, hijos: hijos };
+    }
+    function constante(desde, palabra, t, v) { i = desde + palabra.length; return { t: t, v: v, crudo: palabra }; }
+    function valor(desde) {
+      if (desde >= n) falla("Expecting value", desde);
+      var c = s[desde];
+      if (c === '"') return cadena(desde + 1);
+      if (c === "{") return objeto(desde + 1);
+      if (c === "[") return arreglo(desde + 1);
+      if (c === "n" && s.substr(desde, 4) === "null") return constante(desde, "null", "NoneType", null);
+      if (c === "t" && s.substr(desde, 4) === "true") return constante(desde, "true", "bool", true);
+      if (c === "f" && s.substr(desde, 5) === "false") return constante(desde, "false", "bool", false);
+      if (c === "N" && s.substr(desde, 3) === "NaN") return constante(desde, "NaN", "float", new PyFloat(NaN));
+      if (c === "I" && s.substr(desde, 8) === "Infinity") return constante(desde, "Infinity", "float", new PyFloat(Infinity));
+      if (c === "-" && s.substr(desde, 9) === "-Infinity") return constante(desde, "-Infinity", "float", new PyFloat(-Infinity));
+      NUMERO_JSON.lastIndex = desde;
+      var m = NUMERO_JSON.exec(s);
+      if (!m) falla("Expecting value", desde);
+      i = desde + m[0].length;
+      if (m[1] || m[2]) return { t: "float", v: new PyFloat(Number(m[0])), crudo: m[0] };
+      var entero = BigInt(m[0]);
+      var v = (entero <= MAX_SEGURO && entero >= -MAX_SEGURO) ? Number(entero) : entero;
+      return { t: "int", v: v, crudo: m[0] };
+    }
+    if (s.charAt(0) === "\ufeff") falla("Unexpected UTF-8 BOM (decode using utf-8-sig)", 0);
+    espacios();
+    var raiz = valor(i);
+    espacios();
+    if (i !== n) falla("Extra data", i);
+    return raiz;
+  }
+
+  // ---------- Intérprete de rutas: datos["a"][0], len(...) ----------
+  // Entiende datos, [ ] con un texto ('...' o "...") o un número, len(...) y paréntesis.
+  // Lo demás no lo evalúa: avisa con un mensaje de la página (AvisoRuta), no de Python.
+  function AvisoRuta(texto) { this.texto = texto; }
+  function ErrorPython(clase, mensaje, nodo, base) {
+    this.clase = clase; this.mensaje = mensaje; this.nodo = nodo; this.base = base;
+    this.texto = clase + ": " + mensaje;
+  }
+  var LIMITE_INDICE = BigInt("9223372036854775807");     // el índice más grande que acepta Python (Py_ssize_t)
+  var COMILLAS_TIPOGRAFICAS = /[\u201C\u201D\u2018\u2019\u00AB\u00BB]/;
+
+  function analizarRuta(expr) {
+    var s = expr, i = 0, n = s.length;
+    function aviso(t) { throw new AvisoRuta(t); }
+    function espacios() { while (i < n && (s[i] === " " || s[i] === "\t" || s[i] === "\f")) i++; }
+    function palabra() { var m = /^[A-Za-z_\u00C0-\u024F][A-Za-z0-9_\u00C0-\u024F]*/.exec(s.slice(i)); return m ? m[0] : ""; }
+    function texto() {
+      var q = s[i], ini = i, valor = "";
+      if (s.substr(i, 3) === q + q + q) aviso("Esta página no evalúa textos con comillas triples: usa '...' o \"...\".");
+      i++;
+      for (;;) {
+        if (i >= n) aviso("Falta cerrar las comillas del texto que empieza en " + s.slice(ini, ini + 12) + "…");
+        var c = s[i];
+        if (c === q) { i++; break; }
+        if (c !== "\\") { valor += c; i++; continue; }
+        var e = s[i + 1];
+        if (e === undefined) aviso("Falta cerrar las comillas del texto.");
+        var simples = { "\\": "\\", "'": "'", '"': '"', a: "\x07", b: "\b", f: "\f", n: "\n", r: "\r", t: "\t", v: "\v" };
+        if (Object.prototype.hasOwnProperty.call(simples, e)) { valor += simples[e]; i += 2; continue; }
+        var largo = e === "x" ? 2 : e === "u" ? 4 : e === "U" ? 8 : 0;
+        if (largo) {
+          var h = s.substr(i + 2, largo);
+          if (!new RegExp("^[0-9a-fA-F]{" + largo + "}$").test(h)) aviso("El escape \\" + e + " necesita " + largo + " dígitos hexadecimales.");
+          var cp = parseInt(h, 16);
+          if (cp > 0x10FFFF) aviso("Ese \\U no corresponde a ningún carácter.");
+          valor += String.fromCodePoint(cp); i += 2 + largo; continue;
+        }
+        if (e === "N") aviso("Esta página no evalúa escapes \\N{...}: escribe el carácter directamente.");
+        if (/[0-7]/.test(e)) {
+          var oct = /^[0-7]{1,3}/.exec(s.substr(i + 1, 3))[0];
+          valor += String.fromCodePoint(parseInt(oct, 8)); i += 1 + oct.length; continue;
+        }
+        aviso("La diagonal invertida \\" + e + " no es un escape válido de Python: quítala.");
+      }
+      return { tipo: "texto", valor: valor };
+    }
+    function numero() {
+      var negativo = false, ini = i;
+      while (s[i] === "-" || s[i] === "+") { if (s[i] === "-") negativo = !negativo; i++; espacios(); }
+      var m = /^(?:[0-9](?:_?[0-9])*)?(?:\.(?:[0-9](?:_?[0-9])*)?)?(?:[eE][-+]?[0-9](?:_?[0-9])*)?/.exec(s.slice(i));
+      var tok = m ? m[0] : "";
+      if (!tok || tok === "." || /^[eE]/.test(tok)) {
+        if (i === ini) return null;
+        aviso("Después del signo va un número entero: [-1].");
+      }
+      if (/^0[xXoObB]/.test(s.slice(i))) aviso("Usa números en base 10 dentro de los corchetes.");
+      i += tok.length;
+      if (/^[A-Za-z_]/.test(s[i] || "")) aviso("Ese número no es válido: " + s.slice(ini, i + 1) + "…");
+      var limpio = tok.replace(/_/g, "");
+      if (/[.eE]/.test(limpio)) {
+        var x = Number(limpio);
+        return { tipo: "numero", valor: new PyFloat(negativo ? -x : x) };
+      }
+      if (/^0+[1-9]/.test(limpio)) aviso("Python no acepta enteros con ceros a la izquierda como " + tok + ": escribe " + limpio.replace(/^0+/, "") + ".");
+      var v = BigInt(limpio);
+      return { tipo: "numero", valor: negativo ? -v : v };
+    }
+    function indice() {
+      espacios();
+      var c = s[i];
+      if (c === "]") aviso("Los corchetes no pueden ir vacíos: adentro va una clave entre comillas o una posición.");
+      if (c === "'" || c === '"') return texto();
+      var num = numero();
+      if (num) return num;
+      var p = palabra();
+      if (p && (s[i + p.length] === "'" || s[i + p.length] === '"')) {
+        aviso("Esta página solo entiende textos simples entre comillas, sin letras antes como " + p + "'...'.");
+      }
+      if (p) {
+        aviso("Sin comillas, Python busca una VARIABLE llamada " + p + " (y como no existe, da NameError). " +
+              "Una clave de texto va entre comillas: [\"" + p + "\"] o ['" + p + "'].");
+      }
+      aviso("Dentro de los corchetes va una clave entre comillas (\"city\") o una posición entera (0, 1, -1).");
+    }
+    function atomo() {
+      espacios();
+      var ini = i, p = palabra();
+      if (p === "datos") { i += 5; return { tipo: "datos", ini: ini, fin: i }; }
+      if (p === "len") {
+        i += 3; espacios();
+        if (s[i] !== "(") aviso("Después de len van paréntesis: len(...).");
+        i++; espacios();
+        if (s[i] === ")") aviso("len( ) necesita adentro el valor que quieres medir: len(datos[...]).");
+        var arg = postfijo(); espacios();
+        if (s[i] === ",") aviso("len recibe un solo valor.");
+        if (s[i] !== ")") aviso("Falta cerrar el paréntesis de len( ).");
+        i++;
+        return { tipo: "len", arg: arg, ini: ini, fin: i };
+      }
+      if (s[i] === "(") {
+        i++;
+        var dentro = postfijo(); espacios();
+        if (s[i] !== ")") aviso("Falta cerrar un paréntesis.");
+        i++;
+        return { tipo: "grupo", arg: dentro, ini: ini, fin: i };
+      }
+      if (p && p.toLowerCase() === "datos") aviso("Python distingue mayúsculas y minúsculas: la variable se llama datos, en minúsculas.");
+      if (p && s[i + p.length] === ".") aviso("Esta página solo evalúa datos[...] y len(...): no evalúa métodos ni atributos con punto.");
+      if (p) aviso("La expresión debe empezar con datos (la variable con el JSON ya convertido) o con len(...); " + p + " no es ninguna de las dos.");
+      if (i >= n) aviso("Escribe una expresión que empiece con datos, por ejemplo datos[\"...\"].");
+      aviso("La expresión debe empezar con datos o con len(...).");
+    }
+    function postfijo() {
+      var nodo = atomo();
+      for (;;) {
+        espacios();
+        if (s[i] === ".") aviso("Esta página solo evalúa datos[...] y len(...): no evalúa métodos ni atributos con punto.");
+        if (s[i] === "(") aviso("Esta página no evalúa llamadas como esa: solo datos[...] y len(...).");
+        if (s[i] !== "[") return nodo;
+        i++;
+        var ind = indice();
+        espacios();
+        if (s[i] === ":") aviso("Esta página no evalúa rebanadas [a:b]: usa una sola clave o una sola posición.");
+        if (s[i] === ",") aviso("Dentro de los corchetes va un solo valor: una clave o una posición.");
+        if (s[i] !== "]") aviso(i >= n ? "Falta cerrar el corchete ]." : "Dentro de los corchetes va un solo valor y después se cierra con ].");
+        i++;
+        nodo = { tipo: "sub", base: nodo, indice: ind, ini: nodo.ini, fin: i };
+      }
+    }
+    var tipografica = COMILLAS_TIPOGRAFICAS.exec(s);
+    if (tipografica) {
+      var cp = tipografica[0].codePointAt(0).toString(16).toUpperCase();
+      aviso("Tu teclado escribió comillas tipográficas (" + tipografica[0] + "). Python solo acepta comillas rectas, \" o ': " +
+            "con esas diría SyntaxError: invalid character '" + tipografica[0] + "' (U+" + cp + ").");
+    }
+    var arbol = postfijo();
+    espacios();
+    if (i < n) aviso("Sobra algo al final de la expresión: " + s.slice(i));
+    return arbol;
+  }
+
+  // Evalúa el árbol como Python; lanza ErrorPython con el mismo mensaje que Python 3.12.
+  function evaluarRuta(arbol, datos) {
+    function ev(nodo) {
+      if (nodo.tipo === "datos") return datos;
+      if (nodo.tipo === "grupo") return ev(nodo.arg);
+      if (nodo.tipo === "len") {
+        var x = ev(nodo.arg);
+        if (typeof x === "string") return Array.from(x).length;
+        if (Array.isArray(x)) return x.length;
+        if (x instanceof Map) return x.size;
+        throw new ErrorPython("TypeError", "object of type '" + pyTipo(x) + "' has no len()", nodo, x);
+      }
+      var base = ev(nodo.base), k = nodo.indice.valor;
+      if (base instanceof Map) {
+        if (typeof k === "string" && base.has(k)) return base.get(k);
+        throw new ErrorPython("KeyError", pyRepr(k), nodo, base);
+      }
+      if (Array.isArray(base) || typeof base === "string") {
+        var lista = Array.isArray(base);
+        if (typeof k === "bigint") {
+          if (k > LIMITE_INDICE || k < -LIMITE_INDICE - BigInt(1)) {
+            throw new ErrorPython("IndexError", "cannot fit 'int' into an index-sized integer", nodo, base);
+          }
+          var elementos = lista ? base : Array.from(base), pos = Number(k);
+          if (pos < 0) pos += elementos.length;
+          if (pos < 0 || pos >= elementos.length) {
+            throw new ErrorPython("IndexError", (lista ? "list" : "string") + " index out of range", nodo, base);
+          }
+          return elementos[pos];
+        }
+        if (lista) throw new ErrorPython("TypeError", "list indices must be integers or slices, not " + pyTipo(k), nodo, base);
+        throw new ErrorPython("TypeError", "string indices must be integers, not '" + pyTipo(k) + "'", nodo, base);
+      }
+      throw new ErrorPython("TypeError", "'" + pyTipo(base) + "' object is not subscriptable", nodo, base);
+    }
+    return ev(arbol);
+  }
+
+  // ---------- Huella de un valor (el código guarda la huella, no el dato ni la ruta) ----------
+  function huella(texto) {
+    var h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+    for (var i = 0; i < texto.length; i++) {
+      var ch = texto.charCodeAt(i);
+      h1 = Math.imul(h1 ^ ch, 2654435761);
+      h2 = Math.imul(h2 ^ ch, 1597334677);
+    }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
+  }
+
+  // ---------- Las diez rondas (respuestas reales del 19/10/2026) ----------
+  var OM = "https://api.open-meteo.com/v1/forecast?latitude=25.67&longitude=-100.31";
+  var USUARIO_1 = "{\n  \"id\": 1,\n  \"name\": \"Leanne Graham\",\n  \"username\": \"Bret\",\n  \"email\": \"Sincere@april.biz\",\n  \"address\": {\n    \"street\": \"Kulas Light\",\n    \"suite\": \"Apt. 556\",\n    \"city\": \"Gwenborough\",\n    \"zipcode\": \"92998-3874\",\n    \"geo\": {\n      \"lat\": \"-37.3159\",\n      \"lng\": \"81.1496\"\n    }\n  },\n  \"phone\": \"1-770-736-8031 x56442\",\n  \"website\": \"hildegard.org\",\n  \"company\": {\n    \"name\": \"Romaguera-Crona\",\n    \"catchPhrase\": \"Multi-layered client-server neural-net\",\n    \"bs\": \"harness real-time e-markets\"\n  }\n}";
+  var USUARIO_3 = "{\n  \"id\": 3,\n  \"name\": \"Clementine Bauch\",\n  \"username\": \"Samantha\",\n  \"email\": \"Nathan@yesenia.net\",\n  \"address\": {\n    \"street\": \"Douglas Extension\",\n    \"suite\": \"Suite 847\",\n    \"city\": \"McKenziehaven\",\n    \"zipcode\": \"59590-4157\",\n    \"geo\": {\n      \"lat\": \"-68.6102\",\n      \"lng\": \"-47.0653\"\n    }\n  },\n  \"phone\": \"1-463-123-4447\",\n  \"website\": \"ramiro.info\",\n  \"company\": {\n    \"name\": \"Romaguera-Jacobson\",\n    \"catchPhrase\": \"Face to face bifurcated interface\",\n    \"bs\": \"e-enable strategic applications\"\n  }\n}";
+  var RONDAS = [
+    { url: "https://jsonplaceholder.typicode.com/users/1", estado: "200 OK", texto: USUARIO_1,
+      pregunta: "¿En qué ciudad vive Leanne Graham?",
+      pistas: ["La ciudad es parte de la dirección del usuario.",
+               "Baja primero al diccionario de la dirección y, adentro, busca la clave de la ciudad. Copia las claves tal como están en el JSON, entre comillas."],
+      despues: "Dos niveles: un diccionario dentro de otro. Cada [ ] baja un nivel.",
+      huella: "1zoirh790tq" },
+    { url: "https://api.open-meteo.com/v1/forecast?latitude=25.67&current=temperature_2m", estado: "400 Bad Request",
+      texto: "{\"error\":true,\"reason\":\"Parameter 'latitude' and 'longitude' must have the same number of elements\"}",
+      pregunta: "La API respondió 400 porque faltó la longitud. ¿Qué explicación da en su JSON?",
+      pistas: ["Una respuesta de error también es JSON: aquí es un diccionario chiquito.",
+               "La explicación es un texto; su clave significa \"razón\" en inglés."],
+      despues: "El repr usa comillas dobles porque el texto trae comillas simples adentro. Un 400 también trae JSON: léelo antes de culpar a la API.",
+      huella: "o05of5rfl" },
+    { url: OM + "&current=temperature_2m", estado: "200 OK",
+      texto: "{\"latitude\":25.666021,\"longitude\":-100.31154,\"generationtime_ms\":0.018358230590820312,\"utc_offset_seconds\":0,\"timezone\":\"GMT\",\"timezone_abbreviation\":\"GMT\",\"elevation\":531.0,\"current_units\":{\"time\":\"iso8601\",\"interval\":\"seconds\",\"temperature_2m\":\"°C\"},\"current\":{\"time\":\"2026-10-19T20:15\",\"interval\":900,\"temperature_2m\":24.7}}",
+      pregunta: "¿Qué temperatura hay en este momento en Monterrey?",
+      pistas: ["Los datos de este momento están en un diccionario y sus unidades en otro.",
+               "Si te salió '°C', estás en el diccionario de las unidades: busca la temperatura en el de los valores."],
+      despues: "24.7 lleva punto decimal en el JSON: es float. Sus unidades van aparte, en current_units.",
+      huella: "hoaseq2orx" },
+    { url: OM + "&current=temperature_2m", estado: "200 OK",
+      texto: "{\"latitude\":25.666021,\"longitude\":-100.31154,\"generationtime_ms\":0.018358230590820312,\"utc_offset_seconds\":0,\"timezone\":\"GMT\",\"timezone_abbreviation\":\"GMT\",\"elevation\":531.0,\"current_units\":{\"time\":\"iso8601\",\"interval\":\"seconds\",\"temperature_2m\":\"°C\"},\"current\":{\"time\":\"2026-10-19T20:15\",\"interval\":900,\"temperature_2m\":24.7}}",
+      pregunta: "¿A qué altura sobre el nivel del mar (elevación, en metros) está el punto del pronóstico?",
+      pistas: ["Está en el primer nivel del diccionario: no hace falta bajar.",
+               "Su clave es la palabra en inglés para \"elevación\". Cuando lo atrapes, fíjate en el tipo."],
+      despues: "531.0 es float aunque valga un entero: en el JSON lleva punto decimal.",
+      huella: "5qy6tvalo3" },
+    { url: "https://jsonplaceholder.typicode.com/users/3", estado: "200 OK", texto: USUARIO_3,
+      pregunta: "¿Cuál es la latitud de Clementine Bauch? Cuando la atrapes, fíjate en su tipo.",
+      pistas: ["La latitud está en las coordenadas geográficas, que están dentro de la dirección: son tres niveles.",
+               "Dirección → coordenadas → latitud. Las claves son palabras o abreviaturas en inglés: cópialas del JSON."],
+      despues: "'-68.6102' lleva comillas: es str, no float. Para hacer cuentas con ella hay que convertirla con float().",
+      huella: "8y9ts567ys" },
+    { url: OM + "&timezone=America%2FMonterrey&daily=temperature_2m_max%2Ctemperature_2m_min", estado: "200 OK",
+      texto: "{\"latitude\":25.666021,\"longitude\":-100.31154,\"generationtime_ms\":0.08952617645263672,\"utc_offset_seconds\":-21600,\"timezone\":\"America/Monterrey\",\"timezone_abbreviation\":\"GMT-6\",\"elevation\":531.0,\"daily_units\":{\"time\":\"iso8601\",\"temperature_2m_max\":\"°C\",\"temperature_2m_min\":\"°C\"},\"daily\":{\"time\":[\"2026-10-19\",\"2026-10-20\",\"2026-10-21\",\"2026-10-22\",\"2026-10-23\",\"2026-10-24\",\"2026-10-25\"],\"temperature_2m_max\":[24.7,22.0,27.0,27.3,23.2,24.0,20.1],\"temperature_2m_min\":[13.0,16.2,19.5,19.8,20.0,18.0,18.5]}}",
+      pregunta: "¿Cuál es la temperatura máxima pronosticada para el 22 de octubre?",
+      pistas: ["Primero averigua en qué posición de la lista de fechas está \"2026-10-22\". Se cuenta desde 0.",
+               "Todas las listas del pronóstico diario van en el mismo orden: la máxima de ese día está en esa misma posición de la lista de máximas."],
+      despues: "Las listas de daily son columnas paralelas: la misma posición es el mismo día (el Día 3 las une en registros con zip).",
+      huella: "1p687f5qakj" },
+    { url: OM + "&timezone=America%2FMonterrey&daily=temperature_2m_max%2Ctemperature_2m_min", estado: "200 OK",
+      texto: "{\"latitude\":25.666021,\"longitude\":-100.31154,\"generationtime_ms\":0.08952617645263672,\"utc_offset_seconds\":-21600,\"timezone\":\"America/Monterrey\",\"timezone_abbreviation\":\"GMT-6\",\"elevation\":531.0,\"daily_units\":{\"time\":\"iso8601\",\"temperature_2m_max\":\"°C\",\"temperature_2m_min\":\"°C\"},\"daily\":{\"time\":[\"2026-10-19\",\"2026-10-20\",\"2026-10-21\",\"2026-10-22\",\"2026-10-23\",\"2026-10-24\",\"2026-10-25\"],\"temperature_2m_max\":[24.7,22.0,27.0,27.3,23.2,24.0,20.1],\"temperature_2m_min\":[13.0,16.2,19.5,19.8,20.0,18.0,18.5]}}",
+      pregunta: "¿Cuál es la temperatura mínima pronosticada para el último día del pronóstico?",
+      pistas: ["El último elemento de una lista se puede pedir sin contar cuántos tiene: con un índice negativo.",
+               "Las mínimas están en su propia lista del pronóstico diario; su último elemento es el del 25 de octubre."],
+      despues: "Un índice negativo cuenta desde el final: sirve aunque no sepas cuántos elementos tiene la lista.",
+      huella: "2eu8spg6bdq" },
+    { url: "https://jsonplaceholder.typicode.com/users?id=1&id=2&id=3", estado: "200 OK",
+      texto: "[\n  {\n    \"id\": 1,\n    \"name\": \"Leanne Graham\",\n    \"username\": \"Bret\",\n    \"email\": \"Sincere@april.biz\",\n    \"address\": {\n      \"street\": \"Kulas Light\",\n      \"suite\": \"Apt. 556\",\n      \"city\": \"Gwenborough\",\n      \"zipcode\": \"92998-3874\",\n      \"geo\": {\n        \"lat\": \"-37.3159\",\n        \"lng\": \"81.1496\"\n      }\n    },\n    \"phone\": \"1-770-736-8031 x56442\",\n    \"website\": \"hildegard.org\",\n    \"company\": {\n      \"name\": \"Romaguera-Crona\",\n      \"catchPhrase\": \"Multi-layered client-server neural-net\",\n      \"bs\": \"harness real-time e-markets\"\n    }\n  },\n  {\n    \"id\": 2,\n    \"name\": \"Ervin Howell\",\n    \"username\": \"Antonette\",\n    \"email\": \"Shanna@melissa.tv\",\n    \"address\": {\n      \"street\": \"Victor Plains\",\n      \"suite\": \"Suite 879\",\n      \"city\": \"Wisokyburgh\",\n      \"zipcode\": \"90566-7771\",\n      \"geo\": {\n        \"lat\": \"-43.9509\",\n        \"lng\": \"-34.4618\"\n      }\n    },\n    \"phone\": \"010-692-6593 x09125\",\n    \"website\": \"anastasia.net\",\n    \"company\": {\n      \"name\": \"Deckow-Crist\",\n      \"catchPhrase\": \"Proactive didactic contingency\",\n      \"bs\": \"synergize scalable supply-chains\"\n    }\n  },\n  {\n    \"id\": 3,\n    \"name\": \"Clementine Bauch\",\n    \"username\": \"Samantha\",\n    \"email\": \"Nathan@yesenia.net\",\n    \"address\": {\n      \"street\": \"Douglas Extension\",\n      \"suite\": \"Suite 847\",\n      \"city\": \"McKenziehaven\",\n      \"zipcode\": \"59590-4157\",\n      \"geo\": {\n        \"lat\": \"-68.6102\",\n        \"lng\": \"-47.0653\"\n      }\n    },\n    \"phone\": \"1-463-123-4447\",\n    \"website\": \"ramiro.info\",\n    \"company\": {\n      \"name\": \"Romaguera-Jacobson\",\n      \"catchPhrase\": \"Face to face bifurcated interface\",\n      \"bs\": \"e-enable strategic applications\"\n    }\n  }\n]",
+      pregunta: "Ahora la API mandó una lista de usuarios. ¿Cómo se llama la empresa del tercer usuario de la lista?",
+      pistas: ["Este JSON empieza con [: datos es una LISTA. Primero se pide una posición entera, no una clave.",
+               "El tercero no está en la posición 3, porque se cuenta desde 0. Después baja a su empresa y al nombre de la empresa."],
+      despues: "Cuando el JSON empieza con [, datos es una lista: primero va una posición y después las claves de ese elemento.",
+      huella: "120nxtiocrj" },
+    { url: "https://jsonplaceholder.typicode.com/todos?userId=1", estado: "200 OK",
+      nota: "La API manda 20 tareas; aquí datos tiene solo las primeras 5.",
+      texto: "[\n  {\n    \"userId\": 1,\n    \"id\": 1,\n    \"title\": \"delectus aut autem\",\n    \"completed\": false\n  },\n  {\n    \"userId\": 1,\n    \"id\": 2,\n    \"title\": \"quis ut nam facilis et officia qui\",\n    \"completed\": false\n  },\n  {\n    \"userId\": 1,\n    \"id\": 3,\n    \"title\": \"fugiat veniam minus\",\n    \"completed\": false\n  },\n  {\n    \"userId\": 1,\n    \"id\": 4,\n    \"title\": \"et porro tempora\",\n    \"completed\": true\n  },\n  {\n    \"userId\": 1,\n    \"id\": 5,\n    \"title\": \"laboriosam mollitia et enim quasi adipisci quia provident illum\",\n    \"completed\": false\n  }\n]",
+      pregunta: "¿La tarea con id 4 ya está completada?",
+      pistas: ["datos es una lista de tareas. Ojo: el id de cada tarea no es su posición en la lista.",
+               "Busca en qué posición está la tarea cuyo id es 4 y, adentro, la clave que significa \"completada\"."],
+      despues: "true en el JSON es True en Python (bool). Y el id de una tarea no es su posición: la lista empieza en 0.",
+      huella: "23yowm1hyyh" },
+    { url: "https://archive-api.open-meteo.com/v1/archive?latitude=25.67&longitude=-100.31&start_date=2026-09-01&end_date=2026-09-30&daily=temperature_2m_max%2Ctemperature_2m_min%2Cprecipitation_sum&timezone=America%2FMonterrey", estado: "200 OK",
+      texto: "{\"latitude\":25.694199,\"longitude\":-100.28293,\"generationtime_ms\":2.843618392944336,\"utc_offset_seconds\":-21600,\"timezone\":\"America/Monterrey\",\"timezone_abbreviation\":\"GMT-6\",\"elevation\":531.0,\"daily_units\":{\"time\":\"iso8601\",\"temperature_2m_max\":\"°C\",\"temperature_2m_min\":\"°C\",\"precipitation_sum\":\"mm\"},\"daily\":{\"time\":[\"2026-09-01\",\"2026-09-02\",\"2026-09-03\",\"2026-09-04\",\"2026-09-05\",\"2026-09-06\",\"2026-09-07\",\"2026-09-08\",\"2026-09-09\",\"2026-09-10\",\"2026-09-11\",\"2026-09-12\",\"2026-09-13\",\"2026-09-14\",\"2026-09-15\",\"2026-09-16\",\"2026-09-17\",\"2026-09-18\",\"2026-09-19\",\"2026-09-20\",\"2026-09-21\",\"2026-09-22\",\"2026-09-23\",\"2026-09-24\",\"2026-09-25\",\"2026-09-26\",\"2026-09-27\",\"2026-09-28\",\"2026-09-29\",\"2026-09-30\"],\"temperature_2m_max\":[35.0,36.5,38.0,34.1,32.2,30.2,34.0,33.3,34.9,35.1,37.2,35.0,35.2,35.8,35.9,35.0,34.7,33.5,34.5,35.4,35.4,32.8,31.8,31.5,33.3,33.9,34.2,33.7,33.2,30.9],\"temperature_2m_min\":[23.4,23.7,25.0,25.2,23.6,22.3,22.3,21.8,21.9,22.3,22.4,23.6,23.4,23.6,23.0,22.6,24.0,23.0,22.4,22.0,23.1,22.6,21.8,22.0,22.8,23.6,24.1,23.5,23.4,23.9],\"precipitation_sum\":[1.70,0.70,0.20,0.70,6.90,0.70,0.00,0.30,0.60,0.80,0.20,0.80,0.20,0.20,0.00,0.00,1.90,2.70,0.00,0.00,0.00,2.90,3.20,0.50,0.90,0.70,2.70,2.60,0.30,8.80]}}",
+      pregunta: "¿Cuántos días trae este histórico de septiembre? No los cuentes a mano: usa len(...).",
+      pistas: ["len(...) cuenta los elementos de una lista (o las claves de un diccionario).",
+               "Hay un elemento por día en cada lista del diccionario diario: mide la lista de fechas (o cualquiera de las otras, todas miden lo mismo)."],
+      despues: "len de una lista cuenta sus elementos. Las listas de daily miden lo mismo: son columnas de una misma tabla.",
+      huella: "2a0yibdclbz" }
+  ];
+  RONDAS.forEach(function (r) { r.nodo = analizarJSON(r.texto); });
+
+  // ---------- JSON con sangría (conserva cada dato tal como viene en el texto: 8.80, 531.0) ----------
+  function lineasJSON(raiz) {
+    var L = [];
+    function suelto(n) { return n.t !== "dict" && n.t !== "list"; }
+    function escalar(n) {
+      var clase = n.t === "str" ? "j-str" : (n.t === "int" || n.t === "float") ? "j-num" : "j-kw";
+      return '<span class="' + clase + '">' + esc(n.crudo) + "</span>";
+    }
+    function emitir(n, sangria, prefijo, coma) {
+      var sp = "  ".repeat(sangria);
+      if (suelto(n)) { L.push(sp + prefijo + escalar(n) + coma); return; }
+      var abre = n.t === "dict" ? "{" : "[", cierra = n.t === "dict" ? "}" : "]";
+      if (!n.hijos.length) { L.push(sp + prefijo + abre + cierra + coma); return; }
+      if (n.t === "list" && n.hijos.every(suelto)) {
+        var textos = n.hijos.map(escalar);
+        var largo = n.hijos.reduce(function (a, h) { return a + h.crudo.length + 2; }, 0);
+        if (n.hijos.length <= 4 && largo <= 40) { L.push(sp + prefijo + "[" + textos.join(", ") + "]" + coma); return; }
+        L.push(sp + prefijo + "[");
+        for (var a = 0; a < textos.length; a += 5) {
+          L.push(sp + "  " + textos.slice(a, a + 5).join(", ") + (a + 5 < textos.length ? "," : ""));
+        }
+        L.push(sp + "]" + coma);
+        return;
+      }
+      L.push(sp + prefijo + abre);
+      n.hijos.forEach(function (h, k) {
+        var c = k === n.hijos.length - 1 ? "" : ",";
+        if (n.t === "dict") emitir(h[1], sangria + 1, '<span class="j-clave">' + esc(h[2]) + "</span>: ", c);
+        else emitir(h, sangria + 1, "", c);
+      });
+      L.push(sp + cierra + coma);
+    }
+    emitir(raiz, 0, "", "");
+    return L;
+  }
+
+  // ---------- Estado del juego ----------
+  var CLAVE = "pb-semana12-atrapa-el-dato";
+  function nuevoEstado() {
+    return { actual: 0, resumen: false, rondas: RONDAS.map(function () {
+      return { atrapada: false, saltada: false, intentos: 0, pistas: 0, puntos: 0, historial: [] };
+    }) };
+  }
+  var estado = nuevoEstado();
+  try {
+    var guardado = JSON.parse(localStorage.getItem(CLAVE) || "null");
+    if (guardado && guardado.rondas && guardado.rondas.length === RONDAS.length) estado = guardado;
+  } catch (e) { /* sin almacenamiento: se empieza de cero */ }
+  function guardar() { try { localStorage.setItem(CLAVE, JSON.stringify(estado)); } catch (e) { /* sin almacenamiento */ } }
+
+  function puntosTotales() { return estado.rondas.reduce(function (a, r) { return a + r.puntos; }, 0); }
+  function puntosPosibles(r) { return Math.max(2, 10 - r.intentos - 3 * r.pistas); }
+
+  // ---------- Pintar ----------
+  function pintarMarcador() {
+    var r = estado.rondas[estado.actual];
+    $("txt-ronda").textContent = "Ronda " + (estado.actual + 1) + " de " + RONDAS.length;
+    $("txt-puntos").textContent = puntosTotales() + " puntos" + (r.atrapada ? "" : " · esta ronda vale " + puntosPosibles(r));
+    $("rondas").innerHTML = estado.rondas.map(function (x, k) {
+      var clase = (k === estado.actual ? "actual " : "") + (x.atrapada ? "atrapada" : x.saltada ? "saltada" : "");
+      var dice = "Ronda " + (k + 1) + (x.atrapada ? ", atrapada" : x.saltada ? ", saltada" : "") + (k === estado.actual ? " (actual)" : "");
+      return '<li><button type="button" class="' + clase + '" data-ronda="' + k + '" aria-label="' + dice + '"' +
+             (k === estado.actual ? ' aria-current="step"' : "") + ">" + (k + 1) + "</button></li>";
+    }).join("");
+  }
+
+  function pintarRonda() {
+    var d = RONDAS[estado.actual], r = estado.rondas[estado.actual];
+    $("vista-juego").hidden = false;
+    $("vista-resumen").hidden = true;
+    pintarMarcador();
+    $("pregunta").textContent = d.pregunta;
+    $("fuente").innerHTML = "<code>datos = r.json()</code> de <code>" + esc(d.url) + "</code> → <b>" + esc(d.estado) + "</b>" +
+                            (d.nota ? "<br>" + esc(d.nota) : "");
+    $("json").innerHTML = "<ol>" + lineasJSON(d.nodo).map(function (l) { return "<li>" + (l || " ") + "</li>"; }).join("") + "</ol>";
+    $("json").scrollTop = 0;
+    $("lista-pistas").innerHTML = d.pistas.slice(0, r.pistas).map(function (p, k) {
+      return "<li><b>Pista " + (k + 1) + ".</b> " + esc(p) + "</li>";
+    }).join("");
+    $("pista").disabled = r.atrapada || r.pistas >= d.pistas.length;
+    $("pista").textContent = r.pistas >= d.pistas.length ? "Sin más pistas" : "Pista (−3)";
+    $("saltar").hidden = r.atrapada;
+    $("siguiente").hidden = !r.atrapada;
+    $("siguiente").textContent = estado.actual === RONDAS.length - 1 ? "Ver resumen" : "Siguiente ronda";
+    $("historial").innerHTML = r.historial.slice().reverse().map(function (h) {
+      return "<li><code>" + esc(h.expr) + "</code> → " + esc(h.res) + "</li>";
+    }).join("");
+    $("consola").innerHTML = "";
+    $("tutor").hidden = true;
+    $("expr").value = "";
+    if (r.atrapada) {
+      $("consola").innerHTML = '<span class="prompt">&gt;&gt;&gt; </span>' + esc(r.ganadora.expr) + "\n" + esc(r.ganadora.res);
+      mostrarTutor("bien", "<b>¡Atrapado!</b> Ganaste " + r.puntos + " puntos en esta ronda. " + esc(d.despues));
+    }
+  }
+
+  function mostrarTutor(clase, html) {
+    var t = $("tutor");
+    t.className = "lectura tutor " + clase;
+    t.innerHTML = html;
+    t.hidden = false;
+  }
+
+  // ---------- Explicaciones de cada error ----------
+  function listaClaves(mapa) {
+    var c = Array.from(mapa.keys());
+    return c.length ? c.slice(0, 10).map(pyStr).join(", ") + (c.length > 10 ? ", …" : "") : "(ninguna)";
+  }
+  function describe(v) {
+    var t = pyTipo(v);
+    if (t === "dict") return "un dict con " + v.size + (v.size === 1 ? " clave" : " claves");
+    if (t === "list") return "una list con " + v.length + (v.length === 1 ? " elemento" : " elementos");
+    if (t === "str") return "un str de " + Array.from(v).length + " caracteres";
+    if (t === "NoneType") return "None (null en el JSON)";
+    if (t === "bool") return "un bool (" + pyRepr(v) + ")";
+    return "un " + t + " (" + pyRepr(v) + ")";
+  }
+  function explicarError(e, expr) {
+    var nodo = e.nodo, t;
+    if (nodo.tipo === "len") {
+      return "<code>len()</code> mide textos, listas y diccionarios; " + esc(expr.slice(nodo.arg.ini, nodo.arg.fin)) + " es " + esc(describe(e.base)) + ".";
+    }
+    var antes = esc(expr.slice(nodo.base.ini, nodo.base.fin).trim()), pedazo = esc(expr.slice(nodo.base.fin, nodo.fin).trim());
+    var k = nodo.indice.valor, b = e.base;
+    if (e.clase === "KeyError") {
+      if (typeof k === "string") {
+        t = antes + " sí existe: es " + esc(describe(b)) + ", pero no tiene la clave " + esc(pyStr(k)) + ". Sus claves son: " +
+            esc(listaClaves(b)) + ". Se escriben exactamente como en el JSON.";
+      } else {
+        t = antes + " es un dict: a un diccionario se le piden claves de texto entre comillas, no posiciones. Sus claves son: " + esc(listaClaves(b)) + ".";
+      }
+    } else if (e.clase === "IndexError") {
+      if (/cannot fit/.test(e.mensaje)) t = "Ese número es demasiado grande para ser una posición.";
+      else {
+        var largo = Array.isArray(b) ? b.length : Array.from(b).length;
+        t = antes + " es " + esc(describe(b)) + ": las posiciones válidas van de 0 a " + (largo - 1) + " (o de -" + largo + " a -1). " + pedazo + " se sale.";
+      }
+    } else if (/list indices/.test(e.mensaje)) {
+      t = antes + " es " + esc(describe(b)) + ": a una lista se le piden posiciones enteras ([0], [1], [-1]), no claves.";
+    } else if (/string indices/.test(e.mensaje)) {
+      t = antes + " ya es " + esc(describe(b)) + ": un texto no tiene claves adentro. Ya llegaste a un dato suelto.";
+    } else {
+      t = antes + " ya es " + esc(describe(b)) + ": un dato suelto, sin nada adentro. Quita el último " + pedazo + ".";
+    }
+    return t;
+  }
+
+  // ---------- Probar una expresión ----------
+  function probar() {
+    var d = RONDAS[estado.actual], r = estado.rondas[estado.actual];
+    var expr = $("expr").value.trim();
+    var consola = $("consola");
+    var eco = '<span class="prompt">&gt;&gt;&gt; </span>' + esc(expr) + "\n";
+    var arbol;
+    try {
+      arbol = analizarRuta(expr);
+    } catch (e) {
+      if (!(e instanceof AvisoRuta)) throw e;
+      consola.innerHTML = eco.replace(/\n$/, "");
+      mostrarTutor("mal", "<b>No lo evalúo todavía:</b> " + esc(e.texto) + " <small>(no cuenta como intento)</small>");
+      return;
+    }
+    var valor, error = null;
+    try { valor = evaluarRuta(arbol, d.nodo.v); }
+    catch (e) { if (e instanceof ErrorPython) error = e; else throw e; }
+
+    if (error) {
+      consola.innerHTML = eco + '<span class="error">Traceback (most recent call last):\n  File "&lt;stdin&gt;", line 1, in &lt;module&gt;\n' +
+                          esc(error.texto) + "</span>";
+      if (!r.atrapada) r.intentos++;
+      r.historial.push({ expr: expr, res: error.texto });
+      mostrarTutor("mal", "<b>" + esc(error.clase) + ".</b> " + explicarError(error, expr) +
+                   (r.atrapada ? "" : " <small>(intento fallido: esta ronda ahora vale " + puntosPosibles(r) + ")</small>"));
+    } else {
+      var rep = pyRepr(valor), tipo = pyTipo(valor);
+      consola.innerHTML = eco + (valor === null ? "" : esc(rep));
+      var res = rep + "  (" + tipo + ")";
+      r.historial.push({ expr: expr, res: res });
+      var etiqueta = ' <span class="tipo t-' + tipo + '">' + tipo + "</span>";
+      if (huella("atrapa-el-dato|" + (estado.actual + 1) + "|" + rep) === d.huella) {
+        if (!r.atrapada) {
+          r.atrapada = true;
+          r.saltada = false;
+          r.puntos = puntosPosibles(r);
+          r.ganadora = { expr: expr, res: rep };
+        }
+        mostrarTutor("bien", "<b>¡Atrapado!</b> " + esc(rep) + etiqueta + ". Ganaste " + r.puntos + " puntos en esta ronda. " + esc(d.despues));
+        $("siguiente").hidden = false;
+        $("saltar").hidden = true;
+        $("pista").disabled = true;
+        $("siguiente").focus();
+      } else if (tipo === "dict" || tipo === "list") {
+        mostrarTutor("", "<b>Vas bien:</b> llegaste a " + esc(describe(valor)) +
+          (tipo === "dict" ? ": " + esc(listaClaves(valor)) + "."
+                           : valor.length ? " (posiciones 0 a " + (valor.length - 1) + ", o -" + valor.length + " a -1)." : ".") +
+          " Sigue bajando con otro [ ]. <small>(explorar no cuenta como intento)</small>");
+      } else {
+        if (!r.atrapada) r.intentos++;
+        mostrarTutor("mal", "Python responde " + esc(rep) + etiqueta + (valor === null ? " (la consola no lo muestra porque es None)" : "") +
+          ", pero ese no es el dato que se pide." + (r.atrapada ? "" : " <small>(intento fallido: esta ronda ahora vale " + puntosPosibles(r) + ")</small>"));
+      }
+    }
+    guardar();
+    pintarMarcador();
+    $("historial").innerHTML = r.historial.slice().reverse().map(function (h) {
+      return "<li><code>" + esc(h.expr) + "</code> → " + esc(h.res) + "</li>";
+    }).join("");
+  }
+
+  function irA(k) {
+    estado.actual = k;
+    estado.resumen = false;
+    guardar();
+    pintarRonda();
+  }
+  function pendiente(desde) {
+    for (var j = 1; j <= RONDAS.length; j++) {
+      var k = (desde + j) % RONDAS.length;
+      if (!estado.rondas[k].atrapada) return k;
+    }
+    return -1;
+  }
+
+  function pintarResumen() {
+    estado.resumen = true;
+    guardar();
+    $("vista-juego").hidden = true;
+    $("vista-resumen").hidden = false;
+    var atrapadas = estado.rondas.filter(function (r) { return r.atrapada; }).length;
+    $("total").textContent = puntosTotales() + " de 100 puntos · " + atrapadas + " de " + RONDAS.length + " datos atrapados";
+    $("tabla-resumen").innerHTML = "<thead><tr><th>#</th><th>Pregunta</th><th>Resultado</th><th>Intentos fallidos</th><th>Pistas</th><th>Puntos</th></tr></thead><tbody>" +
+      estado.rondas.map(function (r, k) {
+        return "<tr><td class=\"n\">" + (k + 1) + "</td><td>" + esc(RONDAS[k].pregunta) + "</td><td>" +
+          (r.atrapada ? '<span class="ok">atrapado</span>' : '<span class="mal">' + (r.saltada ? "saltado" : "pendiente") + "</span>") +
+          "</td><td class=\"n\">" + r.intentos + "</td><td class=\"n\">" + r.pistas + "</td><td class=\"n\">" + r.puntos + "</td></tr>";
+      }).join("") + "</tbody>";
+    $("faltantes").hidden = atrapadas === RONDAS.length;
+    $("vista-resumen").scrollIntoView({ block: "start" });
+  }
+
+  // ---------- Eventos ----------
+  $("probar").addEventListener("click", probar);
+  $("expr").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); probar(); } });
+  $("pista").addEventListener("click", function () {
+    var d = RONDAS[estado.actual], r = estado.rondas[estado.actual];
+    if (r.atrapada || r.pistas >= d.pistas.length) return;
+    r.pistas++;
+    guardar();
+    pintarMarcador();
+    $("lista-pistas").innerHTML = d.pistas.slice(0, r.pistas).map(function (p, k) {
+      return "<li><b>Pista " + (k + 1) + ".</b> " + esc(p) + "</li>";
+    }).join("");
+    $("pista").disabled = r.pistas >= d.pistas.length;
+    $("pista").textContent = r.pistas >= d.pistas.length ? "Sin más pistas" : "Pista (−3)";
+  });
+  $("saltar").addEventListener("click", function () {
+    estado.rondas[estado.actual].saltada = true;
+    if (estado.actual === RONDAS.length - 1) pintarResumen();
+    else irA(estado.actual + 1);
+  });
+  $("siguiente").addEventListener("click", function () {
+    if (estado.actual === RONDAS.length - 1) pintarResumen();
+    else irA(estado.actual + 1);
+    $("expr").focus();
+  });
+  $("rondas").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-ronda]");
+    if (b) irA(Number(b.dataset.ronda));
+  });
+  $("faltantes").addEventListener("click", function () {
+    var k = pendiente(RONDAS.length - 1);
+    if (k >= 0) irA(k);
+  });
+  function reiniciar() {
+    estado = nuevoEstado();
+    guardar();
+    pintarRonda();
+  }
+  $("otra-vez").addEventListener("click", reiniciar);
+  $("reiniciar").addEventListener("click", function () {
+    if (confirm("¿Empezar de nuevo? Se borran tus puntos.")) reiniciar();
+  });
+
+  if (estado.resumen) pintarResumen(); else pintarRonda();
+})();
+</script>
+<div id="qr-sitio" class="qr-capa" hidden>
+  <div class="qr-caja" role="dialog" aria-modal="true" aria-label="Código QR de esta página">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 45" role="img" aria-label="Código QR de https://memosanchezg.github.io/programacion-basica-interactivos/semana-12-atrapa-el-dato.html" shape-rendering="crispEdges"><rect width="45" height="45" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM11 2h1v1h-1zM19 2h9v1h-9zM30 2h2v1h-2zM33 2h2v1h-2zM36 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM12 3h4v1h-4zM17 3h1v1h-1zM19 3h1v1h-1zM23 3h1v1h-1zM27 3h5v1h-5zM34 3h1v1h-1zM36 3h1v1h-1zM42 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM10 4h6v1h-6zM18 4h4v1h-4zM23 4h2v1h-2zM26 4h2v1h-2zM29 4h2v1h-2zM32 4h3v1h-3zM36 4h1v1h-1zM38 4h3v1h-3zM42 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h2v1h-2zM13 5h2v1h-2zM16 5h1v1h-1zM18 5h1v1h-1zM23 5h1v1h-1zM26 5h1v1h-1zM28 5h1v1h-1zM31 5h1v1h-1zM33 5h2v1h-2zM36 5h1v1h-1zM38 5h3v1h-3zM42 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h2v1h-2zM15 6h1v1h-1zM17 6h1v1h-1zM20 6h2v1h-2zM24 6h2v1h-2zM30 6h5v1h-5zM36 6h1v1h-1zM38 6h3v1h-3zM42 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h2v1h-2zM13 7h3v1h-3zM17 7h1v1h-1zM22 7h1v1h-1zM26 7h1v1h-1zM29 7h2v1h-2zM34 7h1v1h-1zM36 7h1v1h-1zM42 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM30 8h1v1h-1zM32 8h1v1h-1zM34 8h1v1h-1zM36 8h7v1h-7zM10 9h2v1h-2zM13 9h1v1h-1zM15 9h1v1h-1zM17 9h2v1h-2zM20 9h1v1h-1zM23 9h1v1h-1zM25 9h2v1h-2zM28 9h1v1h-1zM33 9h2v1h-2zM2 10h1v1h-1zM4 10h5v1h-5zM13 10h2v1h-2zM16 10h4v1h-4zM22 10h1v1h-1zM24 10h1v1h-1zM27 10h3v1h-3zM31 10h1v1h-1zM36 10h5v1h-5zM3 11h2v1h-2zM6 11h2v1h-2zM9 11h1v1h-1zM12 11h2v1h-2zM19 11h5v1h-5zM25 11h1v1h-1zM27 11h1v1h-1zM30 11h1v1h-1zM32 11h3v1h-3zM36 11h3v1h-3zM40 11h3v1h-3zM2 12h2v1h-2zM7 12h2v1h-2zM11 12h3v1h-3zM17 12h2v1h-2zM22 12h2v1h-2zM29 12h4v1h-4zM34 12h1v1h-1zM37 12h1v1h-1zM2 13h3v1h-3zM7 13h1v1h-1zM10 13h2v1h-2zM14 13h1v1h-1zM17 13h1v1h-1zM23 13h2v1h-2zM28 13h1v1h-1zM32 13h4v1h-4zM38 13h2v1h-2zM2 14h1v1h-1zM7 14h2v1h-2zM12 14h2v1h-2zM16 14h1v1h-1zM19 14h1v1h-1zM21 14h2v1h-2zM24 14h1v1h-1zM26 14h4v1h-4zM31 14h1v1h-1zM33 14h1v1h-1zM37 14h1v1h-1zM39 14h2v1h-2zM42 14h1v1h-1zM2 15h1v1h-1zM7 15h1v1h-1zM9 15h2v1h-2zM14 15h2v1h-2zM17 15h1v1h-1zM20 15h1v1h-1zM23 15h2v1h-2zM29 15h1v1h-1zM32 15h2v1h-2zM35 15h8v1h-8zM2 16h1v1h-1zM5 16h6v1h-6zM12 16h2v1h-2zM15 16h3v1h-3zM20 16h1v1h-1zM22 16h1v1h-1zM25 16h2v1h-2zM29 16h1v1h-1zM31 16h2v1h-2zM34 16h2v1h-2zM37 16h1v1h-1zM40 16h1v1h-1zM2 17h1v1h-1zM6 17h1v1h-1zM12 17h4v1h-4zM18 17h1v1h-1zM23 17h1v1h-1zM25 17h1v1h-1zM28 17h3v1h-3zM33 17h2v1h-2zM36 17h2v1h-2zM39 17h1v1h-1zM41 17h1v1h-1zM3 18h3v1h-3zM8 18h2v1h-2zM12 18h4v1h-4zM18 18h2v1h-2zM22 18h1v1h-1zM25 18h1v1h-1zM27 18h2v1h-2zM31 18h3v1h-3zM35 18h1v1h-1zM37 18h1v1h-1zM40 18h1v1h-1zM4 19h1v1h-1zM6 19h2v1h-2zM9 19h4v1h-4zM16 19h1v1h-1zM21 19h2v1h-2zM25 19h2v1h-2zM30 19h5v1h-5zM36 19h4v1h-4zM41 19h2v1h-2zM2 20h2v1h-2zM5 20h1v1h-1zM7 20h5v1h-5zM13 20h1v1h-1zM16 20h2v1h-2zM20 20h1v1h-1zM24 20h1v1h-1zM29 20h2v1h-2zM32 20h1v1h-1zM35 20h1v1h-1zM38 20h2v1h-2zM41 20h1v1h-1zM5 21h1v1h-1zM9 21h2v1h-2zM12 21h1v1h-1zM16 21h3v1h-3zM22 21h1v1h-1zM28 21h3v1h-3zM32 21h4v1h-4zM38 21h2v1h-2zM41 21h2v1h-2zM3 22h2v1h-2zM7 22h3v1h-3zM11 22h2v1h-2zM16 22h3v1h-3zM20 22h1v1h-1zM23 22h4v1h-4zM29 22h1v1h-1zM31 22h1v1h-1zM39 22h3v1h-3zM2 23h3v1h-3zM9 23h2v1h-2zM12 23h1v1h-1zM14 23h1v1h-1zM17 23h3v1h-3zM21 23h3v1h-3zM25 23h1v1h-1zM27 23h2v1h-2zM30 23h1v1h-1zM33 23h2v1h-2zM36 23h4v1h-4zM41 23h2v1h-2zM2 24h1v1h-1zM4 24h1v1h-1zM6 24h1v1h-1zM8 24h2v1h-2zM13 24h1v1h-1zM17 24h2v1h-2zM20 24h1v1h-1zM22 24h1v1h-1zM24 24h1v1h-1zM27 24h4v1h-4zM34 24h1v1h-1zM37 24h3v1h-3zM5 25h1v1h-1zM7 25h1v1h-1zM11 25h3v1h-3zM16 25h1v1h-1zM18 25h1v1h-1zM20 25h2v1h-2zM23 25h2v1h-2zM29 25h1v1h-1zM33 25h3v1h-3zM37 25h1v1h-1zM39 25h1v1h-1zM5 26h1v1h-1zM7 26h4v1h-4zM14 26h1v1h-1zM18 26h2v1h-2zM25 26h7v1h-7zM33 26h1v1h-1zM40 26h1v1h-1zM42 26h1v1h-1zM2 27h4v1h-4zM7 27h1v1h-1zM9 27h1v1h-1zM12 27h1v1h-1zM15 27h5v1h-5zM21 27h3v1h-3zM25 27h1v1h-1zM27 27h1v1h-1zM30 27h1v1h-1zM32 27h2v1h-2zM35 27h5v1h-5zM41 27h2v1h-2zM2 28h2v1h-2zM6 28h3v1h-3zM13 28h1v1h-1zM16 28h3v1h-3zM20 28h1v1h-1zM22 28h1v1h-1zM26 28h5v1h-5zM32 28h1v1h-1zM34 28h2v1h-2zM37 28h2v1h-2zM41 28h1v1h-1zM2 29h1v1h-1zM7 29h1v1h-1zM12 29h1v1h-1zM15 29h3v1h-3zM21 29h4v1h-4zM26 29h1v1h-1zM28 29h1v1h-1zM30 29h1v1h-1zM33 29h2v1h-2zM38 29h2v1h-2zM2 30h1v1h-1zM4 30h3v1h-3zM8 30h2v1h-2zM11 30h1v1h-1zM14 30h2v1h-2zM18 30h2v1h-2zM24 30h2v1h-2zM27 30h2v1h-2zM31 30h1v1h-1zM33 30h1v1h-1zM39 30h3v1h-3zM2 31h1v1h-1zM6 31h2v1h-2zM12 31h1v1h-1zM14 31h1v1h-1zM16 31h1v1h-1zM18 31h1v1h-1zM20 31h1v1h-1zM22 31h1v1h-1zM26 31h2v1h-2zM30 31h5v1h-5zM36 31h1v1h-1zM38 31h1v1h-1zM40 31h1v1h-1zM42 31h1v1h-1zM2 32h1v1h-1zM4 32h1v1h-1zM7 32h6v1h-6zM15 32h3v1h-3zM20 32h2v1h-2zM23 32h2v1h-2zM27 32h5v1h-5zM35 32h3v1h-3zM39 32h1v1h-1zM2 33h1v1h-1zM4 33h4v1h-4zM10 33h2v1h-2zM13 33h1v1h-1zM17 33h2v1h-2zM20 33h5v1h-5zM26 33h1v1h-1zM29 33h2v1h-2zM34 33h4v1h-4zM39 33h1v1h-1zM41 33h2v1h-2zM2 34h1v1h-1zM7 34h2v1h-2zM12 34h3v1h-3zM17 34h3v1h-3zM21 34h2v1h-2zM24 34h1v1h-1zM26 34h3v1h-3zM31 34h1v1h-1zM34 34h5v1h-5zM40 34h1v1h-1zM42 34h1v1h-1zM10 35h8v1h-8zM19 35h5v1h-5zM25 35h3v1h-3zM30 35h1v1h-1zM33 35h2v1h-2zM38 35h1v1h-1zM41 35h2v1h-2zM2 36h7v1h-7zM12 36h1v1h-1zM14 36h1v1h-1zM19 36h1v1h-1zM22 36h2v1h-2zM27 36h4v1h-4zM33 36h2v1h-2zM36 36h1v1h-1zM38 36h1v1h-1zM40 36h1v1h-1zM2 37h1v1h-1zM8 37h1v1h-1zM10 37h2v1h-2zM17 37h1v1h-1zM19 37h2v1h-2zM23 37h2v1h-2zM26 37h2v1h-2zM32 37h3v1h-3zM38 37h2v1h-2zM2 38h1v1h-1zM4 38h3v1h-3zM8 38h1v1h-1zM10 38h1v1h-1zM12 38h1v1h-1zM14 38h1v1h-1zM16 38h1v1h-1zM18 38h1v1h-1zM23 38h1v1h-1zM26 38h1v1h-1zM28 38h2v1h-2zM31 38h1v1h-1zM34 38h5v1h-5zM40 38h1v1h-1zM2 39h1v1h-1zM4 39h3v1h-3zM8 39h1v1h-1zM10 39h1v1h-1zM15 39h1v1h-1zM18 39h1v1h-1zM20 39h3v1h-3zM24 39h3v1h-3zM30 39h4v1h-4zM35 39h1v1h-1zM37 39h1v1h-1zM39 39h2v1h-2zM2 40h1v1h-1zM4 40h3v1h-3zM8 40h1v1h-1zM10 40h1v1h-1zM14 40h1v1h-1zM16 40h4v1h-4zM22 40h1v1h-1zM24 40h1v1h-1zM26 40h2v1h-2zM29 40h2v1h-2zM34 40h5v1h-5zM2 41h1v1h-1zM8 41h1v1h-1zM11 41h1v1h-1zM13 41h1v1h-1zM16 41h2v1h-2zM20 41h1v1h-1zM23 41h1v1h-1zM25 41h1v1h-1zM28 41h3v1h-3zM34 41h2v1h-2zM38 41h1v1h-1zM41 41h1v1h-1zM2 42h7v1h-7zM10 42h2v1h-2zM14 42h1v1h-1zM17 42h3v1h-3zM21 42h1v1h-1zM24 42h5v1h-5zM31 42h1v1h-1zM33 42h1v1h-1zM35 42h4v1h-4zM40 42h1v1h-1z"/></svg>
+    <p class="qr-texto">Escanea con la cámara del celular para abrir esta página</p>
+    <p class="qr-url">https://memosanchezg.github.io/programacion-basica-interactivos/semana-12-atrapa-el-dato.html</p>
+    <button type="button" class="qr-cerrar">Cerrar</button>
+  </div>
+</div>
+<style>
+  .qr-capa { position:fixed; top:0; right:0; bottom:0; left:0; z-index:10000; display:flex; align-items:center;
+             justify-content:center; padding:16px; background:#fff; }
+  .qr-capa[hidden] { display:none; }
+  .qr-caja { max-width:100%; text-align:center; color:#0A2A57; font:16px/1.4 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .qr-caja svg { display:block; width:min(62vh, 84vw); height:auto; margin:0 auto; }
+  .qr-texto { margin:12px 0 2px; font-size:1.15rem; font-weight:bold; }
+  .qr-url { margin:0 0 12px; color:#5B6472; word-break:break-all; }
+  .qr-cerrar { font:inherit; padding:6px 20px; border:2px solid #00408F; border-radius:4px; background:#fff;
+               color:#00408F; cursor:pointer; }
+</style>
+<script>
+  (function () {
+    var capa = document.getElementById("qr-sitio");
+    document.querySelectorAll("a.qr-abrir").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        capa.hidden = false;
+        capa.querySelector(".qr-cerrar").focus();
+      });
+    });
+    capa.addEventListener("click", function (e) {
+      if (e.target === capa || e.target.classList.contains("qr-cerrar")) capa.hidden = true;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !capa.hidden) capa.hidden = true;
+    });
+  })();
+</script>
+</body>
+</html>

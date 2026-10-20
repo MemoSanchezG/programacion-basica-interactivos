@@ -1,0 +1,1719 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="tipo" content="simulador">
+<title>¿Cuántos puntos necesitas?</title>
+
+<style>
+  :root {
+    --azul:#00408F; --azul-oscuro:#0A2A57; --guinda:#8C1D35; --oro:#B8975A; --oro-texto:#8A6A2E;
+    --azul-claro:#E8EEF7; --oro-claro:#F7F1E6; --guinda-claro:#F5E6EA; --verde:#2F7D5B;
+    --tinta:#1B1F2A; --gris:#5B6472; --gris-claro:#E9ECF1; --borde:#D9DEE6; --fondo:#FFFFFF;
+    --cmd-fondo:#0C0C0C; --cmd-texto:#E6E6E6;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--fondo); color:var(--tinta);
+         font:16px/1.45 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .franja { height:8px; background:var(--azul); border-bottom:3px solid var(--oro); }
+  header { max-width:1280px; margin:0 auto; padding:12px 18px 4px; }
+  .semana { color:var(--guinda); font-weight:bold; letter-spacing:.04em; font-size:.85rem; text-transform:uppercase; }
+  h1 { font-family:Cambria,Georgia,serif; color:var(--azul-oscuro); font-size:1.7rem; margin:2px 0 2px; }
+  .sub { color:var(--gris); margin:0; }
+  main { max-width:1280px; margin:0 auto; padding:8px 18px 24px; }
+  nav.pestanas { display:flex; gap:4px; flex-wrap:wrap; border-bottom:2px solid var(--gris-claro); margin:10px 0 6px; }
+  nav.pestanas button { font:inherit; font-weight:bold; border:none; background:none; color:var(--gris);
+                        padding:8px 14px; cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; }
+  nav.pestanas button.activo { color:var(--azul-oscuro); border-bottom-color:var(--azul); }
+  nav.pestanas button:focus-visible { outline:2px solid var(--azul); }
+  .fila { display:grid; grid-template-columns:minmax(260px,370px) minmax(0,1fr); gap:16px; align-items:start; }
+  .panel { background:#fff; border:1px solid var(--borde); border-radius:10px; padding:12px 14px; min-width:0; }
+  .panel h2 { font-size:1.02rem; color:var(--azul-oscuro); margin:0 0 8px; }
+  label { display:block; font-weight:bold; color:var(--azul-oscuro); margin-top:10px; }
+  label small { font-weight:normal; color:var(--gris); }
+  input[type=range] { width:100%; }
+  input[type=number], input[type=text], select { font:inherit; padding:4px 6px; border:1px solid var(--borde);
+                        border-radius:6px; }
+  input.mono { font-family:Consolas,"Courier New",monospace; }
+  button.accion { font:inherit; font-weight:bold; border-radius:8px; padding:7px 12px; margin:8px 6px 0 0;
+                  border:1px solid var(--azul); background:#fff; color:var(--azul); cursor:pointer; }
+  button.accion:hover, button.accion:focus-visible { background:var(--azul); color:#fff; outline:none; }
+  canvas { width:100%; display:block; border:1px solid var(--borde); border-radius:4px; background:#fff; }
+  .lectura { background:var(--oro-claro); border-left:4px solid var(--oro); border-radius:8px; padding:10px 12px;
+             margin-top:12px; line-height:1.55; }
+  .lectura b { color:var(--azul-oscuro); }
+  .ok { color:var(--verde); font-weight:bold; }
+  .mal { color:var(--guinda); font-weight:bold; }
+  .preguntas { background:var(--azul-claro); border-radius:8px; padding:10px 14px; margin-top:12px; }
+  .preguntas h3 { margin:0 0 4px; font-size:.95rem; color:var(--azul-oscuro); }
+  .preguntas ol { margin:0; padding-left:20px; }
+  /* Código Python con los colores del curso (minted, estilo borland) y salida de consola (cmd). */
+  .codigo { border:1px solid var(--tinta); background:#fff; font:15px/1.5 Consolas,"Courier New",monospace;
+            overflow-x:auto; margin:8px 0; }
+  .codigo ol { margin:0; padding:8px 12px 8px 3.4em; }
+  .codigo li { white-space:pre; }
+  .codigo li::marker { color:var(--gris); font:11px Cambria,Georgia,serif; }
+  .codigo .kw { color:#000080; font-weight:bold; }
+  .codigo .str, .codigo .num { color:#0000FF; }
+  .codigo .com { color:#008800; font-style:italic; }
+  .codigo .marca { background:var(--oro-claro); outline:1px solid var(--oro); }
+  .consola { background:var(--cmd-fondo); color:var(--cmd-texto); font:15px/1.45 Consolas,"Courier New",monospace;
+             white-space:pre-wrap; word-break:break-word; padding:8px 12px; border-radius:4px; margin:8px 0; min-height:2.2em; }
+  footer { max-width:1280px; margin:0 auto; padding:6px 18px 18px; color:var(--gris); font-size:.85rem; }
+  footer a { color:var(--azul); }
+  @media (max-width: 860px) { .fila { grid-template-columns:1fr; } }
+
+  /* Propios de este simulador */
+  #fx { width:100%; }
+  .marco-lienzo { display:flex; justify-content:center; }
+  .error { color:var(--guinda); font-weight:bold; min-height:1.3em; margin:4px 0 0; font-size:.95rem; }
+  .intervalo { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:4px; }
+  .intervalo input { width:7.5em; }
+  .intervalo label { display:inline; margin:0; }
+  .puntos { display:flex; gap:6px; align-items:center; margin-top:4px; }
+  .puntos input[type=number] { width:5.2em; }
+  .puntos button { font:inherit; font-weight:bold; width:2.2em; border:1px solid var(--azul); background:#fff; color:var(--azul);
+                   border-radius:6px; cursor:pointer; }
+  .puntos button:hover, .puntos button:focus-visible { background:var(--azul); color:#fff; outline:none; }
+  label.casilla { display:flex; gap:8px; align-items:center; font-weight:normal; color:var(--tinta); margin-top:8px; cursor:pointer; }
+  label.casilla input { width:17px; height:17px; margin:0; flex:none; }
+  code { font-family:Consolas,"Courier New",monospace; color:var(--azul); }
+  .consola code { color:inherit; }
+  table.datos { width:100%; border-collapse:collapse; margin-top:4px; font-size:.97rem; }
+  table.datos th, table.datos td { border:1px solid var(--borde); padding:4px 6px; text-align:left; vertical-align:top; background:#fff; }
+  table.datos th { background:var(--gris-claro); color:var(--azul-oscuro); }
+  .leyenda-html { display:flex; flex-wrap:wrap; gap:4px 18px; margin:8px 0 0; color:var(--gris); font-size:.95rem; }
+  .leyenda-html span::before { content:""; display:inline-block; width:22px; height:0; vertical-align:middle; margin-right:6px;
+                               border-top:3px solid var(--c); }
+  .leyenda-html span.pts::before { border-top-width:2px; box-shadow:inset 0 0 0 0 var(--c); }
+  .nota { color:var(--gris); font-size:.93rem; margin:6px 0 0; }
+  .consola .aviso { color:#E0C483; }
+  @media (max-width: 480px) {
+    header { padding:10px 12px 4px; } main { padding:8px 10px 20px; } footer { padding:6px 12px 16px; }
+    .panel { padding:10px; } h1 { font-size:1.45rem; } .codigo, .consola { font-size:13px; }
+  }
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header>
+  <div class="semana">Semana 15 · Día 3 · Gráficas de funciones</div>
+  <h1>¿Cuántos puntos necesitas?</h1>
+  <p class="sub">plt.plot no grafica fórmulas: une puntos con rectas. Elige una función, un intervalo y cuántos puntos tomar, y compara la poligonal con la curva real.</p>
+</header>
+<main>
+  <div class="fila">
+    <div class="panel">
+      <h2>La función y sus puntos</h2>
+      <label for="predef">Función</label>
+      <select id="predef">
+        <option value="0">x**2 - 3*x + 2 (parábola)</option>
+        <option value="1">x**3 - 3*x (cúbica)</option>
+        <option value="2">np.sin(x)</option>
+        <option value="3">np.sin(10*x)</option>
+        <option value="4">abs(x)</option>
+        <option value="5">1/x</option>
+        <option value="6">np.exp(-x**2)</option>
+        <option value="propia">Escribir la mía</option>
+      </select>
+      <label for="fx">f(x) = <small>(como en Python: **, sin, cos, tan, exp, log, sqrt, abs, pi)</small></label>
+      <input id="fx" class="mono" type="text" spellcheck="false" autocomplete="off" aria-describedby="fx-error">
+      <p class="error" id="fx-error" aria-live="polite"></p>
+      <label>Intervalo [a, b] <small>(números o pi, por ejemplo 2*pi)</small></label>
+      <div class="intervalo">
+        <label for="a">a =</label><input id="a" class="mono" type="text" spellcheck="false" autocomplete="off">
+        <label for="b">b =</label><input id="b" class="mono" type="text" spellcheck="false" autocomplete="off">
+      </div>
+      <p class="error" id="ab-error" aria-live="polite"></p>
+      <label for="n">Número de puntos n <small>(de 2 a 400)</small></label>
+      <input id="n" type="range" min="2" max="400" step="1" value="6" aria-describedby="paso">
+      <div class="puntos">
+        <button type="button" id="menos" aria-label="Un punto menos">−</button>
+        <input id="n-num" type="number" min="2" max="400" step="1" value="6" aria-label="Número de puntos">
+        <button type="button" id="mas" aria-label="Un punto más">+</button>
+      </div>
+      <p class="nota" id="paso"></p>
+      <label class="casilla"><input type="checkbox" id="real" checked> Mostrar la curva real (gris)</label>
+      <label class="casilla"><input type="checkbox" id="ejes0" checked> Rectas y = 0 y x = 0: <code>axhline</code>, <code>axvline</code></label>
+      <label class="casilla"><input type="checkbox" id="rejilla"> Cuadrícula: <code>plt.grid(True)</code></label>
+      <div class="lectura" id="lectura" aria-live="polite"></div>
+    </div>
+    <div class="panel">
+      <h2>La gráfica</h2>
+      <div class="marco-lienzo"><canvas id="lienzo" aria-label="Gráfica de la función con la curva real en gris y la poligonal de los n puntos en azul."></canvas></div>
+      <div class="leyenda-html">
+        <span style="--c:#a6a6a6">f(x) real (2001 puntos)</span>
+        <span style="--c:#1f77b4">tus n puntos unidos con rectas: plt.plot(xs, ys, marker="o")</span>
+      </div>
+      <p class="nota">La escala del eje y incluye la curva gris. En tu computadora, matplotlib ajusta los ejes solo a los puntos que grafiques.</p>
+      <nav class="pestanas" role="tablist" aria-label="Versión del programa">
+        <button type="button" class="activo" role="tab" aria-selected="true" aria-controls="vista-codigo" data-version="np" id="tab-np">Con numpy (np.linspace)</button>
+        <button type="button" role="tab" aria-selected="false" aria-controls="vista-codigo" data-version="lista" id="tab-lista">Con comprensión de listas</button>
+      </nav>
+      <div id="vista-codigo" role="tabpanel">
+        <div id="codigo"></div>
+        <div class="consola" id="salida" aria-label="Salida del programa"></div>
+      </div>
+      <div class="preguntas">
+        <h3>Para explorar</h3>
+        <ol>
+          <li>Con la parábola en [−2, 5], prueba n = 3, 4, 5 y 6. ¿Con cuáles encuentran los puntos las dos raíces? ¿Por qué con 3 puntos sí y con 6 no?</li>
+          <li>Con np.sin(10*x) en [0, 2*pi] y n = 21, ¿por qué la poligonal es plana si la curva gris oscila? Prueba n = 20 y n = 22. ¿Desde qué n el error máximo baja de 0.1?</li>
+          <li>Con abs(x) en [−2, 2], ¿por qué el cambio de signo no encuentra su raíz? ¿Con qué valores de n sí aparece?</li>
+          <li>Con 1/x en [−2, 2] y n = 6, ¿qué es la línea casi vertical? ¿Es real la raíz que "detecta" el cambio de signo? Cambia a n = 5 y compara la salida con numpy y con listas.</li>
+          <li>¿Por qué el paso es (b − a)/(n − 1) y no (b − a)/n? ¿Cuántos valores da np.linspace(0, 1, 5)?</li>
+          <li>Escribe tu propia función (por ejemplo np.sin(x)/x o np.log(x)) y busca un n con el que se vea bien.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</main>
+<footer>
+  Basado en el Tema 15, Día 3 (np.linspace, comprensión de listas y plt.plot). La gráfica imita el estilo por omisión de matplotlib 3.
+  Programación Básica · FCFM-UANL · funciona sin internet.
+  <a href="index.html">Índice de simuladores</a> · <a href="#qr-sitio" class="qr-abrir">Abrir en el celular (QR)</a>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+  // ===================== Figura al estilo de matplotlib (inicio) =====================
+  // Dibuja en un <canvas> lo mismo que matplotlib 3.x con su estilo por omisión: figura en
+  // pulgadas a 100 dpi, ejes en [0.125, 0.9] x [0.11, 0.88] de la figura, márgenes de 5 %,
+  // marcas del localizador automático (MaxNLocator), números del ScalarFormatter, ciclo de
+  // colores C0, C1, ..., letra DejaVu Sans (o Verdana, con medidas casi iguales) y leyenda
+  // en la posición "best". MPL.dibujar(canvas, figura) regresa la geometría de cada parte.
+  var MPL = (function () {
+    var CICLO = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
+                 "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"];
+    var PT = 100 / 72;                          // píxeles por punto (1/72 de pulgada) a 100 dpi
+    var LETRA = '"DejaVu Sans", "Bitstream Vera Sans", Verdana, Geneva, sans-serif';
+    var TAM = 10 * PT;                          // font.size = 10 puntos
+    var ASC = 1556 / 2048, DESC = 492 / 2048;   // ascenso y descenso de DejaVu Sans (em)
+    var PASOS = [0.1 * 1, 0.1 * 2, 0.1 * 2.5, 0.1 * 5, 1, 2, 2.5, 5, 10, 20];
+    var GUIONES = { "--": [3.7, 1.6], ":": [1, 1.65], "-.": [6.4, 1.6, 1, 1.6] };
+
+    // ---------- Aritmética igual a la de Python y numpy ----------
+    function divmod(a, b) {                       // divmod() de Python para floats
+      var mod = a % b, div = (a - mod) / b, fd;
+      if (mod) { if ((b < 0) !== (mod < 0)) { mod += b; div -= 1; } }
+      else mod = b < 0 ? -0 : 0;
+      if (div) { fd = Math.floor(div); if (div - fd > 0.5) fd += 1; }
+      else fd = (a / b < 0) ? -0 : 0;
+      return [fd, mod];
+    }
+    function pot10(k) { return Number("1e" + k); }
+    function rint(v) {                            // redondeo al par, como numpy.rint
+      var f = Math.floor(v), d = v - f;
+      return d > 0.5 ? f + 1 : d < 0.5 ? f : (f % 2 === 0 ? f : f + 1);
+    }
+    function redondear(x, d) { var p = pot10(d); return rint(x * p) / p; }   // numpy.round(x, d)
+    // Exponente E tal que |x| = M * 2^E con M impar (x finito, distinto de cero)
+    function exponente2(x) {
+      var a = Math.abs(x), e = 0;
+      while (a !== Math.floor(a)) { a *= 2; e--; }
+      while (a % 2 === 0) { a /= 2; e++; }
+      return e;
+    }
+    // "%.{d}f" % x de Python: redondeo correcto y, en un empate exacto, al dígito par
+    function fijo(x, d) {
+      var s = x.toFixed(d);
+      if (x !== 0 && isFinite(x) && exponente2(x) === -(d + 1)) {
+        var u = s.charCodeAt(s.length - 1) - 48;
+        if (u % 2 === 1) s = s.slice(0, -1) + String(u - 1);
+      }
+      return s;
+    }
+    function menos(s) { return String(s).replace(/-/g, "−"); }   // signo menos tipográfico
+
+    // ---------- MaxNLocator (localizador automático de marcas) ----------
+    function noSingular(v0, v1, expansor, minimo) {
+      if (!isFinite(v0) || !isFinite(v1)) return [-expansor, expansor];
+      if (v1 < v0) { var t = v0; v0 = v1; v1 = t; }
+      var maxabs = Math.max(Math.abs(v0), Math.abs(v1));
+      if (maxabs < (1e6 / minimo) * 2.2250738585072014e-308) { v0 = -expansor; v1 = expansor; }
+      else if (v1 - v0 <= maxabs * minimo) {
+        if (v1 === 0 && v0 === 0) { v0 = -expansor; v1 = expansor; }
+        else { v0 -= expansor * Math.abs(v0); v1 += expansor * Math.abs(v1); }
+      }
+      return [v0, v1];
+    }
+    function cerca(ms, borde, paso, offset) {
+      var tol = 1e-10;
+      if (offset > 0) tol = Math.min(0.4999, Math.max(1e-10, Math.pow(10, Math.log10(offset / paso) - 12)));
+      return Math.abs(ms - borde) < tol;
+    }
+    function marcasCrudas(vmin, vmax, nbins) {
+      var dv = Math.abs(vmax - vmin), media = (vmax + vmin) / 2, offset = 0;
+      if (!(Math.abs(media) / dv < 100)) offset = (media < 0 ? -1 : 1) * pot10(Math.floor(Math.log10(Math.abs(media))));
+      var escala = pot10(Math.floor(Math.log10(dv / nbins)));
+      var v0 = vmin - offset, v1 = vmax - offset, pasos = PASOS.map(function (s) { return s * escala; });
+      var crudo = (v1 - v0) / nbins, i0 = pasos.length - 1, marcas = [], i, k;
+      for (i = 0; i < pasos.length; i++) if (pasos[i] >= crudo) { i0 = i; break; }
+      for (i = i0; i >= 0; i--) {
+        var paso = pasos[i], base = divmod(v0, paso)[0] * paso, off = Math.abs(offset);
+        var dm = divmod(v0 - base, paso), bajo = cerca(dm[1] / paso, 1, paso, off) ? dm[0] + 1 : dm[0];
+        dm = divmod(v1 - base, paso);
+        var alto = cerca(dm[1] / paso, 0, paso, off) ? dm[0] : dm[0] + 1;
+        marcas = [];
+        for (k = bajo; k <= alto; k++) marcas.push(k * paso + base);
+        var dentro = marcas.filter(function (t) { return t <= v1 && t >= v0; }).length;
+        if (dentro >= 2) break;
+      }
+      return marcas.map(function (t) { return t + offset; });
+    }
+    function marcas(vmin, vmax, nbins) {
+      var ns = noSingular(vmin, vmax, 1e-13, 1e-14);
+      return marcasCrudas(ns[0], ns[1], nbins);
+    }
+    function visibles(locs, lim) {
+      var a = Math.min(lim[0], lim[1]), b = Math.max(lim[0], lim[1]), tol = (b - a) * 1e-10;
+      return locs.filter(function (t) { return a - tol <= t && t <= b + tol; });
+    }
+
+    // ---------- ScalarFormatter (los números de las marcas) ----------
+    function piso10(x) { return Math.floor(Math.log10(x)); }
+    function formatoDato(v) {                     // ScalarFormatter.format_data (para el offset)
+      var e = piso10(Math.abs(v)), s = Math.round(v / pot10(e) * 1e10) / 1e10;
+      var sig = s % 1 === 0 ? String(s) : String(Number(s.toPrecision(10)));
+      return e === 0 ? sig : sig + "e" + e;
+    }
+    function formatear(locs, lim) {
+      if (!locs.length) return { etiquetas: [], extra: "" };
+      var a = Math.min(lim[0], lim[1]), b = Math.max(lim[0], lim[1]);
+      var vis = locs.filter(function (t) { return a <= t && t <= b; }), offset = 0, oom = 0, o;
+      if (vis.length) {
+        var lmin = Math.min.apply(null, vis), lmax = Math.max.apply(null, vis);
+        if (!(lmin === lmax || (lmin <= 0 && 0 <= lmax))) {
+          var amin = Math.min(Math.abs(lmin), Math.abs(lmax)), amax = Math.max(Math.abs(lmin), Math.abs(lmax));
+          var omax = Math.ceil(Math.log10(amax)), om = omax;
+          for (o = omax; o > omax - 400; o--) {
+            if (divmod(amin, pot10(o))[0] !== divmod(amax, pot10(o))[0]) { om = o + 1; break; }
+          }
+          if ((amax - amin) / pot10(om) <= 1e-2) {
+            for (o = omax; o > omax - 400; o--) {
+              if (divmod(amax, pot10(o))[0] - divmod(amin, pot10(o))[0] > 1) { om = o + 1; break; }
+            }
+          }
+          var q = divmod(amax, pot10(om))[0];
+          offset = q >= 1000 ? (lmin < 0 ? -1 : 1) * q * pot10(om) : 0;
+        }
+        var oo;
+        if (offset) oo = Math.floor(Math.log10(b - a));
+        else { var val = Math.max.apply(null, vis.map(Math.abs)); oo = val === 0 ? 0 : piso10(val); }
+        oom = (oo <= -5 || oo >= 6) ? oo : 0;
+      }
+      var esc = pot10(oom), base = locs.length < 2 ? locs.concat([lim[0], lim[1]]) : locs;
+      var L = base.map(function (t) { return (t - offset) / esc; });
+      var rango = Math.max.apply(null, L) - Math.min.apply(null, L);
+      if (rango === 0) rango = Math.max.apply(null, L.map(Math.abs));
+      if (rango === 0) rango = 1;
+      if (locs.length < 2) L = L.slice(0, -2);
+      var room = piso10(rango), sig = Math.max(0, 3 - room), umbral = 1e-3 * pot10(room);
+      while (sig >= 0) {
+        var err = 0;
+        L.forEach(function (l) { err = Math.max(err, Math.abs(l - redondear(l, sig))); });
+        if (err < umbral) sig -= 1; else break;
+      }
+      sig += 1;
+      var etiquetas = locs.map(function (t) {
+        var xp = (t - offset) / esc;
+        if (Math.abs(xp) < 1e-8) xp = 0;
+        return menos(fijo(xp, sig));
+      });
+      var extra = "";
+      if (oom || offset) {
+        extra = (oom ? "1e" + oom : "") + (offset ? (offset > 0 ? "+" : "") + formatoDato(offset) : "");
+      }
+      return { etiquetas: etiquetas, extra: menos(extra) };
+    }
+
+    // ---------- Histograma (numpy.histogram) ----------
+    function linspace(a, b, n) {
+      var div = n - 1, delta = b - a, y = [], i;
+      if (div > 0) {
+        var paso = delta / div;
+        for (i = 0; i < n; i++) y.push(paso === 0 ? (i / div) * delta + a : i * paso + a);
+        y[n - 1] = b;
+      } else for (i = 0; i < n; i++) y.push(i * delta + a);
+      return y;
+    }
+    function histograma(datos, bins) {
+      var v = datos.filter(isFinite), bordes, cuentas, i, j;
+      if (typeof bins === "number") {
+        var lo = Math.min.apply(null, v), hi = Math.max.apply(null, v);
+        if (!v.length) { lo = 0; hi = 1; }
+        if (lo === hi) { lo -= 0.5; hi += 0.5; }
+        bordes = linspace(lo, hi, bins + 1);
+      } else bordes = bins.slice();
+      cuentas = bordes.slice(1).map(function () { return 0; });
+      var n = cuentas.length;
+      v.forEach(function (x) {
+        if (x < bordes[0] || x > bordes[n]) return;
+        if (x === bordes[n]) { cuentas[n - 1]++; return; }
+        for (j = 0; j < n; j++) if (x >= bordes[j] && x < bordes[j + 1]) { cuentas[j]++; return; }
+      });
+      return { bordes: bordes, cuentas: cuentas };
+    }
+
+    // ---------- Texto ----------
+    function fuente(tam) { return tam + "px " + LETRA; }
+    function medir(g, s, tam) {
+      g.font = fuente(tam);
+      var m = g.measureText(s), a = m.actualBoundingBoxAscent, d = m.actualBoundingBoxDescent;
+      if (!(a >= 0)) a = 0;
+      if (!(d >= 0)) d = 0;
+      return { w: m.width, a: Math.max(a, ASC * tam), d: Math.max(d, DESC * tam) };
+    }
+    // Texto alineado como en matplotlib (ha: left, center, right; va: top, bottom, center,
+    // baseline, center_baseline). Regresa la caja que ocupa.
+    function texto(g, s, x, y, o) {
+      var tam = o.tam || TAM, m = medir(g, s, tam), va = o.va || "baseline", ha = o.ha || "left", base;
+      if (va === "top") base = y + m.a;
+      else if (va === "bottom") base = y - m.d;
+      else if (va === "center") base = y + (m.a - m.d) / 2;
+      else if (va === "center_baseline") base = y + m.a / 2;
+      else base = y;
+      var x0 = ha === "left" ? x : ha === "right" ? x - m.w : x - m.w / 2;
+      g.fillStyle = o.color || "#000000";
+      g.textAlign = "left"; g.textBaseline = "alphabetic"; g.font = fuente(tam);
+      g.fillText(s, x0, base);
+      return { x0: x0, y0: base - m.a, x1: x0 + m.w, y1: base + m.d };
+    }
+
+    // ---------- Marcadores ----------
+    function marcador(g, tipo, x, y, tam, color, grosorX) {
+      var r = tam * PT / 2;
+      g.beginPath();
+      if (tipo === "o" || tipo === ".") {
+        g.arc(x, y, tipo === "." ? r / 2 : r, 0, 2 * Math.PI);
+      } else if (tipo === "s") {
+        g.rect(x - r, y - r, 2 * r, 2 * r);
+      } else if (tipo === "^") {
+        g.moveTo(x, y - r); g.lineTo(x - r, y + r); g.lineTo(x + r, y + r); g.closePath();
+      } else if (tipo === "x") {
+        g.moveTo(x - r, y - r); g.lineTo(x + r, y + r); g.moveTo(x - r, y + r); g.lineTo(x + r, y - r);
+        g.lineWidth = (grosorX || 1) * PT; g.strokeStyle = color; g.lineCap = "butt"; g.stroke();
+        return;
+      } else return;
+      g.fillStyle = color; g.fill();
+      g.lineWidth = PT; g.strokeStyle = color; g.lineJoin = "round"; g.stroke();
+    }
+
+    // ---------- Geometría para la leyenda "best" ----------
+    function segmentoCruza(m1x, m1y, m2x, m2y, cx, cy, w, h) {
+      return Math.abs(m1x + m2x - 2 * cx) < Math.abs(m1x - m2x) + w &&
+             Math.abs(m1y + m2y - 2 * cy) < Math.abs(m1y - m2y) + h &&
+             2 * Math.abs((m1x - cx) * (m1y - m2y) - (m1y - cy) * (m1x - m2x)) <
+               w * Math.abs(m1y - m2y) + h * Math.abs(m1x - m2x);
+    }
+    function lineaCruzaCaja(pts, c) {
+      var cx = (c.x0 + c.x1) / 2, cy = (c.y0 + c.y1) / 2, w = c.x1 - c.x0, h = c.y1 - c.y0, i, ant = null;
+      for (i = 0; i < pts.length; i++) {
+        var p = pts[i];
+        if (!p) continue;
+        if (ant === null) {
+          if (2 * Math.abs(p[0] - cx) <= w && 2 * Math.abs(p[1] - cy) <= h) return true;
+        } else if (segmentoCruza(ant[0], ant[1], p[0], p[1], cx, cy, w, h)) return true;
+        ant = p;
+      }
+      return false;
+    }
+
+    function distSeg(px, py, a, b) {
+      var dx = b[0] - a[0], dy = b[1] - a[1], L = dx * dx + dy * dy, t = 0;
+      if (L > 0) t = Math.max(0, Math.min(1, ((px - a[0]) * dx + (py - a[1]) * dy) / L));
+      var qx = a[0] + t * dx - px, qy = a[1] + t * dy - py;
+      return Math.sqrt(qx * qx + qy * qy);
+    }
+    function dentro(c, x, y, m) {
+      m = m || 0;
+      return c && x >= c.x0 - m && x <= c.x1 + m && y >= c.y0 - m && y <= c.y1 + m;
+    }
+    function unir(a, b) {
+      if (!a) return b;
+      if (!b) return a;
+      return { x0: Math.min(a.x0, b.x0), y0: Math.min(a.y0, b.y0), x1: Math.max(a.x1, b.x1), y1: Math.max(a.y1, b.y1) };
+    }
+
+    // ---------- La figura ----------
+    // figura = { figsize: [6.4, 4.8], titulo, xlabel, ylabel, grid, xlim, ylim (con null = automático),
+    //   xcats: ["S1", ...] (eje x de categorías en las posiciones 0, 1, ...), leyenda: true/false,
+    //   resaltar: id de una parte, series: [
+    //     {tipo: "plot", x, y, color, lw, ls, marker, ms, label},
+    //     {tipo: "bar", x, h, ancho, color, borde, label},
+    //     {tipo: "hist", datos, bins, color, borde, label},
+    //     {tipo: "scatter", x, y, s, color, marker, label},
+    //     {tipo: "axhline", y, color, lw, ls}, {tipo: "axvline", x, color, lw, ls},
+    //     {tipo: "pie", valores, etiquetas, autopct: "%1.0f%%"}] }
+    function dibujar(cv, f) {
+      if (f.tight && !f.subplot) {                // plt.tight_layout(): mide, ajusta y vuelve a dibujar
+        var copia = {}, k0;
+        for (k0 in f) if (Object.prototype.hasOwnProperty.call(f, k0)) copia[k0] = f[k0];
+        copia.tight = false; copia.resaltar = null;
+        var sub = ajusteApretado(dibujar(cv, copia));
+        copia.resaltar = f.resaltar;
+        if (sub) copia.subplot = sub;
+        var geo0 = dibujar(cv, copia);
+        geo0.apretado = !!sub;
+        return geo0;
+      }
+      var fs = f.figsize || [6.4, 4.8], W = fs[0] * 100, H = fs[1] * 100;
+      var cssW = f.ancho || cv.clientWidth || W, esc = cssW / W, dpr = window.devicePixelRatio || 1, K = esc * dpr;
+      cv.style.height = (H * esc) + "px";
+      cv.width = Math.max(1, Math.round(cssW * dpr));
+      cv.height = Math.max(1, Math.round(H * esc * dpr));
+      var g = cv.getContext("2d");
+      g.setTransform(K, 0, 0, K, 0, 0);
+      g.fillStyle = "#ffffff"; g.fillRect(0, 0, W, H);
+      function ajustar(v, lw) {                   // alinea líneas y rectángulos a los píxeles
+        var d = v * K;
+        if (!lw) return Math.round(d) / K;
+        var n = Math.max(1, Math.round(lw * K));
+        return (n % 2 === 1 ? Math.floor(d) + 0.5 : Math.round(d)) / K;
+      }
+
+      // Colores de los ciclos (plot e hist usan el de líneas; bar, scatter y pie, el de parches)
+      var cl = 0, cp = 0, hayPastel = false;
+      var S = (f.series || []).map(function (s0, i) {
+        var s = {}, k;
+        for (k in s0) if (Object.prototype.hasOwnProperty.call(s0, k)) s[k] = s0[k];
+        s.id = "serie" + i;
+        if (s.tipo === "plot" || s.tipo === "hist") { if (!s.color) s.color = CICLO[cl++ % 10]; }
+        else if (s.tipo === "bar" || s.tipo === "scatter") { if (!s.color) s.color = CICLO[cp++ % 10]; }
+        else if (s.tipo === "axhline" || s.tipo === "axvline") { if (!s.color) s.color = CICLO[0]; }
+        if (s.tipo === "pie") hayPastel = true;
+        if (s.tipo === "hist") {
+          var hh = histograma(s.datos, s.bins === undefined ? 10 : s.bins);
+          s.x = []; s.h = []; s.anchos = [];
+          for (k = 0; k < hh.cuentas.length; k++) {
+            var wd = hh.bordes[k + 1] - hh.bordes[k];
+            s.x.push(hh.bordes[k] + wd / 2); s.h.push(hh.cuentas[k]); s.anchos.push(wd);
+          }
+          s.hist = hh;
+        } else if (s.tipo === "bar") {
+          s.anchos = s.x.map(function () { return s.ancho === undefined ? 0.8 : s.ancho; });
+        }
+        return s;
+      });
+
+      // Ejes (coordenadas del canvas: y crece hacia abajo)
+      var sp = f.subplot || { left: 0.125, right: 0.9, bottom: 0.11, top: 0.88 };
+      var E = { x0: sp.left * W, x1: sp.right * W, y0: (1 - sp.top) * H, y1: (1 - sp.bottom) * H };
+      var geo = { W: W, H: H, esc: esc, ejes: E, cajas: {}, series: [] };
+      if (hayPastel) {
+        var lado = Math.min(E.x1 - E.x0, E.y1 - E.y0), cx = (E.x0 + E.x1) / 2, cy = (E.y0 + E.y1) / 2;
+        E = { x0: cx - lado / 2, x1: cx + lado / 2, y0: cy - lado / 2, y1: cy + lado / 2 };
+        geo.ejes = E;
+      }
+
+      // Límites de los datos, márgenes de 5 % y bordes "pegajosos" (las barras empiezan en 0)
+      var dx = [Infinity, -Infinity], dy = [Infinity, -Infinity], pegY = [];
+      function incluir(l, v) { if (v < l[0]) l[0] = v; if (v > l[1]) l[1] = v; }
+      S.forEach(function (s) {
+        var i;
+        if (s.tipo === "plot" || s.tipo === "scatter") {
+          for (i = 0; i < s.x.length; i++) {
+            if (isFinite(s.x[i]) && isFinite(s.y[i])) { incluir(dx, s.x[i]); incluir(dy, s.y[i]); }
+          }
+        } else if (s.tipo === "bar" || s.tipo === "hist") {
+          for (i = 0; i < s.x.length; i++) {
+            incluir(dx, s.x[i] - s.anchos[i] / 2); incluir(dx, s.x[i] + s.anchos[i] / 2);
+            incluir(dy, Math.min(0, s.h[i])); incluir(dy, Math.max(0, s.h[i]));
+            pegY.push(0);
+          }
+        } else if (s.tipo === "axhline") incluir(dy, s.y);
+        else if (s.tipo === "axvline") incluir(dx, s.x);
+      });
+      function autoescala(l, pegajosos) {
+        if (!(l[0] <= l[1])) return [0, 1];
+        var ns = noSingular(l[0], l[1], 0.05, 1e-15), x0 = ns[0], x1 = ns[1];
+        var tol = 1e-5 * Math.max(Math.abs(x0), Math.abs(x1), Math.abs(x1 - x0)), b0 = null, b1 = null, i;
+        var p = pegajosos.slice().sort(function (a, b) { return a - b; });
+        for (i = p.length - 1; i >= 0; i--) if (p[i] < x0 + tol) { b0 = p[i]; break; }
+        for (i = 0; i < p.length; i++) if (p[i] >= x1 - tol) { b1 = p[i]; break; }
+        var d = (x1 - x0) * 0.05;
+        if (!isFinite(d)) d = 0;
+        x0 -= d; x1 += d;
+        if (b0 !== null) x0 = Math.max(x0, b0);
+        if (b1 !== null) x1 = Math.min(x1, b1);
+        return noSingular(x0, x1, 0.001, 1e-15);
+      }
+      var xlim = hayPastel ? [-1.25, 1.25] : autoescala(dx, []);
+      var ylim = hayPastel ? [-1.25, 1.25] : autoescala(dy, pegY);
+      if (f.xlim) xlim = [f.xlim[0] === null ? xlim[0] : f.xlim[0], f.xlim[1] === null ? xlim[1] : f.xlim[1]];
+      if (f.ylim) ylim = [f.ylim[0] === null ? ylim[0] : f.ylim[0], f.ylim[1] === null ? ylim[1] : f.ylim[1]];
+      geo.xlim = xlim; geo.ylim = ylim;
+      function X(x) { return E.x0 + (x - xlim[0]) / (xlim[1] - xlim[0]) * (E.x1 - E.x0); }
+      function Y(y) { return E.y1 - (y - ylim[0]) / (ylim[1] - ylim[0]) * (E.y1 - E.y0); }
+      geo.X = X; geo.Y = Y;
+
+      // Marcas y sus números
+      var mx = { pos: [], et: [], extra: "" }, my = { pos: [], et: [], extra: "" };
+      if (!hayPastel) {
+        var nbx = Math.max(1, Math.min(9, Math.floor((E.x1 - E.x0) / PT / 30)));
+        var nby = Math.max(1, Math.min(9, Math.floor((E.y1 - E.y0) / PT / 20)));
+        if (f.xcats) {
+          mx.pos = f.xcats.map(function (c, i) { return i; }); mx.et = f.xcats.slice();
+          var vxc = visibles(mx.pos, xlim);
+          mx.et = mx.et.filter(function (c, i) { return vxc.indexOf(i) >= 0; }); mx.pos = vxc;
+        } else {
+          var tx = marcas(xlim[0], xlim[1], nbx), fx = formatear(tx, xlim), vx = visibles(tx, xlim);
+          mx.pos = vx; mx.et = vx.map(function (t) { return fx.etiquetas[tx.indexOf(t)]; }); mx.extra = fx.extra;
+        }
+        var ty = marcas(ylim[0], ylim[1], nby), fy = formatear(ty, ylim), vy = visibles(ty, ylim);
+        my.pos = vy; my.et = vy.map(function (t) { return fy.etiquetas[ty.indexOf(t)]; }); my.extra = fy.extra;
+      }
+      geo.marcasX = mx; geo.marcasY = my;
+
+      // Trazo de una serie de puntos (null corta la línea)
+      function poligonal(pts, color, lw, ls) {
+        if (ls === "None" || ls === "" || ls === " ") return;
+        g.save();
+        g.beginPath();
+        var abierto = false;
+        pts.forEach(function (p) {
+          if (!p) { abierto = false; return; }
+          if (!abierto) { g.moveTo(p[0], p[1]); abierto = true; } else g.lineTo(p[0], p[1]);
+        });
+        g.lineWidth = lw * PT; g.strokeStyle = color; g.lineJoin = "round";
+        var patron = GUIONES[ls];
+        if (patron) { g.setLineDash(patron.map(function (v) { return v * lw * PT; })); g.lineCap = "butt"; }
+        else g.lineCap = "square";
+        g.stroke();
+        g.restore();
+      }
+      function recortar() { g.save(); g.beginPath(); g.rect(E.x0, E.y0, E.x1 - E.x0, E.y1 - E.y0); g.clip(); }
+
+      // 1) Parches (barras, histogramas, pastel) y colecciones (scatter): zorder 1
+      S.forEach(function (s) {
+        var i, info = { id: s.id, tipo: s.tipo, label: s.label };
+        if (s.tipo === "bar" || s.tipo === "hist") {
+          recortar();
+          info.rects = [];
+          for (i = 0; i < s.x.length; i++) {
+            var xa = ajustar(X(s.x[i] - s.anchos[i] / 2), 0), xb = ajustar(X(s.x[i] + s.anchos[i] / 2), 0);
+            var ya = ajustar(Y(Math.max(0, s.h[i])), 0), yb = ajustar(Y(Math.min(0, s.h[i])), 0);
+            g.fillStyle = s.color; g.fillRect(xa, ya, xb - xa, yb - ya);
+            if (s.borde) { g.lineWidth = PT; g.strokeStyle = s.borde; g.strokeRect(xa, ya, xb - xa, yb - ya); }
+            info.rects.push({ x0: xa, y0: ya, x1: xb, y1: yb });
+          }
+          g.restore();
+        } else if (s.tipo === "scatter") {
+          recortar();
+          info.puntos = [];
+          var tam = Math.sqrt(s.s === undefined ? 36 : s.s);
+          for (i = 0; i < s.x.length; i++) {
+            if (!isFinite(s.x[i]) || !isFinite(s.y[i])) continue;
+            marcador(g, s.marker || "o", X(s.x[i]), Y(s.y[i]), tam, s.color, 1.5);
+            info.puntos.push([X(s.x[i]), Y(s.y[i])]);
+          }
+          info.radio = tam * PT / 2 + PT / 2;
+          g.restore();
+        } else if (s.tipo === "pie") {
+          var tot = s.valores.reduce(function (a, b) { return a + b; }, 0), t1 = 0;
+          var cxp = X(0), cyp = Y(0), r = X(1) - X(0);
+          info.cuñas = []; info.centro = [cxp, cyp]; info.radio = r;
+          s.valores.forEach(function (v, k) {
+            var t2 = t1 + v / tot, a1 = 2 * Math.PI * t1, a2 = 2 * Math.PI * t2, am = (a1 + a2) / 2;
+            g.beginPath(); g.moveTo(cxp, cyp); g.arc(cxp, cyp, r, -a1, -a2, true); g.closePath();
+            g.fillStyle = CICLO[(cp + k) % 10]; g.fill();
+            info.cuñas.push([a1, a2]);
+            if (s.etiquetas) {
+              var xt = 1.1 * Math.cos(am), yt = 1.1 * Math.sin(am);
+              texto(g, s.etiquetas[k], X(xt), Y(yt), { ha: xt > 0 ? "left" : "right", va: "center" });
+            }
+            if (s.autopct) {
+              var pct = fijo(100 * v / tot, Number((/%1?\.(\d+)f/.exec(s.autopct) || [0, 0])[1])) + "%";
+              texto(g, pct, X(0.6 * Math.cos(am)), Y(0.6 * Math.sin(am)), { ha: "center", va: "center" });
+            }
+            t1 = t2;
+          });
+        }
+        if (s.tipo !== "plot" && s.tipo !== "axhline" && s.tipo !== "axvline") geo.series.push(info);
+      });
+
+      // 2) Cuadrícula, marcas y sus números (zorder 1.5)
+      var lwEje = 0.8 * PT;
+      if (f.grid && !hayPastel) {
+        g.save(); g.strokeStyle = "#b0b0b0"; g.lineWidth = lwEje; g.lineCap = "square"; g.beginPath();
+        mx.pos.forEach(function (t) { var x = ajustar(X(t), lwEje); g.moveTo(x, E.y0); g.lineTo(x, E.y1); });
+        my.pos.forEach(function (t) { var y = ajustar(Y(t), lwEje); g.moveTo(E.x0, y); g.lineTo(E.x1, y); });
+        g.stroke(); g.restore();
+      }
+      var cajaEjeX = null, cajaEjeY = null, numerosX = null, numerosY = null;
+      if (!hayPastel) {
+        g.save(); g.strokeStyle = "#000000"; g.lineWidth = lwEje; g.beginPath();
+        mx.pos.forEach(function (t) { var x = ajustar(X(t), lwEje); g.moveTo(x, E.y1); g.lineTo(x, E.y1 + 3.5 * PT); });
+        my.pos.forEach(function (t) { var y = ajustar(Y(t), lwEje); g.moveTo(E.x0 - 3.5 * PT, y); g.lineTo(E.x0, y); });
+        g.stroke(); g.restore();
+        mx.pos.forEach(function (t, i) {
+          numerosX = unir(numerosX, texto(g, mx.et[i], X(t), E.y1 + 7 * PT, { ha: "center", va: "top" }));
+        });
+        my.pos.forEach(function (t, i) {
+          numerosY = unir(numerosY, texto(g, my.et[i], E.x0 - 7 * PT, Y(t), { ha: "right", va: "center_baseline" }));
+        });
+        cajaEjeX = numerosX; cajaEjeY = numerosY;
+        if (my.extra) cajaEjeY = unir(cajaEjeY, texto(g, my.extra, E.x0, E.y0 - 3 * PT, { ha: "left", va: "baseline" }));
+        if (mx.extra) cajaEjeX = unir(cajaEjeX, texto(g, mx.extra, E.x1, (numerosX ? numerosX.y1 : E.y1) + 3 * PT, { ha: "right", va: "top" }));
+      }
+      geo.cajas.ejex = cajaEjeX ? unir(cajaEjeX, { x0: E.x0, y0: E.y1, x1: E.x1, y1: E.y1 + 7 * PT }) : null;
+      geo.cajas.ejey = cajaEjeY ? unir(cajaEjeY, { x0: E.x0 - 7 * PT, y0: E.y0, x1: E.x0, y1: E.y1 }) : null;
+
+      // 3) Líneas (zorder 2): plot, axhline, axvline
+      var lineasPx = [];
+      S.forEach(function (s) {
+        var i, pts = [], info = { id: s.id, tipo: s.tipo, label: s.label };
+        if (s.tipo === "plot") {
+          for (i = 0; i < s.x.length; i++) pts.push(isFinite(s.x[i]) && isFinite(s.y[i]) ? [X(s.x[i]), Y(s.y[i])] : null);
+          recortar();
+          poligonal(pts, s.color, s.lw === undefined ? 1.5 : s.lw, s.ls === undefined ? "-" : s.ls);
+          if (s.marker) pts.forEach(function (p) { if (p) marcador(g, s.marker, p[0], p[1], s.ms === undefined ? 6 : s.ms, s.color); });
+          g.restore();
+        } else if (s.tipo === "axhline" || s.tipo === "axvline") {
+          if (s.tipo === "axhline") { var yy = ajustar(Y(s.y), (s.lw || 1.5) * PT); pts = [[E.x0, yy], [E.x1, yy]]; }
+          else { var xx = ajustar(X(s.x), (s.lw || 1.5) * PT); pts = [[xx, E.y0], [xx, E.y1]]; }
+          recortar();
+          poligonal(pts, s.color, s.lw === undefined ? 1.5 : s.lw, s.ls === undefined ? "-" : s.ls);
+          g.restore();
+        } else return;
+        info.puntos = pts; info.marker = s.marker; info.ls = s.ls;
+        lineasPx.push(pts);
+        geo.series.push(info);
+      });
+
+      // 4) Marco de los ejes (zorder 2.5)
+      if (!hayPastel) {
+        g.save(); g.strokeStyle = "#000000"; g.lineWidth = lwEje; g.lineCap = "square";
+        var l = ajustar(E.x0, lwEje), r2 = ajustar(E.x1, lwEje), t = ajustar(E.y0, lwEje), b = ajustar(E.y1, lwEje);
+        g.strokeRect(l, t, r2 - l, b - t);
+        g.restore();
+      }
+
+      // 5) Título y nombres de los ejes
+      if (f.titulo) geo.cajas.titulo = texto(g, f.titulo, (E.x0 + E.x1) / 2, E.y0 - 6 * PT, { ha: "center", va: "baseline", tam: 12 * PT });
+      if (f.xlabel) {
+        var yx = (numerosX ? Math.max(numerosX.y1, E.y1) : E.y1) + 4 * PT;
+        geo.cajas.xlabel = texto(g, f.xlabel, (E.x0 + E.x1) / 2, yx, { ha: "center", va: "top" });
+      }
+      if (f.ylabel) {
+        var xy = (numerosY ? Math.min(numerosY.x0, E.x0) : E.x0) - 4 * PT, m = medir(g, f.ylabel, TAM), ym = (E.y0 + E.y1) / 2;
+        g.save(); g.translate(xy, ym); g.rotate(-Math.PI / 2);
+        g.fillStyle = "#000000"; g.textAlign = "left"; g.textBaseline = "alphabetic"; g.font = fuente(TAM);
+        g.fillText(f.ylabel, -m.w / 2, -m.d);
+        g.restore();
+        geo.cajas.ylabel = { x0: xy - m.a - m.d, y0: ym - m.w / 2, x1: xy, y1: ym + m.w / 2 };
+      }
+
+      // 6) Leyenda (zorder 5), en la posición con menos datos encima ("best")
+      geo.entradas = 0;
+      if (f.leyenda && !hayPastel) {
+        var ent = S.filter(function (s) { return typeof s.label === "string" && s.label !== "" && s.label.charAt(0) !== "_" && s.tipo !== "pie"; });
+        geo.entradas = ent.length;
+        if (ent.length) {
+          var pad = 0.4 * TAM, sep = 0.5 * TAM, hl = 2 * TAM, hh = 0.7 * TAM, htp = 0.8 * TAM, bap = 0.5 * TAM;
+          var med = ent.map(function (s) { return medir(g, s.label, TAM); });
+          var filas = med.map(function (mm) { return Math.max(hh, mm.a) + mm.d; });
+          var anchoL = 2 * pad + hl + htp + Math.max.apply(null, med.map(function (mm) { return mm.w; }));
+          var altoL = 2 * pad + filas.reduce(function (a, b2) { return a + b2; }, 0) + sep * (ent.length - 1);
+          var C = { x0: E.x0 + bap, x1: E.x1 - bap, y0: E.y0 + bap, y1: E.y1 - bap };
+          var cx2 = (C.x0 + C.x1) / 2 - anchoL / 2, cy2 = (C.y0 + C.y1) / 2 - altoL / 2;
+          var pos = [null, [C.x1 - anchoL, C.y0], [C.x0, C.y0], [C.x0, C.y1 - altoL], [C.x1 - anchoL, C.y1 - altoL],
+                     [C.x1 - anchoL, cy2], [C.x0, cy2], [C.x1 - anchoL, cy2], [cx2, C.y1 - altoL], [cx2, C.y0], [cx2, cy2]];
+          var rects = [], ofs = [];
+          geo.series.forEach(function (info) {
+            if (info.rects) rects = rects.concat(info.rects);
+            if (info.tipo === "scatter") ofs = ofs.concat(info.puntos);
+          });
+          var mejor = null;
+          for (var idx = 1; idx <= 10; idx++) {
+            var c = { x0: pos[idx][0], y0: pos[idx][1], x1: pos[idx][0] + anchoL, y1: pos[idx][1] + altoL }, malo = 0;
+            lineasPx.forEach(function (pts) {
+              pts.forEach(function (p) { if (p && p[0] > c.x0 && p[0] < c.x1 && p[1] > c.y0 && p[1] < c.y1) malo++; });
+              if (lineaCruzaCaja(pts, c)) malo++;
+            });
+            ofs.forEach(function (p) { if (p[0] > c.x0 && p[0] < c.x1 && p[1] > c.y0 && p[1] < c.y1) malo++; });
+            rects.forEach(function (q) { if (q.x0 < c.x1 && c.x0 < q.x1 && q.y0 < c.y1 && c.y0 < q.y1) malo++; });
+            if (!mejor || malo < mejor.malo) mejor = { malo: malo, c: c };
+            if (malo === 0) break;
+          }
+          var L = mejor.c, rad = 0.2 * TAM;
+          g.save();
+          g.globalAlpha = 0.8;
+          g.beginPath();
+          g.moveTo(L.x0 + rad, L.y0); g.arcTo(L.x1, L.y0, L.x1, L.y1, rad); g.arcTo(L.x1, L.y1, L.x0, L.y1, rad);
+          g.arcTo(L.x0, L.y1, L.x0, L.y0, rad); g.arcTo(L.x0, L.y0, L.x1, L.y0, rad); g.closePath();
+          g.fillStyle = "#ffffff"; g.fill(); g.lineWidth = PT; g.strokeStyle = "#cccccc"; g.stroke();
+          g.restore();
+          var yb2 = L.y0 + pad;
+          ent.forEach(function (s, k) {
+            var base = yb2 + Math.max(hh, med[k].a), hx0 = L.x0 + pad, hx1 = hx0 + hl;
+            if (s.tipo === "plot" || s.tipo === "axhline" || s.tipo === "axvline") {
+              poligonal([[hx0, base - hh / 2], [hx1, base - hh / 2]], s.color, s.lw === undefined ? 1.5 : s.lw, s.ls === undefined ? "-" : s.ls);
+              if (s.marker) marcador(g, s.marker, (hx0 + hx1) / 2, base - hh / 2, s.ms === undefined ? 6 : s.ms, s.color);
+            } else if (s.tipo === "scatter") {
+              marcador(g, s.marker || "o", (hx0 + hx1) / 2, base - hh * 0.6875, Math.sqrt(s.s === undefined ? 36 : s.s), s.color, 1.5);
+            } else {
+              g.fillStyle = s.color; g.fillRect(hx0, base - hh, hl, hh);
+              if (s.borde) { g.lineWidth = PT; g.strokeStyle = s.borde; g.strokeRect(hx0, base - hh, hl, hh); }
+            }
+            texto(g, s.label, hx1 + htp, base, { va: "baseline" });
+            yb2 += filas[k] + sep;
+          });
+          geo.cajas.leyenda = L;
+        }
+      }
+
+      // 7) Resaltado de una o varias partes
+      if (f.resaltar) [].concat(f.resaltar).forEach(function (id) { resaltar(g, geo, id); });
+      return geo;
+    }
+
+    // Márgenes de plt.tight_layout(): todo lo que rodea a los ejes, más 1.08 veces la letra
+    function ajusteApretado(geo) {
+      var E = geo.ejes, bb = { x0: E.x0, y0: E.y0, x1: E.x1, y1: E.y1 }, pad = 1.08 * TAM;
+      ["titulo", "xlabel", "ylabel", "ejex", "ejey"].forEach(function (k) { bb = unir(bb, geo.cajas[k]); });
+      var ml = (Math.max(E.x0 - bb.x0, 0) + pad) / geo.W, mr = (Math.max(bb.x1 - E.x1, 0) + pad) / geo.W;
+      var mt = (Math.max(E.y0 - bb.y0, 0) + pad) / geo.H, mb = (Math.max(bb.y1 - E.y1, 0) + pad) / geo.H;
+      if (ml + mr >= 1 || mt + mb >= 1) return null;
+      return { left: ml, right: 1 - mr, bottom: mb, top: 1 - mt };
+    }
+    // ¿Algún texto se sale de la figura? (en tu computadora se vería cortado)
+    function cortados(geo) {
+      var r = [];
+      ["titulo", "xlabel", "ylabel", "ejex", "ejey"].forEach(function (k) {
+        var c = geo.cajas[k];
+        if (c && (c.x0 < -0.5 || c.y0 < -0.5 || c.x1 > geo.W + 0.5 || c.y1 > geo.H + 0.5)) r.push(k);
+      });
+      return r;
+    }
+
+    var ORO = "#B8975A";
+    function marcoResaltado(g, c, m) {
+      g.save();
+      g.fillStyle = "rgba(184, 151, 90, 0.18)";
+      g.fillRect(c.x0 - m, c.y0 - m, c.x1 - c.x0 + 2 * m, c.y1 - c.y0 + 2 * m);
+      g.setLineDash([5, 3]); g.lineWidth = 2; g.strokeStyle = ORO;
+      g.strokeRect(c.x0 - m, c.y0 - m, c.x1 - c.x0 + 2 * m, c.y1 - c.y0 + 2 * m);
+      g.restore();
+    }
+    function resaltar(g, geo, id) {
+      var E = geo.ejes;
+      if (id === "figura") {
+        g.save(); g.setLineDash([8, 4]); g.lineWidth = 4; g.strokeStyle = ORO;
+        g.strokeRect(2, 2, geo.W - 4, geo.H - 4); g.restore();
+        return;
+      }
+      if (id === "grid" || id === "ejes") { marcoResaltado(g, E, 2); return; }
+      if (geo.cajas[id]) { marcoResaltado(g, geo.cajas[id], 3); return; }
+      var info = geo.series.filter(function (s) { return s.id === id; })[0];
+      if (!info) return;
+      g.save();
+      g.beginPath(); g.rect(E.x0, E.y0, E.x1 - E.x0, E.y1 - E.y0); g.clip();
+      g.strokeStyle = "rgba(184, 151, 90, 0.55)"; g.fillStyle = "rgba(184, 151, 90, 0.35)";
+      if (info.rects) {
+        g.lineWidth = 4;
+        info.rects.forEach(function (q) { g.strokeRect(q.x0 - 2, q.y0 - 2, q.x1 - q.x0 + 4, q.y1 - q.y0 + 4); });
+      } else if (info.tipo === "scatter") {
+        info.puntos.forEach(function (p) { g.beginPath(); g.arc(p[0], p[1], info.radio + 4, 0, 2 * Math.PI); g.fill(); });
+      } else if (info.puntos) {
+        g.lineWidth = 10; g.lineJoin = "round"; g.lineCap = "round"; g.beginPath();
+        var ab = false;
+        info.puntos.forEach(function (p) {
+          if (!p) { ab = false; return; }
+          if (!ab) { g.moveTo(p[0], p[1]); ab = true; } else g.lineTo(p[0], p[1]);
+        });
+        g.stroke();
+      }
+      g.restore();
+    }
+
+    // Qué parte de la figura está bajo el punto (x, y) en píxeles CSS del canvas
+    function parteEn(geo, x, y) {
+      var fx = x / geo.esc, fy = y / geo.esc, E = geo.ejes, tol = 6 / geo.esc, i, j;
+      if (dentro(geo.cajas.leyenda, fx, fy)) return "leyenda";
+      if (dentro(geo.cajas.titulo, fx, fy, 3)) return "titulo";
+      if (dentro(geo.cajas.xlabel, fx, fy, 3)) return "xlabel";
+      if (dentro(geo.cajas.ylabel, fx, fy, 3)) return "ylabel";
+      var enEjes = dentro(E, fx, fy);
+      if (enEjes) {
+        for (i = geo.series.length - 1; i >= 0; i--) {
+          var s = geo.series[i];
+          if (s.puntos && s.tipo !== "scatter") {
+            for (j = 0; j < s.puntos.length; j++) {
+              var p = s.puntos[j], q = s.puntos[j + 1];
+              if (p && q && distSeg(fx, fy, p, q) < tol) return s.id;
+              if (p && s.marker && Math.abs(p[0] - fx) < tol && Math.abs(p[1] - fy) < tol) return s.id;
+            }
+          }
+        }
+        for (i = geo.series.length - 1; i >= 0; i--) {
+          var t = geo.series[i];
+          if (t.tipo === "scatter") {
+            for (j = 0; j < t.puntos.length; j++) {
+              if (Math.abs(t.puntos[j][0] - fx) < t.radio + tol / 2 && Math.abs(t.puntos[j][1] - fy) < t.radio + tol / 2) return t.id;
+            }
+          }
+          if (t.rects) for (j = 0; j < t.rects.length; j++) if (dentro(t.rects[j], fx, fy, 1)) return t.id;
+          if (t.cuñas) {
+            var ddx = fx - t.centro[0], ddy = t.centro[1] - fy;
+            if (ddx * ddx + ddy * ddy <= t.radio * t.radio) return t.id;
+          }
+        }
+      }
+      if (dentro(geo.cajas.ejex, fx, fy, 2)) return "ejex";
+      if (dentro(geo.cajas.ejey, fx, fy, 2)) return "ejey";
+      if (enEjes) return "ejes";
+      return "figura";
+    }
+
+    return { dibujar: dibujar, parteEn: parteEn, cortados: cortados, marcas: marcas, visibles: visibles, formatear: formatear,
+             linspace: linspace, histograma: histograma, fijo: fijo, divmod: divmod, CICLO: CICLO, PT: PT };
+  })();
+  // ===================== Figura al estilo de matplotlib (fin) =====================
+
+  function $(id) { return document.getElementById(id); }
+  function esc(t) {
+    return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  // ---------- Código Python con los colores del curso ----------
+  var PY_KW = /^(False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)$/;
+  function pyResaltar(linea) {
+    var html = "", i = 0, m, resto;
+    while (i < linea.length) {
+      resto = linea.slice(i);
+      if ((m = /^#.*/.exec(resto))) { html += '<span class="com">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[rRbBfFuU]{0,2}("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/.exec(resto))) { html += '<span class="str">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[A-Za-z_\u00C0-\u024F][\w\u00C0-\u024F]*/.exec(resto))) { html += PY_KW.test(m[0]) ? '<span class="kw">' + m[0] + "</span>" : esc(m[0]); }
+      else if ((m = /^(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?j?/.exec(resto))) { html += '<span class="num">' + m[0] + "</span>"; }
+      else { m = [resto[0]]; html += esc(m[0]); }
+      i += m[0].length;
+    }
+    return html;
+  }
+  function mostrarCodigo(el, lineas) {
+    el.innerHTML = '<div class="codigo"><ol>' + lineas.map(function (l) {
+      return "<li>" + (pyResaltar(l) || " ") + "</li>";
+    }).join("") + "</ol></div>";
+  }
+
+  // ---------- Mostrar valores como los imprime Python ----------
+  // repr() de un float de Python: la representación más corta que vuelve al mismo número.
+  function pyFloat(x) {
+    if (Number.isNaN(x)) return "nan";
+    if (x === Infinity) return "inf";
+    if (x === -Infinity) return "-inf";
+    if (x === 0) return Object.is(x, -0) ? "-0.0" : "0.0";
+    var partes = Math.abs(x).toExponential().split("e");
+    var digitos = partes[0].replace(".", "");
+    var exp = parseInt(partes[1], 10);
+    var decpt = exp + 1, signo = x < 0 ? "-" : "";
+    if (decpt > 16 || decpt < -3) {
+      var mant = digitos.length > 1 ? digitos[0] + "." + digitos.slice(1) : digitos[0];
+      return signo + mant + "e" + (exp < 0 ? "-" : "+") + (Math.abs(exp) < 10 ? "0" : "") + Math.abs(exp);
+    }
+    if (decpt <= 0) return signo + "0." + "0".repeat(-decpt) + digitos;
+    if (decpt >= digitos.length) return signo + digitos + "0".repeat(decpt - digitos.length) + ".0";
+    return signo + digitos.slice(0, decpt) + "." + digitos.slice(decpt);
+  }
+
+  // ---------- print() de un arreglo de numpy de floats (una dimensión) ----------
+  // Como numpy: cada número con los dígitos justos, a lo más 8 decimales (floatmode "maxprec"),
+  // alineados en columnas; notación científica si el mayor valor es >= 1e8, o el menor distinto
+  // de cero es < 0.0001, o el cociente entre ellos es > 1000; renglones de 75 caracteres.
+  function npExponente2(x) {
+    var a = Math.abs(x), e = 0;
+    while (a !== Math.floor(a)) { a *= 2; e--; }
+    while (a % 2 === 0) { a /= 2; e++; }
+    return e;
+  }
+  function npRedondeo(x, d) {          // |x| redondeado a d decimales, empates al par (exacto)
+    var s = Math.abs(x).toFixed(d);
+    if (x !== 0 && npExponente2(x) === -(d + 1)) {
+      var u = s.charCodeAt(s.length - 1) - 48;
+      if (u % 2 === 1) s = s.slice(0, -1) + String(u - 1);
+    }
+    return s;
+  }
+  function npCorto(x) {                // dígitos más cortos que regresan al mismo float
+    var p = Math.abs(x).toExponential().split("e");
+    return { dig: p[0].replace(".", ""), exp: parseInt(p[1], 10) };
+  }
+  function npSigno(x) { return (x < 0 || Object.is(x, -0)) ? "-" : ""; }
+  function npPosicional(x, prec) {     // dragon4_positional(unique=True, precision=prec, trim=".")
+    var c = npCorto(x), s, dec = Math.max(0, c.dig.length - 1 - c.exp);
+    if (x === 0) s = "0.";
+    else if (dec <= prec) {
+      if (c.exp >= c.dig.length - 1) s = c.dig + "0".repeat(c.exp - c.dig.length + 1) + ".";
+      else if (c.exp >= 0) s = c.dig.slice(0, c.exp + 1) + "." + c.dig.slice(c.exp + 1);
+      else s = "0." + "0".repeat(-c.exp - 1) + c.dig;
+    } else {
+      s = npRedondeo(x, prec).replace(/0+$/, "");
+      if (s.indexOf(".") < 0) s += ".";
+    }
+    return npSigno(x) + s;
+  }
+  function npCientifico(x, prec, minDig, expDig) {  // dragon4_scientific(unique=True)
+    var man = "0", ex = 0;
+    if (x !== 0) {
+      var c = npCorto(x);
+      man = c.dig; ex = c.exp;
+      if (man.length - 1 > prec) {
+        var pr = Math.abs(x).toExponential(prec).split("e"), d = prec - c.exp;
+        man = pr[0].replace(".", "");
+        if (d >= 0 && npExponente2(x) === -(d + 1)) {         // empate exacto: al par
+          var u = man.charCodeAt(man.length - 1) - 48;
+          if (u % 2 === 1) man = man.slice(0, -1) + String(u - 1);
+        }
+        man = man.replace(/0+$/, "") || "0"; ex = parseInt(pr[1], 10);
+      }
+    }
+    var frac = man.slice(1);
+    while (minDig !== undefined && frac.length < minDig) frac += "0";
+    var es = String(Math.abs(ex));
+    while (es.length < (expDig || 2)) es = "0" + es;
+    return npSigno(x) + man.charAt(0) + "." + frac + "e" + (ex < 0 ? "-" : "+") + es;
+  }
+  function npStr(valores) {
+    var fin = valores.filter(function (v) { return isFinite(v); });
+    var nz = fin.filter(function (v) { return v !== 0; }).map(Math.abs);
+    var expo = false, pl = 0, pr = 0, prec = 0, expSize = 0;
+    if (nz.length) {
+      var mx = Math.max.apply(null, nz), mn = Math.min.apply(null, nz);
+      expo = mx >= 1e8 || mn < 0.0001 || mx / mn > 1000;
+    }
+    if (expo) {
+      fin.forEach(function (v) {
+        var par = npCientifico(v, 8).split("e"), ip = par[0].split(".");
+        prec = Math.max(prec, ip[1].length); expSize = Math.max(expSize, par[1].length - 1);
+        pl = Math.max(pl, ip[0].length);
+      });
+      pr = expSize + 2 + prec;
+    } else {
+      fin.forEach(function (v) {
+        var ip = npPosicional(v, 8).split(".");
+        pl = Math.max(pl, ip[0].length); pr = Math.max(pr, ip[1].length);
+      });
+    }
+    if (fin.length !== valores.length) {
+      var neginf = valores.some(function (v) { return v === -Infinity; }) ? 1 : 0;
+      pl = Math.max(pl, 3 - (pr + 1), neginf + 3 - (pr + 1));
+    }
+    var palabras = valores.map(function (v) {
+      if (!isFinite(v)) {
+        var t = isNaN(v) ? "nan" : v > 0 ? "inf" : "-inf";
+        return " ".repeat(Math.max(0, pl + pr + 1 - t.length)) + t;
+      }
+      if (expo) {
+        var s1 = npCientifico(v, prec, prec, expSize);
+        return " ".repeat(Math.max(0, pl - s1.split(".")[0].length)) + s1;
+      }
+      var ip = npPosicional(v, 8).split(".");
+      return " ".repeat(pl - ip[0].length) + ip[0] + "." + ip[1] + " ".repeat(pr - ip[1].length);
+    });
+    var s = "", linea = " ";
+    palabras.forEach(function (w, i) {
+      if (linea.length + w.length > 74 && linea.length > 1) { s += linea.replace(/\s+$/, "") + "\n"; linea = " "; }
+      linea += w;
+      if (i < palabras.length - 1) linea += " ";
+    });
+    s += linea;
+    return "[" + s.slice(1) + "]";
+  }
+  // ---------- fin de print() de numpy ----------
+
+  // ---------- Expresiones de Python con x (analizador propio, sin eval) ----------
+  var FUNCIONES = { sin: 1, cos: 1, tan: 1, exp: 1, log: 1, sqrt: 1, abs: 1 };
+  function ErrorExpr(texto) { this.texto = texto; }
+  function fichas(s) {
+    var t = [], i = 0, m;
+    while (i < s.length) {
+      var r = s.slice(i);
+      if ((m = /^\s+/.exec(r))) { i += m[0].length; continue; }
+      if ((m = /^(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?/.exec(r))) t.push({ k: "num", s: m[0], i: i, fin: i + m[0].length });
+      else if ((m = /^[A-Za-z_][A-Za-z_0-9]*(\.[A-Za-z_][A-Za-z_0-9]*)*/.exec(r))) t.push({ k: "nom", s: m[0], i: i, fin: i + m[0].length });
+      else if ((m = /^(\*\*|\/\/|[-+*\/()^,%])/.exec(r))) t.push({ k: "op", s: m[0], i: i, fin: i + m[0].length });
+      else throw new ErrorExpr("No entiendo el carácter " + r[0] + " (posición " + (i + 1) + ").");
+      i += m[0].length;
+    }
+    return t;
+  }
+  // Árbol: {k: "num", v, real} | {k: "x"} | {k: "pi"} | {k: "un", op, a} | {k: "bin", op, a, b} | {k: "fn", f, np, a}
+  function analizar(s, conX) {
+    var t = fichas(s), p = 0;
+    function es(v) { return t[p] && t[p].k === "op" && t[p].s === v; }
+    function expr() {
+      var a = termino();
+      while (es("+") || es("-")) { var op = t[p++].s; a = { k: "bin", op: op, a: a, b: termino() }; }
+      return a;
+    }
+    function termino() {
+      var a = unario();
+      while (es("*") || es("/") || es("//") || es("%")) {
+        var op = t[p++].s;
+        if (op === "//" || op === "%") throw new ErrorExpr("Aquí solo se aceptan + - * / y **; " + op + " no.");
+        a = { k: "bin", op: op, a: a, b: unario() };
+      }
+      return a;
+    }
+    function unario() {
+      if (es("-") || es("+")) { var op = t[p++].s; return { k: "un", op: op, a: unario() }; }
+      return potencia();
+    }
+    function potencia() {
+      var a = primario();
+      if (es("**")) { p++; return { k: "bin", op: "**", a: a, b: unario() }; }
+      if (es("^")) throw new ErrorExpr("En Python la potencia se escribe **, no ^ (x**2).");
+      return a;
+    }
+    function primario() {
+      var f = t[p];
+      if (!f) throw new ErrorExpr("Falta algo al final de la expresión.");
+      if (f.k === "num") { p++; return { k: "num", v: Number(f.s), real: /[.eE]/.test(f.s) }; }
+      if (f.k === "op" && f.s === "(") {
+        p++;
+        var e = expr();
+        if (!es(")")) throw new ErrorExpr("Falta cerrar un paréntesis.");
+        p++;
+        return e;
+      }
+      if (f.k === "nom") {
+        p++;
+        var pre = /^(np|numpy|math)\./.exec(f.s), base = f.s.replace(/^(np|numpy|math)\./, "");
+        if (f.s === "x") {
+          if (!conX) throw new ErrorExpr("El intervalo no puede depender de x: escribe un número o pi.");
+          return { k: "x" };
+        }
+        if (base === "pi" && f.s.indexOf(".") === f.s.lastIndexOf(".")) return { k: "pi" };
+        if (FUNCIONES[base] && f.s.split(".").length <= 2) {
+          if (pre && pre[1] === "math" && base === "abs") throw new ErrorExpr("math no tiene abs: escribe abs(x).");
+          if (!es("(")) throw new ErrorExpr("Las funciones llevan paréntesis: " + f.s + "(x).");
+          p++;
+          var arg = expr();
+          if (es(",")) throw new ErrorExpr(base + " recibe un solo valor.");
+          if (!es(")")) throw new ErrorExpr("Falta cerrar el paréntesis de " + f.s + ".");
+          p++;
+          return { k: "fn", f: base, np: !!pre && pre[1] !== "math", a: arg };
+        }
+        if (base === "sen") throw new ErrorExpr("En Python el seno es sin, no sen.");
+        if (base === "ln") throw new ErrorExpr("En Python el logaritmo natural es log.");
+        if (base === "e") throw new ErrorExpr("Para e**x escribe exp(x).");
+        if (base === "X") throw new ErrorExpr("La variable es x minúscula.");
+        throw new ErrorExpr("No conozco " + f.s + ": usa x, pi y las funciones sin, cos, tan, exp, log, sqrt y abs.");
+      }
+      if (f.s === ")") throw new ErrorExpr("Sobra un paréntesis.");
+      if (f.s === "^") throw new ErrorExpr("En Python la potencia se escribe **, no ^ (x**2).");
+      throw new ErrorExpr("Falta un número" + (conX ? " o x" : "") + " antes de " + f.s + ".");
+    }
+    if (!t.length) throw new ErrorExpr(conX ? "Escribe una expresión con x, por ejemplo x**2 - 3*x + 2." : "Escribe un número.");
+    var arbol = expr();
+    if (p < t.length) {
+      var sig = t[p];
+      if (sig.k === "num" || sig.k === "nom" || sig.s === "(") throw new ErrorExpr("Falta un operador antes de " + sig.s + ": en Python 2x se escribe 2*x.");
+      if (sig.s === ")") throw new ErrorExpr("Sobra un paréntesis.");
+      if (sig.s === "^") throw new ErrorExpr("En Python la potencia se escribe **, no ^ (x**2).");
+      throw new ErrorExpr("No entiendo " + sig.s + " en esa posición.");
+    }
+    return { arbol: arbol, fichas: t, texto: s };
+  }
+  function usa(nodo, k) {
+    if (!nodo) return false;
+    if (nodo.k === k) return true;
+    return usa(nodo.a, k) || usa(nodo.b, k);
+  }
+  function usaMath(nodo) {
+    if (!nodo) return false;
+    if (nodo.k === "pi" || (nodo.k === "fn" && nodo.f !== "abs")) return true;
+    return usaMath(nodo.a) || usaMath(nodo.b);
+  }
+  // Reescribe el texto para numpy (x -> xs, sin -> np.sin) o para listas (sin -> math.sin)
+  function reescribir(e, version) {
+    var s = e.texto, r = "", ant = 0;
+    e.fichas.forEach(function (f, k) {
+      r += s.slice(ant, f.i);
+      var nuevo = f.s;
+      if (f.k === "nom") {
+        var base = f.s.replace(/^(np|numpy|math)\./, ""), sigue = e.fichas[k + 1];
+        if (f.s === "x") nuevo = version === "np" ? "xs" : "x";
+        else if (base === "pi") nuevo = version === "np" ? "np.pi" : "math.pi";
+        else if (FUNCIONES[base] && sigue && sigue.s === "(") {
+          if (base === "abs") nuevo = version === "np" ? f.s : "abs";
+          else nuevo = (version === "np" ? "np." : "math.") + base;
+        }
+      }
+      r += nuevo;
+      ant = f.fin;
+    });
+    return r + s.slice(ant);
+  }
+
+  // ---------- Evaluar ----------
+  // Con números de JavaScript (los mismos floats de 64 bits que usa Python)
+  function valor(n, x) {
+    switch (n.k) {
+      case "num": return n.v;
+      case "x": return x;
+      case "pi": return Math.PI;
+      case "un": return n.op === "-" ? -valor(n.a, x) : valor(n.a, x);
+      case "fn":
+        var u = valor(n.a, x);
+        return { sin: Math.sin, cos: Math.cos, tan: Math.tan, exp: Math.exp, log: Math.log, sqrt: Math.sqrt, abs: Math.abs }[n.f](u);
+      case "bin":
+        var a = valor(n.a, x), b = valor(n.b, x);
+        if (n.op === "+") return a + b;
+        if (n.op === "-") return a - b;
+        if (n.op === "*") return a * b;
+        if (n.op === "/") return a / b;
+        return Math.pow(a, b);
+    }
+    return NaN;
+  }
+  // El valor y una cota de su error de redondeo (análisis de primer orden): sirve para decidir
+  // si un valor como 1.2e-16 es en realidad un cero, sin confundirlo con un valor chico de verdad.
+  var EPS = 2.220446049250313e-16;
+  function valorErr(n, x) {
+    var a, b, v, e, u, eu;
+    switch (n.k) {
+      case "num": return [n.v, EPS * Math.abs(n.v)];
+      case "x": return [x, EPS * Math.abs(x)];        // x ya viene redondeado (por ejemplo, x = pi)
+      case "pi": return [Math.PI, EPS * Math.PI];
+      case "un": a = valorErr(n.a, x); return [n.op === "-" ? -a[0] : a[0], a[1]];
+      case "fn":
+        a = valorErr(n.a, x); u = a[0]; eu = a[1];
+        v = valor({ k: "fn", f: n.f, a: { k: "num", v: u } }, 0);
+        if (n.f === "sin") e = Math.abs(Math.cos(u)) * eu;
+        else if (n.f === "cos") e = Math.abs(Math.sin(u)) * eu;
+        else if (n.f === "tan") e = (1 + v * v) * eu;
+        else if (n.f === "exp") e = Math.abs(v) * eu;
+        else if (n.f === "log") e = eu / Math.abs(u);
+        else if (n.f === "sqrt") e = eu / (2 * Math.abs(v));
+        else e = eu;
+        e += EPS * Math.abs(v);
+        return [v, isFinite(e) ? e : EPS * Math.abs(v)];
+      case "bin":
+        a = valorErr(n.a, x); b = valorErr(n.b, x);
+        var p = a[0], q = b[0], ep = a[1], eq = b[1];
+        if (n.op === "+") { v = p + q; e = ep + eq; }
+        else if (n.op === "-") { v = p - q; e = ep + eq; }
+        else if (n.op === "*") { v = p * q; e = Math.abs(q) * ep + Math.abs(p) * eq; }
+        else if (n.op === "/") { v = p / q; e = ep / Math.abs(q) + Math.abs(p) * eq / (q * q); }
+        else { v = Math.pow(p, q); e = Math.abs(q * Math.pow(p, q - 1)) * ep + (eq ? Math.abs(v * Math.log(Math.abs(p))) * eq : 0); }
+        e += EPS * Math.abs(v);
+        return [v, isFinite(e) ? e : EPS * Math.abs(v)];
+    }
+    return [NaN, 0];
+  }
+  // ¿Es cero? Exactamente 0 o, a lo más, del tamaño de su error de redondeo (y ese error es
+  // chico comparado con la escala de la función: cerca de un polo el error se dispara).
+  function esCero(arbol, x, escala) {
+    var r = valorErr(arbol, x);
+    return isFinite(r[0]) && (r[0] === 0 || (Math.abs(r[0]) <= 8 * r[1] && r[1] <= 1e-9 * Math.max(1, escala || 1)));
+  }
+
+  // Como Python con floats (versión con listas): lanza el error que lanzaría Python
+  function ErrorPy(tipo, motivo) { this.tipo = tipo; this.motivo = motivo; }
+  function pyValor(n, x) {
+    var a, b;
+    switch (n.k) {
+      case "num": return { v: n.v, ent: !n.real };
+      case "x": return { v: x, ent: false };
+      case "pi": return { v: Math.PI, ent: false };
+      case "un": a = pyValor(n.a, x); return { v: n.op === "-" ? -a.v : a.v, ent: a.ent };
+      case "fn":
+        a = pyValor(n.a, x);
+        var u = a.v;
+        if (n.f === "abs") return { v: Math.abs(u), ent: a.ent };
+        if (n.f === "log" && u <= 0) throw new ErrorPy("ValueError", "math.log solo acepta números positivos");
+        if (n.f === "sqrt" && u < 0) throw new ErrorPy("ValueError", "math.sqrt no acepta negativos");
+        if ((n.f === "sin" || n.f === "cos" || n.f === "tan") && (u === Infinity || u === -Infinity)) throw new ErrorPy("ValueError", "math." + n.f + " no acepta infinito");
+        var r = valor({ k: "fn", f: n.f, a: { k: "num", v: u } }, 0);
+        if (n.f === "exp" && r === Infinity && isFinite(u)) throw new ErrorPy("OverflowError", "math.exp da un número demasiado grande");
+        return { v: r, ent: false };
+      case "bin":
+        a = pyValor(n.a, x); b = pyValor(n.b, x);
+        if (n.op === "+") return { v: a.v + b.v, ent: a.ent && b.ent };
+        if (n.op === "-") return { v: a.v - b.v, ent: a.ent && b.ent };
+        if (n.op === "*") return { v: a.v * b.v, ent: a.ent && b.ent };
+        if (n.op === "/") {
+          if (b.v === 0) throw new ErrorPy("ZeroDivisionError", "una división entre cero");
+          return { v: a.v / b.v, ent: false };
+        }
+        if (a.ent && b.ent && b.v >= 0) return { v: Math.pow(a.v, b.v), ent: true };
+        if (a.v === 0 && b.v < 0) throw new ErrorPy("ZeroDivisionError", "0.0 elevado a una potencia negativa");
+        if (a.v < 0 && isFinite(b.v) && !Number.isInteger(b.v)) throw new ErrorPy("complejo", "");
+        var pw = Math.pow(a.v, b.v);
+        if (!isFinite(pw) && isFinite(a.v) && isFinite(b.v)) throw new ErrorPy("OverflowError", "una potencia demasiado grande");
+        return { v: pw, ent: false };
+    }
+    return { v: NaN, ent: false };
+  }
+  // Como numpy (versión con np.linspace): arreglos de floats; anota los RuntimeWarning. Cada
+  // operación de numpy junta sus avisos y los reporta en el orden de numpy: divide by zero,
+  // overflow, invalid value.
+  function npValor(n, xs, avisos) {
+    var banderas = {};
+    function avisa(clase, ufunc) { banderas[clase] = ufunc; }
+    function reportar() {
+      ["divide by zero", "overflow", "invalid value"].forEach(function (clase) {
+        if (banderas[clase]) {
+          var m = clase + " encountered in " + banderas[clase];
+          if (avisos.indexOf(m) < 0) avisos.push(m);
+        }
+      });
+      banderas = {};
+    }
+    function mapa(A, B, f) {
+      var L = Math.max(A ? A.length : 1, B ? B.length : 1), r = [];
+      for (var i = 0; i < L; i++) r.push(f(A ? A[A.length === 1 ? 0 : i] : null, B ? B[B.length === 1 ? 0 : i] : null));
+      return r;
+    }
+    var a, b;
+    switch (n.k) {
+      case "num": return { v: n.v, ent: !n.real };
+      case "pi": return { v: Math.PI, ent: false };
+      case "x": return { arr: xs.slice() };
+      case "un":
+        a = npValor(n.a, xs, avisos);
+        if (a.arr) return { arr: a.arr.map(function (v) { return n.op === "-" ? -v : v; }) };
+        return { v: n.op === "-" ? -a.v : a.v, ent: a.ent };
+      case "fn":
+        a = npValor(n.a, xs, avisos);
+        if (n.f === "abs" && !n.np && !a.arr) return { v: Math.abs(a.v), ent: a.ent };
+        var arr = a.arr || [a.v];
+        var resF = arr.map(function (u) {
+          if (isNaN(u)) return NaN;
+          if ((n.f === "sin" || n.f === "cos" || n.f === "tan") && !isFinite(u)) { avisa("invalid value", n.f); return NaN; }
+          if (n.f === "log") { if (u === 0) { avisa("divide by zero", "log"); return -Infinity; } if (u < 0) { avisa("invalid value", "log"); return NaN; } }
+          if (n.f === "sqrt" && u < 0) { avisa("invalid value", "sqrt"); return NaN; }
+          var r = valor({ k: "fn", f: n.f, a: { k: "num", v: u } }, 0);
+          if (n.f === "exp" && r === Infinity && isFinite(u)) avisa("overflow", "exp");
+          return r;
+        });
+        reportar();
+        return { arr: resF };
+      case "bin":
+        a = npValor(n.a, xs, avisos); b = npValor(n.b, xs, avisos);
+        if (!a.arr && !b.arr) {           // dos números de Python: se calcula como Python
+          var pa = { k: "num", v: a.v, real: !a.ent }, pb = { k: "num", v: b.v, real: !b.ent };
+          return pyValor({ k: "bin", op: n.op, a: pa, b: pb }, 0);
+        }
+        var A = a.arr || null, B = b.arr || null, va = a.arr ? null : [a.v], vb = b.arr ? null : [b.v];
+        var nombre = { "+": "add", "-": "subtract", "*": "multiply", "/": "divide", "**": "power" }[n.op];
+        if (n.op === "**" && A && !B) {    // atajos de numpy para exponentes 2, 0.5, -1, 1 y 0
+          var e = b.v;
+          if (e === 2) nombre = "square"; else if (e === 0.5) nombre = "sqrt"; else if (e === -1) nombre = "reciprocal";
+        }
+        var resB = mapa(A || va, B || vb, function (p, q) {
+          var r;
+          if (n.op === "+") r = p + q; else if (n.op === "-") r = p - q; else if (n.op === "*") r = p * q;
+          else if (n.op === "/") {
+            if (q === 0 && !isNaN(p)) {
+              if (p === 0) avisa("invalid value", nombre); else if (isFinite(p)) avisa("divide by zero", nombre);
+              return p / q;
+            }
+            r = p / q;
+          } else {
+            if (p === 0 && q < 0) { avisa("divide by zero", nombre); return Math.pow(p, q); }
+            if (p < 0 && isFinite(q) && !Number.isInteger(q)) { avisa("invalid value", nombre); return NaN; }
+            r = Math.pow(p, q);
+          }
+          if (isNaN(r) && !isNaN(p) && !isNaN(q)) avisa("invalid value", nombre);
+          else if (!isFinite(r) && !isNaN(r) && isFinite(p) && isFinite(q)) avisa("overflow", nombre);
+          return r;
+        });
+        reportar();
+        return { arr: resB };
+    }
+    return { v: NaN, ent: false };
+  }
+
+  // ---------- Análisis de la función real (2001 puntos y refinamiento) ----------
+  function dorado(fn, l, r, signo) {               // mínimo (signo 1) o máximo (-1) en [l, r]
+    var g = (Math.sqrt(5) - 1) / 2, c = r - g * (r - l), d = l + g * (r - l);
+    for (var k = 0; k < 90; k++) {
+      if (signo * fn(c) < signo * fn(d)) r = d; else l = c;
+      c = r - g * (r - l); d = l + g * (r - l);
+    }
+    var x = (l + r) / 2;
+    return { x: x, y: fn(x) };
+  }
+  function percentil(orden, q) { return orden[Math.min(orden.length - 1, Math.max(0, Math.round(q * (orden.length - 1))))]; }
+  function analizarReal(fn, a, b, arbol) {
+    var N = 2000, xs = MPL.linspace(a, b, N + 1), ys = xs.map(fn), i;
+    var fin = ys.filter(function (v) { return isFinite(v); }).sort(function (p, q) { return p - q; });
+    var escala = fin.length ? percentil(fin, 0.95) - percentil(fin, 0.05) : 1;
+    if (!(escala > 0)) escala = fin.length ? Math.max(Math.abs(fin[0]), Math.abs(fin[fin.length - 1]), 1) : 1;
+    var ceros = xs.map(function (x) { return esCero(arbol, x, escala); });
+    var corte = [], polos = [], sinLimite = { min: false, max: false }, indefinida = false;
+    for (i = 0; i <= N; i++) {
+      if (ys[i] === Infinity) sinLimite.max = true;
+      if (ys[i] === -Infinity) sinLimite.min = true;
+      if (isNaN(ys[i])) indefinida = true;
+    }
+    for (i = 0; i < N; i++) {
+      var y0 = ys[i], y1 = ys[i + 1], ym = fn((xs[i] + xs[i + 1]) / 2);
+      if (!isFinite(y0) || !isFinite(y1) || !isFinite(ym)) { corte[i] = true; }
+      else corte[i] = ym > Math.max(y0, y1) + 0.05 * escala || ym < Math.min(y0, y1) - 0.05 * escala;
+      if (corte[i]) {
+        // ¿Crece sin límite? Ubica el punto raro del tramo y acércate a él por los dos lados
+        var l = xs[i], r = xs[i + 1], s = (l + r) / 2;
+        if (isNaN(y0) !== isNaN(y1)) {             // borde entre donde f existe y donde no
+          var lo2 = l, hi2 = r;
+          for (var it2 = 0; it2 < 80; it2++) { var m2 = (lo2 + hi2) / 2; if (isNaN(fn(m2)) === isNaN(y0)) lo2 = m2; else hi2 = m2; }
+          s = isNaN(y0) ? hi2 : lo2;
+        } else {                                    // el valor más grande en |f|
+          var mejor = -1;
+          for (var z = 0; z < 4 && mejor !== Infinity; z++) {
+            var paso = (r - l) / 64;
+            for (var k = 0; k <= 64; k++) {
+              var t = l + k * paso, ft = Math.abs(fn(t));
+              if (ft === Infinity) { s = t; mejor = Infinity; break; }
+              if (ft > mejor) { mejor = ft; s = t; }
+            }
+            l = Math.max(xs[i], s - paso); r = Math.min(xs[i + 1], s + paso);
+          }
+        }
+        var polo = false;
+        [-1, 1].forEach(function (lado) {
+          var v = [1e-4, 1e-6, 1e-8].map(function (dd) { return fn(s + lado * dd * (b - a)); });
+          if (v.some(isNaN)) return;
+          var w = v.map(Math.abs);
+          var crece = w[2] === Infinity || (w[2] > w[1] && w[1] > w[0] && (w[2] - w[1]) >= 0.5 * (w[1] - w[0]) && w[2] > 3 * escala);
+          if (crece) { polo = true; if (v[2] > 0) sinLimite.max = true; else sinLimite.min = true; }
+        });
+        if (polo || fn(s) === Infinity || fn(s) === -Infinity) polos.push(Math.abs(s) < 1e-9 * (b - a) ? 0 : s);
+      }
+    }
+    // Extremos reales
+    function extremo(signo) {
+      var mejorI = -1;
+      for (var j = 0; j <= N; j++) if (isFinite(ys[j]) && (mejorI < 0 || signo * ys[j] < signo * ys[mejorI])) mejorI = j;
+      if (mejorI < 0) return null;
+      var r0 = { x: xs[mejorI], y: ys[mejorI] };
+      if (mejorI > 0 && mejorI < N && !corte[mejorI - 1] && !corte[mejorI]) {
+        var d2 = dorado(fn, xs[mejorI - 1], xs[mejorI + 1], signo);
+        if (isFinite(d2.y) && signo * d2.y < signo * r0.y) r0 = d2;
+      }
+      return r0;
+    }
+    // Raíces reales: puntos en cero, cambios de signo sin corte (bisección) y raíces que tocan el eje
+    var raices = [];
+    function agrega(x) { if (!raices.some(function (q) { return Math.abs(q - x) < 1e-7 * (b - a); })) raices.push(x); }
+    for (i = 0; i <= N; i++) if (ceros[i]) agrega(xs[i]);
+    for (i = 0; i < N; i++) {
+      if (corte[i] || !(ys[i] * ys[i + 1] < 0) || ceros[i] || ceros[i + 1]) continue;
+      var lo = xs[i], hi = xs[i + 1], flo = ys[i];
+      for (var it = 0; it < 80; it++) {
+        var m = (lo + hi) / 2, fm = fn(m);
+        if (fm === 0) { lo = hi = m; break; }
+        if ((fm < 0) === (flo < 0)) { lo = m; flo = fm; } else hi = m;
+      }
+      agrega((lo + hi) / 2);
+    }
+    for (i = 1; i < N; i++) {
+      var ai = Math.abs(ys[i]), vecino = Math.max(Math.abs(ys[i - 1]), Math.abs(ys[i + 1]));
+      if (!isFinite(ai) || corte[i - 1] || corte[i] || ceros[i] || ai > 1e-3 * escala) continue;
+      if (ai <= Math.abs(ys[i - 1]) && ai <= Math.abs(ys[i + 1]) && ys[i - 1] * ys[i + 1] > 0) {
+        var dd = dorado(function (t) { return Math.abs(fn(t)); }, xs[i - 1], xs[i + 1], 1);
+        if (Math.abs(dd.y) <= 1e-10 * vecino || esCero(arbol, dd.x, escala)) agrega(dd.x);
+      }
+    }
+    raices.sort(function (p, q) { return p - q; });
+    return { xs: xs, ys: ys, corte: corte, escala: escala, fin: fin, polos: polos, sinLimite: sinLimite, indefinida: indefinida,
+             min: sinLimite.min ? null : extremo(1), max: sinLimite.max ? null : extremo(-1), raices: raices };
+  }
+
+  // ---------- Funciones predefinidas ----------
+  var PREDEF = [
+    { f: "x**2 - 3*x + 2", a: "-2", b: "5", n: 6 },
+    { f: "x**3 - 3*x", a: "-2.5", b: "2.5", n: 6 },
+    { f: "np.sin(x)", a: "0", b: "2*pi", n: 8 },
+    { f: "np.sin(10*x)", a: "0", b: "2*pi", n: 21 },
+    { f: "abs(x)", a: "-2", b: "2", n: 6 },
+    { f: "1/x", a: "-2", b: "2", n: 6 },
+    { f: "np.exp(-x**2)", a: "-3", b: "3", n: 6 }
+  ];
+
+  // ---------- Formato de números para las lecturas ----------
+  function num(v) {
+    if (!isFinite(v)) return v > 0 ? "∞" : v < 0 ? "−∞" : "no definido";
+    var a = Math.abs(v), s;
+    if (a !== 0 && (a >= 1e5 || a < 1e-3)) s = v.toExponential(2).replace("e+", "e");
+    else s = String(Number(v.toFixed(a >= 100 ? 1 : 3)));
+    return s === "-0" ? "0" : s.replace(/-/g, "−");
+  }
+
+  // ---------- Estado y dibujo ----------
+  var version = "np", ultimo = null;
+  function leerN() { return Math.max(2, Math.min(400, Math.round(Number($("n").value)) || 2)); }
+  function ponerN(n) {
+    n = Math.max(2, Math.min(400, Math.round(n) || 2));
+    $("n").value = n; $("n-num").value = n;
+  }
+  function evaluarIntervalo(id) {
+    var txt = $(id).value.trim(), e = analizar(txt, false), v;
+    try { v = pyValor(e.arbol, 0).v; }
+    catch (err) { throw new ErrorExpr(id + " no se puede calcular: " + (err.tipo === "complejo" ? "da un número complejo" : err.motivo) + "."); }
+    if (!isFinite(v)) throw new ErrorExpr(id + " debe ser un número finito.");
+    return { v: v, e: e, ent: pyValor(e.arbol, 0).ent };
+  }
+
+  function actualizar() {
+    var n = leerN(), fxTexto = $("fx").value, e, ia, ib;
+    $("fx-error").textContent = ""; $("ab-error").textContent = "";
+    try { e = analizar(fxTexto, true); }
+    catch (err) { if (err instanceof ErrorExpr) { $("fx-error").textContent = err.texto; return; } throw err; }
+    try { ia = evaluarIntervalo("a"); ib = evaluarIntervalo("b"); }
+    catch (err2) { if (err2 instanceof ErrorExpr) { $("ab-error").textContent = err2.texto; return; } throw err2; }
+    if (!(ia.v < ib.v)) { $("ab-error").textContent = "a debe ser menor que b."; return; }
+    var a = ia.v, b = ib.v;
+    var fn = function (x) { return valor(e.arbol, x); };
+
+    // Puntos que ve plt.plot (los de np.linspace)
+    var xsN = MPL.linspace(a, b, n), avisos = [], ysN, errNp = null;
+    try { ysN = npValor(e.arbol, xsN, avisos); }
+    catch (err3) { errNp = err3; }
+    var ys = errNp ? xsN.map(fn) : (ysN.arr ? (ysN.arr.length === n ? ysN.arr : xsN.map(function () { return ysN.arr[0]; })) : xsN.map(function () { return ysN.v; }));
+    var constante = !errNp && (!ysN.arr || ysN.arr.length !== n);
+    // Versión con listas: a + i * paso, y f(x) para cada x
+    var paso = (b - a) / (n - 1), xsL = [], errL = null, xErr = null, i;
+    for (i = 0; i < n; i++) xsL.push(a + i * paso);
+    for (i = 0; i < n && !errL; i++) {
+      try { pyValor(e.arbol, xsL[i]); } catch (err4) { errL = err4; xErr = xsL[i]; }
+    }
+    var clave = fxTexto + "|" + a + "|" + b;
+    if (!cache || cache.clave !== clave) cache = { clave: clave, R: analizarReal(fn, a, b, e.arbol) };
+    ultimo = { e: e, ia: ia, ib: ib, a: a, b: b, n: n, xsN: xsN, ys: ys, avisos: avisos, errNp: errNp, constante: constante,
+               xsL: xsL, errL: errL, xErr: xErr, R: cache.R, paso: paso };
+    lecturas();
+    dibujar();
+    codigo();
+  }
+  var cache = null;
+
+  function dibujar() {
+    var u = ultimo, R = u.R, series = [], f = { series: series };
+    if ($("real").checked) {
+      var xd = [], yy = [];
+      for (var i = 0; i < R.xs.length; i++) {
+        xd.push(R.xs[i]); yy.push(R.ys[i]);
+        if (i < R.xs.length - 1 && R.corte[i] && isFinite(R.ys[i]) && isFinite(R.ys[i + 1])) { xd.push((R.xs[i] + R.xs[i + 1]) / 2); yy.push(NaN); }
+      }
+      series.push({ tipo: "plot", x: xd, y: yy, color: "#a6a6a6", lw: 2.5 });
+    }
+    series.push({ tipo: "plot", x: u.xsN, y: u.ys, marker: "o" });
+    if ($("ejes0").checked) {
+      series.push({ tipo: "axhline", y: 0, color: "#808080", lw: 0.8 });
+      series.push({ tipo: "axvline", x: 0, color: "#808080", lw: 0.8 });
+    }
+    f.grid = $("rejilla").checked;
+    if (R.sinLimite.min || R.sinLimite.max) {
+      var lo = percentil(R.fin, 0.05), hi = percentil(R.fin, 0.95), span = hi - lo || 1;
+      f.ylim = [lo - 0.6 * span, hi + 0.6 * span];
+    }
+    var cv = $("lienzo");
+    f.ancho = Math.min(cv.parentNode.clientWidth || 640, 640);
+    cv.style.width = f.ancho + "px";
+    MPL.dibujar(cv, f);
+    cv.setAttribute("aria-label", "Gráfica de f(x) = " + u.e.texto + " en [" + $("a").value + ", " + $("b").value + "]: curva real en gris y la poligonal de " +
+                    u.n + " puntos en azul. " + $("lectura").textContent);
+  }
+
+  function lecturas() {
+    var u = ultimo, R = u.R, n = u.n, ys = u.ys, xs = u.xsN, i;
+    // Una x que difiere de 0 solo por redondeo (como -5.55e-17) se muestra como 0
+    var numX = function (x) { return num(Math.abs(x) < 1e-9 * (u.b - u.a) ? 0 : x); };
+    // Extremos de los puntos
+    var iMin = -1, iMax = -1;
+    for (i = 0; i < n; i++) {
+      if (!isFinite(ys[i])) continue;
+      if (iMin < 0 || ys[i] < ys[iMin]) iMin = i;
+      if (iMax < 0 || ys[i] > ys[iMax]) iMax = i;
+    }
+    function enX(v, x) { return num(v) + " <small>(x = " + numX(x) + ")</small>"; }
+    var dondePolo = R.polos.length ? " cerca de x = " + numX(R.polos[0]) : "";
+    var minReal = R.min ? enX(R.min.y, R.min.x) : '<span class="mal">no tiene</span> <small>(baja sin límite' + dondePolo + ")</small>";
+    var maxReal = R.max ? enX(R.max.y, R.max.x) : '<span class="mal">no tiene</span> <small>(sube sin límite' + dondePolo + ")</small>";
+    // Raíces por cambio de signo
+    var det = [], falsas = 0, cero = xs.map(function (x, k) { return isFinite(ys[k]) && esCero(u.e.arbol, x, R.escala); });
+    for (i = 0; i < n; i++) if (cero[i]) det.push({ x: xs[i], falsa: false });
+    for (i = 0; i < n - 1; i++) {
+      var p = ys[i], q = ys[i + 1];
+      if (!isFinite(p) || !isFinite(q) || cero[i] || cero[i + 1] || !(p * q < 0)) continue;
+      var xr = xs[i] - p * (xs[i + 1] - xs[i]) / (q - p);
+      var hay = R.raices.some(function (r) { return r > xs[i] && r < xs[i + 1]; });
+      det.push({ x: xr, falsa: !hay });
+      if (!hay) falsas++;
+    }
+    det.sort(function (s, t) { return s.x - t.x; });
+    var buenas = det.filter(function (d) { return !d.falsa; });
+    function lista(v) {
+      if (!v.length) return "";
+      var muestra = v.slice(0, 4).map(numX).join(", ");
+      return ": x ≈ " + muestra + (v.length > 4 ? ", …" : "");
+    }
+    var detTxt = buenas.length + lista(buenas.map(function (d) { return d.x; }));
+    if (falsas) detTxt += ' <span class="mal">y ' + falsas + (falsas === 1 ? " falsa" : " falsas") + "</span> <small>(cambio de signo en un salto, no en una raíz)</small>";
+    var realTxt = R.raices.length + lista(R.raices);
+    // Error máximo de la poligonal
+    var errMax = 0, xE = null;
+    if (R.polos.length) errMax = Infinity;
+    else {
+      var k = 0;
+      for (var j = 0; j < R.xs.length; j++) {
+        var x = R.xs[j], y = R.ys[j];
+        if (!isFinite(y)) continue;
+        while (k < n - 2 && xs[k + 1] < x) k++;
+        var y0 = ys[k], y1 = ys[k + 1];
+        if (!isFinite(y0) || !isFinite(y1)) continue;
+        var t = (x - xs[k]) / (xs[k + 1] - xs[k]), pl = y0 + t * (y1 - y0), d = Math.abs(y - pl);
+        if (d > errMax) { errMax = d; xE = x; }
+      }
+    }
+    var errTxt = isFinite(errMax) ? num(errMax) + (xE !== null ? " <small>(cerca de x = " + numX(xE) + ")</small>" : "") :
+      '<span class="mal">sin límite</span> <small>(la función no está acotada)</small>';
+    var ok = function (bien) { return bien ? ' class="ok"' : ""; };
+    var minBien = R.min && iMin >= 0 && Math.abs(ys[iMin] - R.min.y) <= 0.01 * R.escala;
+    var maxBien = R.max && iMax >= 0 && Math.abs(ys[iMax] - R.max.y) <= 0.01 * R.escala;
+    $("lectura").innerHTML =
+      '<table class="datos"><thead><tr><th scope="col"></th><th scope="col">Con tus ' + n + ' puntos</th><th scope="col">Real</th></tr></thead><tbody>' +
+      "<tr><th scope=\"row\">Mínimo</th><td" + ok(minBien) + ">" + (iMin >= 0 ? enX(ys[iMin], xs[iMin]) : "—") + "</td><td>" + minReal + "</td></tr>" +
+      "<tr><th scope=\"row\">Máximo</th><td" + ok(maxBien) + ">" + (iMax >= 0 ? enX(ys[iMax], xs[iMax]) : "—") + "</td><td>" + maxReal + "</td></tr>" +
+      "<tr><th scope=\"row\">Raíces</th><td" + ok(buenas.length === R.raices.length && !falsas) + ">" + detTxt + "</td><td>" + realTxt + "</td></tr>" +
+      "</tbody></table>" +
+      "<p style=\"margin:8px 0 0\"><b>Error máximo de la poligonal:</b> " + errTxt + "</p>" +
+      (R.indefinida ? '<p class="nota">f no está definida en una parte del intervalo (por ejemplo, log o sqrt de negativos).</p>' : "") +
+      '<p class="nota">Las raíces de los puntos salen de un cambio de signo entre dos puntos vecinos, o de un punto que cae justo en 0.</p>';
+    $("paso").innerHTML = "Paso entre puntos: (b − a)/(n − 1) = " + num(u.paso) + ".";
+  }
+
+  function codigo() {
+    var u = ultimo, L = [], salida = [], avisos = [];
+    var aNp = reescribir(u.ia.e, "np"), bNp = reescribir(u.ib.e, "np"), aL = reescribir(u.ia.e, "lista"), bL = reescribir(u.ib.e, "lista");
+    var extra = [];
+    if ($("ejes0").checked) extra.push('plt.axhline(0, color="gray", linewidth=0.8)', 'plt.axvline(0, color="gray", linewidth=0.8)');
+    if ($("rejilla").checked) extra.push("plt.grid(True)");
+    if (version === "np") {
+      L.push("import numpy as np", "import matplotlib.pyplot as plt", "",
+             "xs = np.linspace(" + aNp + ", " + bNp + ", " + u.n + ")",
+             "print(len(xs))", "print(xs[:4])",
+             "ys = " + reescribir(u.e, "np"),
+             'plt.plot(xs, ys, marker="o")');
+      salida.push(String(u.n), npStr(u.xsN.slice(0, 4)));
+      if (u.errNp) avisos.push(errorTexto(u.errNp, "la fórmula", null, 7));
+      else {
+        u.avisos.forEach(function (m) { avisos.push("Línea 7: numpy avisa RuntimeWarning: " + m); });
+        if (u.avisos.length) avisos.push("numpy no se detiene: pone inf o nan en esos puntos y plt.plot no los dibuja.");
+        if (u.constante) avisos.push("Tu f no usa x: ys es un solo número y plt.plot(xs, ys) marca ValueError (x and y must have same first dimension).");
+      }
+    } else {
+      var necesitaMath = usaMath(u.e.arbol) || usaMath(u.ia.e.arbol) || usaMath(u.ib.e.arbol);
+      if (necesitaMath) L.push("import math");
+      L.push("import matplotlib.pyplot as plt", "",
+             "def f(x):", "    return " + reescribir(u.e, "lista"), "",
+             "a, b, n = " + aL + ", " + bL + ", " + u.n,
+             "paso = (b - a) / (n - 1)",
+             "xs = [a + i * paso for i in range(n)]",
+             "print(len(xs))", "print(xs[:4])",
+             "ys = [f(x) for x in xs]",
+             'plt.plot(xs, ys, marker="o")');
+      salida.push(String(u.n), "[" + u.xsL.slice(0, 4).map(pyFloat).join(", ") + "]");
+      if (u.errL) avisos.push(errorTexto(u.errL, "f(" + pyFloat(u.xErr) + ")", u.xErr, necesitaMath ? 12 : 11));
+      else {
+        var ultimoL = u.xsL[u.n - 1], ultimoN = u.xsN[u.n - 1];
+        if (ultimoL !== ultimoN) avisos.push("El último punto de la lista es " + pyFloat(ultimoL) + " y no " + pyFloat(ultimoN) + ": la suma acumula el error de redondeo de paso. np.linspace pone b exacto al final.");
+      }
+    }
+    L = L.concat(extra);
+    L.push("plt.show()");
+    mostrarCodigo($("codigo"), L);
+    $("salida").innerHTML = esc(salida.join("\n")) + (avisos.length ? "\n" + avisos.map(function (t) {
+      return '<span class="aviso">⚠ ' + esc(t) + "</span>";
+    }).join("\n") : "");
+  }
+  function errorTexto(err, donde, x, linea) {
+    if (err.tipo === "complejo") return "En la línea " + linea + ", " + donde + " da un número complejo (potencia fraccionaria de un negativo): Python no lo puede graficar.";
+    return "Aquí el programa se detiene: en la línea " + linea + ", " + donde + " lanza " + err.tipo + " (" + err.motivo + ")." +
+           (x !== null && x === 0 ? " x = 0.0 es uno de tus puntos." : "");
+  }
+
+  // ---------- Eventos ----------
+  function cargarPredef(k) {
+    var p = PREDEF[k];
+    $("fx").value = p.f; $("a").value = p.a; $("b").value = p.b; ponerN(p.n);
+  }
+  $("predef").addEventListener("change", function () {
+    var v = $("predef").value;
+    if (v === "propia") { $("fx").focus(); $("fx").select(); return; }
+    cargarPredef(Number(v));
+    actualizar();
+  });
+  $("fx").addEventListener("input", function () {
+    var k = PREDEF.map(function (p) { return p.f; }).indexOf($("fx").value.trim());
+    $("predef").value = k >= 0 ? String(k) : "propia";
+    actualizar();
+  });
+  ["a", "b"].forEach(function (id) { $(id).addEventListener("input", actualizar); });
+  $("n").addEventListener("input", function () { ponerN(Number($("n").value)); actualizar(); });
+  $("n-num").addEventListener("change", function () { ponerN(Number($("n-num").value)); actualizar(); });
+  $("menos").addEventListener("click", function () { ponerN(leerN() - 1); actualizar(); });
+  $("mas").addEventListener("click", function () { ponerN(leerN() + 1); actualizar(); });
+  ["real", "ejes0", "rejilla"].forEach(function (id) { $(id).addEventListener("change", actualizar); });
+  document.querySelectorAll("nav.pestanas button").forEach(function (bt) {
+    bt.addEventListener("click", function () {
+      version = bt.dataset.version;
+      document.querySelectorAll("nav.pestanas button").forEach(function (x) {
+        x.classList.toggle("activo", x === bt);
+        x.setAttribute("aria-selected", x === bt ? "true" : "false");
+      });
+      if (ultimo) codigo();
+    });
+  });
+  var temporizador = null;
+  window.addEventListener("resize", function () { clearTimeout(temporizador); temporizador = setTimeout(function () { if (ultimo) dibujar(); }, 80); });
+
+  cargarPredef(0);
+  actualizar();
+})();
+</script>
+<div id="qr-sitio" class="qr-capa" hidden>
+  <div class="qr-caja" role="dialog" aria-modal="true" aria-label="Código QR de esta página">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 45" role="img" aria-label="Código QR de https://memosanchezg.github.io/programacion-basica-interactivos/semana-15-muestreo-funciones.html" shape-rendering="crispEdges"><rect width="45" height="45" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM11 2h2v1h-2zM15 2h1v1h-1zM18 2h2v1h-2zM21 2h7v1h-7zM30 2h2v1h-2zM33 2h2v1h-2zM36 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM15 3h1v1h-1zM19 3h1v1h-1zM22 3h2v1h-2zM29 3h3v1h-3zM34 3h1v1h-1zM36 3h1v1h-1zM42 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM10 4h1v1h-1zM14 4h1v1h-1zM19 4h2v1h-2zM22 4h3v1h-3zM26 4h1v1h-1zM29 4h2v1h-2zM33 4h2v1h-2zM36 4h1v1h-1zM38 4h3v1h-3zM42 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h2v1h-2zM14 5h1v1h-1zM16 5h1v1h-1zM18 5h1v1h-1zM23 5h1v1h-1zM26 5h3v1h-3zM31 5h1v1h-1zM33 5h2v1h-2zM36 5h1v1h-1zM38 5h3v1h-3zM42 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM17 6h1v1h-1zM20 6h2v1h-2zM24 6h2v1h-2zM28 6h1v1h-1zM30 6h5v1h-5zM36 6h1v1h-1zM38 6h3v1h-3zM42 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h1v1h-1zM12 7h4v1h-4zM17 7h1v1h-1zM22 7h1v1h-1zM26 7h1v1h-1zM29 7h2v1h-2zM34 7h1v1h-1zM36 7h1v1h-1zM42 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM30 8h1v1h-1zM32 8h1v1h-1zM34 8h1v1h-1zM36 8h7v1h-7zM10 9h2v1h-2zM13 9h1v1h-1zM15 9h1v1h-1zM17 9h2v1h-2zM20 9h1v1h-1zM23 9h1v1h-1zM25 9h2v1h-2zM28 9h1v1h-1zM33 9h2v1h-2zM2 10h1v1h-1zM4 10h5v1h-5zM11 10h3v1h-3zM16 10h2v1h-2zM19 10h1v1h-1zM22 10h1v1h-1zM24 10h1v1h-1zM27 10h3v1h-3zM31 10h1v1h-1zM36 10h5v1h-5zM3 11h1v1h-1zM5 11h1v1h-1zM9 11h1v1h-1zM13 11h1v1h-1zM19 11h5v1h-5zM25 11h1v1h-1zM27 11h1v1h-1zM30 11h1v1h-1zM32 11h3v1h-3zM36 11h3v1h-3zM40 11h3v1h-3zM3 12h1v1h-1zM6 12h3v1h-3zM11 12h2v1h-2zM17 12h2v1h-2zM22 12h2v1h-2zM29 12h4v1h-4zM34 12h1v1h-1zM37 12h1v1h-1zM3 13h2v1h-2zM9 13h1v1h-1zM11 13h1v1h-1zM13 13h1v1h-1zM17 13h1v1h-1zM23 13h2v1h-2zM28 13h1v1h-1zM32 13h3v1h-3zM38 13h2v1h-2zM2 14h1v1h-1zM6 14h1v1h-1zM8 14h1v1h-1zM12 14h3v1h-3zM16 14h2v1h-2zM19 14h1v1h-1zM21 14h2v1h-2zM24 14h1v1h-1zM26 14h4v1h-4zM31 14h1v1h-1zM33 14h1v1h-1zM37 14h1v1h-1zM39 14h2v1h-2zM6 15h2v1h-2zM9 15h2v1h-2zM17 15h2v1h-2zM20 15h1v1h-1zM23 15h2v1h-2zM30 15h1v1h-1zM32 15h11v1h-11zM3 16h1v1h-1zM5 16h1v1h-1zM8 16h3v1h-3zM13 16h1v1h-1zM17 16h4v1h-4zM22 16h5v1h-5zM29 16h1v1h-1zM31 16h2v1h-2zM34 16h2v1h-2zM37 16h1v1h-1zM40 16h1v1h-1zM3 17h1v1h-1zM6 17h1v1h-1zM11 17h1v1h-1zM18 17h1v1h-1zM23 17h3v1h-3zM28 17h1v1h-1zM30 17h1v1h-1zM36 17h2v1h-2zM39 17h1v1h-1zM41 17h1v1h-1zM4 18h2v1h-2zM8 18h2v1h-2zM12 18h2v1h-2zM17 18h3v1h-3zM25 18h1v1h-1zM27 18h2v1h-2zM31 18h3v1h-3zM35 18h1v1h-1zM37 18h1v1h-1zM40 18h1v1h-1zM3 19h5v1h-5zM13 19h2v1h-2zM16 19h1v1h-1zM21 19h2v1h-2zM25 19h2v1h-2zM30 19h5v1h-5zM36 19h4v1h-4zM41 19h2v1h-2zM2 20h2v1h-2zM5 20h1v1h-1zM7 20h2v1h-2zM13 20h1v1h-1zM17 20h2v1h-2zM20 20h1v1h-1zM22 20h1v1h-1zM24 20h1v1h-1zM28 20h4v1h-4zM35 20h1v1h-1zM38 20h2v1h-2zM41 20h1v1h-1zM5 21h1v1h-1zM10 21h4v1h-4zM15 21h2v1h-2zM18 21h1v1h-1zM22 21h1v1h-1zM29 21h2v1h-2zM32 21h4v1h-4zM38 21h2v1h-2zM41 21h2v1h-2zM3 22h1v1h-1zM7 22h2v1h-2zM13 22h1v1h-1zM18 22h1v1h-1zM20 22h1v1h-1zM23 22h7v1h-7zM31 22h1v1h-1zM37 22h1v1h-1zM39 22h3v1h-3zM3 23h3v1h-3zM9 23h1v1h-1zM11 23h2v1h-2zM14 23h6v1h-6zM21 23h3v1h-3zM25 23h1v1h-1zM27 23h1v1h-1zM30 23h1v1h-1zM32 23h3v1h-3zM36 23h7v1h-7zM2 24h3v1h-3zM8 24h4v1h-4zM13 24h1v1h-1zM16 24h3v1h-3zM20 24h1v1h-1zM22 24h1v1h-1zM24 24h1v1h-1zM27 24h4v1h-4zM34 24h1v1h-1zM39 24h2v1h-2zM3 25h2v1h-2zM7 25h1v1h-1zM9 25h3v1h-3zM13 25h1v1h-1zM15 25h2v1h-2zM18 25h1v1h-1zM20 25h2v1h-2zM23 25h2v1h-2zM29 25h1v1h-1zM33 25h3v1h-3zM37 25h2v1h-2zM3 26h1v1h-1zM5 26h2v1h-2zM8 26h1v1h-1zM11 26h2v1h-2zM15 26h2v1h-2zM18 26h2v1h-2zM25 26h7v1h-7zM33 26h1v1h-1zM40 26h2v1h-2zM2 27h1v1h-1zM4 27h2v1h-2zM7 27h1v1h-1zM10 27h1v1h-1zM12 27h2v1h-2zM15 27h2v1h-2zM19 27h1v1h-1zM21 27h3v1h-3zM25 27h1v1h-1zM27 27h1v1h-1zM30 27h1v1h-1zM32 27h2v1h-2zM35 27h5v1h-5zM41 27h2v1h-2zM2 28h1v1h-1zM5 28h4v1h-4zM10 28h1v1h-1zM13 28h1v1h-1zM16 28h1v1h-1zM18 28h1v1h-1zM20 28h1v1h-1zM22 28h1v1h-1zM26 28h5v1h-5zM32 28h1v1h-1zM34 28h1v1h-1zM36 28h3v1h-3zM3 29h2v1h-2zM9 29h2v1h-2zM12 29h1v1h-1zM15 29h2v1h-2zM21 29h4v1h-4zM26 29h1v1h-1zM28 29h1v1h-1zM30 29h1v1h-1zM33 29h4v1h-4zM38 29h2v1h-2zM41 29h2v1h-2zM3 30h1v1h-1zM5 30h1v1h-1zM7 30h3v1h-3zM11 30h1v1h-1zM15 30h1v1h-1zM17 30h1v1h-1zM19 30h1v1h-1zM24 30h5v1h-5zM31 30h1v1h-1zM33 30h1v1h-1zM39 30h3v1h-3zM2 31h2v1h-2zM6 31h2v1h-2zM12 31h3v1h-3zM16 31h1v1h-1zM18 31h1v1h-1zM20 31h1v1h-1zM22 31h1v1h-1zM26 31h2v1h-2zM31 31h6v1h-6zM38 31h1v1h-1zM40 31h1v1h-1zM42 31h1v1h-1zM2 32h1v1h-1zM4 32h1v1h-1zM6 32h1v1h-1zM8 32h4v1h-4zM13 32h2v1h-2zM16 32h3v1h-3zM21 32h1v1h-1zM23 32h2v1h-2zM26 32h6v1h-6zM34 32h4v1h-4zM39 32h1v1h-1zM2 33h1v1h-1zM4 33h2v1h-2zM7 33h1v1h-1zM10 33h1v1h-1zM12 33h3v1h-3zM18 33h1v1h-1zM20 33h5v1h-5zM33 33h1v1h-1zM35 33h3v1h-3zM39 33h1v1h-1zM41 33h2v1h-2zM2 34h1v1h-1zM5 34h1v1h-1zM8 34h1v1h-1zM15 34h3v1h-3zM19 34h1v1h-1zM21 34h2v1h-2zM24 34h6v1h-6zM31 34h1v1h-1zM34 34h5v1h-5zM40 34h1v1h-1zM42 34h1v1h-1zM10 35h1v1h-1zM14 35h1v1h-1zM16 35h1v1h-1zM19 35h1v1h-1zM21 35h3v1h-3zM25 35h3v1h-3zM30 35h1v1h-1zM33 35h2v1h-2zM38 35h1v1h-1zM41 35h2v1h-2zM2 36h7v1h-7zM12 36h1v1h-1zM14 36h1v1h-1zM16 36h2v1h-2zM19 36h1v1h-1zM22 36h2v1h-2zM28 36h3v1h-3zM33 36h2v1h-2zM36 36h1v1h-1zM38 36h1v1h-1zM40 36h1v1h-1zM2 37h1v1h-1zM8 37h1v1h-1zM10 37h1v1h-1zM14 37h1v1h-1zM16 37h2v1h-2zM19 37h2v1h-2zM22 37h3v1h-3zM26 37h1v1h-1zM28 37h1v1h-1zM33 37h2v1h-2zM38 37h2v1h-2zM2 38h1v1h-1zM4 38h3v1h-3zM8 38h1v1h-1zM10 38h2v1h-2zM13 38h2v1h-2zM18 38h1v1h-1zM21 38h1v1h-1zM23 38h1v1h-1zM26 38h4v1h-4zM31 38h1v1h-1zM34 38h5v1h-5zM40 38h1v1h-1zM2 39h1v1h-1zM4 39h3v1h-3zM8 39h1v1h-1zM10 39h3v1h-3zM15 39h1v1h-1zM18 39h1v1h-1zM20 39h3v1h-3zM24 39h3v1h-3zM30 39h2v1h-2zM33 39h1v1h-1zM35 39h1v1h-1zM37 39h1v1h-1zM39 39h4v1h-4zM2 40h1v1h-1zM4 40h3v1h-3zM8 40h1v1h-1zM10 40h2v1h-2zM14 40h7v1h-7zM22 40h1v1h-1zM24 40h1v1h-1zM26 40h2v1h-2zM29 40h2v1h-2zM34 40h6v1h-6zM2 41h1v1h-1zM8 41h1v1h-1zM11 41h1v1h-1zM13 41h1v1h-1zM15 41h3v1h-3zM19 41h1v1h-1zM23 41h1v1h-1zM25 41h1v1h-1zM28 41h3v1h-3zM34 41h2v1h-2zM38 41h2v1h-2zM41 41h1v1h-1zM2 42h7v1h-7zM10 42h1v1h-1zM12 42h1v1h-1zM14 42h4v1h-4zM21 42h1v1h-1zM24 42h5v1h-5zM31 42h1v1h-1zM33 42h1v1h-1zM35 42h4v1h-4zM40 42h1v1h-1z"/></svg>
+    <p class="qr-texto">Escanea con la cámara del celular para abrir esta página</p>
+    <p class="qr-url">https://memosanchezg.github.io/programacion-basica-interactivos/semana-15-muestreo-funciones.html</p>
+    <button type="button" class="qr-cerrar">Cerrar</button>
+  </div>
+</div>
+<style>
+  .qr-capa { position:fixed; top:0; right:0; bottom:0; left:0; z-index:10000; display:flex; align-items:center;
+             justify-content:center; padding:16px; background:#fff; }
+  .qr-capa[hidden] { display:none; }
+  .qr-caja { max-width:100%; text-align:center; color:#0A2A57; font:16px/1.4 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .qr-caja svg { display:block; width:min(62vh, 84vw); height:auto; margin:0 auto; }
+  .qr-texto { margin:12px 0 2px; font-size:1.15rem; font-weight:bold; }
+  .qr-url { margin:0 0 12px; color:#5B6472; word-break:break-all; }
+  .qr-cerrar { font:inherit; padding:6px 20px; border:2px solid #00408F; border-radius:4px; background:#fff;
+               color:#00408F; cursor:pointer; }
+</style>
+<script>
+  (function () {
+    var capa = document.getElementById("qr-sitio");
+    document.querySelectorAll("a.qr-abrir").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        capa.hidden = false;
+        capa.querySelector(".qr-cerrar").focus();
+      });
+    });
+    capa.addEventListener("click", function (e) {
+      if (e.target === capa || e.target.classList.contains("qr-cerrar")) capa.hidden = true;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !capa.hidden) capa.hidden = true;
+    });
+  })();
+</script>
+</body>
+</html>

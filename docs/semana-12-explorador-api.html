@@ -1,0 +1,1379 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="tipo" content="simulador">
+<title>Explorador de APIs</title>
+
+<style>
+  :root {
+    --azul:#00408F; --azul-oscuro:#0A2A57; --guinda:#8C1D35; --oro:#B8975A; --oro-texto:#8A6A2E;
+    --azul-claro:#E8EEF7; --oro-claro:#F7F1E6; --guinda-claro:#F5E6EA; --verde:#2F7D5B;
+    --tinta:#1B1F2A; --gris:#5B6472; --gris-claro:#E9ECF1; --borde:#D9DEE6; --fondo:#FFFFFF;
+    --cmd-fondo:#0C0C0C; --cmd-texto:#E6E6E6;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--fondo); color:var(--tinta);
+         font:16px/1.45 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .franja { height:8px; background:var(--azul); border-bottom:3px solid var(--oro); }
+  header { max-width:1280px; margin:0 auto; padding:12px 18px 4px; }
+  .semana { color:var(--guinda); font-weight:bold; letter-spacing:.04em; font-size:.85rem; text-transform:uppercase; }
+  h1 { font-family:Cambria,Georgia,serif; color:var(--azul-oscuro); font-size:1.7rem; margin:2px 0 2px; }
+  .sub { color:var(--gris); margin:0; }
+  main { max-width:1280px; margin:0 auto; padding:8px 18px 24px; }
+  nav.pestanas { display:flex; gap:4px; flex-wrap:wrap; border-bottom:2px solid var(--gris-claro); margin:6px 0 12px; }
+  nav.pestanas button { font:inherit; font-weight:bold; border:none; background:none; color:var(--gris);
+                        padding:8px 14px; cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; }
+  nav.pestanas button.activo { color:var(--azul-oscuro); border-bottom-color:var(--azul); }
+  nav.pestanas button:focus-visible { outline:2px solid var(--azul); }
+  section.vista { display:none; }
+  section.vista.activo { display:block; }
+  .fila { display:grid; grid-template-columns:minmax(260px,360px) minmax(0,1fr); gap:16px; align-items:start; }
+  .panel { background:#fff; border:1px solid var(--borde); border-radius:10px; padding:12px 14px; }
+  .panel h2 { font-size:1.02rem; color:var(--azul-oscuro); margin:0 0 8px; }
+  label { display:block; font-weight:bold; color:var(--azul-oscuro); margin-top:10px; }
+  label small { font-weight:normal; color:var(--gris); }
+  input[type=range] { width:100%; }
+  input[type=number], input[type=text], select, textarea { font:inherit; padding:4px 6px; border:1px solid var(--borde);
+                        border-radius:6px; }
+  input.mono, textarea.mono { font-family:Consolas,"Courier New",monospace; }
+  button.accion { font:inherit; font-weight:bold; border-radius:8px; padding:7px 12px; margin:8px 6px 0 0;
+                  border:1px solid var(--azul); background:#fff; color:var(--azul); cursor:pointer; }
+  button.accion:hover, button.accion:focus-visible { background:var(--azul); color:#fff; outline:none; }
+  .lectura { background:var(--oro-claro); border-left:4px solid var(--oro); border-radius:8px; padding:10px 12px;
+             margin-top:12px; line-height:1.55; }
+  .lectura b { color:var(--azul-oscuro); }
+  .ok { color:var(--verde); font-weight:bold; }
+  .mal { color:var(--guinda); font-weight:bold; }
+  .preguntas { background:var(--azul-claro); border-radius:8px; padding:10px 14px; margin-top:12px; }
+  .preguntas h3 { margin:0 0 4px; font-size:.95rem; color:var(--azul-oscuro); }
+  .preguntas ol { margin:0; padding-left:20px; }
+  /* Código Python con los colores del curso (minted, estilo borland) y salida de consola (cmd). */
+  .codigo { border:1px solid var(--tinta); background:#fff; font:15px/1.5 Consolas,"Courier New",monospace;
+            overflow-x:auto; margin:8px 0; }
+  .codigo ol { margin:0; padding:8px 12px 8px 3.4em; }
+  .codigo li { white-space:pre; }
+  .codigo li::marker { color:var(--gris); font:11px Cambria,Georgia,serif; }
+  .codigo .kw { color:#000080; font-weight:bold; }
+  .codigo .str, .codigo .num { color:#0000FF; }
+  .codigo .com { color:#008800; font-style:italic; }
+  .codigo .marca { background:var(--oro-claro); outline:1px solid var(--oro); }
+  .consola { background:var(--cmd-fondo); color:var(--cmd-texto); font:15px/1.45 Consolas,"Courier New",monospace;
+             white-space:pre-wrap; word-break:break-word; padding:8px 12px; border-radius:4px; margin:8px 0; min-height:2.2em; }
+  footer { max-width:1280px; margin:0 auto; padding:6px 18px 18px; color:var(--gris); font-size:.85rem; }
+  footer a { color:var(--azul); }
+  @media (max-width: 820px) { .fila { grid-template-columns:1fr; } }
+
+  /* Propios de este simulador */
+  .fila > * { min-width:0; }
+  .panel h3 { font-size:.95rem; color:var(--azul-oscuro); margin:14px 0 4px; }
+  select, input.ancho { width:100%; }
+  code, .mono { font-family:Consolas,"Courier New",monospace; }
+  .nota { color:var(--gris); font-size:.92rem; margin:4px 0 0; }
+  fieldset { border:1px solid var(--borde); border-radius:8px; margin:10px 0 0; padding:4px 10px 8px; min-width:0; }
+  legend { font-weight:bold; color:var(--azul-oscuro); padding:0 4px; }
+  legend small { font-weight:normal; color:var(--gris); }
+  label.casilla { display:flex; gap:8px; align-items:center; font-weight:normal; color:var(--tinta); margin-top:6px; cursor:pointer; }
+  label.casilla input { width:18px; height:18px; margin:0; flex:none; }
+  label.casilla small { color:var(--gris); }
+  label.casilla.opcion { align-items:flex-start; }
+  label.casilla.opcion input { margin-top:2px; }
+  label.casilla.opcion span { min-width:0; }
+  label.casilla.opcion code { font-size:.9em; overflow-wrap:anywhere; }
+  label.casilla.opcion small { display:block; line-height:1.2; }
+  .param { display:grid; grid-template-columns:minmax(0,7.8em) minmax(0,1fr); gap:2px 8px; align-items:center; margin-top:6px; }
+  .param label.casilla { margin-top:0; }
+  .param input[type=text] { width:100%; font-family:Consolas,"Courier New",monospace; }
+  .param .ayuda { grid-column:2; color:var(--gris); font-size:.85rem; }
+  .sin-params { color:var(--gris); margin:6px 0 2px; }
+  .url-final { font:14px/1.55 Consolas,"Courier New",monospace; background:#fff; border:1px solid var(--tinta);
+               padding:8px 10px; word-break:break-all; margin-top:4px; }
+  .u-protocolo { color:var(--gris); }
+  .u-servidor { color:var(--azul); font-weight:bold; }
+  .u-ruta { color:var(--guinda); font-weight:bold; }
+  .u-param { color:var(--verde); }
+  .u-sep { color:var(--tinta); font-weight:bold; }
+  .u-cod { background:var(--oro-claro); outline:1px solid var(--oro); }
+  .u-error { color:var(--guinda); }
+  .leyenda-url { display:flex; flex-wrap:wrap; gap:2px 12px; font-size:.85rem; margin-top:4px; }
+  .leyenda-url span { white-space:nowrap; }
+  button.accion.primaria { background:var(--azul); color:#fff; }
+  button.accion.primaria:hover, button.accion.primaria:focus-visible { background:var(--azul-oscuro); }
+  button.accion:disabled { opacity:.55; cursor:wait; }
+  .guardadas ul { list-style:none; padding:0; margin:6px 0 0; }
+  .guardadas li { display:flex; gap:8px; align-items:flex-start; padding:5px 0; border-top:1px solid var(--gris-claro); }
+  .guardadas li button.accion { margin:0; padding:3px 9px; font-size:.9rem; flex:none; }
+  .guardadas .u { font:13px/1.4 Consolas,"Courier New",monospace; word-break:break-all; }
+  details.guardadas { margin-top:12px; }
+  details.guardadas summary { cursor:pointer; font-weight:bold; color:var(--azul-oscuro); }
+  .estado { display:flex; flex-wrap:wrap; gap:6px 12px; align-items:center; }
+  .codigo-http { font:bold 1.2rem Consolas,"Courier New",monospace; border:2px solid; border-radius:8px; padding:1px 10px; }
+  .f2 { color:var(--verde); border-color:var(--verde); }
+  .f3 { color:var(--gris); border-color:var(--gris); }
+  .f4 { color:var(--guinda); border-color:var(--guinda); }
+  .f5 { color:var(--oro-texto); border-color:var(--oro); }
+  .familia { font-weight:bold; }
+  .detalle-http { margin:6px 0 0; }
+  .aviso-caja { background:var(--guinda-claro); border-left:4px solid var(--guinda); border-radius:8px; padding:8px 12px; margin-top:8px; }
+  .viejo { background:var(--gris-claro); border-left:4px solid var(--gris); border-radius:8px; padding:6px 12px; margin-top:8px; }
+  .arbol { font:14px/1.5 Consolas,"Courier New",monospace; max-height:440px; overflow:auto; border:1px solid var(--borde);
+           border-radius:8px; padding:6px 4px; }
+  .arbol ul { list-style:none; margin:0; padding:0 0 0 1.3em; }
+  .arbol > ul { padding-left:0; }
+  .arbol li[role=treeitem] { outline:none; }
+  .arbol .nodo { display:flex; flex-wrap:wrap; align-items:baseline; gap:0 8px; padding:3px 6px; border-radius:4px; cursor:pointer; }
+  .arbol .nodo:hover { background:var(--gris-claro); }
+  .arbol li[role=treeitem]:focus-visible > .nodo { outline:2px solid var(--azul); outline-offset:-1px; }
+  .arbol li[aria-selected=true] > .nodo { background:var(--oro-claro); outline:1px solid var(--oro); }
+  .flecha { display:inline-block; width:1.2em; text-align:center; color:var(--gris); flex:none; }
+  .arbol li[aria-expanded=false] > .nodo .flecha::before { content:"▸"; }
+  .arbol li[aria-expanded=true] > .nodo .flecha::before { content:"▾"; }
+  .k-raiz { font-weight:bold; color:var(--azul-oscuro); }
+  .k-clave { color:#000080; }
+  .k-indice { color:var(--guinda); }
+  .v-str, .v-num { color:#0000FF; word-break:break-all; }
+  .v-kw { color:#000080; font-weight:bold; }
+  .v-resumen { color:var(--gris); }
+  .tipo { font:bold 12px/1.4 Calibri,"Segoe UI",sans-serif; border:1px solid; border-radius:9px; padding:0 7px; }
+  .t-dict { color:var(--azul-oscuro); border-color:var(--azul-oscuro); }
+  .t-list { color:var(--guinda); border-color:var(--guinda); }
+  .t-str { color:var(--verde); border-color:var(--verde); }
+  .t-int, .t-float { color:var(--oro-texto); border-color:var(--oro); }
+  .t-bool, .t-NoneType { color:var(--gris); border-color:var(--gris); }
+  .crudo { font:13.5px/1.5 Consolas,"Courier New",monospace; white-space:pre-wrap; word-break:break-all; margin:0;
+           max-height:440px; overflow:auto; border:1px solid var(--borde); border-radius:8px; padding:8px 10px; background:#fff; }
+  .crudo:focus-visible { outline:2px solid var(--azul); }
+  .vacio { color:var(--gris); padding:8px; }
+  .seleccion .ruta { font:15px/1.5 Consolas,"Courier New",monospace; color:var(--azul-oscuro); font-weight:bold; word-break:break-all; }
+  .seleccion .repr { font:14px/1.5 Consolas,"Courier New",monospace; word-break:break-all; }
+  .seleccion dl { display:grid; grid-template-columns:auto minmax(0,1fr); gap:3px 10px; margin:0; }
+  .seleccion dt { font-weight:bold; color:var(--azul-oscuro); }
+  .seleccion dd { margin:0; min-width:0; }
+  .seleccion .explica { margin:8px 0 0; }
+  .consola .error { color:#FF8A80; }
+  .consola .tenue { color:#9AA0A6; }
+  .botones { display:flex; flex-wrap:wrap; align-items:center; gap:0 6px; }
+  .botones label.casilla { margin-top:8px; }
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header>
+  <div class="semana">Semana 12 · APIs y consumo de datos</div>
+  <h1>Explorador de APIs</h1>
+  <p class="sub">Arma una petición a una API real, envíala y recorre el JSON que responde: cada dato con su ruta y su tipo en Python.</p>
+</header>
+<main>
+  <div class="fila">
+    <div class="panel">
+      <h2>1 · La petición</h2>
+      <label for="preajuste">API y recurso</label>
+      <select id="preajuste">
+        <option value="pronostico">Open-Meteo · pronóstico del clima</option>
+        <option value="historico">Open-Meteo · histórico del clima</option>
+        <option value="usuario">JSONPlaceholder · un usuario (/users/ID)</option>
+        <option value="tareas">JSONPlaceholder · tareas de un usuario (/todos?userId=N)</option>
+        <option value="publicacion">JSONPlaceholder · una publicación (/posts/ID)</option>
+      </select>
+      <label for="base">URL sin parámetros <small>(servidor y ruta)</small></label>
+      <input id="base" type="text" class="mono ancho" spellcheck="false" autocomplete="off" autocapitalize="off">
+      <div id="caja-id" hidden>
+        <label for="id-recurso">ID <small>(el número al final de la ruta)</small></label>
+        <input id="id-recurso" type="number" min="1" max="200" step="1" value="1">
+      </div>
+      <fieldset id="parametros"><legend>Parámetros <small>(params=)</small></legend><div id="lista-params"></div></fieldset>
+
+      <h3>URL final, como la arma requests</h3>
+      <div class="url-final" id="url-final"></div>
+      <div class="leyenda-url" aria-hidden="true">
+        <span class="u-protocolo">protocolo</span><span class="u-servidor">servidor</span><span class="u-ruta">ruta</span>
+        <span class="u-param">parámetros</span><span><span class="u-cod">%2C</span> codificado</span>
+      </div>
+
+      <div class="botones">
+        <button type="button" class="accion primaria" id="enviar">Enviar petición</button>
+        <label class="casilla"><input type="checkbox" id="usar-guardadas"> Usar respuestas guardadas (sin internet)</label>
+      </div>
+
+      <h3>Provoca un error real</h3>
+      <div class="botones">
+        <button type="button" class="accion" data-error="sin-longitude">Sin longitude (400)</button>
+        <button type="button" class="accion" data-error="usuario-11">Usuario 11 (404)</button>
+        <button type="button" class="accion" data-error="dedo">Error de dedo: /user/1 (404)</button>
+      </div>
+
+      <details class="guardadas" id="guardadas">
+        <summary>Respuestas guardadas el 19/10/2026</summary>
+        <p class="nota">Respuestas reales de las APIs, las mismas de las diapositivas. Sirven sin internet.</p>
+        <ul id="lista-guardadas"></ul>
+      </details>
+    </div>
+
+    <div class="panel">
+      <h2>2 · La respuesta</h2>
+      <div id="estado-http" aria-live="polite"></div>
+      <nav class="pestanas" role="tablist" aria-label="Cómo ver la respuesta">
+        <button type="button" class="activo" data-vista="v-arbol" role="tab" aria-selected="true" aria-controls="v-arbol">Árbol: datos = r.json()</button>
+        <button type="button" data-vista="v-crudo" role="tab" aria-selected="false" aria-controls="v-crudo">Texto crudo: r.text</button>
+      </nav>
+      <section class="vista activo" id="v-arbol" role="tabpanel">
+        <p class="nota">Cada renglón muestra cómo bajar un nivel. Haz clic en un dato (o usa las flechas y Enter) para ver su ruta completa.</p>
+        <div class="arbol" id="arbol"></div>
+      </section>
+      <section class="vista" id="v-crudo" role="tabpanel">
+        <p class="nota" id="info-crudo"></p>
+        <pre class="crudo" id="crudo" tabindex="0" aria-label="Texto crudo de la respuesta (r.text)"></pre>
+      </section>
+      <div class="lectura seleccion" id="seleccion" aria-live="polite"></div>
+
+      <h3>El programa en Python</h3>
+      <div id="codigo"></div>
+      <div class="consola" id="salida" aria-label="Lo que imprime el programa"></div>
+      <p class="nota" id="nota-salida"></p>
+
+      <div class="preguntas">
+        <h3>Para explorar · Día 1: la petición</h3>
+        <ol>
+          <li>Lee la URL final del pronóstico. ¿Cómo aparece la diagonal de <code>America/Monterrey</code>? ¿En qué orden salen los parámetros y con qué símbolo se separan?</li>
+          <li>Antes de presionar "Sin longitude (400)": ¿de qué familia será el código y de quién es la culpa? Después, ¿qué explica la clave <code>reason</code> del JSON?</li>
+          <li>Envía un usuario, elige su nombre (<code>["name"]</code>) en el árbol y luego prueba "Usuario 11" y "Error de dedo". ¿Qué texto regresan? ¿Qué error aparece al final de la consola y por qué parece culpa de la API?</li>
+        </ol>
+        <h3 style="margin-top:8px">Para explorar · Día 2: el JSON</h3>
+        <ol start="4">
+          <li>En el pronóstico, haz clic en la máxima del 22 de octubre. ¿Cuál es su ruta? ¿Por qué el último índice no es 4 si es el cuarto día?</li>
+          <li>¿De qué tipo es <code>elevation</code> (531.0)? ¿Y <code>utc_offset_seconds</code>? ¿Qué decide el tipo de un número?</li>
+          <li>En un usuario, ¿de qué tipo es la latitud (<code>address</code> → <code>geo</code> → <code>lat</code>)? ¿Qué tendrías que hacer antes de compararla o restarla?</li>
+          <li>En el histórico de septiembre compara la lluvia del 30 de septiembre en el texto crudo y en el árbol. ¿Por qué no se ve igual?</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</main>
+<footer>
+  Programación Básica · FCFM-UANL · con internet hace peticiones reales a Open-Meteo y JSONPlaceholder;
+  sin internet usa las respuestas guardadas el 19/10/2026.
+  <a href="index.html">Índice de simuladores</a> · <a href="#qr-sitio" class="qr-abrir">Abrir en el celular (QR)</a>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+
+  // Pestañas (árbol / texto crudo)
+  document.querySelectorAll("nav.pestanas button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      document.querySelectorAll("nav.pestanas button").forEach(function (x) {
+        x.classList.remove("activo"); x.setAttribute("aria-selected", "false");
+      });
+      document.querySelectorAll("section.vista").forEach(function (x) { x.classList.remove("activo"); });
+      b.classList.add("activo"); b.setAttribute("aria-selected", "true");
+      document.getElementById(b.dataset.vista).classList.add("activo");
+    });
+  });
+
+  function esc(t) {
+    return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  // ---------- Código Python con los colores del curso ----------
+  var PY_KW = /^(False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)$/;
+  function pyResaltar(linea) {
+    var html = "", i = 0, m, resto;
+    while (i < linea.length) {
+      resto = linea.slice(i);
+      if ((m = /^#.*/.exec(resto))) { html += '<span class="com">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[rRbBfFuU]{0,2}("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/.exec(resto))) { html += '<span class="str">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[A-Za-z_\u00C0-\u024F][\w\u00C0-\u024F]*/.exec(resto))) { html += PY_KW.test(m[0]) ? '<span class="kw">' + m[0] + "</span>" : esc(m[0]); }
+      else if ((m = /^(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?j?/.exec(resto))) { html += '<span class="num">' + m[0] + "</span>"; }
+      else { m = [resto[0]]; html += esc(m[0]); }
+      i += m[0].length;
+    }
+    return html;
+  }
+  // Pinta código en un contenedor, con números de línea; marcar = número de línea (1, 2...) a resaltar.
+  function mostrarCodigo(el, codigo, marcar) {
+    var lineas = codigo.replace(/\n$/, "").split("\n");
+    el.innerHTML = '<div class="codigo"><ol>' + lineas.map(function (l, k) {
+      return "<li" + (marcar === k + 1 ? ' class="marca"' : "") + ">" + (pyResaltar(l) || " ") + "</li>";
+    }).join("") + "</ol></div>";
+  }
+
+  // ---------- Mostrar valores como los imprime Python ----------
+  // PyFloat marca un número que en Python es float aunque valga un entero (531.0, 35.0).
+  function PyFloat(valor) { this.valor = valor; }
+
+  // repr() de un float de Python: la representación más corta que vuelve al mismo número.
+  function pyFloat(x) {
+    if (Number.isNaN(x)) return "nan";
+    if (x === Infinity) return "inf";
+    if (x === -Infinity) return "-inf";
+    if (x === 0) return Object.is(x, -0) ? "-0.0" : "0.0";
+    var partes = Math.abs(x).toExponential().split("e");
+    var digitos = partes[0].replace(".", "");
+    var exp = parseInt(partes[1], 10);
+    var decpt = exp + 1, signo = x < 0 ? "-" : "";
+    if (decpt > 16 || decpt < -3) {
+      var mant = digitos.length > 1 ? digitos[0] + "." + digitos.slice(1) : digitos[0];
+      return signo + mant + "e" + (exp < 0 ? "-" : "+") + (Math.abs(exp) < 10 ? "0" : "") + Math.abs(exp);
+    }
+    if (decpt <= 0) return signo + "0." + "0".repeat(-decpt) + digitos;
+    if (decpt >= digitos.length) return signo + digitos + "0".repeat(decpt - digitos.length) + ".0";
+    return signo + digitos.slice(0, decpt) + "." + digitos.slice(decpt);
+  }
+
+  function hexa(n, ancho) { var s = n.toString(16); while (s.length < ancho) s = "0" + s; return s; }
+  // Caracteres que Python no considera imprimibles (repr los escribe como \x.., \u.. o \U........)
+  var NO_IMPRIMIBLE = /[\p{Cc}\p{Cf}\p{Cs}\p{Co}\p{Cn}\p{Zl}\p{Zp}\p{Zs}]/u;
+  function escaparCaracter(c, comilla) {
+    var code = c.codePointAt(0);
+    if (c === "\\") return "\\\\";
+    if (c === comilla) return "\\" + comilla;
+    if (c === "\n") return "\\n";
+    if (c === "\r") return "\\r";
+    if (c === "\t") return "\\t";
+    if (code < 32 || code === 127) return "\\x" + hexa(code, 2);
+    if (code > 127 && NO_IMPRIMIBLE.test(c)) {
+      return code <= 0xff ? "\\x" + hexa(code, 2) : code <= 0xffff ? "\\u" + hexa(code, 4) : "\\U" + hexa(code, 8);
+    }
+    return c;
+  }
+
+  // repr() de un texto: comillas simples, o dobles si el texto trae ' y no trae ".
+  function pyStr(s) {
+    var q = (s.indexOf("'") >= 0 && s.indexOf('"') < 0) ? '"' : "'";
+    var r = "";
+    for (var c of s) r += escaparCaracter(c, q);
+    return q + r + q;
+  }
+
+  // Un texto escrito como literal de Python entre comillas dobles (para el código que se muestra).
+  function pyLiteral(s) {
+    var r = "";
+    for (var c of s) r += escaparCaracter(c, '"');
+    return '"' + r + '"';
+  }
+
+  // repr() de un valor: None, True/False, int (number o BigInt), float (PyFloat), str, list y dict (Map).
+  function pyRepr(v) {
+    if (v === null || v === undefined) return "None";
+    if (v === true) return "True";
+    if (v === false) return "False";
+    if (v instanceof PyFloat) return pyFloat(v.valor);
+    if (typeof v === "bigint") return v.toString();
+    if (typeof v === "number") return Number.isInteger(v) ? String(v) : pyFloat(v);
+    if (typeof v === "string") return pyStr(v);
+    if (Array.isArray(v)) return "[" + v.map(pyRepr).join(", ") + "]";
+    if (v instanceof Map) {
+      var partes = [];
+      v.forEach(function (x, k) { partes.push(pyRepr(k) + ": " + pyRepr(x)); });
+      return "{" + partes.join(", ") + "}";
+    }
+    return "{" + Object.keys(v).map(function (k) { return pyStr(k) + ": " + pyRepr(v[k]); }).join(", ") + "}";
+  }
+
+  // Lo que muestra print(): igual que repr, salvo que un texto sale sin comillas.
+  function pyPrint(v) { return typeof v === "string" ? v : pyRepr(v); }
+
+  // type(v).__name__
+  function pyTipo(v) {
+    if (v === null || v === undefined) return "NoneType";
+    if (typeof v === "boolean") return "bool";
+    if (v instanceof PyFloat) return "float";
+    if (typeof v === "bigint") return "int";
+    if (typeof v === "number") return Number.isInteger(v) ? "int" : "float";
+    if (typeof v === "string") return "str";
+    if (Array.isArray(v)) return "list";
+    return "dict";
+  }
+
+  // ---------- json.loads de Python ----------
+  // Regresa nodos {t: tipo de Python, v: valor, crudo: texto original (datos sueltos), hijos}.
+  // Los dict son Map (conservan el orden de las claves); los enteros grandes, BigInt.
+  // Si el texto no es JSON lanza ErrorJSON con el mismo mensaje que json.JSONDecodeError.
+  function ErrorJSON(msg, doc, pos) {
+    var antes = Array.from(doc.slice(0, pos)), linea = 1, ultimo = -1;
+    for (var k = 0; k < antes.length; k++) if (antes[k] === "\n") { linea++; ultimo = k; }
+    this.msg = msg;
+    this.pos = antes.length;
+    this.texto = msg + ": line " + linea + " column " + (antes.length - ultimo) + " (char " + antes.length + ")";
+  }
+
+  var NUMERO_JSON = /-?(?:0|[1-9][0-9]*)(\.[0-9]+)?([eE][-+]?[0-9]+)?/y;
+  var MAX_SEGURO = BigInt(Number.MAX_SAFE_INTEGER);
+
+  function analizarJSON(s) {
+    var n = s.length, i = 0;
+    var ESCAPES = { '"': '"', "\\": "\\", "/": "/", b: "\b", f: "\f", n: "\n", r: "\r", t: "\t" };
+    function falla(msg, pos) { throw new ErrorJSON(msg, s, pos); }
+    function espacios() {
+      while (i < n) {
+        var c = s.charCodeAt(i);
+        if (c === 32 || c === 9 || c === 10 || c === 13) i++; else break;
+      }
+    }
+    function esHex4(t) { return /^[0-9a-fA-F]{4}$/.test(t); }
+    function cadena(desde) {                    // desde = posición después de la comilla
+      var inicio = desde - 1, texto = "", j = desde;
+      for (;;) {
+        var k = j, c = "";
+        for (; k < n; k++) {
+          c = s[k];
+          if (c === '"' || c === "\\") break;
+          if (s.charCodeAt(k) <= 0x1f) falla("Invalid control character at", k);
+        }
+        if (k >= n) falla("Unterminated string starting at", inicio);
+        texto += s.slice(j, k);
+        k++;
+        if (c === '"') { j = k; break; }
+        if (k >= n) falla("Unterminated string starting at", inicio);
+        c = s[k];
+        if (c !== "u") {
+          if (!Object.prototype.hasOwnProperty.call(ESCAPES, c)) falla("Invalid \\escape", k - 1);
+          texto += ESCAPES[c];
+          j = k + 1;
+        } else {
+          k++;
+          var fin = k + 4;
+          if (fin >= n) falla("Invalid \\uXXXX escape", k - 1);
+          if (!esHex4(s.slice(k, fin))) falla("Invalid \\uXXXX escape", fin - 5);
+          var cp = parseInt(s.slice(k, fin), 16);
+          if (cp >= 0xd800 && cp <= 0xdbff && fin + 6 < n && s[fin] === "\\" && s[fin + 1] === "u") {
+            if (!esHex4(s.slice(fin + 2, fin + 6))) falla("Invalid \\uXXXX escape", fin + 1);
+            var cp2 = parseInt(s.slice(fin + 2, fin + 6), 16);
+            if (cp2 >= 0xdc00 && cp2 <= 0xdfff) { cp = 0x10000 + ((cp - 0xd800) << 10) + (cp2 - 0xdc00); fin += 6; }
+          }
+          texto += String.fromCodePoint(cp);
+          j = fin;
+        }
+      }
+      i = j;
+      return { t: "str", v: texto, crudo: s.slice(inicio, j) };
+    }
+    function objeto(desde) {
+      var mapa = new Map(), hijos = [];
+      i = desde; espacios();
+      if (i < n && s[i] === "}") { i++; return { t: "dict", v: mapa, hijos: hijos }; }
+      for (;;) {
+        if (i >= n || s[i] !== '"') falla("Expecting property name enclosed in double quotes", i);
+        var clave = cadena(i + 1);
+        espacios();
+        if (i >= n || s[i] !== ":") falla("Expecting ':' delimiter", i);
+        i++; espacios();
+        var nodo = valor(i);
+        if (mapa.has(clave.v)) {
+          hijos.forEach(function (h) { if (h[0] === clave.v) h[1] = nodo; });
+        } else {
+          hijos.push([clave.v, nodo, clave.crudo]);
+        }
+        mapa.set(clave.v, nodo.v);
+        espacios();
+        if (i < n && s[i] === "}") { i++; break; }
+        if (i >= n || s[i] !== ",") falla("Expecting ',' delimiter", i);
+        i++; espacios();
+      }
+      return { t: "dict", v: mapa, hijos: hijos };
+    }
+    function arreglo(desde) {
+      var lista = [], hijos = [];
+      i = desde; espacios();
+      if (i < n && s[i] === "]") { i++; return { t: "list", v: lista, hijos: hijos }; }
+      for (;;) {
+        var nodo = valor(i);
+        hijos.push(nodo); lista.push(nodo.v);
+        espacios();
+        if (i < n && s[i] === "]") { i++; break; }
+        if (i >= n || s[i] !== ",") falla("Expecting ',' delimiter", i);
+        i++; espacios();
+      }
+      return { t: "list", v: lista, hijos: hijos };
+    }
+    function constante(desde, palabra, t, v) { i = desde + palabra.length; return { t: t, v: v, crudo: palabra }; }
+    function valor(desde) {
+      if (desde >= n) falla("Expecting value", desde);
+      var c = s[desde];
+      if (c === '"') return cadena(desde + 1);
+      if (c === "{") return objeto(desde + 1);
+      if (c === "[") return arreglo(desde + 1);
+      if (c === "n" && s.substr(desde, 4) === "null") return constante(desde, "null", "NoneType", null);
+      if (c === "t" && s.substr(desde, 4) === "true") return constante(desde, "true", "bool", true);
+      if (c === "f" && s.substr(desde, 5) === "false") return constante(desde, "false", "bool", false);
+      if (c === "N" && s.substr(desde, 3) === "NaN") return constante(desde, "NaN", "float", new PyFloat(NaN));
+      if (c === "I" && s.substr(desde, 8) === "Infinity") return constante(desde, "Infinity", "float", new PyFloat(Infinity));
+      if (c === "-" && s.substr(desde, 9) === "-Infinity") return constante(desde, "-Infinity", "float", new PyFloat(-Infinity));
+      NUMERO_JSON.lastIndex = desde;
+      var m = NUMERO_JSON.exec(s);
+      if (!m) falla("Expecting value", desde);
+      i = desde + m[0].length;
+      if (m[1] || m[2]) return { t: "float", v: new PyFloat(Number(m[0])), crudo: m[0] };
+      var entero = BigInt(m[0]);
+      var v = (entero <= MAX_SEGURO && entero >= -MAX_SEGURO) ? Number(entero) : entero;
+      return { t: "int", v: v, crudo: m[0] };
+    }
+    if (s.charAt(0) === "\ufeff") falla("Unexpected UTF-8 BOM (decode using utf-8-sig)", 0);
+    espacios();
+    var raiz = valor(i);
+    espacios();
+    if (i !== n) falla("Extra data", i);
+    return raiz;
+  }
+
+  // json.loads(texto): el valor de Python, sin los nodos.
+  function pyParseJSON(texto) { return analizarJSON(texto).v; }
+
+  // datos[k] como en Python (k es un texto o un entero); los errores llevan el mensaje de Python 3.12.
+  function ErrorPython(clase, mensaje) { this.clase = clase; this.texto = clase + ": " + mensaje; }
+  function subindice(base, k) {
+    if (base instanceof Map) {
+      if (typeof k === "string" && base.has(k)) return base.get(k);
+      throw new ErrorPython("KeyError", pyRepr(k));
+    }
+    if (Array.isArray(base) || typeof base === "string") {
+      var lista = Array.isArray(base);
+      if (typeof k === "number") {
+        var elementos = lista ? base : Array.from(base), pos = k < 0 ? k + elementos.length : k;
+        if (pos < 0 || pos >= elementos.length) throw new ErrorPython("IndexError", (lista ? "list" : "string") + " index out of range");
+        return elementos[pos];
+      }
+      if (lista) throw new ErrorPython("TypeError", "list indices must be integers or slices, not " + pyTipo(k));
+      throw new ErrorPython("TypeError", "string indices must be integers, not '" + pyTipo(k) + "'");
+    }
+    throw new ErrorPython("TypeError", "'" + pyTipo(base) + "' object is not subscriptable");
+  }
+
+  // ---------- La URL que arma requests (requests.Request("GET", url, params=...).prepare().url) ----------
+  function bytesUTF8(cp) {
+    if (cp < 0x80) return [cp];
+    if (cp < 0x800) return [0xc0 | (cp >> 6), 0x80 | (cp & 63)];
+    if (cp < 0x10000) return [0xe0 | (cp >> 12), 0x80 | ((cp >> 6) & 63), 0x80 | (cp & 63)];
+    return [0xf0 | (cp >> 18), 0x80 | ((cp >> 12) & 63), 0x80 | ((cp >> 6) & 63), 0x80 | (cp & 63)];
+  }
+  function porciento(b) { return "%" + hexa(b, 2).toUpperCase(); }
+  var SIEMPRE_SEGUROS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_.-~";
+  // urllib.parse.quote(texto, safe)
+  function quote(texto, seguros) {
+    var r = "";
+    for (var c of texto) {
+      if (c.length === 1 && c.charCodeAt(0) < 128 && (SIEMPRE_SEGUROS.indexOf(c) >= 0 || seguros.indexOf(c) >= 0)) r += c;
+      else bytesUTF8(c.codePointAt(0)).forEach(function (b) { r += porciento(b); });
+    }
+    return r;
+  }
+  // urllib.parse.quote_plus: los espacios se vuelven +
+  function quotePlus(texto) {
+    return texto.indexOf(" ") >= 0 ? quote(texto, " ").replace(/ /g, "+") : quote(texto, "");
+  }
+  // urllib3: codifica lo que no se permite en una parte de la URL (sin tocar los %XX que ya vienen)
+  var CARACTERES_RUTA = SIEMPRE_SEGUROS + "!$&'()*+,;=:@/";
+  function codificarInvalidos(parte, permitidos) {
+    var normal = parte.replace(/%[a-fA-F0-9]{2}/g, function (m) { return m.toUpperCase(); });
+    var nCod = (parte.match(/%[a-fA-F0-9]{2}/g) || []).length;
+    var nPor = (normal.match(/%/g) || []).length;
+    var yaCodificado = nCod === nPor, r = "";
+    for (var c of normal) {
+      if ((yaCodificado && c === "%") || (c.length === 1 && c.charCodeAt(0) < 128 && permitidos.indexOf(c) >= 0)) r += c;
+      else bytesUTF8(c.codePointAt(0)).forEach(function (b) { r += porciento(b); });
+    }
+    return r;
+  }
+  function quitarPuntos(ruta) {
+    var salida = [];
+    ruta.split("/").forEach(function (seg) {
+      if (seg === ".") return;
+      if (seg !== "..") salida.push(seg);
+      else if (salida.length) salida.pop();
+    });
+    if (ruta.charAt(0) === "/" && (!salida.length || salida[0])) salida.unshift("");
+    if (/\/\.\.?$/.test(ruta)) salida.push("");
+    return salida.join("/");
+  }
+  // requests.utils.requote_uri
+  function requote(uri) {
+    var partes = uri.split("%"), ok = true;
+    for (var k = 1; k < partes.length; k++) {
+      var h = partes[k].slice(0, 2);
+      if (h.length === 2 && /^[A-Za-z0-9]{2}$/.test(h)) {
+        if (!/^[0-9a-fA-F]{2}$/.test(h)) { ok = false; break; }
+        var c = String.fromCharCode(parseInt(h, 16));
+        partes[k] = SIEMPRE_SEGUROS.indexOf(c) >= 0 ? c + partes[k].slice(2) : "%" + partes[k];
+      } else {
+        partes[k] = "%" + partes[k];
+      }
+    }
+    if (!ok) return quote(uri, "!#$&'()*+,/:;=?@[]~");
+    return quote(partes.join(""), "!#$%&'()*+,/:;=?@[]~");
+  }
+  // params: [[clave, texto]], donde texto es str(valor) en Python.
+  // Regresa {url} o {error: "requests.exceptions.MissingSchema: ..."} o {sinPreparar: url} (esquema que no es http).
+  function urlRequests(base, params) {
+    var url = base.replace(/^\s+/, "");
+    if (url.indexOf(":") >= 0 && url.toLowerCase().indexOf("http") !== 0) return { sinPreparar: url };
+    var conEsquema = /^(?:[a-zA-Z][a-zA-Z0-9+-]*:|\/)/.test(url) ? url : "//" + url;
+    var m = /^(?:([a-zA-Z][a-zA-Z0-9+.-]*):)?(?:\/\/([^\\/?#]*))?([^?#]*)(?:\?([^#]*))?(?:#([\s\S]*))?$/.exec(conEsquema);
+    var esquema = m[1], autoridad = m[2], ruta = m[3], consulta = m[4], fragmento = m[5];
+    if (!esquema) {
+      return { error: "requests.exceptions.MissingSchema: Invalid URL " + pyStr(url) +
+               ": No scheme supplied. Perhaps you meant https://" + url + "?" };
+    }
+    esquema = esquema.toLowerCase();
+    var anfitrion = "", usuario = "", puerto = "";
+    if (autoridad) {
+      var arroba = autoridad.lastIndexOf("@");
+      var hp = /^(.*?)(:[0-9]*)?$/.exec(arroba >= 0 ? autoridad.slice(arroba + 1) : autoridad);
+      anfitrion = hp[1].toLowerCase();
+      puerto = (hp[2] && hp[2] !== ":") ? hp[2] : "";
+      if (arroba >= 0) usuario = autoridad.slice(0, arroba) + "@";
+    }
+    if (!anfitrion) return { error: "requests.exceptions.InvalidURL: Invalid URL " + pyStr(url) + ": No host supplied" };
+    anfitrion = usuario + anfitrion + puerto;
+    if (ruta) ruta = codificarInvalidos(quitarPuntos(ruta), CARACTERES_RUTA);
+    if (!ruta) ruta = "/";
+    if (consulta) consulta = codificarInvalidos(consulta, CARACTERES_RUTA + "?");
+    if (fragmento) fragmento = codificarInvalidos(fragmento, CARACTERES_RUTA + "?");
+    var cod = params.map(function (p) { return quotePlus(p[0]) + "=" + quotePlus(p[1]); }).join("&");
+    if (cod) consulta = consulta ? consulta + "&" + cod : cod;
+    var armada = esquema + "://" + anfitrion + ruta + (consulta ? "?" + consulta : "") + (fragmento ? "#" + fragmento : "");
+    return { url: requote(armada) };
+  }
+
+  // ---------- Respuestas reales guardadas el 19/10/2026 (presentaciones/respuestas_api.json) ----------
+  var GUARDADAS = {
+ "https://jsonplaceholder.typicode.com/users/1": {
+  "status": 200,
+  "reason": "OK",
+  "content_type": "application/json; charset=utf-8",
+  "text": "{\n  \"id\": 1,\n  \"name\": \"Leanne Graham\",\n  \"username\": \"Bret\",\n  \"email\": \"Sincere@april.biz\",\n  \"address\": {\n    \"street\": \"Kulas Light\",\n    \"suite\": \"Apt. 556\",\n    \"city\": \"Gwenborough\",\n    \"zipcode\": \"92998-3874\",\n    \"geo\": {\n      \"lat\": \"-37.3159\",\n      \"lng\": \"81.1496\"\n    }\n  },\n  \"phone\": \"1-770-736-8031 x56442\",\n  \"website\": \"hildegard.org\",\n  \"company\": {\n    \"name\": \"Romaguera-Crona\",\n    \"catchPhrase\": \"Multi-layered client-server neural-net\",\n    \"bs\": \"harness real-time e-markets\"\n  }\n}"
+ },
+ "https://jsonplaceholder.typicode.com/users/3": {
+  "status": 200,
+  "reason": "OK",
+  "content_type": "application/json; charset=utf-8",
+  "text": "{\n  \"id\": 3,\n  \"name\": \"Clementine Bauch\",\n  \"username\": \"Samantha\",\n  \"email\": \"Nathan@yesenia.net\",\n  \"address\": {\n    \"street\": \"Douglas Extension\",\n    \"suite\": \"Suite 847\",\n    \"city\": \"McKenziehaven\",\n    \"zipcode\": \"59590-4157\",\n    \"geo\": {\n      \"lat\": \"-68.6102\",\n      \"lng\": \"-47.0653\"\n    }\n  },\n  \"phone\": \"1-463-123-4447\",\n  \"website\": \"ramiro.info\",\n  \"company\": {\n    \"name\": \"Romaguera-Jacobson\",\n    \"catchPhrase\": \"Face to face bifurcated interface\",\n    \"bs\": \"e-enable strategic applications\"\n  }\n}"
+ },
+ "https://jsonplaceholder.typicode.com/users/11": {
+  "status": 404,
+  "reason": "Not Found",
+  "content_type": "application/json; charset=utf-8",
+  "text": "{}"
+ },
+ "https://jsonplaceholder.typicode.com/user/1": {
+  "status": 404,
+  "reason": "Not Found",
+  "content_type": "application/json; charset=utf-8",
+  "text": "{}"
+ },
+ "https://jsonplaceholder.typicode.com/users?id=1&id=2&id=3": {
+  "status": 200,
+  "reason": "OK",
+  "content_type": "application/json; charset=utf-8",
+  "text": "[\n  {\n    \"id\": 1,\n    \"name\": \"Leanne Graham\",\n    \"username\": \"Bret\",\n    \"email\": \"Sincere@april.biz\",\n    \"address\": {\n      \"street\": \"Kulas Light\",\n      \"suite\": \"Apt. 556\",\n      \"city\": \"Gwenborough\",\n      \"zipcode\": \"92998-3874\",\n      \"geo\": {\n        \"lat\": \"-37.3159\",\n        \"lng\": \"81.1496\"\n      }\n    },\n    \"phone\": \"1-770-736-8031 x56442\",\n    \"website\": \"hildegard.org\",\n    \"company\": {\n      \"name\": \"Romaguera-Crona\",\n      \"catchPhrase\": \"Multi-layered client-server neural-net\",\n      \"bs\": \"harness real-time e-markets\"\n    }\n  },\n  {\n    \"id\": 2,\n    \"name\": \"Ervin Howell\",\n    \"username\": \"Antonette\",\n    \"email\": \"Shanna@melissa.tv\",\n    \"address\": {\n      \"street\": \"Victor Plains\",\n      \"suite\": \"Suite 879\",\n      \"city\": \"Wisokyburgh\",\n      \"zipcode\": \"90566-7771\",\n      \"geo\": {\n        \"lat\": \"-43.9509\",\n        \"lng\": \"-34.4618\"\n      }\n    },\n    \"phone\": \"010-692-6593 x09125\",\n    \"website\": \"anastasia.net\",\n    \"company\": {\n      \"name\": \"Deckow-Crist\",\n      \"catchPhrase\": \"Proactive didactic contingency\",\n      \"bs\": \"synergize scalable supply-chains\"\n    }\n  },\n  {\n    \"id\": 3,\n    \"name\": \"Clementine Bauch\",\n    \"username\": \"Samantha\",\n    \"email\": \"Nathan@yesenia.net\",\n    \"address\": {\n      \"street\": \"Douglas Extension\",\n      \"suite\": \"Suite 847\",\n      \"city\": \"McKenziehaven\",\n      \"zipcode\": \"59590-4157\",\n      \"geo\": {\n        \"lat\": \"-68.6102\",\n        \"lng\": \"-47.0653\"\n      }\n    },\n    \"phone\": \"1-463-123-4447\",\n    \"website\": \"ramiro.info\",\n    \"company\": {\n      \"name\": \"Romaguera-Jacobson\",\n      \"catchPhrase\": \"Face to face bifurcated interface\",\n      \"bs\": \"e-enable strategic applications\"\n    }\n  }\n]"
+ },
+ "https://api.open-meteo.com/v1/forecast?latitude=25.67&longitude=-100.31&current=temperature_2m": {
+  "status": 200,
+  "reason": "OK",
+  "content_type": "application/json; charset=utf-8",
+  "text": "{\"latitude\":25.666021,\"longitude\":-100.31154,\"generationtime_ms\":0.018358230590820312,\"utc_offset_seconds\":0,\"timezone\":\"GMT\",\"timezone_abbreviation\":\"GMT\",\"elevation\":531.0,\"current_units\":{\"time\":\"iso8601\",\"interval\":\"seconds\",\"temperature_2m\":\"°C\"},\"current\":{\"time\":\"2026-10-19T20:15\",\"interval\":900,\"temperature_2m\":24.7}}"
+ },
+ "https://api.open-meteo.com/v1/forecast?latitude=25.67&current=temperature_2m": {
+  "status": 400,
+  "reason": "Bad Request",
+  "content_type": "application/json; charset=utf-8",
+  "text": "{\"error\":true,\"reason\":\"Parameter 'latitude' and 'longitude' must have the same number of elements\"}"
+ },
+ "https://api.open-meteo.com/v1/forecast?latitude=25.67&longitude=-100.31&timezone=America%2FMonterrey&daily=temperature_2m_max%2Ctemperature_2m_min": {
+  "status": 200,
+  "reason": "OK",
+  "content_type": "application/json; charset=utf-8",
+  "text": "{\"latitude\":25.666021,\"longitude\":-100.31154,\"generationtime_ms\":0.08952617645263672,\"utc_offset_seconds\":-21600,\"timezone\":\"America/Monterrey\",\"timezone_abbreviation\":\"GMT-6\",\"elevation\":531.0,\"daily_units\":{\"time\":\"iso8601\",\"temperature_2m_max\":\"°C\",\"temperature_2m_min\":\"°C\"},\"daily\":{\"time\":[\"2026-10-19\",\"2026-10-20\",\"2026-10-21\",\"2026-10-22\",\"2026-10-23\",\"2026-10-24\",\"2026-10-25\"],\"temperature_2m_max\":[24.7,22.0,27.0,27.3,23.2,24.0,20.1],\"temperature_2m_min\":[13.0,16.2,19.5,19.8,20.0,18.0,18.5]}}"
+ },
+ "https://api.open-meteo.com/v1/forecast?latitude=25.67&longitude=-100.31&timezone=America%2FMonterrey&daily=temperature_2m_max%2Ctemperature_2m_min%2Cprecipitation_probability_max": {
+  "status": 200,
+  "reason": "OK",
+  "content_type": "application/json; charset=utf-8",
+  "text": "{\"latitude\":25.666021,\"longitude\":-100.31154,\"generationtime_ms\":0.10418891906738281,\"utc_offset_seconds\":-21600,\"timezone\":\"America/Monterrey\",\"timezone_abbreviation\":\"GMT-6\",\"elevation\":531.0,\"daily_units\":{\"time\":\"iso8601\",\"temperature_2m_max\":\"°C\",\"temperature_2m_min\":\"°C\",\"precipitation_probability_max\":\"%\"},\"daily\":{\"time\":[\"2026-10-19\",\"2026-10-20\",\"2026-10-21\",\"2026-10-22\",\"2026-10-23\",\"2026-10-24\",\"2026-10-25\"],\"temperature_2m_max\":[24.7,22.0,27.0,27.3,23.2,24.0,20.1],\"temperature_2m_min\":[13.0,16.2,19.5,19.8,20.0,18.0,18.5],\"precipitation_probability_max\":[4,11,6,22,19,13,47]}}"
+ },
+ "https://archive-api.open-meteo.com/v1/archive?latitude=25.67&longitude=-100.31&start_date=2026-09-01&end_date=2026-09-30&daily=temperature_2m_max%2Ctemperature_2m_min%2Cprecipitation_sum&timezone=America%2FMonterrey": {
+  "status": 200,
+  "reason": "OK",
+  "content_type": "application/json; charset=utf-8",
+  "text": "{\"latitude\":25.694199,\"longitude\":-100.28293,\"generationtime_ms\":2.843618392944336,\"utc_offset_seconds\":-21600,\"timezone\":\"America/Monterrey\",\"timezone_abbreviation\":\"GMT-6\",\"elevation\":531.0,\"daily_units\":{\"time\":\"iso8601\",\"temperature_2m_max\":\"°C\",\"temperature_2m_min\":\"°C\",\"precipitation_sum\":\"mm\"},\"daily\":{\"time\":[\"2026-09-01\",\"2026-09-02\",\"2026-09-03\",\"2026-09-04\",\"2026-09-05\",\"2026-09-06\",\"2026-09-07\",\"2026-09-08\",\"2026-09-09\",\"2026-09-10\",\"2026-09-11\",\"2026-09-12\",\"2026-09-13\",\"2026-09-14\",\"2026-09-15\",\"2026-09-16\",\"2026-09-17\",\"2026-09-18\",\"2026-09-19\",\"2026-09-20\",\"2026-09-21\",\"2026-09-22\",\"2026-09-23\",\"2026-09-24\",\"2026-09-25\",\"2026-09-26\",\"2026-09-27\",\"2026-09-28\",\"2026-09-29\",\"2026-09-30\"],\"temperature_2m_max\":[35.0,36.5,38.0,34.1,32.2,30.2,34.0,33.3,34.9,35.1,37.2,35.0,35.2,35.8,35.9,35.0,34.7,33.5,34.5,35.4,35.4,32.8,31.8,31.5,33.3,33.9,34.2,33.7,33.2,30.9],\"temperature_2m_min\":[23.4,23.7,25.0,25.2,23.6,22.3,22.3,21.8,21.9,22.3,22.4,23.6,23.4,23.6,23.0,22.6,24.0,23.0,22.4,22.0,23.1,22.6,21.8,22.0,22.8,23.6,24.1,23.5,23.4,23.9],\"precipitation_sum\":[1.70,0.70,0.20,0.70,6.90,0.70,0.00,0.30,0.60,0.80,0.20,0.80,0.20,0.20,0.00,0.00,1.90,2.70,0.00,0.00,0.00,2.90,3.20,0.50,0.90,0.70,2.70,2.60,0.30,8.80]}}"
+ }
+};
+
+  // La misma petición aunque los parámetros vayan en otro orden (como requests_simulado.py)
+  function claveGuardada(url) {
+    var m = /^[a-zA-Z]+:\/\/([^\/?#]*)([^?#]*)(?:\?([^#]*))?/.exec(url);
+    if (!m) return url;
+    return m[1].toLowerCase() + m[2] + "?" + (m[3] || "").split("&").sort().join("&");
+  }
+  var INDICE_GUARDADAS = {};
+  Object.keys(GUARDADAS).forEach(function (u) { INDICE_GUARDADAS[claveGuardada(u)] = GUARDADAS[u]; });
+
+  // ---------- Preajustes ----------
+  var LATITUD = { clave: "latitude", valor: "25.67", ayuda: "latitud (Monterrey: 25.67)" };
+  var LONGITUD = { clave: "longitude", valor: "-100.31", ayuda: "longitud (Monterrey: -100.31)" };
+  var ZONA = { clave: "timezone", valor: "America/Monterrey", ayuda: "fechas y horas de Monterrey" };
+  var PREAJUSTES = {
+    pronostico: {
+      base: "https://api.open-meteo.com/v1/forecast",
+      params: [LATITUD, LONGITUD,
+        { clave: "current", ayuda: "el clima de este momento",
+          opciones: [["temperature_2m", "temperatura (°C)"], ["relative_humidity_2m", "humedad relativa (%)"],
+                     ["wind_speed_10m", "viento (km/h)"]], marcadas: [] },
+        { clave: "daily", ayuda: "un valor por día, 7 días",
+          opciones: [["temperature_2m_max", "máxima (°C)"], ["temperature_2m_min", "mínima (°C)"],
+                     ["precipitation_probability_max", "probabilidad de lluvia (%)"]],
+          marcadas: ["temperature_2m_max", "temperature_2m_min", "precipitation_probability_max"] },
+        ZONA]
+    },
+    historico: {
+      base: "https://archive-api.open-meteo.com/v1/archive",
+      params: [LATITUD, LONGITUD,
+        { clave: "start_date", valor: "2026-09-01", ayuda: "primer día (aaaa-mm-dd)" },
+        { clave: "end_date", valor: "2026-09-30", ayuda: "último día (aaaa-mm-dd)" },
+        { clave: "daily", ayuda: "un valor por día",
+          opciones: [["temperature_2m_max", "máxima (°C)"], ["temperature_2m_min", "mínima (°C)"],
+                     ["precipitation_sum", "lluvia del día (mm)"]],
+          marcadas: ["temperature_2m_max", "temperature_2m_min", "precipitation_sum"] },
+        ZONA]
+    },
+    usuario: { base: "https://jsonplaceholder.typicode.com/users/1", conId: true, params: null },
+    tareas: { base: "https://jsonplaceholder.typicode.com/todos",
+              params: [{ clave: "userId", valor: "1", ayuda: "número de usuario (1 a 10)" }] },
+    publicacion: { base: "https://jsonplaceholder.typicode.com/posts/1", conId: true, params: null }
+  };
+  var preajuste = "pronostico";
+
+  function pintarParametros() {
+    var p = PREAJUSTES[preajuste], html = "";
+    if (!p.params) {
+      html = '<p class="sin-params">Este recurso no lleva parámetros: el ID va en la ruta.</p>';
+    } else {
+      p.params.forEach(function (d) {
+        if (d.opciones) {
+          html += '<fieldset><legend><code>' + d.clave + "</code> <small>(" + esc(d.ayuda) + ', separados con comas)</small></legend>' +
+            d.opciones.map(function (o) {
+              return '<label class="casilla opcion"><input type="checkbox" data-lista="' + d.clave + '" value="' + o[0] + '"' +
+                (d.marcadas.indexOf(o[0]) >= 0 ? " checked" : "") + "><span><code>" + o[0] + "</code><small>" + esc(o[1]) + "</small></span></label>";
+            }).join("") + "</fieldset>";
+        } else {
+          html += '<div class="param"><label class="casilla"><input type="checkbox" id="p-' + d.clave + '" checked> <code>' + d.clave +
+            '</code></label><input type="text" id="v-' + d.clave + '" value="' + esc(d.valor) + '" aria-label="Valor de ' + d.clave +
+            '" spellcheck="false" autocomplete="off" autocapitalize="off"><span class="ayuda">' + esc(d.ayuda) + "</span></div>";
+        }
+      });
+    }
+    $("lista-params").innerHTML = html;
+    $("lista-params").querySelectorAll("input").forEach(function (x) {
+      x.addEventListener(x.type === "checkbox" ? "change" : "input", actualizar);
+    });
+  }
+
+  // Lo que escribe el alumno, como valor de Python: int, float o str (como en el diccionario params)
+  function valorPython(texto) {
+    var t = texto.trim();
+    if (/^-?[0-9]+$/.test(t)) return { tipo: "int", texto: BigInt(t).toString() };
+    if (/^-?(?:[0-9]+\.[0-9]*|\.[0-9]+|[0-9]+)(?:[eE][-+]?[0-9]+)?$/.test(t) && isFinite(Number(t))) {
+      return { tipo: "float", texto: pyFloat(Number(t)) };
+    }
+    return { tipo: "str", texto: t };
+  }
+  function literalPython(v) { return v.tipo === "str" ? pyLiteral(v.texto) : v.texto; }
+
+  function estadoPeticion() {
+    var p = PREAJUSTES[preajuste], params = [];
+    if (p.params) {
+      p.params.forEach(function (d) {
+        if (d.opciones) {
+          var marcadas = Array.prototype.map.call(
+            document.querySelectorAll('input[data-lista="' + d.clave + '"]:checked'), function (x) { return x.value; });
+          if (marcadas.length) params.push([d.clave, { tipo: "str", texto: marcadas.join(",") }]);
+        } else if ($("p-" + d.clave).checked) {
+          params.push([d.clave, valorPython($("v-" + d.clave).value)]);
+        }
+      });
+    }
+    var base = $("base").value.trim();
+    var u = urlRequests(base, params.map(function (x) { return [x[0], x[1].texto]; }));
+    return { base: base, params: params, conParams: !!p.params, url: u };
+  }
+
+  // ---------- La URL en colores ----------
+  function resaltarCodificado(t) {
+    return esc(t).replace(/%[0-9A-F]{2}|\+/g, function (m) { return '<span class="u-cod">' + m + "</span>"; });
+  }
+  function pintarURL(u) {
+    var caja = $("url-final");
+    if (u.error) {
+      caja.innerHTML = '<span class="u-error">requests no puede armar esta URL. Al llamar a requests.get lanza:<br>' + esc(u.error) + "</span>";
+      return;
+    }
+    if (u.sinPreparar !== undefined) {
+      caja.innerHTML = '<span class="u-error">' + esc(u.sinPreparar) + "<br>requests solo pide URL que empiezan con http:// o https://.</span>";
+      return;
+    }
+    var m = /^([a-z]+:\/\/)([^\/?#]*)([^?#]*)(\?[^#]*)?(#.*)?$/.exec(u.url);
+    var html = '<span class="u-protocolo">' + esc(m[1]) + '</span><span class="u-servidor">' + esc(m[2]) +
+               '</span><span class="u-ruta">' + resaltarCodificado(m[3]) + "</span>";
+    if (m[4]) {
+      html += '<span class="u-sep">?</span>' + m[4].slice(1).split("&").map(function (par) {
+        return '<span class="u-param">' + resaltarCodificado(par) + "</span>";
+      }).join('<span class="u-sep">&amp;</span>');
+    }
+    if (m[5]) html += esc(m[5]);
+    caja.innerHTML = html;
+  }
+
+  // ---------- Estado de la respuesta ----------
+  var FRASES = { 200: "OK", 201: "Created", 204: "No Content", 301: "Moved Permanently", 302: "Found",
+    304: "Not Modified", 400: "Bad Request", 401: "Unauthorized", 403: "Forbidden", 404: "Not Found",
+    405: "Method Not Allowed", 408: "Request Timeout", 422: "Unprocessable Entity", 429: "Too Many Requests",
+    500: "Internal Server Error", 502: "Bad Gateway", 503: "Service Unavailable", 504: "Gateway Timeout" };
+  function familia(c) {
+    if (c >= 200 && c < 300) return { clase: "f2", t: "2xx · éxito", d: "La petición salió bien y la respuesta trae los datos que pediste. r.ok es True." };
+    if (c >= 300 && c < 400) return { clase: "f3", t: "3xx · redirección", d: "El recurso está en otra dirección; requests sigue la redirección por ti." };
+    if (c >= 400 && c < 500) return { clase: "f4", t: "4xx · error de quien pide", d: "La culpa es de la petición, no del servidor: 400 = parámetros mal, 404 = no existe, 429 = demasiadas peticiones. r.ok es False: la respuesta trae texto, pero no tus datos." };
+    if (c >= 500 && c < 600) return { clase: "f5", t: "5xx · falla del servidor", d: "Tu petición puede estar bien, pero el servidor falló; intenta más tarde. r.ok es False." };
+    return { clase: "f3", t: "código poco común", d: "" };
+  }
+
+  var respuesta = null;     // {url, status, reason, contentType, texto, origen, aviso, nodo, errorJSON}
+  var seleccion = ["timezone"];
+
+  function anfitrion(url) { var m = /^[a-z]+:\/\/([^\/?#]*)/i.exec(url); return m ? m[1] : url; }
+  function hora() {
+    var d = new Date();
+    return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+  }
+
+  function mostrarRespuesta(r) {
+    respuesta = r;
+    try { r.nodo = analizarJSON(r.texto); r.errorJSON = null; }
+    catch (e) { if (e instanceof ErrorJSON) { r.nodo = null; r.errorJSON = e; } else throw e; }
+    pintarEstado();
+    pintarCrudo();
+    pintarArbol();
+    actualizar();
+  }
+
+  function pintarEstado() {
+    var r = respuesta, f = familia(r.status), html = "";
+    html += '<div class="estado"><span class="codigo-http ' + f.clase + '">' + r.status + " " + esc(r.reason) + "</span>" +
+            '<span class="familia ' + f.clase + '">' + f.t + "</span></div>";
+    html += '<p class="detalle-http">' + esc(f.d) + "</p>";
+    var origen = r.origen === "vivo" ? "Respuesta en vivo de " + esc(anfitrion(r.url)) + ", recibida a las " + r.hora + "."
+      : "Respuesta real guardada el 19/10/2026" + ($("usar-guardadas").checked ? " (elegiste usar las respuestas guardadas)."
+      : r.aviso ? "." : ". Presiona Enviar petición para pedirla en vivo.");
+    html += '<p class="nota"><code>r.status_code</code> = ' + r.status + " · <code>r.ok</code> = " + (r.status < 400 ? "True" : "False") +
+            " · <code>Content-Type</code>: " + esc(r.contentType || "(no vino)") + "<br>" + origen + "</p>";
+    if (r.aviso) html += '<div class="aviso-caja">' + r.aviso + "</div>";
+    if (r.contentType && !/json/i.test(r.contentType)) {
+      html += '<div class="aviso-caja">El Content-Type no dice JSON: la respuesta es otro formato y r.json() fallaría.</div>';
+    }
+    if (r.status === 404 && r.texto.trim() === "{}") {
+      html += '<div class="aviso-caja">El texto de este 404 es <code>{}</code>: un diccionario vacío. r.json() no falla, pero no trae ningún dato.</div>';
+    }
+    $("estado-http").innerHTML = html;
+  }
+
+  function pintarCrudo() {
+    var r = respuesta;
+    $("info-crudo").innerHTML = "<code>r.text</code> es un <b>str</b> de " + Array.from(r.texto).length +
+      " caracteres: así llega por la red, todavía sin convertir.";
+    $("crudo").textContent = r.texto || "(texto vacío)";
+  }
+
+  // ---------- El árbol ----------
+  function claseValor(nodo) {
+    return nodo.t === "str" ? "v-str" : (nodo.t === "int" || nodo.t === "float") ? "v-num" : "v-kw";
+  }
+  function recortar(t, max) { var a = Array.from(t); return a.length > max ? a.slice(0, max - 1).join("") + "…" : t; }
+  function cuantos(n, uno, varios) { return n + " " + (n === 1 ? uno : varios); }
+  function resumen(nodo) {
+    if (nodo.t === "dict") return nodo.hijos.length ? "{…} " + cuantos(nodo.hijos.length, "clave", "claves") : "{} vacío";
+    return nodo.hijos.length ? "[…] " + cuantos(nodo.hijos.length, "elemento", "elementos") : "[] vacía";
+  }
+  function crearItem(nodo, ruta, nivel) {
+    var li = document.createElement("li");
+    li.setAttribute("role", "treeitem");
+    li.setAttribute("aria-level", String(nivel));
+    li.setAttribute("aria-selected", "false");
+    li.tabIndex = -1;
+    li.ruta = ruta; li.nodo = nodo; li.grupo = null;
+    var ultimo = ruta.length ? ruta[ruta.length - 1] : null;
+    var etiqueta = !ruta.length ? '<span class="k-raiz">datos</span>'
+      : typeof ultimo === "number" ? '<span class="k-indice">[' + ultimo + "]</span>"
+      : '<span class="k-clave">[' + esc(pyLiteral(ultimo)) + "]</span>";
+    var contenedor = nodo.t === "dict" || nodo.t === "list";
+    var valor = contenedor ? '<span class="v-resumen">' + resumen(nodo) + "</span>"
+                           : '<span class="' + claseValor(nodo) + '">' + esc(recortar(pyRepr(nodo.v), 90)) + "</span>";
+    var fila = document.createElement("div");
+    fila.className = "nodo";
+    fila.innerHTML = '<span class="flecha" aria-hidden="true"></span>' + etiqueta + valor +
+                     '<span class="tipo t-' + nodo.t + '">' + nodo.t + "</span>";
+    li.appendChild(fila);
+    if (contenedor && nodo.hijos.length) li.setAttribute("aria-expanded", "false");
+    return li;
+  }
+  function expandir(li, abrir) {
+    if (!li.hasAttribute("aria-expanded")) return;
+    if (abrir && !li.grupo) {
+      var ul = document.createElement("ul"), nodo = li.nodo, nivel = Number(li.getAttribute("aria-level")) + 1;
+      ul.setAttribute("role", "group");
+      if (nodo.t === "dict") nodo.hijos.forEach(function (h) { ul.appendChild(crearItem(h[1], li.ruta.concat([h[0]]), nivel)); });
+      else nodo.hijos.forEach(function (h, k) { ul.appendChild(crearItem(h, li.ruta.concat([k]), nivel)); });
+      li.appendChild(ul);
+      li.grupo = ul;
+    }
+    if (li.grupo) li.grupo.hidden = !abrir;
+    li.setAttribute("aria-expanded", abrir ? "true" : "false");
+  }
+  // Abre solo lo que cabe bien a la vista: contenedores chicos en los primeros niveles
+  function abrirAuto(li, nivel, enListaLarga) {
+    var nodo = li.nodo;
+    if (!li.hasAttribute("aria-expanded")) return;
+    if (nivel > 0 && (nivel > 2 || enListaLarga || nodo.hijos.length > (nodo.t === "list" ? 8 : 12))) return;
+    expandir(li, true);
+    var larga = nodo.t === "list" && nodo.hijos.length > 8;
+    Array.prototype.forEach.call(li.grupo.children, function (hijo) { abrirAuto(hijo, nivel + 1, larga); });
+  }
+  function itemsVisibles() {
+    return Array.prototype.filter.call($("arbol").querySelectorAll("li[role=treeitem]"), function (li) {
+      for (var g = li.parentElement; g && g.id !== "arbol"; g = g.parentElement) if (g.hidden) return false;
+      return true;
+    });
+  }
+  function enfocar(li) {
+    $("arbol").querySelectorAll("li[role=treeitem]").forEach(function (x) { x.tabIndex = -1; });
+    li.tabIndex = 0;
+    li.focus();
+  }
+  function mismaRuta(a, b) { return a.length === b.length && a.every(function (x, k) { return x === b[k]; }); }
+  // Abre el árbol hasta la ruta elegida (si existe en esta respuesta) y la marca
+  function marcarSeleccion() {
+    var raiz = $("arbol").querySelector("li[role=treeitem]");
+    if (!raiz) return null;
+    var li = raiz;
+    for (var k = 0; k < seleccion.length; k++) {
+      if (!li.hasAttribute("aria-expanded")) { li = null; break; }
+      expandir(li, true);
+      var siguiente = null;
+      Array.prototype.forEach.call(li.grupo.children, function (h) { if (mismaRuta(h.ruta, seleccion.slice(0, k + 1))) siguiente = h; });
+      if (!siguiente) { li = null; break; }
+      li = siguiente;
+    }
+    $("arbol").querySelectorAll("li[aria-selected=true]").forEach(function (x) { x.setAttribute("aria-selected", "false"); });
+    $("arbol").querySelectorAll("li[role=treeitem]").forEach(function (x) { x.tabIndex = -1; });
+    if (li) { li.setAttribute("aria-selected", "true"); li.tabIndex = 0; }
+    else raiz.tabIndex = 0;
+    return li;
+  }
+  function pintarArbol() {
+    var cont = $("arbol");
+    cont.innerHTML = "";
+    if (!respuesta || !respuesta.nodo) {
+      cont.innerHTML = '<p class="vacio">' + (respuesta && respuesta.errorJSON
+        ? "El texto no es JSON: r.json() lanza JSONDecodeError (" + esc(respuesta.errorJSON.texto) + "). Mira el texto crudo."
+        : "Envía una petición para ver su respuesta.") + "</p>";
+      return;
+    }
+    var ul = document.createElement("ul");
+    ul.setAttribute("role", "tree");
+    ul.setAttribute("aria-label", "datos: la respuesta convertida con r.json()");
+    var raiz = crearItem(respuesta.nodo, [], 1);
+    ul.appendChild(raiz);
+    cont.appendChild(ul);
+    abrirAuto(raiz, 0, false);
+    marcarSeleccion();
+  }
+  function seleccionar(ruta) {
+    seleccion = ruta.slice();
+    marcarSeleccion();
+    actualizar();
+  }
+  $("arbol").addEventListener("click", function (e) {
+    var li = e.target.closest("li[role=treeitem]");
+    if (!li) return;
+    if (e.target.closest(".flecha")) {
+      expandir(li, li.getAttribute("aria-expanded") === "false");
+      enfocar(li);
+      return;
+    }
+    if (li.getAttribute("aria-expanded") === "false") expandir(li, true);
+    seleccionar(li.ruta);
+    enfocar(li);
+  });
+  $("arbol").addEventListener("keydown", function (e) {
+    var actual = e.target.closest ? e.target.closest("li[role=treeitem]") : null;
+    if (!actual) return;
+    var vis = itemsVisibles(), k = vis.indexOf(actual), destino = null;
+    switch (e.key) {
+      case "ArrowDown": destino = vis[k + 1]; break;
+      case "ArrowUp": destino = vis[k - 1]; break;
+      case "Home": destino = vis[0]; break;
+      case "End": destino = vis[vis.length - 1]; break;
+      case "ArrowRight":
+        if (actual.getAttribute("aria-expanded") === "false") expandir(actual, true);
+        else if (actual.getAttribute("aria-expanded") === "true") destino = actual.grupo.firstElementChild;
+        break;
+      case "ArrowLeft":
+        if (actual.getAttribute("aria-expanded") === "true") expandir(actual, false);
+        else destino = actual.parentElement.closest("li[role=treeitem]");
+        break;
+      case "Enter": case " ":
+        seleccionar(actual.ruta);
+        destino = actual;
+        break;
+      default: return;
+    }
+    e.preventDefault();
+    if (destino) enfocar(destino);
+  });
+
+  // ---------- Ruta, programa y salida ----------
+  function rutaPython(ruta) {
+    return "datos" + ruta.map(function (k) { return "[" + (typeof k === "number" ? k : pyLiteral(k)) + "]"; }).join("");
+  }
+  function seguirRuta(v, ruta) { ruta.forEach(function (k) { v = subindice(v, k); }); return v; }
+
+  function programa(est) {
+    var L = ["import requests", "", "URL = " + pyLiteral(est.base)];
+    if (est.conParams) {
+      if (!est.params.length) L.push("params = {}");
+      else {
+        L.push("params = {");
+        est.params.forEach(function (p) { L.push("    " + pyLiteral(p[0]) + ": " + literalPython(p[1]) + ","); });
+        L.push("}");
+      }
+      L.push("", "r = requests.get(URL, params=params, timeout=10)");
+    } else {
+      L.push("", "r = requests.get(URL, timeout=10)");
+    }
+    var lineaGet = L.length;
+    L.push("print(r.status_code)", "print(r.url)", "datos = r.json()");
+    var lineaJson = L.length;
+    L.push("print(" + rutaPython(seleccion) + ")");
+    return { codigo: L.join("\n"), get: lineaGet, json: lineaJson, print: L.length };
+  }
+
+  function explicarValor(v, nodo) {
+    var t = pyTipo(v), partes = [];
+    if (t === "str") {
+      partes.push("En el JSON va entre comillas dobles: Python lo convierte en <b>str</b>. print() lo muestra sin comillas.");
+      if (/^\s*-?\d+(\.\d+)?\s*$/.test(v)) partes.push("<b>Ojo:</b> parece número, pero es texto. Para hacer cuentas o comparar hay que convertirlo con <code>float()</code>.");
+    } else if (t === "int") {
+      partes.push("En el JSON es un número sin punto decimal: Python lo convierte en <b>int</b>.");
+    } else if (t === "float") {
+      partes.push("En el JSON lleva punto decimal (o exponente): Python lo convierte en <b>float</b>" +
+        (Number.isInteger(v.valor) ? ", aunque valga un entero." : "."));
+      if (nodo && nodo.crudo && nodo.crudo !== pyFloat(v.valor)) {
+        partes.push("En el texto crudo dice <code>" + esc(nodo.crudo) + "</code>; Python guarda el número y lo muestra como <code>" + esc(pyFloat(v.valor)) + "</code>.");
+      }
+    } else if (t === "bool") {
+      partes.push("En el JSON es <code>" + (v ? "true" : "false") + "</code> (minúsculas): Python lo convierte en <b>" + (v ? "True" : "False") + "</b>.");
+    } else if (t === "NoneType") {
+      partes.push("En el JSON es <code>null</code>: Python lo convierte en <b>None</b>, un dato que no existe.");
+    } else if (t === "list") {
+      partes.push("En el JSON es un arreglo <code>[ ]</code>: Python lo convierte en <b>list</b>. " +
+        (v.length ? "Tiene " + cuantos(v.length, "elemento", "elementos") + ": posiciones 0 a " + (v.length - 1) + " (o -" + v.length + " a -1)." : "Está vacía."));
+    } else {
+      var claves = Array.from(v.keys());
+      partes.push("En el JSON es un objeto <code>{ }</code>: Python lo convierte en <b>dict</b>. " +
+        (claves.length ? "Claves: " + esc(claves.slice(0, 8).map(pyStr).join(", ")) + (claves.length > 8 ? ", …" : "") + "." : "No tiene claves."));
+    }
+    var ultimo = seleccion[seleccion.length - 1];
+    if (typeof ultimo === "number") {
+      var padre = seguirRuta(respuesta.nodo.v, seleccion.slice(0, -1));
+      partes.push("Es el elemento [" + ultimo + "] de una lista de " + padre.length + ": también se llega con [" + (ultimo - padre.length) + "].");
+    }
+    return partes.join(" ");
+  }
+
+  function nodoDe(ruta) {
+    var nodo = respuesta && respuesta.nodo;
+    for (var k = 0; nodo && k < ruta.length; k++) {
+      if (nodo.t === "dict") {
+        var h = null;
+        nodo.hijos.forEach(function (x) { if (x[0] === ruta[k]) h = x[1]; });
+        nodo = h;
+      } else if (nodo.t === "list") nodo = nodo.hijos[ruta[k]] || null;
+      else nodo = null;
+    }
+    return nodo;
+  }
+
+  function pintarSeleccion() {
+    var caja = $("seleccion");
+    if (!respuesta || !respuesta.nodo) {
+      caja.innerHTML = respuesta ? "Como el texto no es JSON, no hay datos que recorrer." : "Envía una petición para ver su respuesta.";
+      return;
+    }
+    var ruta = rutaPython(seleccion);
+    try {
+      var v = seguirRuta(respuesta.nodo.v, seleccion), t = pyTipo(v), rep = pyRepr(v);
+      var largo = Array.from(rep).length;
+      caja.innerHTML = "<dl>" +
+        "<dt>Ruta</dt><dd class=\"ruta\">" + esc(ruta) + "</dd>" +
+        "<dt>Valor</dt><dd class=\"repr\">" + esc(recortar(rep, 300)) + (largo > 300 ? " <small>(" + largo + " caracteres en total)</small>" : "") + "</dd>" +
+        "<dt>Tipo</dt><dd><span class=\"tipo t-" + t + "\">" + t + "</span> <code>type(...)</code> → <code>" + esc("<class '" + t + "'>") + "</code></dd>" +
+        "</dl><p class=\"explica\">" + explicarValor(v, nodoDe(seleccion)) + "</p>";
+    } catch (e) {
+      if (!(e instanceof ErrorPython)) throw e;
+      caja.innerHTML = "<dl><dt>Ruta</dt><dd class=\"ruta\">" + esc(ruta) + "</dd></dl><p class=\"explica\">Esta ruta no existe en la respuesta nueva: " +
+        "Python lanza <b>" + esc(e.texto) + "</b>. Elige otro dato en el árbol.</p>";
+    }
+  }
+
+  function pintarSalida(est, prog) {
+    var u = est.url, lineas = [], falla = null, nota = "";
+    if (u.error) {
+      lineas.push([u.error, true]); falla = prog.get;
+      nota = "requests.get no llega a enviar nada: la URL no tiene la forma que necesita.";
+    } else if (u.sinPreparar !== undefined) {
+      lineas.push(["requests.exceptions.InvalidSchema: No connection adapters were found for " + pyStr(u.sinPreparar), true]);
+      falla = prog.get;
+      nota = "requests.get no sabe pedir esa dirección: falta https:// al principio.";
+    } else if (!respuesta) {
+      nota = faltaRespuesta === "red"
+        ? "Sin respuesta no hay nada que imprimir: en Python el programa se detendría en la línea " + prog.get +
+          " con una excepción de requests (ConnectionError o Timeout)."
+        : "Presiona Enviar petición para ver lo que imprime.";
+    } else if (respuesta.url !== u.url) {
+      nota = "La respuesta de arriba es de otra URL: presiona Enviar petición para correr este programa.";
+    } else {
+      lineas.push([String(respuesta.status), false], [respuesta.url, false]);
+      if (respuesta.errorJSON) {
+        lineas.push(["requests.exceptions.JSONDecodeError: " + respuesta.errorJSON.texto, true]);
+        falla = prog.json;
+      } else {
+        try {
+          lineas.push([pyPrint(seguirRuta(respuesta.nodo.v, seleccion)), false]);
+        } catch (e) {
+          if (!(e instanceof ErrorPython)) throw e;
+          lineas.push([e.texto, true]);
+          falla = prog.print;
+        }
+      }
+    }
+    if (falla) {
+      nota = (nota ? nota + " " : "") + "El programa se detiene en la línea " + falla + " con ese error (arriba de él Python imprime el Traceback, con la ruta de tu archivo).";
+    }
+    $("salida").innerHTML = lineas.map(function (l) { return l[1] ? '<span class="error">' + esc(l[0]) + "</span>" : esc(l[0]); }).join("\n");
+    $("nota-salida").textContent = nota;
+    return falla;
+  }
+
+  function actualizar() {
+    var est = estadoPeticion();
+    pintarURL(est.url);
+    var prog = programa(est);
+    var falla = pintarSalida(est, prog);
+    mostrarCodigo($("codigo"), prog.codigo, falla || prog.print);
+    pintarSeleccion();
+  }
+
+  // ---------- Enviar ----------
+  var faltaRespuesta = "";     // por qué no hay respuesta que mostrar ("" si nadie ha enviado nada)
+  function sinRespuesta(mensaje, porque) {
+    respuesta = null;
+    faltaRespuesta = porque;
+    $("estado-http").innerHTML = '<div class="aviso-caja">' + mensaje + "</div>";
+    $("info-crudo").textContent = "";
+    $("crudo").textContent = "";
+    pintarArbol();
+    $("guardadas").open = true;
+    actualizar();
+  }
+  function usarGuardada(url, motivo) {
+    var g = INDICE_GUARDADAS[claveGuardada(url)];
+    if (!g) {
+      if (motivo) {
+        sinRespuesta(motivo + " Tampoco hay una respuesta guardada para esta URL; las que sí hay están en la lista " +
+                     "\"Respuestas guardadas el 19/10/2026\".", "red");
+      } else {
+        sinRespuesta("No hay una respuesta guardada para esta URL. Quita la marca de \"Usar respuestas guardadas\" para pedirla " +
+                     "en vivo, o elige una de la lista \"Respuestas guardadas el 19/10/2026\".", "guardada");
+      }
+      return;
+    }
+    faltaRespuesta = "";
+    mostrarRespuesta({ url: url, status: g.status, reason: g.reason, contentType: g.content_type, texto: g.text,
+                       origen: "guardada", aviso: motivo || "" });
+  }
+  var enviando = false;
+  async function enviar() {
+    var est = estadoPeticion();
+    if (est.url.error || est.url.sinPreparar !== undefined) {
+      actualizar();
+      $("salida").scrollIntoView({ block: "nearest" });
+      return;
+    }
+    var url = est.url.url;
+    if ($("usar-guardadas").checked) { usarGuardada(url, ""); return; }
+    if (enviando) return;
+    enviando = true;
+    $("enviar").disabled = true;
+    $("enviar").textContent = "Esperando respuesta…";
+    var control = new AbortController();
+    var reloj = setTimeout(function () { control.abort(); }, 10000);
+    try {
+      var r = await fetch(url, { signal: control.signal, cache: "no-store" });
+      var texto = await r.text();
+      faltaRespuesta = "";
+      mostrarRespuesta({ url: url, status: r.status, reason: FRASES[r.status] || r.statusText || "", contentType: r.headers.get("content-type") || "",
+                         texto: texto, origen: "vivo", hora: hora(), aviso: "" });
+    } catch (e) {
+      var motivo = e && e.name === "AbortError"
+        ? "El servidor no contestó en 10 segundos (en Python, con timeout=10, requests lanzaría requests.exceptions.Timeout)."
+        : "No se pudo conectar con " + esc(anfitrion(url)) + ": sin internet, el servidor no existe o la red lo bloquea (en Python, requests lanzaría requests.exceptions.ConnectionError).";
+      usarGuardada(url, motivo);
+    } finally {
+      clearTimeout(reloj);
+      enviando = false;
+      $("enviar").disabled = false;
+      $("enviar").textContent = "Enviar petición";
+    }
+  }
+  $("enviar").addEventListener("click", enviar);
+
+  // ---------- Preajustes, ID y URL cargadas ----------
+  function aplicarPreajuste(nombre) {
+    if (nombre !== preajuste) seleccion = [];
+    preajuste = nombre;
+    $("preajuste").value = nombre;
+    var p = PREAJUSTES[nombre];
+    $("base").value = p.base;
+    $("caja-id").hidden = !p.conId;
+    if (p.conId) $("id-recurso").value = (/\/(\d+)$/.exec(p.base) || [0, 1])[1];
+    pintarParametros();
+  }
+  $("preajuste").addEventListener("change", function () { aplicarPreajuste($("preajuste").value); actualizar(); });
+  $("base").addEventListener("input", function () {
+    var m = /\/(\d+)$/.exec($("base").value.trim());
+    if (m && PREAJUSTES[preajuste].conId) $("id-recurso").value = m[1];
+    actualizar();
+  });
+  $("id-recurso").addEventListener("input", function () {
+    var id = $("id-recurso").value.trim(), b = $("base").value.trim();
+    if (!/^[0-9]+$/.test(id)) return;
+    $("base").value = /\/[0-9]*$/.test(b) ? b.replace(/\/[0-9]*$/, "/" + id) : b + "/" + id;
+    actualizar();
+  });
+  $("usar-guardadas").addEventListener("change", actualizar);
+
+  function decodificar(t) { try { return decodeURIComponent(t.replace(/\+/g, " ")); } catch (e) { return t; } }
+  // Pone en los controles una URL guardada (preajuste, ruta y parámetros)
+  function cargarURL(url) {
+    var m = /^https:\/\/([^\/?#]+)([^?#]*)(?:\?(.*))?$/.exec(url);
+    if (!m) return false;
+    var host = m[1], ruta = m[2], nombre = null;
+    if (host === "api.open-meteo.com" && ruta === "/v1/forecast") nombre = "pronostico";
+    else if (host === "archive-api.open-meteo.com" && ruta === "/v1/archive") nombre = "historico";
+    else if (host === "jsonplaceholder.typicode.com" && /^\/users?\/\d+$/.test(ruta)) nombre = "usuario";
+    else if (host === "jsonplaceholder.typicode.com" && ruta === "/todos") nombre = "tareas";
+    else if (host === "jsonplaceholder.typicode.com" && /^\/posts\/\d+$/.test(ruta)) nombre = "publicacion";
+    if (!nombre) return false;
+    aplicarPreajuste(nombre);
+    var p = PREAJUSTES[nombre];
+    if (p.conId) {
+      $("base").value = "https://" + host + ruta;
+      $("id-recurso").value = /(\d+)$/.exec(ruta)[1];
+      return true;
+    }
+    var q = {};
+    (m[3] || "").split("&").forEach(function (par) {
+      if (!par) return;
+      var k = par.indexOf("=");
+      q[decodificar(k >= 0 ? par.slice(0, k) : par)] = decodificar(k >= 0 ? par.slice(k + 1) : "");
+    });
+    p.params.forEach(function (d) {
+      var presente = Object.prototype.hasOwnProperty.call(q, d.clave);
+      if (d.opciones) {
+        var vals = presente ? q[d.clave].split(",") : [];
+        document.querySelectorAll('input[data-lista="' + d.clave + '"]').forEach(function (x) { x.checked = vals.indexOf(x.value) >= 0; });
+      } else {
+        $("p-" + d.clave).checked = presente;
+        $("v-" + d.clave).value = presente ? q[d.clave] : d.valor;
+      }
+    });
+    return true;
+  }
+
+  var ERRORES = {
+    "sin-longitude": "https://api.open-meteo.com/v1/forecast?latitude=25.67&current=temperature_2m",
+    "usuario-11": "https://jsonplaceholder.typicode.com/users/11",
+    "dedo": "https://jsonplaceholder.typicode.com/user/1"
+  };
+  document.querySelectorAll("[data-error]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      cargarURL(ERRORES[b.dataset.error]);
+      actualizar();
+      enviar();
+    });
+  });
+
+  // Lista de respuestas guardadas, con su botón para cargarlas
+  var htmlGuardadas = "";
+  Object.keys(GUARDADAS).forEach(function (u, k) {
+    if (/\/users\?/.test(u)) return;
+    var g = GUARDADAS[u];
+    var corta = decodificar(u.replace(/^https:\/\//, ""));
+    htmlGuardadas += '<li><button type="button" class="accion" data-guardada="' + k + '" aria-label="Cargar ' + esc(corta).replace(/"/g, "&quot;") + '">Cargar</button>' +
+      '<span><span class="u">' + esc(corta) + "</span><br><small>" + g.status + " " + esc(g.reason) + "</small></span></li>";
+  });
+  $("lista-guardadas").innerHTML = htmlGuardadas;
+  $("lista-guardadas").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-guardada]");
+    if (!b) return;
+    var u = Object.keys(GUARDADAS)[Number(b.dataset.guardada)];
+    cargarURL(u);
+    actualizar();
+    usarGuardada(estadoPeticion().url.url, "");
+  });
+
+  // ---------- Inicio: el pronóstico con su respuesta guardada ----------
+  aplicarPreajuste("pronostico");
+  seleccion = ["timezone"];
+  usarGuardada(estadoPeticion().url.url, "");
+})();
+</script>
+<div id="qr-sitio" class="qr-capa" hidden>
+  <div class="qr-caja" role="dialog" aria-modal="true" aria-label="Código QR de esta página">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 45" role="img" aria-label="Código QR de https://memosanchezg.github.io/programacion-basica-interactivos/semana-12-explorador-api.html" shape-rendering="crispEdges"><rect width="45" height="45" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM10 2h1v1h-1zM13 2h1v1h-1zM16 2h1v1h-1zM18 2h10v1h-10zM30 2h2v1h-2zM33 2h2v1h-2zM36 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM10 3h3v1h-3zM14 3h1v1h-1zM17 3h1v1h-1zM20 3h1v1h-1zM22 3h1v1h-1zM25 3h3v1h-3zM30 3h1v1h-1zM32 3h1v1h-1zM36 3h1v1h-1zM42 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM11 4h3v1h-3zM15 4h1v1h-1zM19 4h1v1h-1zM21 4h1v1h-1zM34 4h1v1h-1zM36 4h1v1h-1zM38 4h3v1h-3zM42 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h9v1h-9zM23 5h1v1h-1zM26 5h1v1h-1zM28 5h1v1h-1zM31 5h1v1h-1zM33 5h2v1h-2zM36 5h1v1h-1zM38 5h3v1h-3zM42 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM13 6h3v1h-3zM19 6h1v1h-1zM21 6h4v1h-4zM26 6h1v1h-1zM28 6h3v1h-3zM33 6h1v1h-1zM36 6h1v1h-1zM38 6h3v1h-3zM42 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM12 7h2v1h-2zM18 7h1v1h-1zM20 7h5v1h-5zM27 7h1v1h-1zM32 7h3v1h-3zM36 7h1v1h-1zM42 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM30 8h1v1h-1zM32 8h1v1h-1zM34 8h1v1h-1zM36 8h7v1h-7zM10 9h1v1h-1zM14 9h3v1h-3zM18 9h2v1h-2zM22 9h1v1h-1zM29 9h1v1h-1zM31 9h3v1h-3zM2 10h1v1h-1zM4 10h2v1h-2zM7 10h3v1h-3zM11 10h3v1h-3zM15 10h2v1h-2zM19 10h5v1h-5zM26 10h1v1h-1zM28 10h1v1h-1zM30 10h4v1h-4zM36 10h1v1h-1zM39 10h1v1h-1zM41 10h2v1h-2zM4 11h1v1h-1zM6 11h1v1h-1zM9 11h1v1h-1zM12 11h2v1h-2zM19 11h5v1h-5zM25 11h1v1h-1zM27 11h1v1h-1zM30 11h1v1h-1zM32 11h3v1h-3zM36 11h3v1h-3zM40 11h3v1h-3zM2 12h2v1h-2zM5 12h1v1h-1zM7 12h4v1h-4zM12 12h1v1h-1zM14 12h1v1h-1zM16 12h1v1h-1zM18 12h3v1h-3zM25 12h2v1h-2zM28 12h1v1h-1zM30 12h1v1h-1zM35 12h2v1h-2zM38 12h1v1h-1zM40 12h2v1h-2zM3 13h1v1h-1zM6 13h2v1h-2zM12 13h1v1h-1zM15 13h1v1h-1zM18 13h1v1h-1zM20 13h2v1h-2zM26 13h5v1h-5zM34 13h3v1h-3zM41 13h2v1h-2zM2 14h1v1h-1zM4 14h1v1h-1zM8 14h2v1h-2zM12 14h3v1h-3zM16 14h1v1h-1zM19 14h1v1h-1zM21 14h2v1h-2zM24 14h1v1h-1zM26 14h4v1h-4zM31 14h1v1h-1zM33 14h1v1h-1zM37 14h1v1h-1zM39 14h3v1h-3zM4 15h2v1h-2zM9 15h1v1h-1zM14 15h1v1h-1zM16 15h2v1h-2zM22 15h1v1h-1zM24 15h3v1h-3zM28 15h1v1h-1zM31 15h1v1h-1zM33 15h2v1h-2zM36 15h1v1h-1zM39 15h1v1h-1zM42 15h1v1h-1zM3 16h1v1h-1zM7 16h2v1h-2zM10 16h4v1h-4zM16 16h3v1h-3zM20 16h6v1h-6zM27 16h1v1h-1zM30 16h2v1h-2zM33 16h2v1h-2zM36 16h7v1h-7zM2 17h1v1h-1zM6 17h1v1h-1zM11 17h2v1h-2zM14 17h1v1h-1zM17 17h1v1h-1zM20 17h1v1h-1zM23 17h1v1h-1zM25 17h1v1h-1zM28 17h3v1h-3zM36 17h2v1h-2zM39 17h1v1h-1zM41 17h1v1h-1zM2 18h2v1h-2zM7 18h4v1h-4zM15 18h3v1h-3zM20 18h1v1h-1zM23 18h1v1h-1zM26 18h2v1h-2zM29 18h1v1h-1zM33 18h2v1h-2zM38 18h1v1h-1zM41 18h1v1h-1zM2 19h4v1h-4zM7 19h1v1h-1zM10 19h1v1h-1zM12 19h2v1h-2zM15 19h4v1h-4zM22 19h4v1h-4zM27 19h1v1h-1zM29 19h1v1h-1zM31 19h1v1h-1zM34 19h2v1h-2zM37 19h1v1h-1zM2 20h2v1h-2zM5 20h1v1h-1zM7 20h6v1h-6zM14 20h1v1h-1zM20 20h1v1h-1zM24 20h1v1h-1zM29 20h2v1h-2zM32 20h1v1h-1zM35 20h1v1h-1zM38 20h2v1h-2zM41 20h1v1h-1zM2 21h1v1h-1zM4 21h1v1h-1zM7 21h1v1h-1zM9 21h1v1h-1zM12 21h1v1h-1zM14 21h3v1h-3zM18 21h3v1h-3zM22 21h2v1h-2zM25 21h2v1h-2zM30 21h2v1h-2zM33 21h1v1h-1zM37 21h1v1h-1zM39 21h2v1h-2zM42 21h1v1h-1zM2 22h1v1h-1zM4 22h5v1h-5zM10 22h1v1h-1zM14 22h1v1h-1zM16 22h1v1h-1zM25 22h1v1h-1zM27 22h1v1h-1zM30 22h4v1h-4zM35 22h2v1h-2zM38 22h1v1h-1zM40 22h1v1h-1zM42 22h1v1h-1zM3 23h1v1h-1zM6 23h1v1h-1zM12 23h1v1h-1zM14 23h1v1h-1zM17 23h3v1h-3zM21 23h3v1h-3zM25 23h1v1h-1zM27 23h2v1h-2zM30 23h1v1h-1zM33 23h2v1h-2zM36 23h1v1h-1zM38 23h2v1h-2zM41 23h2v1h-2zM6 24h6v1h-6zM14 24h1v1h-1zM16 24h1v1h-1zM18 24h2v1h-2zM23 24h5v1h-5zM30 24h3v1h-3zM35 24h1v1h-1zM37 24h2v1h-2zM40 24h2v1h-2zM2 25h1v1h-1zM5 25h1v1h-1zM9 25h2v1h-2zM13 25h5v1h-5zM26 25h2v1h-2zM30 25h1v1h-1zM32 25h1v1h-1zM34 25h1v1h-1zM36 25h1v1h-1zM41 25h2v1h-2zM3 26h2v1h-2zM7 26h2v1h-2zM14 26h1v1h-1zM18 26h2v1h-2zM25 26h7v1h-7zM33 26h1v1h-1zM40 26h1v1h-1zM42 26h1v1h-1zM2 27h1v1h-1zM5 27h1v1h-1zM7 27h1v1h-1zM10 27h6v1h-6zM18 27h1v1h-1zM20 27h2v1h-2zM26 27h6v1h-6zM33 27h2v1h-2zM36 27h1v1h-1zM39 27h2v1h-2zM42 27h1v1h-1zM2 28h4v1h-4zM7 28h2v1h-2zM11 28h6v1h-6zM21 28h4v1h-4zM28 28h1v1h-1zM33 28h2v1h-2zM36 28h2v1h-2zM39 28h1v1h-1zM41 28h2v1h-2zM4 29h2v1h-2zM10 29h1v1h-1zM12 29h1v1h-1zM15 29h3v1h-3zM21 29h4v1h-4zM26 29h1v1h-1zM28 29h1v1h-1zM30 29h1v1h-1zM33 29h2v1h-2zM38 29h2v1h-2zM41 29h2v1h-2zM2 30h1v1h-1zM4 30h1v1h-1zM6 30h5v1h-5zM13 30h1v1h-1zM15 30h4v1h-4zM20 30h1v1h-1zM22 30h3v1h-3zM26 30h2v1h-2zM29 30h1v1h-1zM32 30h4v1h-4zM37 30h3v1h-3zM5 31h1v1h-1zM9 31h1v1h-1zM11 31h1v1h-1zM13 31h1v1h-1zM16 31h4v1h-4zM21 31h4v1h-4zM29 31h1v1h-1zM31 31h1v1h-1zM34 31h2v1h-2zM39 31h3v1h-3zM2 32h1v1h-1zM4 32h1v1h-1zM7 32h9v1h-9zM19 32h1v1h-1zM21 32h1v1h-1zM23 32h2v1h-2zM27 32h5v1h-5zM35 32h3v1h-3zM39 32h1v1h-1zM6 33h1v1h-1zM12 33h1v1h-1zM15 33h1v1h-1zM17 33h5v1h-5zM24 33h2v1h-2zM28 33h1v1h-1zM30 33h3v1h-3zM34 33h1v1h-1zM36 33h1v1h-1zM38 33h3v1h-3zM42 33h1v1h-1zM3 34h1v1h-1zM5 34h5v1h-5zM12 34h1v1h-1zM15 34h3v1h-3zM19 34h2v1h-2zM22 34h2v1h-2zM28 34h14v1h-14zM10 35h1v1h-1zM12 35h1v1h-1zM14 35h2v1h-2zM17 35h3v1h-3zM21 35h3v1h-3zM25 35h3v1h-3zM30 35h1v1h-1zM33 35h2v1h-2zM38 35h1v1h-1zM41 35h2v1h-2zM2 36h7v1h-7zM10 36h1v1h-1zM12 36h2v1h-2zM15 36h1v1h-1zM20 36h1v1h-1zM25 36h3v1h-3zM30 36h5v1h-5zM36 36h1v1h-1zM38 36h1v1h-1zM41 36h1v1h-1zM2 37h1v1h-1zM8 37h1v1h-1zM10 37h2v1h-2zM14 37h1v1h-1zM16 37h4v1h-4zM21 37h2v1h-2zM29 37h2v1h-2zM34 37h1v1h-1zM38 37h1v1h-1zM41 37h2v1h-2zM2 38h1v1h-1zM4 38h3v1h-3zM8 38h1v1h-1zM12 38h1v1h-1zM14 38h1v1h-1zM16 38h1v1h-1zM18 38h1v1h-1zM23 38h1v1h-1zM26 38h1v1h-1zM28 38h2v1h-2zM31 38h1v1h-1zM34 38h5v1h-5zM40 38h1v1h-1zM2 39h1v1h-1zM4 39h3v1h-3zM8 39h1v1h-1zM10 39h2v1h-2zM13 39h7v1h-7zM21 39h1v1h-1zM23 39h2v1h-2zM28 39h3v1h-3zM33 39h2v1h-2zM38 39h2v1h-2zM41 39h1v1h-1zM2 40h1v1h-1zM4 40h3v1h-3zM8 40h1v1h-1zM10 40h3v1h-3zM15 40h2v1h-2zM19 40h5v1h-5zM32 40h3v1h-3zM37 40h1v1h-1zM40 40h3v1h-3zM2 41h1v1h-1zM8 41h1v1h-1zM11 41h1v1h-1zM13 41h1v1h-1zM16 41h2v1h-2zM20 41h1v1h-1zM23 41h1v1h-1zM25 41h1v1h-1zM28 41h3v1h-3zM34 41h2v1h-2zM38 41h2v1h-2zM41 41h1v1h-1zM2 42h7v1h-7zM10 42h1v1h-1zM13 42h1v1h-1zM16 42h1v1h-1zM18 42h1v1h-1zM20 42h5v1h-5zM27 42h1v1h-1zM29 42h1v1h-1zM32 42h3v1h-3zM36 42h1v1h-1zM39 42h1v1h-1zM41 42h1v1h-1z"/></svg>
+    <p class="qr-texto">Escanea con la cámara del celular para abrir esta página</p>
+    <p class="qr-url">https://memosanchezg.github.io/programacion-basica-interactivos/semana-12-explorador-api.html</p>
+    <button type="button" class="qr-cerrar">Cerrar</button>
+  </div>
+</div>
+<style>
+  .qr-capa { position:fixed; top:0; right:0; bottom:0; left:0; z-index:10000; display:flex; align-items:center;
+             justify-content:center; padding:16px; background:#fff; }
+  .qr-capa[hidden] { display:none; }
+  .qr-caja { max-width:100%; text-align:center; color:#0A2A57; font:16px/1.4 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .qr-caja svg { display:block; width:min(62vh, 84vw); height:auto; margin:0 auto; }
+  .qr-texto { margin:12px 0 2px; font-size:1.15rem; font-weight:bold; }
+  .qr-url { margin:0 0 12px; color:#5B6472; word-break:break-all; }
+  .qr-cerrar { font:inherit; padding:6px 20px; border:2px solid #00408F; border-radius:4px; background:#fff;
+               color:#00408F; cursor:pointer; }
+</style>
+<script>
+  (function () {
+    var capa = document.getElementById("qr-sitio");
+    document.querySelectorAll("a.qr-abrir").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        capa.hidden = false;
+        capa.querySelector(".qr-cerrar").focus();
+      });
+    });
+    capa.addEventListener("click", function (e) {
+      if (e.target === capa || e.target.classList.contains("qr-cerrar")) capa.hidden = true;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !capa.hidden) capa.hidden = true;
+    });
+  })();
+</script>
+</body>
+</html>

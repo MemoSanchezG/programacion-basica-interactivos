@@ -1,0 +1,793 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="tipo" content="ejercicio">
+<title>Laboratorio de matplotlib</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<style>
+  :root {
+    --azul:#00408F; --azul-oscuro:#0A2A57; --guinda:#8C1D35; --oro:#B8975A; --oro-texto:#8A6A2E;
+    --azul-claro:#E8EEF7; --oro-claro:#F7F1E6; --guinda-claro:#F5E6EA; --verde:#2F7D5B;
+    --tinta:#1B1F2A; --gris:#5B6472; --gris-claro:#E9ECF1; --borde:#D9DEE6; --fondo:#FFFFFF;
+    --cmd-fondo:#0C0C0C; --cmd-texto:#E6E6E6;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--fondo); color:var(--tinta);
+         font:16px/1.45 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .franja { height:8px; background:var(--azul); border-bottom:3px solid var(--oro); }
+  header { max-width:1280px; margin:0 auto; padding:12px 18px 4px; }
+  .semana { color:var(--guinda); font-weight:bold; letter-spacing:.04em; font-size:.85rem; text-transform:uppercase; }
+  h1 { font-family:Cambria,Georgia,serif; color:var(--azul-oscuro); font-size:1.7rem; margin:2px 0 2px; }
+  .sub { color:var(--gris); margin:0; }
+  main { max-width:1280px; margin:0 auto; padding:8px 18px 24px; }
+  .fila { display:grid; grid-template-columns:minmax(260px,380px) minmax(0,1fr); gap:16px; align-items:start; }
+  .panel { background:#fff; border:1px solid var(--borde); border-radius:10px; padding:12px 14px; min-width:0; }
+  .panel h2 { font-size:1.02rem; color:var(--azul-oscuro); margin:0 0 8px; }
+  .panel h3 { font-size:.95rem; color:var(--azul-oscuro); margin:12px 0 4px; }
+  .panel ol, .panel ul { padding-left:20px; margin:4px 0; }
+  .panel li { margin:4px 0; }
+  code { font-family:Consolas,"Courier New",monospace; color:var(--azul); }
+  .lectura { background:var(--oro-claro); border-left:4px solid var(--oro); border-radius:8px; padding:10px 12px;
+             margin-top:12px; line-height:1.55; }
+  .barra { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-bottom:8px; }
+  button.accion { font:inherit; font-weight:bold; border-radius:8px; padding:7px 12px;
+                  border:1px solid var(--azul); background:#fff; color:var(--azul); cursor:pointer; }
+  button.accion:hover:not(:disabled), button.accion:focus-visible { background:var(--azul); color:#fff; outline:none; }
+  button.accion.primaria { background:var(--azul); color:#fff; }
+  button.accion.primaria:hover:not(:disabled) { background:var(--azul-oscuro); }
+  button.accion:disabled { opacity:.5; cursor:wait; }
+  #estado { color:var(--gris); font-size:.92rem; margin-left:4px; }
+  #estado.listo { color:var(--verde); }
+  .editor-caja { border:1px solid var(--tinta); }
+  .CodeMirror { height:auto; min-height:260px; font:15px/1.5 Consolas,"Courier New",monospace; }
+  .CodeMirror-linenumber { color:var(--gris); font:11px Cambria,Georgia,serif; padding-top:3px; }
+  .cm-s-default .cm-keyword { color:#000080; font-weight:bold; }
+  .cm-s-default .cm-string { color:#0000FF; }
+  .cm-s-default .cm-number { color:#0000FF; }
+  .cm-s-default .cm-comment { color:#008800; font-style:italic; }
+  .cm-s-default .cm-builtin, .cm-s-default .cm-variable, .cm-s-default .cm-def,
+  .cm-s-default .cm-property, .cm-s-default .cm-operator { color:var(--tinta); }
+  textarea#editor { width:100%; min-height:260px; font:15px/1.5 Consolas,"Courier New",monospace; border:0; padding:8px; }
+  .consola { background:var(--cmd-fondo); color:var(--cmd-texto); font:15px/1.45 Consolas,"Courier New",monospace;
+             white-space:pre-wrap; word-break:break-word; padding:8px 12px; border-radius:4px; margin:6px 0; min-height:2.6em; }
+  .consola .error { color:#FF8A80; }
+  .consola .aviso { color:#B8975A; }
+  #figuras img { max-width:100%; border:1px solid var(--borde); border-radius:6px; margin:6px 0; display:block; }
+  #archivos a { display:inline-block; margin:4px 10px 4px 0; color:var(--azul); font-weight:bold; }
+  ul.pruebas { list-style:none; padding-left:0; }
+  ul.pruebas li { padding:4px 0 4px 26px; position:relative; }
+  ul.pruebas li::before { content:"•"; position:absolute; left:8px; color:var(--gris); }
+  ul.pruebas li.ok::before { content:"✓"; color:var(--verde); font-weight:bold; left:4px; }
+  ul.pruebas li.mal::before { content:"✗"; color:var(--guinda); font-weight:bold; left:4px; }
+  ul.pruebas li.mal { color:var(--guinda); }
+  .resumen { font-weight:bold; margin:6px 0; }
+  .resumen.ok { color:var(--verde); }
+  .resumen.mal { color:var(--guinda); }
+  footer { max-width:1280px; margin:0 auto; padding:6px 18px 18px; color:var(--gris); font-size:.85rem; }
+  footer a { color:var(--azul); }
+  @media (max-width: 860px) { .fila { grid-template-columns:1fr; } }
+
+  /* Propios de este laboratorio */
+  nav.retos { display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 12px; }
+  nav.retos button { font:inherit; font-size:.95rem; border:1px solid var(--borde); border-radius:8px; background:#fff;
+                     color:var(--azul-oscuro); padding:6px 10px; cursor:pointer; text-align:left; }
+  nav.retos button .num { font-weight:bold; color:var(--guinda); }
+  nav.retos button[aria-selected="true"] { border-color:var(--azul); background:var(--azul-claro); font-weight:bold; }
+  nav.retos button:hover, nav.retos button:focus-visible { border-color:var(--azul); outline:none; }
+  nav.retos button .hecho { color:var(--verde); font-weight:bold; margin-left:4px; }
+  #reto-titulo { font-family:Cambria,Georgia,serif; font-size:1.2rem; color:var(--azul-oscuro); margin:0 0 6px; }
+  @media (max-width: 480px) {
+    header { padding:10px 12px 4px; } main { padding:8px 10px 20px; } footer { padding:6px 12px 16px; }
+    .panel { padding:10px; } h1 { font-size:1.45rem; } nav.retos button { padding:6px 8px; }
+  }
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header>
+  <div class="semana">Semana 15 · Gráficas · Ejercicio con Python</div>
+  <h1>Laboratorio de matplotlib</h1>
+  <p class="sub">Cinco retos con el clima real de Monterrey de septiembre de 2026: escribe el código, córrelo aquí mismo y verifica tu gráfica.</p>
+</header>
+<main>
+  <div class="fila">
+    <div class="panel">
+      <h2>Elige un reto</h2>
+      <nav class="retos" id="retos" role="tablist" aria-label="Retos"></nav>
+      <h3 id="reto-titulo"></h3>
+      <ol id="instrucciones"></ol>
+      <h3>Lo que se revisa al presionar Verificar</h3>
+      <ul class="pruebas" id="lista-pruebas"></ul>
+      <div class="lectura" id="pista"></div>
+      <p class="sub" style="margin-top:10px">El archivo <code>clima_septiembre.json</code> (el del reto final del Tema 12) ya está en la carpeta de trabajo.</p>
+    </div>
+    <div class="panel">
+      <div class="barra">
+        <button type="button" class="accion primaria" id="ejecutar" disabled>▶ Ejecutar</button>
+        <button type="button" class="accion" id="verificar" disabled>✓ Verificar</button>
+        <button type="button" class="accion" id="restaurar">↺ Código inicial</button>
+        <button type="button" class="accion" id="descargar">⬇ Descargar .py</button>
+        <span id="estado" role="status">Cargando Python…</span>
+      </div>
+      <div class="editor-caja"><textarea id="editor" spellcheck="false" aria-label="Editor de código Python"></textarea></div>
+      <h3>Salida</h3>
+      <div class="consola" id="salida"></div>
+      <div id="figuras"></div>
+      <div id="archivos"></div>
+      <div id="resultados" aria-live="polite"></div>
+    </div>
+  </div>
+</main>
+<footer>
+  Programación Básica · FCFM-UANL · Python corre en tu navegador (la primera vez descarga unos 10 MB;
+  después funciona más rápido; matplotlib tarda unos segundos más). Ctrl+Enter ejecuta. Tu código de cada reto se guarda en este navegador.
+  <a href="index.html">Índice de simuladores</a> · <a href="#qr-sitio" class="qr-abrir">Abrir en el celular (QR)</a>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.27.7/full/pyodide.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  // ===================== Configuración del laboratorio =====================
+  var CLAVE = "pb-s15-laboratorio";       // prefijo de lo que se guarda en el navegador
+  var PAQUETES = ["matplotlib"];
+  var MICROPIP = [];
+  // ---------- Datos del laboratorio (generados) ----------
+  // El contenido de clima_septiembre.json (el archivo del reto final del Tema 12).
+  var JSON_SEP = "[\n  {\n    \"fecha\": \"2026-09-01\",\n    \"tmax\": 35.0,\n    \"tmin\": 23.4,\n    \"lluvia_mm\": 1.7\n  },\n  {\n    \"fecha\": \"2026-09-02\",\n    \"tmax\": 36.5,\n    \"tmin\": 23.7,\n    \"lluvia_mm\": 0.7\n  },\n  {\n    \"fecha\": \"2026-09-03\",\n    \"tmax\": 38.0,\n    \"tmin\": 25.0,\n    \"lluvia_mm\": 0.2\n  },\n  {\n    \"fecha\": \"2026-09-04\",\n    \"tmax\": 34.1,\n    \"tmin\": 25.2,\n    \"lluvia_mm\": 0.7\n  },\n  {\n    \"fecha\": \"2026-09-05\",\n    \"tmax\": 32.2,\n    \"tmin\": 23.6,\n    \"lluvia_mm\": 6.9\n  },\n  {\n    \"fecha\": \"2026-09-06\",\n    \"tmax\": 30.2,\n    \"tmin\": 22.3,\n    \"lluvia_mm\": 0.7\n  },\n  {\n    \"fecha\": \"2026-09-07\",\n    \"tmax\": 34.0,\n    \"tmin\": 22.3,\n    \"lluvia_mm\": 0.0\n  },\n  {\n    \"fecha\": \"2026-09-08\",\n    \"tmax\": 33.3,\n    \"tmin\": 21.8,\n    \"lluvia_mm\": 0.3\n  },\n  {\n    \"fecha\": \"2026-09-09\",\n    \"tmax\": 34.9,\n    \"tmin\": 21.9,\n    \"lluvia_mm\": 0.6\n  },\n  {\n    \"fecha\": \"2026-09-10\",\n    \"tmax\": 35.1,\n    \"tmin\": 22.3,\n    \"lluvia_mm\": 0.8\n  },\n  {\n    \"fecha\": \"2026-09-11\",\n    \"tmax\": 37.2,\n    \"tmin\": 22.4,\n    \"lluvia_mm\": 0.2\n  },\n  {\n    \"fecha\": \"2026-09-12\",\n    \"tmax\": 35.0,\n    \"tmin\": 23.6,\n    \"lluvia_mm\": 0.8\n  },\n  {\n    \"fecha\": \"2026-09-13\",\n    \"tmax\": 35.2,\n    \"tmin\": 23.4,\n    \"lluvia_mm\": 0.2\n  },\n  {\n    \"fecha\": \"2026-09-14\",\n    \"tmax\": 35.8,\n    \"tmin\": 23.6,\n    \"lluvia_mm\": 0.2\n  },\n  {\n    \"fecha\": \"2026-09-15\",\n    \"tmax\": 35.9,\n    \"tmin\": 23.0,\n    \"lluvia_mm\": 0.0\n  },\n  {\n    \"fecha\": \"2026-09-16\",\n    \"tmax\": 35.0,\n    \"tmin\": 22.6,\n    \"lluvia_mm\": 0.0\n  },\n  {\n    \"fecha\": \"2026-09-17\",\n    \"tmax\": 34.7,\n    \"tmin\": 24.0,\n    \"lluvia_mm\": 1.9\n  },\n  {\n    \"fecha\": \"2026-09-18\",\n    \"tmax\": 33.5,\n    \"tmin\": 23.0,\n    \"lluvia_mm\": 2.7\n  },\n  {\n    \"fecha\": \"2026-09-19\",\n    \"tmax\": 34.5,\n    \"tmin\": 22.4,\n    \"lluvia_mm\": 0.0\n  },\n  {\n    \"fecha\": \"2026-09-20\",\n    \"tmax\": 35.4,\n    \"tmin\": 22.0,\n    \"lluvia_mm\": 0.0\n  },\n  {\n    \"fecha\": \"2026-09-21\",\n    \"tmax\": 35.4,\n    \"tmin\": 23.1,\n    \"lluvia_mm\": 0.0\n  },\n  {\n    \"fecha\": \"2026-09-22\",\n    \"tmax\": 32.8,\n    \"tmin\": 22.6,\n    \"lluvia_mm\": 2.9\n  },\n  {\n    \"fecha\": \"2026-09-23\",\n    \"tmax\": 31.8,\n    \"tmin\": 21.8,\n    \"lluvia_mm\": 3.2\n  },\n  {\n    \"fecha\": \"2026-09-24\",\n    \"tmax\": 31.5,\n    \"tmin\": 22.0,\n    \"lluvia_mm\": 0.5\n  },\n  {\n    \"fecha\": \"2026-09-25\",\n    \"tmax\": 33.3,\n    \"tmin\": 22.8,\n    \"lluvia_mm\": 0.9\n  },\n  {\n    \"fecha\": \"2026-09-26\",\n    \"tmax\": 33.9,\n    \"tmin\": 23.6,\n    \"lluvia_mm\": 0.7\n  },\n  {\n    \"fecha\": \"2026-09-27\",\n    \"tmax\": 34.2,\n    \"tmin\": 24.1,\n    \"lluvia_mm\": 2.7\n  },\n  {\n    \"fecha\": \"2026-09-28\",\n    \"tmax\": 33.7,\n    \"tmin\": 23.5,\n    \"lluvia_mm\": 2.6\n  },\n  {\n    \"fecha\": \"2026-09-29\",\n    \"tmax\": 33.2,\n    \"tmin\": 23.4,\n    \"lluvia_mm\": 0.3\n  },\n  {\n    \"fecha\": \"2026-09-30\",\n    \"tmax\": 30.9,\n    \"tmin\": 23.9,\n    \"lluvia_mm\": 8.8\n  }\n]";
+  // Código de partida de cada reto.
+  var CODIGOS = [
+    [
+      "import json",
+      "import matplotlib.pyplot as plt",
+      "",
+      "with open(\"clima_septiembre.json\", encoding=\"utf-8\") as f:",
+      "    clima = json.load(f)",
+      "dias = [int(r[\"fecha\"][-2:]) for r in clima]",
+      "tmax = [r[\"tmax\"] for r in clima]",
+      "",
+      "plt.plot(dias, tmax)",
+      "# Completa: un marcador para cada dato, el título y los nombres",
+      "# de los dos ejes (el eje y con sus unidades)",
+      "",
+      "plt.show()",
+    ].join("\n") + "\n",
+    [
+      "import json",
+      "import matplotlib.pyplot as plt",
+      "",
+      "with open(\"clima_septiembre.json\", encoding=\"utf-8\") as f:",
+      "    clima = json.load(f)",
+      "lluvia_sep = [r[\"lluvia_mm\"] for r in clima]",
+      "lluvia_oct = [28.8, 70.2, 20.1, 10.9, 10.8, 0.6, 1.4, 2.1,",
+      "              0.7, 0.0, 3.3, 0.8, 0.9, 0.7, 2.1]   # mm, 1 al 15 de octubre",
+      "",
+      "plt.plot(range(1, 31), lluvia_sep, marker=\"o\")",
+      "plt.plot(range(1, 16), lluvia_oct, marker=\"o\")",
+      "plt.title(\"Lluvia diaria en Monterrey, 2026\")",
+      "plt.xlabel(\"Día del mes\")",
+      "plt.ylabel(\"Lluvia (mm)\")",
+      "# Completa: ponle nombre (label=) a cada línea y muestra la leyenda",
+      "plt.show()",
+    ].join("\n") + "\n",
+    [
+      "import json",
+      "import matplotlib.pyplot as plt",
+      "",
+      "with open(\"clima_septiembre.json\", encoding=\"utf-8\") as f:",
+      "    clima = json.load(f)",
+      "lluvia = [r[\"lluvia_mm\"] for r in clima]",
+      "",
+      "semanas = [\"1-7\", \"8-14\", \"15-21\", \"22-28\", \"29-30\"]",
+      "totales = [sum(lluvia[i:i + 7]) for i in range(0, 30, 7)]",
+      "",
+      "plt.bar(semanas, totales, color=\"#00408F\")",
+      "plt.ylim(2, 14)   # ¿así es honesta la gráfica?",
+      "plt.title(\"Lluvia por semana, septiembre 2026\")",
+      "plt.xlabel(\"Días del mes\")",
+      "# Falta el nombre del eje y, con sus unidades",
+      "plt.show()",
+    ].join("\n") + "\n",
+    [
+      "import json",
+      "import matplotlib.pyplot as plt",
+      "",
+      "with open(\"clima_septiembre.json\", encoding=\"utf-8\") as f:",
+      "    clima = json.load(f)",
+      "tmax = [r[\"tmax\"] for r in clima]",
+      "",
+      "plt.hist(tmax)",
+      "plt.title(\"¿Qué máximas fueron típicas en septiembre?\")",
+      "# Completa: intervalos de 2 °C, de 30 a 40, y los nombres de los ejes",
+      "plt.show()",
+    ].join("\n") + "\n",
+    [
+      "import json",
+      "import matplotlib.pyplot as plt",
+      "",
+      "with open(\"clima_septiembre.json\", encoding=\"utf-8\") as f:",
+      "    clima = json.load(f)",
+      "tmax = [r[\"tmax\"] for r in clima]",
+      "lluvia = [r[\"lluvia_mm\"] for r in clima]",
+      "",
+      "plt.scatter(tmax, lluvia, color=\"#8C1D35\")",
+      "plt.title(\"¿Llueve más los días calurosos?\")",
+      "plt.xlabel(\"Máxima (°C)\")",
+      "plt.ylabel(\"Lluvia (mm)\")",
+      "plt.show()",
+      "plt.savefig(\"dispersion.png\", dpi=150)",
+    ].join("\n") + "\n"
+  ];
+  // Pruebas: revisar_k(ns, salida, archivos, figuras) regresa una lista de (ok, mensaje).
+  var PRUEBAS_PY = [
+    "TMAX = [35.0, 36.5, 38.0, 34.1, 32.2, 30.2, 34.0, 33.3, 34.9, 35.1, 37.2, 35.0, 35.2, 35.8, 35.9,",
+    "        35.0, 34.7, 33.5, 34.5, 35.4, 35.4, 32.8, 31.8, 31.5, 33.3, 33.9, 34.2, 33.7, 33.2, 30.9]",
+    "TMIN = [23.4, 23.7, 25.0, 25.2, 23.6, 22.3, 22.3, 21.8, 21.9, 22.3, 22.4, 23.6, 23.4, 23.6, 23.0,",
+    "        22.6, 24.0, 23.0, 22.4, 22.0, 23.1, 22.6, 21.8, 22.0, 22.8, 23.6, 24.1, 23.5, 23.4, 23.9]",
+    "LLUVIA = [1.7, 0.7, 0.2, 0.7, 6.9, 0.7, 0.0, 0.3, 0.6, 0.8, 0.2, 0.8, 0.2, 0.2, 0.0,",
+    "          0.0, 1.9, 2.7, 0.0, 0.0, 0.0, 2.9, 3.2, 0.5, 0.9, 0.7, 2.7, 2.6, 0.3, 8.8]",
+    "LLUVIA_OCT = [28.8, 70.2, 20.1, 10.9, 10.8, 0.6, 1.4, 2.1, 0.7, 0.0, 3.3, 0.8, 0.9, 0.7, 2.1]",
+    "DIAS = list(range(1, 31))",
+    "SEMANAS = ['1-7', '8-14', '15-21', '22-28', '29-30']",
+    "TOTALES = [sum(LLUVIA[i:i + 7]) for i in range(0, 30, 7)]",
+    "",
+    "",
+    "def _ejes(figuras):",
+    "    return [ax for fig in figuras for ax in fig.axes]",
+    "",
+    "",
+    "def _iguales(a, b, tol=1e-6):",
+    "    try:",
+    "        a = [float(v) for v in a]",
+    "        b = [float(v) for v in b]",
+    "    except (TypeError, ValueError):",
+    "        return False",
+    "    return len(a) == len(b) and all(abs(x - y) <= tol for x, y in zip(a, b))",
+    "",
+    "",
+    "def _linea_con(figuras, ys):",
+    "    for ax in _ejes(figuras):",
+    "        for ln in ax.lines:",
+    "            if _iguales(ln.get_ydata(), ys):",
+    "                return ax, ln",
+    "    return None, None",
+    "",
+    "",
+    "def _barras(figuras):",
+    "    for ax in _ejes(figuras):",
+    "        rect = [p for p in ax.patches if type(p).__name__ == 'Rectangle']",
+    "        if rect:",
+    "            return ax, rect",
+    "    return None, []",
+    "",
+    "",
+    "def _texto(t):",
+    "    return (t or '').strip()",
+    "",
+    "",
+    "def _titulo(ax):",
+    "    t = _texto(ax.get_title())",
+    "    return (bool(t), 'Título: ' + repr(t) if t else 'Falta el título: plt.title(\"...\")')",
+    "",
+    "",
+    "def _eje(ax, cual, unidades, ejemplo):",
+    "    t = _texto(ax.get_xlabel() if cual == 'x' else ax.get_ylabel())",
+    "    if not t:",
+    "        return (False, 'Falta el nombre del eje ' + cual + (' con sus unidades' if unidades else '') +",
+    "                ', por ejemplo plt.' + cual + 'label(\"' + ejemplo + '\")')",
+    "    if unidades and not any(u in t.lower() for u in unidades):",
+    "        return (False, 'El eje ' + cual + ' se llama ' + repr(t) + ', pero no dice sus unidades (' + unidades[0] + ')')",
+    "    return (True, 'Eje ' + cual + ': ' + repr(t))",
+    "",
+    "",
+    "def _sin_figuras():",
+    "    return [(False, 'No se mostró ninguna gráfica: ¿llamaste plt.show()?')]",
+    "",
+    "",
+    "def revisar_1(ns, salida, archivos, figuras):",
+    "    if not figuras:",
+    "        return _sin_figuras()",
+    "    ax, ln = _linea_con(figuras, TMAX)",
+    "    if ln is None:",
+    "        return [(False, 'No encontré una línea con las 30 máximas: usa plt.plot(dias, tmax)')]",
+    "    r = []",
+    "    ok = _iguales(ln.get_xdata(), DIAS)",
+    "    r.append((ok, 'Hay una línea con las 30 máximas, día por día' if ok else 'En el eje x deben ir los días 1 a 30: plt.plot(dias, tmax)'))",
+    "    ok = ln.get_marker() not in (None, '', 'None', ' ')",
+    "    r.append((ok, 'Cada dato tiene un marcador' if ok else 'Agrega un marcador para ver cada dato: marker=\"o\"'))",
+    "    r.append(_titulo(ax))",
+    "    r.append(_eje(ax, 'x', [], 'Día del mes'))",
+    "    r.append(_eje(ax, 'y', ['°c', 'grados'], 'Temperatura (°C)'))",
+    "    return r",
+    "",
+    "",
+    "def revisar_2(ns, salida, archivos, figuras):",
+    "    if not figuras:",
+    "        return _sin_figuras()",
+    "    ax1, l1 = _linea_con(figuras, LLUVIA)",
+    "    ax2, l2 = _linea_con(figuras, LLUVIA_OCT)",
+    "    r = [(l1 is not None, 'Hay una línea con la lluvia de septiembre' if l1 is not None else 'Falta la línea de septiembre: plt.plot(range(1, 31), lluvia_sep)'),",
+    "         (l2 is not None, 'Hay una línea con la lluvia de octubre' if l2 is not None else 'Falta la línea de octubre: plt.plot(range(1, 16), lluvia_oct)')]",
+    "    if l1 is None or l2 is None:",
+    "        return r",
+    "    juntas = ax1 is ax2",
+    "    r.append((juntas, 'Las dos líneas están en la misma gráfica' if juntas else 'Dibuja las dos líneas en la misma gráfica (sin otro plt.figure en medio)'))",
+    "    etiquetas = [l1.get_label(), l2.get_label()]",
+    "    ok = all(e and not e.startswith('_') for e in etiquetas)",
+    "    r.append((ok, 'Cada línea tiene nombre: ' + ' y '.join(repr(e) for e in etiquetas) if ok else 'Ponle nombre a cada línea con label=, por ejemplo label=\"Septiembre\"'))",
+    "    lg = ax1.get_legend()",
+    "    textos = [t.get_text() for t in lg.get_texts()] if lg is not None else []",
+    "    if lg is None:",
+    "        r.append((False, 'No hay leyenda: llama plt.legend() después de los dos plt.plot'))",
+    "    elif not textos:",
+    "        r.append((False, 'La leyenda está vacía: las líneas necesitan label='))",
+    "    else:",
+    "        ok = sorted(textos) == sorted(etiquetas)",
+    "        r.append((ok, 'La leyenda dice ' + ' y '.join(repr(t) for t in textos) if ok else 'La leyenda no coincide con los label de las dos líneas'))",
+    "    r.append(_titulo(ax1))",
+    "    r.append(_eje(ax1, 'y', ['mm', 'milímetro'], 'Lluvia (mm)'))",
+    "    return r",
+    "",
+    "",
+    "def revisar_3(ns, salida, archivos, figuras):",
+    "    if not figuras:",
+    "        return _sin_figuras()",
+    "    ax, rect = _barras(figuras)",
+    "    if ax is None:",
+    "        return [(False, 'No encontré barras: usa plt.bar(semanas, totales)')]",
+    "    r = []",
+    "    alturas = [p.get_height() for p in rect]",
+    "    ok = _iguales(alturas, TOTALES)",
+    "    r.append((ok, 'Hay 5 barras con la lluvia total de cada semana' if ok else 'Las barras deben ser los 5 totales semanales de la lista totales'))",
+    "    nombres = [t.get_text() for t in ax.get_xticklabels()]",
+    "    ok = nombres == SEMANAS",
+    "    r.append((ok, 'Cada barra lleva el nombre de su semana' if ok else 'En el eje x deben ir las semanas: plt.bar(semanas, totales)'))",
+    "    abajo = ax.get_ylim()[0]",
+    "    ok = abs(abajo) < 1e-9",
+    "    r.append((ok, 'El eje y empieza en 0' if ok else 'El eje y empieza en ' + format(abajo, 'g') + ', no en 0: así las barras exageran las diferencias'))",
+    "    r.append(_eje(ax, 'y', ['mm', 'milímetro'], 'Lluvia total (mm)'))",
+    "    r.append(_titulo(ax))",
+    "    return r",
+    "",
+    "",
+    "def revisar_4(ns, salida, archivos, figuras):",
+    "    if not figuras:",
+    "        return _sin_figuras()",
+    "    ax, rect = _barras(figuras)",
+    "    if ax is None:",
+    "        return [(False, 'No encontré el histograma: usa plt.hist(tmax, bins=...)')]",
+    "    rect = sorted(rect, key=lambda p: p.get_x())",
+    "    bordes = [p.get_x() for p in rect] + [rect[-1].get_x() + rect[-1].get_width()]",
+    "    ok = _iguales(bordes, [30, 32, 34, 36, 38, 40])",
+    "    r = [(ok, 'Los intervalos son de 2 °C, de 30 a 40' if ok else",
+    "          'Los límites deben ser 30, 32, 34, 36, 38 y 40; los tuyos son ' + ', '.join(format(b, '.4g') for b in bordes))]",
+    "    cuentas = [p.get_height() for p in rect]",
+    "    ok = _iguales(cuentas, [4, 8, 15, 2, 1])",
+    "    r.append((ok, 'Las barras cuentan 4, 8, 15, 2 y 1 días' if ok else 'Las barras deben contar los días de cada intervalo con los datos de tmax'))",
+    "    r.append(_eje(ax, 'x', ['°c', 'grados'], 'Temperatura máxima (°C)'))",
+    "    r.append(_eje(ax, 'y', [], 'Número de días'))",
+    "    r.append(_titulo(ax))",
+    "    return r",
+    "",
+    "",
+    "def revisar_5(ns, salida, archivos, figuras):",
+    "    r = []",
+    "    ax = col = None",
+    "    for a in _ejes(figuras):",
+    "        for c in a.collections:",
+    "            if len(c.get_offsets()) == 30:",
+    "                ax, col = a, c",
+    "                break",
+    "        if col is not None:",
+    "            break",
+    "    if col is None:",
+    "        r.append((False, 'No encontré la dispersión: usa plt.scatter(tmax, lluvia)'))",
+    "    else:",
+    "        off = col.get_offsets()",
+    "        ok = _iguales([p[0] for p in off], TMAX) and _iguales([p[1] for p in off], LLUVIA)",
+    "        r.append((ok, 'Hay un punto por día: la máxima en x y la lluvia en y' if ok else 'Los puntos deben ser (máxima, lluvia): plt.scatter(tmax, lluvia)'))",
+    "        okx, msgx = _eje(ax, 'x', ['°c', 'grados'], 'Máxima (°C)')",
+    "        oky, msgy = _eje(ax, 'y', ['mm', 'milímetro'], 'Lluvia (mm)')",
+    "        r.append((okx and oky, 'Los ejes dicen sus unidades: °C y mm' if okx and oky else (msgy if okx else msgx)))",
+    "    pngs = [n for n in archivos if n.lower().endswith('.png')]",
+    "    if not pngs:",
+    "        r.append((False, 'No se guardó ninguna imagen .png: usa plt.savefig(\"dispersion.png\", dpi=150)'))",
+    "        return r",
+    "    r.append((True, 'Se guardó ' + pngs[0]))",
+    "    import matplotlib.image as mpimg",
+    "    img = mpimg.imread(pngs[0])",
+    "    dibujo = int((img[..., :3].min(axis=2) < 0.9).sum())",
+    "    ok = dibujo > 500",
+    "    r.append((ok, pngs[0] + ' tiene la gráfica (' + str(dibujo) + ' píxeles con dibujo)' if ok else",
+    "              pngs[0] + ' está en blanco: plt.show() ya había descartado la figura cuando llamaste plt.savefig'))",
+    "    return r",
+    "",
+    "",
+    "revisar = revisar_1",
+  ].join("\n");
+  // ---------- fin de los datos del laboratorio ----------
+  var ARCHIVOS = { "clima_septiembre.json": JSON_SEP };
+  var RETOS = [
+    { corto: "Línea", titulo: "Reto 1 · Tu primera gráfica completa", archivo: "reto1_maximas.py",
+      instrucciones: [
+        "Presiona <b>▶ Ejecutar</b>: se grafican las 30 máximas de septiembre, pero la gráfica no dice qué es ni en qué unidades.",
+        "Agrega <code>marker=\"o\"</code> a <code>plt.plot</code> para ver cada dato.",
+        "Agrega <code>plt.title</code>, <code>plt.xlabel</code> y <code>plt.ylabel</code>; el eje y con sus unidades: <code>\"Temperatura (°C)\"</code>.",
+        "Presiona <b>✓ Verificar</b>."],
+      pruebas: ["Hay una línea con las 30 máximas: los días en el eje x y tmax en el eje y",
+                "Cada dato tiene un marcador (marker)",
+                "La gráfica tiene título",
+                "El eje x tiene nombre",
+                "El eje y tiene nombre con sus unidades (°C)"],
+      pista: "El orden es plot → title, xlabel, ylabel → show. Si no encuentras el símbolo °, cópialo de aquí: <code>°</code>." },
+    { corto: "Leyenda", titulo: "Reto 2 · Dos meses en una gráfica", archivo: "reto2_leyenda.py",
+      instrucciones: [
+        "Ya están las dos líneas en la misma gráfica: la lluvia de septiembre y la del 1 al 15 de octubre. matplotlib les pone colores distintos (C0 y C1) sin que se lo pidas, pero no se sabe cuál es cuál.",
+        "Ponle nombre a cada una: <code>label=\"Septiembre\"</code> y <code>label=\"Octubre\"</code>.",
+        "Llama <code>plt.legend()</code> antes de <code>plt.show()</code> y verifica."],
+      pruebas: ["Hay una línea con la lluvia de septiembre",
+                "Hay una línea con la lluvia de octubre",
+                "Las dos líneas están en la misma gráfica",
+                "Cada línea tiene nombre (label=)",
+                "Hay una leyenda con esos nombres",
+                "La gráfica tiene título",
+                "El eje y tiene nombre con sus unidades (mm)"],
+      pista: "Sin label=, plt.legend() no tiene qué mostrar; sin plt.legend(), los label no se ven." },
+    { corto: "Barras", titulo: "Reto 3 · Barras honestas", archivo: "reto3_barras.py",
+      instrucciones: [
+        "Corre el código: con <code>plt.ylim(2, 14)</code> la semana 8-14 casi desaparece. ¿Es honesta la gráfica?",
+        "Haz que el eje y empiece en 0: quita <code>plt.ylim</code> o usa <code>plt.ylim(bottom=0)</code>.",
+        "Agrega el nombre del eje y con sus unidades: <code>\"Lluvia total (mm)\"</code>."],
+      pruebas: ["Hay 5 barras con la lluvia total de cada semana",
+                "Cada barra lleva el nombre de su semana",
+                "El eje y empieza en 0",
+                "El eje y tiene nombre con sus unidades (mm)",
+                "La gráfica tiene título"],
+      pista: "En una gráfica de barras la altura es el valor: si el eje no empieza en 0, las diferencias se exageran." },
+    { corto: "Histograma", titulo: "Reto 4 · ¿Qué máximas fueron típicas?", archivo: "reto4_histograma.py",
+      instrucciones: [
+        "<code>plt.hist(tmax)</code> usa 10 intervalos automáticos, que empiezan en 30.2: difíciles de leer.",
+        "Usa intervalos de 2 °C, de 30 a 40: <code>bins=[30, 32, 34, 36, 38, 40]</code> (como la tabla de frecuencias del Tema 13). <code>edgecolor=\"black\"</code> separa las barras.",
+        "Nombra los ejes: <code>\"Temperatura máxima (°C)\"</code> y <code>\"Número de días\"</code>."],
+      pruebas: ["Los intervalos son de 2 °C, de 30 a 40",
+                "Las barras cuentan los días de cada intervalo",
+                "El eje x tiene nombre con sus unidades (°C)",
+                "El eje y tiene nombre",
+                "La gráfica tiene título"],
+      pista: "bins puede ser una cantidad (bins=5) o la lista de los límites de los intervalos. También sirve range(30, 41, 2)." },
+    { corto: "Guardar", titulo: "Reto 5 · La imagen en blanco", archivo: "reto5_dispersion.py",
+      instrucciones: [
+        "Corre el código: la gráfica se ve, y abajo aparece <code>dispersion.png</code> para descargarla. Ábrela: está en blanco.",
+        "Encuentra por qué y arréglalo, sin quitar <code>plt.show()</code>.",
+        "Verifica: la prueba abre la imagen y cuenta los píxeles que tienen dibujo."],
+      pruebas: ["Hay un punto por día: la máxima en el eje x y la lluvia en el eje y",
+                "Los ejes dicen sus unidades: °C y mm",
+                "Se guardó una imagen .png con plt.savefig",
+                "La imagen tiene la gráfica (no está en blanco)"],
+      pista: "plt.show() muestra la figura y después la descarta: lo que se guarda luego es una figura nueva, vacía." }
+  ];
+  // ==========================================================================
+
+  var PREPARAR_PY = [
+    "import sys, io, os, json, base64, traceback, linecache",
+    "_TRABAJO = '/home/pyodide/trabajo'",
+    "",
+    "def _formatear_error(e):",
+    "    if isinstance(e, SyntaxError):",
+    "        return ''.join(traceback.format_exception_only(type(e), e))",
+    "    marcos = [m for m in traceback.extract_tb(e.__traceback__) if m.filename == 'tu_programa.py']",
+    "    texto = 'Traceback (most recent call last):\\n' + ''.join(traceback.format_list(marcos))",
+    "    return texto + ''.join(traceback.format_exception_only(type(e), e))",
+    "",
+    "def _correr(codigo, archivos_json, verificar):",
+    "    archivos = json.loads(archivos_json)",
+    "    # Para que los errores muestren la línea de código, como en la consola",
+    "    linecache.cache['tu_programa.py'] = (len(codigo), None, codigo.splitlines(True), 'tu_programa.py')",
+    "    os.makedirs(_TRABAJO, exist_ok=True)",
+    "    os.chdir(_TRABAJO)",
+    "    for n in os.listdir('.'):",
+    "        if os.path.isfile(n):",
+    "            os.remove(n)",
+    "    for nombre, contenido in archivos.items():",
+    "        with open(nombre, 'w', encoding='utf-8') as f:",
+    "            f.write(contenido)",
+    "    salida, imagenes, figuras, plt = io.StringIO(), [], [], None",
+    "    if 'matplotlib' in sys.modules or 'matplotlib' in codigo:",
+    "        try:",
+    "            import matplotlib",
+    "            matplotlib.use('Agg')",
+    "            import matplotlib.pyplot as plt",
+    "            plt.close('all')",
+    "        except ImportError:",
+    "            plt = None",
+    "    def _mostrar(*args, **kwargs):",
+    "        for n in plt.get_fignums():",
+    "            b = io.BytesIO()",
+    "            plt.figure(n).savefig(b, format='png', dpi=100, bbox_inches='tight')",
+    "            imagenes.append(base64.b64encode(b.getvalue()).decode('ascii'))",
+    "            figuras.append(plt.figure(n))",
+    "        plt.close('all')",
+    "    if plt is not None:",
+    "        show_original, plt.show = plt.show, _mostrar",
+    "    ns = {'__name__': '__main__'}",
+    "    error = None",
+    "    viejo_out, viejo_err = sys.stdout, sys.stderr",
+    "    sys.stdout = sys.stderr = salida",
+    "    try:",
+    "        exec(compile(codigo, 'tu_programa.py', 'exec'), ns)",
+    "    except BaseException as e:",
+    "        error = _formatear_error(e)",
+    "    finally:",
+    "        sys.stdout, sys.stderr = viejo_out, viejo_err",
+    "        if plt is not None:",
+    "            plt.show = show_original",
+    "    sin_show = plt is not None and not imagenes and len(plt.get_fignums()) > 0",
+    "    if sin_show:",
+    "        _mostrar()",
+    "    nuevos = sorted(n for n in os.listdir('.') if os.path.isfile(n) and n not in archivos)",
+    "    resultados = None",
+    "    if verificar and error is None:",
+    "        try:",
+    "            resultados = [[bool(ok), str(msg)] for ok, msg in revisar(ns, salida.getvalue(), nuevos, figuras)]",
+    "        except Exception as e:",
+    "            resultados = [[False, 'No se pudo revisar: ' + ''.join(traceback.format_exception_only(type(e), e)).strip()]]",
+    "    return json.dumps({'salida': salida.getvalue(), 'error': error, 'figuras': imagenes,",
+    "                       'archivos': nuevos, 'resultados': resultados, 'sin_show': sin_show})",
+  ].join("\n");
+
+  var $ = function (id) { return document.getElementById(id); };
+  var pyodide = null, editor = null, reto = 0, listo = false;
+
+  function esc(t) {
+    return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  function estado(texto, listo) {
+    $("estado").textContent = texto;
+    $("estado").className = listo ? "listo" : "";
+  }
+  // Lo que se guarda en el navegador. Si el navegador no deja guardar (ventana privada), se
+  // conserva en memoria mientras la página esté abierta.
+  var memoria = {};
+  function leer(clave) {
+    if (Object.prototype.hasOwnProperty.call(memoria, clave)) return memoria[clave];
+    try { return localStorage.getItem(CLAVE + "-" + clave); } catch (e) { return null; }
+  }
+  function escribir(clave, valor) {
+    memoria[clave] = valor;
+    try { localStorage.setItem(CLAVE + "-" + clave, valor); } catch (e) { /* sin almacenamiento */ }
+  }
+  function guardar() { escribir("reto" + (reto + 1), obtenerCodigo()); }
+  function obtenerCodigo() { return editor ? editor.getValue() : $("editor").value; }
+  function ponerCodigo(t) { if (editor) { editor.setValue(t); editor.clearHistory(); } else $("editor").value = t; }
+
+  // Botones de los retos
+  $("retos").innerHTML = RETOS.map(function (r, k) {
+    return '<button type="button" role="tab" id="boton-reto' + (k + 1) + '" data-reto="' + k + '">' +
+           '<span class="num">' + (k + 1) + '</span> ' + esc(r.corto) + '<span class="hecho" id="hecho' + (k + 1) + '"></span></button>';
+  }).join("");
+  function marcarHechos() {
+    RETOS.forEach(function (r, k) {
+      var hecho = leer("ok" + (k + 1)) === "1";
+      $("hecho" + (k + 1)).textContent = hecho ? " ✓" : "";
+      $("boton-reto" + (k + 1)).setAttribute("aria-label", "Reto " + (k + 1) + ": " + r.corto + (hecho ? " (ya pasaste sus pruebas)" : ""));
+    });
+  }
+
+  function limpiar() {
+    $("salida").innerHTML = "";
+    $("figuras").innerHTML = "";
+    $("archivos").innerHTML = "";
+    $("resultados").innerHTML = "";
+  }
+
+  function usarReto(k, guardarAntes) {
+    if (guardarAntes) guardar();
+    reto = k;
+    var r = RETOS[k];
+    document.querySelectorAll("#retos button").forEach(function (b) {
+      b.setAttribute("aria-selected", Number(b.dataset.reto) === k ? "true" : "false");
+      b.tabIndex = Number(b.dataset.reto) === k ? 0 : -1;
+    });
+    $("reto-titulo").textContent = r.titulo;
+    $("instrucciones").innerHTML = r.instrucciones.map(function (t) { return "<li>" + t + "</li>"; }).join("");
+    $("lista-pruebas").innerHTML = r.pruebas.map(function (p) { return "<li>" + esc(p) + "</li>"; }).join("");
+    $("pista").innerHTML = "<b>Pista:</b> " + r.pista;
+    ponerCodigo(leer("reto" + (k + 1)) || CODIGOS[k]);
+    limpiar();
+    escribir("actual", String(k));
+    if (listo) pyodide.runPython("revisar = revisar_" + (k + 1));
+  }
+  document.querySelectorAll("#retos button").forEach(function (b) {
+    b.addEventListener("click", function () { if (Number(b.dataset.reto) !== reto) usarReto(Number(b.dataset.reto), true); });
+    b.addEventListener("keydown", function (e) {
+      if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+      e.preventDefault();
+      var k = (reto + (e.key === "ArrowRight" ? 1 : RETOS.length - 1)) % RETOS.length;
+      usarReto(k, true);
+      $("boton-reto" + (k + 1)).focus();
+    });
+  });
+
+  // Editor: CodeMirror si cargó; si no, el cuadro de texto con Tab = 4 espacios
+  $("editor").value = "";
+  if (window.CodeMirror) {
+    editor = CodeMirror.fromTextArea($("editor"), {
+      mode: "python", lineNumbers: true, indentUnit: 4, tabSize: 4, smartIndent: true,
+      extraKeys: {
+        "Tab": function (cm) { cm.replaceSelection("    "); },
+        "Ctrl-Enter": function () { ejecutar(false); },
+        "Cmd-Enter": function () { ejecutar(false); }
+      }
+    });
+    var temporizador = null;
+    editor.on("change", function () { clearTimeout(temporizador); temporizador = setTimeout(guardar, 500); });
+  } else {
+    $("editor").addEventListener("keydown", function (e) {
+      if (e.key === "Tab") {
+        e.preventDefault();
+        var t = e.target, i = t.selectionStart;
+        t.value = t.value.slice(0, i) + "    " + t.value.slice(t.selectionEnd);
+        t.selectionStart = t.selectionEnd = i + 4;
+      } else if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault(); ejecutar(false);
+      }
+    });
+    $("editor").addEventListener("input", guardar);
+  }
+
+  function tipoArchivo(nombre) {
+    var ext = nombre.split(".").pop().toLowerCase();
+    return { png: "image/png", json: "application/json", csv: "text/csv", txt: "text/plain",
+             xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }[ext] || "application/octet-stream";
+  }
+
+  async function ejecutar(verificar) {
+    if (!listo) return;
+    guardar();
+    limpiar();
+    $("ejecutar").disabled = $("verificar").disabled = true;
+    estado(verificar ? "Verificando…" : "Ejecutando…");
+    await new Promise(function (r) { setTimeout(r, 30); });   // deja que se pinte el estado
+    var r, k = reto;
+    try {
+      pyodide.globals.set("_codigo_alumno", obtenerCodigo());
+      pyodide.globals.set("_archivos_json", JSON.stringify(ARCHIVOS));
+      pyodide.globals.set("_verificar", !!verificar);
+      r = JSON.parse(await pyodide.runPythonAsync("_correr(_codigo_alumno, _archivos_json, _verificar)"));
+    } catch (e) {
+      $("salida").innerHTML = '<span class="error">' + esc(String(e)) + "</span>";
+      $("ejecutar").disabled = $("verificar").disabled = false;
+      estado("Python listo", true);
+      return;
+    }
+    var html = esc(r.salida);
+    if (r.error) html += '<span class="error">' + esc(r.error) + "</span>";
+    if (!r.salida && !r.error) html = '<span class="aviso">(el programa terminó sin imprimir nada)</span>';
+    $("salida").innerHTML = html;
+    r.figuras.forEach(function (b64, i) {
+      var img = new Image();
+      img.alt = "Figura " + (i + 1) + " que dibujó tu programa";
+      img.src = "data:image/png;base64," + b64;
+      $("figuras").appendChild(img);
+    });
+    if (r.sin_show) {
+      $("figuras").insertAdjacentHTML("beforeend",
+        '<p class="sub">No llamaste <code>plt.show()</code>; aquí se muestra la figura de todos modos.</p>');
+    }
+    r.archivos.forEach(function (nombre) {
+      var datos = pyodide.FS.readFile("/home/pyodide/trabajo/" + nombre);
+      var url = URL.createObjectURL(new Blob([datos], { type: tipoArchivo(nombre) }));
+      var a = document.createElement("a");
+      a.href = url; a.download = nombre;
+      a.textContent = "⬇ " + nombre + " (" + Math.max(1, Math.round(datos.length / 1024)) + " KB)";
+      $("archivos").appendChild(a);
+    });
+    if (verificar) {
+      if (r.error) {
+        $("resultados").innerHTML = '<p class="resumen mal">Corrige el error de arriba y vuelve a verificar.</p>';
+      } else if (r.resultados) {
+        var bien = r.resultados.filter(function (x) { return x[0]; }).length;
+        var total = r.resultados.length;
+        $("resultados").innerHTML =
+          '<p class="resumen ' + (bien === total ? "ok" : "mal") + '">' +
+          (bien === total ? "¡Todas las pruebas pasan! (" + total + " de " + total + ")" : bien + " de " + total + " pruebas pasan") +
+          "</p><ul class=\"pruebas\">" + r.resultados.map(function (x) {
+            return '<li class="' + (x[0] ? "ok" : "mal") + '">' + esc(x[1]) + "</li>";
+          }).join("") + "</ul>";
+        if (bien === total && k === reto) { escribir("ok" + (k + 1), "1"); marcarHechos(); }
+      }
+    }
+    $("ejecutar").disabled = $("verificar").disabled = false;
+    estado("Python listo", true);
+  }
+
+  $("ejecutar").addEventListener("click", function () { ejecutar(false); });
+  $("verificar").addEventListener("click", function () { ejecutar(true); });
+  $("restaurar").addEventListener("click", function () {
+    if (confirm("¿Regresar al código inicial de este reto? Se perderán tus cambios.")) { ponerCodigo(CODIGOS[reto]); guardar(); limpiar(); }
+  });
+  $("descargar").addEventListener("click", function () {
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([obtenerCodigo()], { type: "text/x-python" }));
+    a.download = RETOS[reto].archivo;
+    a.click();
+  });
+
+  async function iniciar() {
+    if (!window.loadPyodide) {
+      estado("No se pudo descargar Python: revisa tu conexión a internet y recarga la página.");
+      return;
+    }
+    try {
+      pyodide = await loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.27.7/full/" });
+      if (PAQUETES.length) {
+        estado("Cargando " + PAQUETES.join(", ") + "…");
+        await pyodide.loadPackage(PAQUETES);
+      }
+      if (MICROPIP.length) {
+        estado("Instalando " + MICROPIP.join(", ") + "…");
+        await pyodide.loadPackage("micropip");
+        await pyodide.pyimport("micropip").install(MICROPIP);
+      }
+      pyodide.runPython(PREPARAR_PY);
+      pyodide.runPython(PRUEBAS_PY);
+      pyodide.runPython("revisar = revisar_" + (reto + 1));
+      listo = true;
+      $("ejecutar").disabled = $("verificar").disabled = false;
+      estado("Python listo", true);
+    } catch (e) {
+      estado("No se pudo preparar Python: " + e);
+    }
+  }
+
+  var guardado = Number(leer("actual"));
+  usarReto(guardado >= 0 && guardado < RETOS.length ? guardado : 0, false);
+  marcarHechos();
+  iniciar();
+})();
+</script>
+<div id="qr-sitio" class="qr-capa" hidden>
+  <div class="qr-caja" role="dialog" aria-modal="true" aria-label="Código QR de esta página">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 45" role="img" aria-label="Código QR de https://memosanchezg.github.io/programacion-basica-interactivos/semana-15-laboratorio.html" shape-rendering="crispEdges"><rect width="45" height="45" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM16 2h3v1h-3zM20 2h3v1h-3zM24 2h3v1h-3zM30 2h2v1h-2zM33 2h2v1h-2zM36 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM11 3h1v1h-1zM13 3h2v1h-2zM17 3h1v1h-1zM20 3h1v1h-1zM24 3h1v1h-1zM29 3h2v1h-2zM34 3h1v1h-1zM36 3h1v1h-1zM42 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM10 4h1v1h-1zM13 4h5v1h-5zM21 4h1v1h-1zM26 4h1v1h-1zM28 4h3v1h-3zM33 4h2v1h-2zM36 4h1v1h-1zM38 4h3v1h-3zM42 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h2v1h-2zM13 5h2v1h-2zM17 5h2v1h-2zM20 5h1v1h-1zM23 5h2v1h-2zM26 5h1v1h-1zM31 5h1v1h-1zM33 5h2v1h-2zM36 5h1v1h-1zM38 5h3v1h-3zM42 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h1v1h-1zM17 6h1v1h-1zM21 6h1v1h-1zM25 6h1v1h-1zM28 6h1v1h-1zM30 6h5v1h-5zM36 6h1v1h-1zM38 6h3v1h-3zM42 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h5v1h-5zM16 7h2v1h-2zM22 7h1v1h-1zM26 7h1v1h-1zM29 7h2v1h-2zM34 7h1v1h-1zM36 7h1v1h-1zM42 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM30 8h1v1h-1zM32 8h1v1h-1zM34 8h1v1h-1zM36 8h7v1h-7zM10 9h2v1h-2zM13 9h1v1h-1zM17 9h2v1h-2zM20 9h1v1h-1zM23 9h1v1h-1zM25 9h2v1h-2zM28 9h1v1h-1zM33 9h2v1h-2zM2 10h1v1h-1zM4 10h5v1h-5zM11 10h4v1h-4zM17 10h3v1h-3zM22 10h1v1h-1zM24 10h1v1h-1zM27 10h3v1h-3zM31 10h1v1h-1zM36 10h5v1h-5zM2 11h1v1h-1zM4 11h1v1h-1zM7 11h1v1h-1zM9 11h2v1h-2zM12 11h1v1h-1zM16 11h1v1h-1zM19 11h5v1h-5zM25 11h1v1h-1zM27 11h1v1h-1zM30 11h1v1h-1zM32 11h3v1h-3zM36 11h3v1h-3zM40 11h3v1h-3zM2 12h11v1h-11zM18 12h1v1h-1zM22 12h2v1h-2zM29 12h4v1h-4zM34 12h1v1h-1zM36 12h2v1h-2zM2 13h2v1h-2zM6 13h1v1h-1zM9 13h1v1h-1zM11 13h1v1h-1zM13 13h1v1h-1zM17 13h2v1h-2zM23 13h2v1h-2zM28 13h1v1h-1zM32 13h3v1h-3zM36 13h1v1h-1zM38 13h2v1h-2zM41 13h1v1h-1zM2 14h1v1h-1zM4 14h1v1h-1zM6 14h4v1h-4zM12 14h1v1h-1zM14 14h1v1h-1zM16 14h1v1h-1zM18 14h2v1h-2zM21 14h1v1h-1zM24 14h1v1h-1zM27 14h3v1h-3zM31 14h1v1h-1zM33 14h1v1h-1zM35 14h1v1h-1zM37 14h1v1h-1zM39 14h2v1h-2zM9 15h3v1h-3zM17 15h1v1h-1zM19 15h2v1h-2zM22 15h3v1h-3zM26 15h1v1h-1zM29 15h2v1h-2zM32 15h11v1h-11zM2 16h1v1h-1zM5 16h1v1h-1zM8 16h5v1h-5zM16 16h4v1h-4zM21 16h1v1h-1zM23 16h2v1h-2zM31 16h2v1h-2zM35 16h1v1h-1zM37 16h1v1h-1zM40 16h1v1h-1zM12 17h5v1h-5zM18 17h1v1h-1zM21 17h4v1h-4zM26 17h1v1h-1zM28 17h1v1h-1zM30 17h1v1h-1zM34 17h1v1h-1zM36 17h2v1h-2zM39 17h1v1h-1zM41 17h1v1h-1zM4 18h1v1h-1zM6 18h7v1h-7zM14 18h1v1h-1zM17 18h3v1h-3zM21 18h1v1h-1zM27 18h2v1h-2zM31 18h2v1h-2zM35 18h1v1h-1zM37 18h1v1h-1zM40 18h1v1h-1zM3 19h5v1h-5zM10 19h1v1h-1zM12 19h1v1h-1zM14 19h6v1h-6zM21 19h3v1h-3zM25 19h3v1h-3zM30 19h5v1h-5zM36 19h4v1h-4zM41 19h2v1h-2zM2 20h3v1h-3zM7 20h3v1h-3zM12 20h1v1h-1zM14 20h2v1h-2zM18 20h2v1h-2zM22 20h2v1h-2zM27 20h4v1h-4zM35 20h1v1h-1zM38 20h2v1h-2zM41 20h1v1h-1zM5 21h1v1h-1zM9 21h1v1h-1zM12 21h1v1h-1zM16 21h2v1h-2zM19 21h2v1h-2zM23 21h2v1h-2zM27 21h1v1h-1zM29 21h2v1h-2zM32 21h4v1h-4zM38 21h2v1h-2zM41 21h2v1h-2zM3 22h3v1h-3zM7 22h3v1h-3zM11 22h2v1h-2zM16 22h1v1h-1zM18 22h1v1h-1zM23 22h1v1h-1zM25 22h2v1h-2zM28 22h2v1h-2zM32 22h1v1h-1zM39 22h3v1h-3zM3 23h2v1h-2zM9 23h2v1h-2zM14 23h1v1h-1zM17 23h9v1h-9zM27 23h1v1h-1zM30 23h1v1h-1zM32 23h3v1h-3zM36 23h7v1h-7zM2 24h2v1h-2zM7 24h3v1h-3zM13 24h1v1h-1zM17 24h2v1h-2zM20 24h1v1h-1zM22 24h1v1h-1zM24 24h1v1h-1zM27 24h4v1h-4zM34 24h1v1h-1zM37 24h4v1h-4zM2 25h4v1h-4zM7 25h1v1h-1zM10 25h2v1h-2zM13 25h1v1h-1zM15 25h1v1h-1zM18 25h1v1h-1zM20 25h2v1h-2zM23 25h2v1h-2zM29 25h1v1h-1zM33 25h3v1h-3zM39 25h1v1h-1zM41 25h2v1h-2zM2 26h2v1h-2zM5 26h1v1h-1zM7 26h3v1h-3zM11 26h1v1h-1zM14 26h1v1h-1zM16 26h1v1h-1zM18 26h2v1h-2zM25 26h7v1h-7zM33 26h1v1h-1zM39 26h4v1h-4zM4 27h3v1h-3zM10 27h1v1h-1zM15 27h1v1h-1zM18 27h2v1h-2zM21 27h3v1h-3zM25 27h1v1h-1zM27 27h1v1h-1zM30 27h1v1h-1zM32 27h2v1h-2zM35 27h5v1h-5zM42 27h1v1h-1zM5 28h2v1h-2zM8 28h1v1h-1zM13 28h2v1h-2zM16 28h3v1h-3zM20 28h1v1h-1zM22 28h1v1h-1zM26 28h5v1h-5zM32 28h1v1h-1zM34 28h1v1h-1zM36 28h3v1h-3zM2 29h1v1h-1zM4 29h1v1h-1zM6 29h2v1h-2zM9 29h2v1h-2zM12 29h2v1h-2zM15 29h4v1h-4zM21 29h4v1h-4zM26 29h1v1h-1zM28 29h1v1h-1zM30 29h1v1h-1zM33 29h4v1h-4zM38 29h2v1h-2zM2 30h1v1h-1zM5 30h1v1h-1zM8 30h1v1h-1zM11 30h1v1h-1zM13 30h3v1h-3zM18 30h2v1h-2zM22 30h1v1h-1zM24 30h5v1h-5zM30 30h2v1h-2zM33 30h2v1h-2zM39 30h3v1h-3zM2 31h2v1h-2zM11 31h2v1h-2zM14 31h1v1h-1zM16 31h2v1h-2zM20 31h1v1h-1zM27 31h1v1h-1zM29 31h1v1h-1zM31 31h6v1h-6zM38 31h1v1h-1zM40 31h1v1h-1zM42 31h1v1h-1zM2 32h1v1h-1zM4 32h1v1h-1zM7 32h4v1h-4zM12 32h1v1h-1zM14 32h1v1h-1zM17 32h4v1h-4zM22 32h10v1h-10zM35 32h3v1h-3zM39 32h1v1h-1zM2 33h1v1h-1zM4 33h2v1h-2zM10 33h2v1h-2zM14 33h2v1h-2zM20 33h1v1h-1zM23 33h3v1h-3zM29 33h1v1h-1zM35 33h3v1h-3zM39 33h1v1h-1zM41 33h2v1h-2zM2 34h1v1h-1zM6 34h3v1h-3zM13 34h1v1h-1zM15 34h1v1h-1zM17 34h3v1h-3zM24 34h6v1h-6zM31 34h1v1h-1zM33 34h6v1h-6zM40 34h1v1h-1zM42 34h1v1h-1zM10 35h2v1h-2zM13 35h2v1h-2zM18 35h1v1h-1zM20 35h3v1h-3zM25 35h2v1h-2zM30 35h2v1h-2zM33 35h2v1h-2zM38 35h1v1h-1zM41 35h2v1h-2zM2 36h7v1h-7zM12 36h3v1h-3zM16 36h2v1h-2zM20 36h1v1h-1zM24 36h1v1h-1zM29 36h3v1h-3zM33 36h2v1h-2zM36 36h1v1h-1zM38 36h1v1h-1zM40 36h1v1h-1zM2 37h1v1h-1zM8 37h1v1h-1zM10 37h5v1h-5zM16 37h2v1h-2zM22 37h1v1h-1zM26 37h1v1h-1zM28 37h1v1h-1zM31 37h4v1h-4zM38 37h2v1h-2zM2 38h1v1h-1zM4 38h3v1h-3zM8 38h1v1h-1zM10 38h2v1h-2zM13 38h6v1h-6zM20 38h2v1h-2zM23 38h2v1h-2zM26 38h1v1h-1zM29 38h1v1h-1zM34 38h5v1h-5zM40 38h1v1h-1zM2 39h1v1h-1zM4 39h3v1h-3zM8 39h1v1h-1zM10 39h1v1h-1zM12 39h1v1h-1zM15 39h2v1h-2zM18 39h1v1h-1zM21 39h2v1h-2zM25 39h2v1h-2zM28 39h1v1h-1zM30 39h4v1h-4zM35 39h1v1h-1zM37 39h1v1h-1zM2 40h1v1h-1zM4 40h3v1h-3zM8 40h1v1h-1zM10 40h1v1h-1zM14 40h1v1h-1zM16 40h3v1h-3zM22 40h1v1h-1zM24 40h1v1h-1zM26 40h2v1h-2zM29 40h2v1h-2zM34 40h5v1h-5zM40 40h1v1h-1zM2 41h1v1h-1zM8 41h1v1h-1zM11 41h1v1h-1zM13 41h1v1h-1zM17 41h1v1h-1zM20 41h1v1h-1zM23 41h1v1h-1zM25 41h1v1h-1zM28 41h3v1h-3zM34 41h2v1h-2zM38 41h2v1h-2zM41 41h1v1h-1zM2 42h7v1h-7zM10 42h1v1h-1zM16 42h2v1h-2zM19 42h3v1h-3zM24 42h5v1h-5zM31 42h1v1h-1zM33 42h1v1h-1zM35 42h4v1h-4zM40 42h1v1h-1z"/></svg>
+    <p class="qr-texto">Escanea con la cámara del celular para abrir esta página</p>
+    <p class="qr-url">https://memosanchezg.github.io/programacion-basica-interactivos/semana-15-laboratorio.html</p>
+    <button type="button" class="qr-cerrar">Cerrar</button>
+  </div>
+</div>
+<style>
+  .qr-capa { position:fixed; top:0; right:0; bottom:0; left:0; z-index:10000; display:flex; align-items:center;
+             justify-content:center; padding:16px; background:#fff; }
+  .qr-capa[hidden] { display:none; }
+  .qr-caja { max-width:100%; text-align:center; color:#0A2A57; font:16px/1.4 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .qr-caja svg { display:block; width:min(62vh, 84vw); height:auto; margin:0 auto; }
+  .qr-texto { margin:12px 0 2px; font-size:1.15rem; font-weight:bold; }
+  .qr-url { margin:0 0 12px; color:#5B6472; word-break:break-all; }
+  .qr-cerrar { font:inherit; padding:6px 20px; border:2px solid #00408F; border-radius:4px; background:#fff;
+               color:#00408F; cursor:pointer; }
+</style>
+<script>
+  (function () {
+    var capa = document.getElementById("qr-sitio");
+    document.querySelectorAll("a.qr-abrir").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        capa.hidden = false;
+        capa.querySelector(".qr-cerrar").focus();
+      });
+    });
+    capa.addEventListener("click", function (e) {
+      if (e.target === capa || e.target.classList.contains("qr-cerrar")) capa.hidden = true;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !capa.hidden) capa.hidden = true;
+    });
+  })();
+</script>
+</body>
+</html>

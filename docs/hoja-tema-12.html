@@ -1,0 +1,654 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tema 12 · Hoja del estudiante</title>
+<style>
+:root {
+  --azul: #00408F; --azul-osc: #0A2A57; --guinda: #8C1D35; --oro: #B8975A;
+  --azul-claro: #E8EEF7; --oro-claro: #F7F1E6; --tinta: #1B1F2A; --gris: #5B6472; --borde: #D9DEE6;
+  --cmd-fondo: #0C0C0C; --cmd-texto: #E6E6E6;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: #FFFFFF; color: var(--tinta);
+  font-family: Calibri, "Segoe UI", system-ui, -apple-system, sans-serif; font-size: 17px; line-height: 1.55; }
+a { color: var(--azul); font-weight: 600; }
+.wrap { max-width: 940px; margin: 0 auto; padding: 0 16px; }
+header { border-left: 14px solid var(--azul); box-shadow: inset 3px 0 0 var(--oro); padding: 34px 0 24px; }
+.eyebrow { color: var(--guinda); font-weight: 700; letter-spacing: .05em; font-size: 15px;
+  font-family: Cambria, Georgia, serif; }
+h1 { font-family: Cambria, Georgia, serif; color: var(--azul-osc); font-size: clamp(30px, 5vw, 44px);
+  margin: 4px 0 6px; line-height: 1.15; }
+.sub { color: var(--gris); margin: 0 0 8px; }
+.subtitulo { color: var(--azul); font-style: italic; font-size: 19px; margin: 0 0 6px; }
+nav.dias { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+nav.dias a { border: 1px solid var(--borde); color: var(--azul-osc); text-decoration: none; padding: 5px 14px;
+  border-radius: 999px; font-size: 15px; }
+nav.dias a:hover { border-color: var(--oro); background: var(--oro-claro); }
+.franja { height: 7px; background: var(--azul); border-bottom: 3px solid var(--oro); }
+main { padding: 4px 0 48px; }
+section { padding-top: 26px; }
+h2 { font-family: Cambria, Georgia, serif; color: var(--azul-osc); font-size: 28px; margin: 0 0 4px; line-height: 1.2; }
+h3 { color: var(--azul-osc); font-size: 19px; margin: 22px 0 8px; }
+.dia { border-top: 1px solid var(--borde); margin-top: 28px; }
+.dia .num { color: var(--guinda); font-family: Cambria, Georgia, serif; font-weight: 700; font-size: 20px; }
+.chip { display: inline-block; color: var(--guinda); font-family: Cambria, Georgia, serif; font-weight: 700;
+  font-size: 17px; margin-left: 8px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.card { border: 1.5px solid var(--oro); border-radius: 10px; padding: 14px 16px; }
+.card b { display: block; margin-bottom: 4px; color: var(--azul-osc); }
+.card small { color: var(--guinda); font-weight: 700; }
+ul.links { padding-left: 20px; margin: 6px 0; }
+ul.links li { margin: 4px 0; }
+ol.tareas li { margin: 6px 0; }
+.pista { background: var(--oro-claro); border: 1px solid var(--oro); border-radius: 10px; padding: 10px 14px; }
+.pista b { color: var(--guinda); }
+.bloque { margin: 10px 0; }
+code, .mono { font-family: Consolas, "Courier New", monospace; color: var(--azul); }
+.highlight table { border-collapse: collapse; }
+.highlight td { padding: 0; vertical-align: top; }
+.highlight td.linenos pre { margin: 0; padding: 10px 8px 10px 0; text-align: right; color: var(--gris);
+  font-family: Cambria, Georgia, serif; font-size: 11px; line-height: 21px; background: transparent; }
+.highlight td.code { width: 100%; }
+.highlight td.code pre { margin: 0; padding: 10px 14px; border: 1px solid var(--tinta); background: #FFFFFF;
+  font-family: Consolas, "Courier New", monospace; font-size: 15px; line-height: 21px !important; overflow-x: auto; }
+.highlight { overflow-x: auto; }
+.prompt { background: var(--azul-claro); border-radius: 10px; padding: 14px 16px; margin: 0; font-style: italic; }
+.acciones { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 8px 0 0; }
+button.copiar { font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; border: 0; border-radius: 999px;
+  padding: 6px 14px; background: var(--azul); color: #fff; }
+button.copiar:hover { background: var(--azul-osc); }
+.entrega { border: 1px dashed var(--oro); border-radius: 10px; padding: 10px 14px; }
+table.chuleta { border-collapse: collapse; width: 100%; font-size: 15px; }
+table.chuleta th { background: var(--azul-osc); color: #fff; text-align: left; padding: 7px 10px; }
+table.chuleta td { padding: 6px 10px; border-bottom: 1px solid var(--borde); }
+table.chuleta tr:nth-child(even) td { background: var(--azul-claro); }
+footer { color: var(--gris); font-size: 14px; border-top: 1px solid var(--borde); margin-top: 36px; padding-top: 14px; }
+textarea.crudo { display: none; }
+@media print {
+  nav.dias, button.copiar { display: none; }
+  .dia { page-break-before: always; }
+}
+</style></head><body><div class="franja"></div>
+<header><div class="wrap">
+<div class="eyebrow">TEMA 12 · SEMANA 12 · HOJA DEL ESTUDIANTE</div>
+<h1>APIs y consumo de datos</h1>
+<p class="sub">Programación Básica 2026 · FCFM · UANL. Aquí están los enlaces a PythonTutor, el código de los ejemplos que se corren en tu computadora, el código de partida y los prompts sugeridos de cada ejercicio, listos para copiar.</p>
+<nav class="dias"><a href="#dia1">Día 1</a><a href="#dia2">Día 2</a><a href="#dia3">Día 3</a><a href="#dia4">Día 4</a><a href="#dia5">Día 5</a><a href="#chuleta">Chuleta</a><a href="#interactivos">Simuladores</a><a href="#recursos">Recursos</a></nav>
+</div></header><main class="wrap">
+<section><h2>Cómo usar la IA esta semana</h2>
+<p class="sub">Consumir APIs con IA sin que piense por ti</p><ul>
+<li>Una IA escribe en segundos el código para consultar una API, pero no sabe qué responde HOY esa API: puede inventar parámetros, claves o direcciones que no existen.</li>
+<li>Primero tú: abre la URL en el navegador, mira el JSON real y escribe la ruta para llegar al dato que necesitas.</li>
+<li>Después la IA: pídele que te explique un código de estado, un parámetro de la documentación o por qué tu ruta da KeyError.</li>
+<li>Nunca pegues en la IA (ni subas a GitHub) claves de API, contraseñas o tokens. Temario (Fase 3): la IA puede explicar APIs, no trabajar con datos que no entiendes.</li>
+</ul><h3>Ejemplo de prompt</h3><div class="bloque">
+<p class="prompt">Hago requests.get a Open-Meteo y datos[&#x27;temperature&#x27;] me da KeyError. Este es el JSON que recibí: (pego el JSON). No me des el código: pregúntame cómo está anidado el dato que busco.</p><textarea class="crudo" id="prompt-ia">Hago requests.get a Open-Meteo y datos[&#x27;temperature&#x27;] me da KeyError. Este es el JSON que recibí: (pego el JSON). No me des el código: pregúntame cómo está anidado el dato que busco.</textarea>
+<div class="acciones"><button class="copiar" data-copiar="prompt-ia">Copiar prompt</button></div></div>
+</section>
+<section><h2>Tu ejercicio cuenta si pasa el checkpoint</h2><div class="cards">
+<div class="card"><b>Palabra clave</b>Al iniciar el checkpoint el profesor dice una palabra en voz alta. Escríbela como comentario en la línea 1 de tu archivo.<br><small>Demuestra que estuviste en clase</small></div>
+<div class="card"><b>Cambio sorpresa, sin IA</b>Al terminar el tiempo del ejercicio se proyecta un cambio. Tienes 5 minutos para aplicarlo tú solo.<br><small>Demuestra que entiendes tu código</small></div>
+<div class="card"><b>Entrega antes de salir</b>Subes tu archivo .py a la tarea de Teams del día. La tarea se cierra al terminar la clase.<br><small>Demuestra que lo hiciste en clase</small></div>
+<div class="card"><b>Defensa rápida</b>El profesor elige 2–3 personas al azar para explicar una línea de su código en 1 minuto.<br><small>Demuestra que el código es tuyo</small></div>
+</div>
+<p class="sub">La IA sí se permite durante el ejercicio (con el prompt sugerido). El cambio sorpresa y la defensa son sin IA.</p>
+</section>
+<section class="dia" id="dia1"><div class="num">DÍA 1</div>
+<h2>Peticiones HTTP: pedirle datos a una API</h2><p class="sub">Qué es una API web y cómo pedirle datos con una petición HTTP (requests.get)</p>
+<h3>Ejemplos para correr en tu computadora</h3>
+<p class="sub">PythonTutor no puede correr estos ejemplos: copia cada uno a un archivo .py y ejecútalo con Python.</p>
+<div class="bloque"><b>Tu primera petición</b> <span class="sub">(PythonTutor no puede importar requests ni conectarse a internet.)</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">7</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">8</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">9</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>requests
+
+url = <span style="color: #00F">&quot;https://jsonplaceholder.typicode.com/users/1&quot;</span>
+r = requests.get(url, timeout=<span style="color: #00F">10</span>)
+
+print(r.status_code, r.reason)
+print(r.headers[<span style="color: #00F">&quot;Content-Type&quot;</span>])
+print(type(r.text), len(r.text))
+print(r.text[:<span style="color: #00F">40</span>])
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="ejemplo-1-1">import requests
+
+url = &quot;https://jsonplaceholder.typicode.com/users/1&quot;
+r = requests.get(url, timeout=10)
+
+print(r.status_code, r.reason)
+print(r.headers[&quot;Content-Type&quot;])
+print(type(r.text), len(r.text))
+print(r.text[:40])</textarea>
+<div class="acciones"><button class="copiar" data-copiar="ejemplo-1-1">Copiar código</button></div></div>
+<div class="bloque"><b>Parámetros y un error 400</b> <span class="sub">(PythonTutor no puede importar requests ni conectarse a internet.)</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 7</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 8</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 9</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">10</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">11</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">12</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">13</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>requests
+
+URL = <span style="color: #00F">&quot;https://api.open-meteo.com/v1/forecast&quot;</span>
+lugar = {<span style="color: #00F">&quot;latitude&quot;</span>: <span style="color: #00F">25.67</span>, <span style="color: #00F">&quot;longitude&quot;</span>: -<span style="color: #00F">100.31</span>,
+         <span style="color: #00F">&quot;current&quot;</span>: <span style="color: #00F">&quot;temperature_2m&quot;</span>}
+
+r = requests.get(URL, params=lugar, timeout=<span style="color: #00F">10</span>)
+print(r.status_code, r.url)
+
+<span style="color: #000080; font-weight: bold">del</span> lugar[<span style="color: #00F">&quot;longitude&quot;</span>]        <span style="color: #080; font-style: italic"># olvidamos un parámetro</span>
+r = requests.get(URL, params=lugar, timeout=<span style="color: #00F">10</span>)
+print(r.status_code, r.reason)
+print(r.text)
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="ejemplo-1-2">import requests
+
+URL = &quot;https://api.open-meteo.com/v1/forecast&quot;
+lugar = {&quot;latitude&quot;: 25.67, &quot;longitude&quot;: -100.31,
+         &quot;current&quot;: &quot;temperature_2m&quot;}
+
+r = requests.get(URL, params=lugar, timeout=10)
+print(r.status_code, r.url)
+
+del lugar[&quot;longitude&quot;]        # olvidamos un parámetro
+r = requests.get(URL, params=lugar, timeout=10)
+print(r.status_code, r.reason)
+print(r.text)</textarea>
+<div class="acciones"><button class="copiar" data-copiar="ejemplo-1-2">Copiar código</button></div></div>
+<h3>Reto: tus primeras peticiones<span class="chip">20 min</span></h3><ol class="tareas">
+<li>Con un ciclo for consulta https://jsonplaceholder.typicode.com/users/ID para los ID 1, 3 y 11, con timeout=10 en cada petición.</li>
+<li>Para cada ID imprime el código de estado y, solo si r.ok, los primeros 60 caracteres de r.text; si no, un aviso con el código y r.reason.</li>
+<li>Consulta la temperatura actual de Monterrey en Open-Meteo con params= e imprime r.status_code y r.url. Compara r.url con tu diccionario.</li>
+</ol>
+<p class="pista"><b>Pista:</b> Arma cada URL con BASE + str(id_usuario). JSONPlaceholder solo tiene 10 usuarios: el 11 no existe y tu programa no debe tronar.</p>
+<h3>Código de partida</h3><div class="bloque">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">7</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">8</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>requests
+
+BASE = <span style="color: #00F">&quot;https://jsonplaceholder.typicode.com/users/&quot;</span>
+ids = [<span style="color: #00F">1</span>, <span style="color: #00F">3</span>, <span style="color: #00F">11</span>]
+
+CLIMA = <span style="color: #00F">&quot;https://api.open-meteo.com/v1/forecast&quot;</span>
+lugar = {<span style="color: #00F">&quot;latitude&quot;</span>: <span style="color: #00F">25.67</span>, <span style="color: #00F">&quot;longitude&quot;</span>: -<span style="color: #00F">100.31</span>,
+         <span style="color: #00F">&quot;current&quot;</span>: <span style="color: #00F">&quot;temperature_2m&quot;</span>}
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="codigo-1">import requests
+
+BASE = &quot;https://jsonplaceholder.typicode.com/users/&quot;
+ids = [1, 3, 11]
+
+CLIMA = &quot;https://api.open-meteo.com/v1/forecast&quot;
+lugar = {&quot;latitude&quot;: 25.67, &quot;longitude&quot;: -100.31,
+         &quot;current&quot;: &quot;temperature_2m&quot;}</textarea>
+<div class="acciones"><button class="copiar" data-copiar="codigo-1">Copiar código</button><span class="sub">Solo en tu computadora: PythonTutor no puede importar requests ni conectarse a internet.</span></div></div>
+<h3>Prompt sugerido para la IA</h3><div class="bloque">
+<p class="prompt">Estoy aprendiendo a hacer peticiones HTTP con requests en Python. Quiero consultar una API dentro de un ciclo y revisar el código de estado antes de usar la respuesta. No me des el código: pregúntame qué significa cada código de estado y qué debería hacer mi programa si recibe un 404.</p><textarea class="crudo" id="prompt-1">Estoy aprendiendo a hacer peticiones HTTP con requests en Python. Quiero consultar una API dentro de un ciclo y revisar el código de estado antes de usar la respuesta. No me des el código: pregúntame qué significa cada código de estado y qué debería hacer mi programa si recibe un 404.</textarea>
+<div class="acciones"><button class="copiar" data-copiar="prompt-1">Copiar prompt</button><span class="sub">Si la IA te da el código completo, pídele que mejor te haga una pregunta.</span></div></div>
+<h3>Checkpoint y entrega</h3><div class="entrega"><ol>
+<li>Escribe la <b>palabra clave</b> que diga el profesor como comentario en la línea 1: <code># clave: ______</code></li>
+<li>Aplica el <b>cambio sorpresa</b> que se proyectará al terminar el ejercicio (sin IA, 5 min).</li>
+<li>Sube <b>S12D1_matricula.py</b> a la tarea de Teams del día antes de salir: la tarea cierra al terminar la clase.</li>
+<li>Prepárate: el profesor puede pedirte que expliques una línea de tu código.</li>
+</ol></div>
+</section>
+<section class="dia" id="dia2"><div class="num">DÍA 2</div>
+<h2>JSON: del texto a diccionarios y listas</h2><p class="sub">Convertir la respuesta JSON en dict y list, y llegar a un dato dentro de estructuras anidadas</p>
+<h3>Ejemplos de la clase</h3><ul class="links">
+<li>Del texto al diccionario — <a href="https://pythontutor.com/visualize.html#code=import%20json%0A%0Atexto%20%3D%20%28%27%7B%22latitude%22%3A25.666021%2C%22longitude%22%3A-100.31154%2C%27%0A%20%20%20%20%20%20%20%20%20%27%22elevation%22%3A531.0%2C%27%0A%20%20%20%20%20%20%20%20%20%27%22current_units%22%3A%7B%22temperature_2m%22%3A%22%C2%B0C%22%7D%2C%27%0A%20%20%20%20%20%20%20%20%20%27%22current%22%3A%7B%22time%22%3A%222026-10-19T20%3A15%22%2C%27%0A%20%20%20%20%20%20%20%20%20%27%22temperature_2m%22%3A24.7%7D%7D%27%29%0A%0Adatos%20%3D%20json.loads%28texto%29%0Aprint%28type%28texto%29%2C%20type%28datos%29%29%0Aprint%28list%28datos.keys%28%29%29%29%0Atemp%20%3D%20datos%5B%22current%22%5D%5B%22temperature_2m%22%5D%0Aunidad%20%3D%20datos%5B%22current_units%22%5D%5B%22temperature_2m%22%5D%0Aprint%28%22Monterrey%3A%22%2C%20temp%2C%20unidad%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">PythonTutor »</a></li>
+<li>Rutas de acceso en datos anidados — <a href="https://pythontutor.com/visualize.html#code=import%20json%0A%0Atexto%20%3D%20%22%22%22%7B%0A%20%20%22id%22%3A%201%2C%0A%20%20%22name%22%3A%20%22Leanne%20Graham%22%2C%0A%20%20%22email%22%3A%20%22Sincere%40april.biz%22%2C%0A%20%20%22address%22%3A%20%7B%0A%20%20%20%20%22city%22%3A%20%22Gwenborough%22%2C%0A%20%20%20%20%22zipcode%22%3A%20%2292998-3874%22%2C%0A%20%20%20%20%22geo%22%3A%20%7B%22lat%22%3A%20%22-37.3159%22%2C%20%22lng%22%3A%20%2281.1496%22%7D%0A%20%20%7D%2C%0A%20%20%22company%22%3A%20%7B%22name%22%3A%20%22Romaguera-Crona%22%7D%0A%7D%22%22%22%0A%0Adatos%20%3D%20json.loads%28texto%29%0Aprint%28datos%5B%22name%22%5D%29%0Aprint%28datos%5B%22address%22%5D%5B%22city%22%5D%29%0Aprint%28datos%5B%22address%22%5D%5B%22geo%22%5D%5B%22lat%22%5D%29%0Aprint%28datos%5B%22company%22%5D%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">PythonTutor »</a></li>
+</ul>
+<h3>Reto: lee el pronóstico de la semana<span class="chip">20 min</span></h3><ol class="tareas">
+<li>Convierte texto con json.loads e imprime las claves del primer nivel y la unidad de las temperaturas.</li>
+<li>Recorre los 7 días e imprime en cada renglón la fecha, la máxima y la mínima (las tres listas van en el mismo orden).</li>
+<li>Al final imprime la fecha del día más caluroso: usa max() y .index() sobre la lista de máximas (Tema 6).</li>
+</ol>
+<p class="pista"><b>Pista:</b> datos[&quot;daily&quot;][&quot;time&quot;] es la lista de fechas y datos[&quot;daily&quot;][&quot;temperature_2m_max&quot;][i] la máxima del día i. Recorre con for i in range(len(fechas)).</p>
+<h3>Código de partida</h3><div class="bloque">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 7</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 8</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 9</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">10</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>json
+
+texto = (<span style="color: #00F">&#39;{&quot;timezone&quot;:&quot;America/Monterrey&quot;,&#39;</span>
+         <span style="color: #00F">&#39;&quot;daily_units&quot;:{&quot;time&quot;:&quot;iso8601&quot;,&quot;temperature_2m_max&quot;:&quot;°C&quot;,&#39;</span>
+         <span style="color: #00F">&#39;&quot;temperature_2m_min&quot;:&quot;°C&quot;,&quot;precipitation_probability_max&quot;:&quot;%&quot;},&#39;</span>
+         <span style="color: #00F">&#39;&quot;daily&quot;:{&quot;time&quot;:[&quot;2026-10-19&quot;,&quot;2026-10-20&quot;,&quot;2026-10-21&quot;,&#39;</span>
+         <span style="color: #00F">&#39;&quot;2026-10-22&quot;,&quot;2026-10-23&quot;,&quot;2026-10-24&quot;,&quot;2026-10-25&quot;],&#39;</span>
+         <span style="color: #00F">&#39;&quot;temperature_2m_max&quot;:[24.7,22.0,27.0,27.3,23.2,24.0,20.1],&#39;</span>
+         <span style="color: #00F">&#39;&quot;temperature_2m_min&quot;:[13.0,16.2,19.5,19.8,20.0,18.0,18.5],&#39;</span>
+         <span style="color: #00F">&#39;&quot;precipitation_probability_max&quot;:[4,11,6,22,19,13,47]}}&#39;</span>)
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="codigo-2">import json
+
+texto = (&#x27;{&quot;timezone&quot;:&quot;America/Monterrey&quot;,&#x27;
+         &#x27;&quot;daily_units&quot;:{&quot;time&quot;:&quot;iso8601&quot;,&quot;temperature_2m_max&quot;:&quot;°C&quot;,&#x27;
+         &#x27;&quot;temperature_2m_min&quot;:&quot;°C&quot;,&quot;precipitation_probability_max&quot;:&quot;%&quot;},&#x27;
+         &#x27;&quot;daily&quot;:{&quot;time&quot;:[&quot;2026-10-19&quot;,&quot;2026-10-20&quot;,&quot;2026-10-21&quot;,&#x27;
+         &#x27;&quot;2026-10-22&quot;,&quot;2026-10-23&quot;,&quot;2026-10-24&quot;,&quot;2026-10-25&quot;],&#x27;
+         &#x27;&quot;temperature_2m_max&quot;:[24.7,22.0,27.0,27.3,23.2,24.0,20.1],&#x27;
+         &#x27;&quot;temperature_2m_min&quot;:[13.0,16.2,19.5,19.8,20.0,18.0,18.5],&#x27;
+         &#x27;&quot;precipitation_probability_max&quot;:[4,11,6,22,19,13,47]}}&#x27;)</textarea>
+<div class="acciones"><button class="copiar" data-copiar="codigo-2">Copiar código</button><a href="https://pythontutor.com/visualize.html#code=import%20json%0A%0Atexto%20%3D%20%28%27%7B%22timezone%22%3A%22America/Monterrey%22%2C%27%0A%20%20%20%20%20%20%20%20%20%27%22daily_units%22%3A%7B%22time%22%3A%22iso8601%22%2C%22temperature_2m_max%22%3A%22%C2%B0C%22%2C%27%0A%20%20%20%20%20%20%20%20%20%27%22temperature_2m_min%22%3A%22%C2%B0C%22%2C%22precipitation_probability_max%22%3A%22%25%22%7D%2C%27%0A%20%20%20%20%20%20%20%20%20%27%22daily%22%3A%7B%22time%22%3A%5B%222026-10-19%22%2C%222026-10-20%22%2C%222026-10-21%22%2C%27%0A%20%20%20%20%20%20%20%20%20%27%222026-10-22%22%2C%222026-10-23%22%2C%222026-10-24%22%2C%222026-10-25%22%5D%2C%27%0A%20%20%20%20%20%20%20%20%20%27%22temperature_2m_max%22%3A%5B24.7%2C22.0%2C27.0%2C27.3%2C23.2%2C24.0%2C20.1%5D%2C%27%0A%20%20%20%20%20%20%20%20%20%27%22temperature_2m_min%22%3A%5B13.0%2C16.2%2C19.5%2C19.8%2C20.0%2C18.0%2C18.5%5D%2C%27%0A%20%20%20%20%20%20%20%20%20%27%22precipitation_probability_max%22%3A%5B4%2C11%2C6%2C22%2C19%2C13%2C47%5D%7D%7D%27%29%0A&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">Abrir en PythonTutor »</a></div></div>
+<h3>Prompt sugerido para la IA</h3><div class="bloque">
+<p class="prompt">Estoy aprendiendo a leer JSON con json.loads en Python. Tengo un pronóstico con un diccionario daily que trae listas de fechas, máximas y mínimas. No me des el código: pregúntame qué tipo de dato hay en cada nivel y cómo llegaría al tercer elemento de una de las listas.</p><textarea class="crudo" id="prompt-2">Estoy aprendiendo a leer JSON con json.loads en Python. Tengo un pronóstico con un diccionario daily que trae listas de fechas, máximas y mínimas. No me des el código: pregúntame qué tipo de dato hay en cada nivel y cómo llegaría al tercer elemento de una de las listas.</textarea>
+<div class="acciones"><button class="copiar" data-copiar="prompt-2">Copiar prompt</button><span class="sub">Si la IA te da el código completo, pídele que mejor te haga una pregunta.</span></div></div>
+<h3>Checkpoint y entrega</h3><div class="entrega"><ol>
+<li>Escribe la <b>palabra clave</b> que diga el profesor como comentario en la línea 1: <code># clave: ______</code></li>
+<li>Aplica el <b>cambio sorpresa</b> que se proyectará al terminar el ejercicio (sin IA, 5 min).</li>
+<li>Sube <b>S12D2_matricula.py</b> a la tarea de Teams del día antes de salir: la tarea cierra al terminar la clase.</li>
+<li>Prepárate: el profesor puede pedirte que expliques una línea de tu código.</li>
+</ol></div>
+</section>
+<section class="dia" id="dia3"><div class="num">DÍA 3</div>
+<h2>Normalización: tus datos, en tu formato</h2><p class="sub">Normalizar datos crudos de una API: aplanar, renombrar, convertir unidades y armar registros</p>
+<h3>Ejemplos de la clase</h3><ul class="links">
+<li>Dos APIs, un solo formato — <a href="https://pythontutor.com/visualize.html#code=api_1%20%3D%20%7B%22name%22%3A%20%22Monterrey%22%2C%20%22main%22%3A%20%7B%22temp%22%3A%20297.85%7D%7D%0Aapi_2%20%3D%20%7B%22timezone%22%3A%20%22America/Monterrey%22%2C%0A%20%20%20%20%20%20%20%20%20%22current%22%3A%20%7B%22temperature_2m%22%3A%2024.7%7D%7D%0A%0Adef%20desde_api_1%28crudo%29%3A%20%20%20%20%20%20%20%20%20%20%23%20viene%20en%20Kelvin%0A%20%20%20%20return%20%7B%22ciudad%22%3A%20crudo%5B%22name%22%5D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%22temp_c%22%3A%20round%28crudo%5B%22main%22%5D%5B%22temp%22%5D%20-%20273.15%2C%201%29%7D%0A%0Adef%20desde_api_2%28crudo%29%3A%20%20%20%20%20%20%20%20%20%20%23%20viene%20en%20%C2%B0C%0A%20%20%20%20return%20%7B%22ciudad%22%3A%20crudo%5B%22timezone%22%5D.split%28%22/%22%29%5B1%5D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%22temp_c%22%3A%20crudo%5B%22current%22%5D%5B%22temperature_2m%22%5D%7D%0A%0Afor%20registro%20in%20%5Bdesde_api_1%28api_1%29%2C%20desde_api_2%28api_2%29%5D%3A%0A%20%20%20%20print%28registro%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">PythonTutor »</a></li>
+<li>Del JSON de columnas a una lista de registros — <a href="https://pythontutor.com/visualize.html#code=daily%20%3D%20%7B%22time%22%3A%20%5B%222026-10-19%22%2C%20%222026-10-20%22%2C%20%222026-10-21%22%5D%2C%0A%20%20%20%20%20%20%20%20%20%22temperature_2m_max%22%3A%20%5B24.7%2C%2022.0%2C%2027.0%5D%2C%0A%20%20%20%20%20%20%20%20%20%22temperature_2m_min%22%3A%20%5B13.0%2C%2016.2%2C%2019.5%5D%7D%0A%0Aregistros%20%3D%20%5B%5D%0Afor%20fecha%2C%20tmax%2C%20tmin%20in%20zip%28daily%5B%22time%22%5D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20daily%5B%22temperature_2m_max%22%5D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20daily%5B%22temperature_2m_min%22%5D%29%3A%0A%20%20%20%20registros.append%28%7B%22fecha%22%3A%20fecha%2C%20%22tmax%22%3A%20tmax%2C%20%22tmin%22%3A%20tmin%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22oscilacion%22%3A%20round%28tmax%20-%20tmin%2C%201%29%7D%29%0A%0Aprint%28len%28registros%29%2C%20%22registros%22%29%0Aprint%28registros%5B0%5D%29%0Afor%20r%20in%20registros%3A%0A%20%20%20%20print%28r%5B%22fecha%22%5D%2C%20r%5B%22oscilacion%22%5D%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">PythonTutor »</a></li>
+</ul>
+<h3>Reto: normaliza los usuarios de una API<span class="chip">20 min</span></h3><ol class="tareas">
+<li>Convierte texto con json.loads: es una LISTA de usuarios reales de JSONPlaceholder, cada uno con diccionarios anidados.</li>
+<li>Escribe normalizar(usuario) que regrese un registro plano: id, nombre, correo (en minúsculas), ciudad, lat y lng (como float) y empresa.</li>
+<li>Crea la lista normalizados, imprime cada registro y, al final, la ciudad del usuario más al norte (latitud más alta; ojo: todas son negativas).</li>
+</ol>
+<p class="pista"><b>Pista:</b> lat viene como TEXTO (&#x27;-37.3159&#x27;): conviértelo con float(). Su ruta es usuario[&#x27;address&#x27;][&#x27;geo&#x27;][&#x27;lat&#x27;]. Para el más al norte, usa max() con una lista de latitudes.</p>
+<h3>Código de partida</h3><div class="bloque">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 7</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 8</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 9</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">10</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">11</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">12</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">13</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">14</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">15</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">16</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>json
+
+texto = <span style="color: #00F">&quot;&quot;&quot;[</span>
+<span style="color: #00F"> {&quot;id&quot;: 1, &quot;name&quot;: &quot;Leanne Graham&quot;, &quot;email&quot;: &quot;Sincere@april.biz&quot;,</span>
+<span style="color: #00F">  &quot;address&quot;: {&quot;city&quot;: &quot;Gwenborough&quot;,</span>
+<span style="color: #00F">              &quot;geo&quot;: {&quot;lat&quot;: &quot;-37.3159&quot;, &quot;lng&quot;: &quot;81.1496&quot;}},</span>
+<span style="color: #00F">  &quot;company&quot;: {&quot;name&quot;: &quot;Romaguera-Crona&quot;}},</span>
+<span style="color: #00F"> {&quot;id&quot;: 2, &quot;name&quot;: &quot;Ervin Howell&quot;, &quot;email&quot;: &quot;Shanna@melissa.tv&quot;,</span>
+<span style="color: #00F">  &quot;address&quot;: {&quot;city&quot;: &quot;Wisokyburgh&quot;,</span>
+<span style="color: #00F">              &quot;geo&quot;: {&quot;lat&quot;: &quot;-43.9509&quot;, &quot;lng&quot;: &quot;-34.4618&quot;}},</span>
+<span style="color: #00F">  &quot;company&quot;: {&quot;name&quot;: &quot;Deckow-Crist&quot;}},</span>
+<span style="color: #00F"> {&quot;id&quot;: 3, &quot;name&quot;: &quot;Clementine Bauch&quot;, &quot;email&quot;: &quot;Nathan@yesenia.net&quot;,</span>
+<span style="color: #00F">  &quot;address&quot;: {&quot;city&quot;: &quot;McKenziehaven&quot;,</span>
+<span style="color: #00F">              &quot;geo&quot;: {&quot;lat&quot;: &quot;-68.6102&quot;, &quot;lng&quot;: &quot;-47.0653&quot;}},</span>
+<span style="color: #00F">  &quot;company&quot;: {&quot;name&quot;: &quot;Romaguera-Jacobson&quot;}}</span>
+<span style="color: #00F">]&quot;&quot;&quot;</span>
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="codigo-3">import json
+
+texto = &quot;&quot;&quot;[
+ {&quot;id&quot;: 1, &quot;name&quot;: &quot;Leanne Graham&quot;, &quot;email&quot;: &quot;Sincere@april.biz&quot;,
+  &quot;address&quot;: {&quot;city&quot;: &quot;Gwenborough&quot;,
+              &quot;geo&quot;: {&quot;lat&quot;: &quot;-37.3159&quot;, &quot;lng&quot;: &quot;81.1496&quot;}},
+  &quot;company&quot;: {&quot;name&quot;: &quot;Romaguera-Crona&quot;}},
+ {&quot;id&quot;: 2, &quot;name&quot;: &quot;Ervin Howell&quot;, &quot;email&quot;: &quot;Shanna@melissa.tv&quot;,
+  &quot;address&quot;: {&quot;city&quot;: &quot;Wisokyburgh&quot;,
+              &quot;geo&quot;: {&quot;lat&quot;: &quot;-43.9509&quot;, &quot;lng&quot;: &quot;-34.4618&quot;}},
+  &quot;company&quot;: {&quot;name&quot;: &quot;Deckow-Crist&quot;}},
+ {&quot;id&quot;: 3, &quot;name&quot;: &quot;Clementine Bauch&quot;, &quot;email&quot;: &quot;Nathan@yesenia.net&quot;,
+  &quot;address&quot;: {&quot;city&quot;: &quot;McKenziehaven&quot;,
+              &quot;geo&quot;: {&quot;lat&quot;: &quot;-68.6102&quot;, &quot;lng&quot;: &quot;-47.0653&quot;}},
+  &quot;company&quot;: {&quot;name&quot;: &quot;Romaguera-Jacobson&quot;}}
+]&quot;&quot;&quot;</textarea>
+<div class="acciones"><button class="copiar" data-copiar="codigo-3">Copiar código</button><a href="https://pythontutor.com/visualize.html#code=import%20json%0A%0Atexto%20%3D%20%22%22%22%5B%0A%20%7B%22id%22%3A%201%2C%20%22name%22%3A%20%22Leanne%20Graham%22%2C%20%22email%22%3A%20%22Sincere%40april.biz%22%2C%0A%20%20%22address%22%3A%20%7B%22city%22%3A%20%22Gwenborough%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22geo%22%3A%20%7B%22lat%22%3A%20%22-37.3159%22%2C%20%22lng%22%3A%20%2281.1496%22%7D%7D%2C%0A%20%20%22company%22%3A%20%7B%22name%22%3A%20%22Romaguera-Crona%22%7D%7D%2C%0A%20%7B%22id%22%3A%202%2C%20%22name%22%3A%20%22Ervin%20Howell%22%2C%20%22email%22%3A%20%22Shanna%40melissa.tv%22%2C%0A%20%20%22address%22%3A%20%7B%22city%22%3A%20%22Wisokyburgh%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22geo%22%3A%20%7B%22lat%22%3A%20%22-43.9509%22%2C%20%22lng%22%3A%20%22-34.4618%22%7D%7D%2C%0A%20%20%22company%22%3A%20%7B%22name%22%3A%20%22Deckow-Crist%22%7D%7D%2C%0A%20%7B%22id%22%3A%203%2C%20%22name%22%3A%20%22Clementine%20Bauch%22%2C%20%22email%22%3A%20%22Nathan%40yesenia.net%22%2C%0A%20%20%22address%22%3A%20%7B%22city%22%3A%20%22McKenziehaven%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22geo%22%3A%20%7B%22lat%22%3A%20%22-68.6102%22%2C%20%22lng%22%3A%20%22-47.0653%22%7D%7D%2C%0A%20%20%22company%22%3A%20%7B%22name%22%3A%20%22Romaguera-Jacobson%22%7D%7D%0A%5D%22%22%22%0A&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">Abrir en PythonTutor »</a></div></div>
+<h3>Prompt sugerido para la IA</h3><div class="bloque">
+<p class="prompt">Estoy aprendiendo a normalizar datos de una API en Python. Tengo usuarios con diccionarios anidados (address, geo, company) y quiero convertir cada uno en un diccionario plano con nombres en español. No me des el código: pregúntame cuál es la ruta de cada dato y qué tipo de dato debería tener en mi registro.</p><textarea class="crudo" id="prompt-3">Estoy aprendiendo a normalizar datos de una API en Python. Tengo usuarios con diccionarios anidados (address, geo, company) y quiero convertir cada uno en un diccionario plano con nombres en español. No me des el código: pregúntame cuál es la ruta de cada dato y qué tipo de dato debería tener en mi registro.</textarea>
+<div class="acciones"><button class="copiar" data-copiar="prompt-3">Copiar prompt</button><span class="sub">Si la IA te da el código completo, pídele que mejor te haga una pregunta.</span></div></div>
+<h3>Checkpoint y entrega</h3><div class="entrega"><ol>
+<li>Escribe la <b>palabra clave</b> que diga el profesor como comentario en la línea 1: <code># clave: ______</code></li>
+<li>Aplica el <b>cambio sorpresa</b> que se proyectará al terminar el ejercicio (sin IA, 5 min).</li>
+<li>Sube <b>S12D3_matricula.py</b> a la tarea de Teams del día antes de salir: la tarea cierra al terminar la clase.</li>
+<li>Prepárate: el profesor puede pedirte que expliques una línea de tu código.</li>
+</ol></div>
+</section>
+<section class="dia" id="dia4"><div class="num">DÍA 4</div>
+<h2>Validación de tipos: no confíes en los datos externos</h2><p class="sub">Validar que los datos externos traigan los campos y tipos correctos antes de usarlos</p>
+<h3>Ejemplos de la clase</h3><ul class="links">
+<li>La trampa de bool: True también es int (así no: solo isinstance(v, (int, float))) — <a href="https://pythontutor.com/visualize.html#code=valores%20%3D%20%5B24.7%2C%20True%2C%20%2225.1%22%2C%20None%2C%2018%5D%0Anumeros%20%3D%20%5B%5D%0Afor%20v%20in%20valores%3A%0A%20%20%20%20if%20isinstance%28v%2C%20%28int%2C%20float%29%29%3A%0A%20%20%20%20%20%20%20%20numeros.append%28v%29%0Aprint%28numeros%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">PythonTutor »</a></li>
+<li>La trampa de bool: True también es int (así sí: descarta bool de forma explícita) — <a href="https://pythontutor.com/visualize.html#code=valores%20%3D%20%5B24.7%2C%20True%2C%20%2225.1%22%2C%20None%2C%2018%5D%0Anumeros%20%3D%20%5B%5D%0Afor%20v%20in%20valores%3A%0A%20%20%20%20if%20isinstance%28v%2C%20bool%29%3A%0A%20%20%20%20%20%20%20%20continue%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%23%20True%20no%20es%20dato%0A%20%20%20%20if%20isinstance%28v%2C%20%28int%2C%20float%29%29%3A%0A%20%20%20%20%20%20%20%20numeros.append%28v%29%0Aprint%28numeros%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">PythonTutor »</a></li>
+<li>Registrar y continuar — <a href="https://pythontutor.com/visualize.html#code=lecturas%20%3D%20%5B%7B%22estacion%22%3A%20%22Centro%22%2C%20%22temp%22%3A%2024.7%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%7B%22estacion%22%3A%20%22Norte%22%2C%20%22temp%22%3A%20%2225.1%22%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%7B%22estacion%22%3A%20%22Sur%22%2C%20%22temp%22%3A%20None%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%7B%22estacion%22%3A%20%22Obispado%22%7D%5D%0A%0Adef%20validar%28lectura%29%3A%0A%20%20%20%20if%20%22temp%22%20not%20in%20lectura%3A%0A%20%20%20%20%20%20%20%20raise%20ValueError%28%22falta%20temp%22%29%0A%20%20%20%20t%20%3D%20lectura%5B%22temp%22%5D%0A%20%20%20%20if%20isinstance%28t%2C%20str%29%3A%0A%20%20%20%20%20%20%20%20t%20%3D%20float%28t%29%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%23%20se%20repara%0A%20%20%20%20if%20isinstance%28t%2C%20bool%29%20or%20not%20isinstance%28t%2C%20%28int%2C%20float%29%29%3A%0A%20%20%20%20%20%20%20%20raise%20TypeError%28f%22temp%20inv%C3%A1lida%3A%20%7Bt%21r%7D%22%29%0A%20%20%20%20return%20%7B%22estacion%22%3A%20lectura%5B%22estacion%22%5D%2C%20%22temp%22%3A%20float%28t%29%7D%0A%0Avalidas%2C%20errores%20%3D%20%5B%5D%2C%20%5B%5D%0Afor%20lectura%20in%20lecturas%3A%0A%20%20%20%20try%3A%0A%20%20%20%20%20%20%20%20validas.append%28validar%28lectura%29%29%0A%20%20%20%20except%20%28ValueError%2C%20TypeError%29%20as%20e%3A%0A%20%20%20%20%20%20%20%20errores.append%28f%22%7Blectura%5B%27estacion%27%5D%7D%3A%20%7Be%7D%22%29%0Aprint%28%5Bv%5B%22estacion%22%5D%20for%20v%20in%20validas%5D%29%0Aprint%28errores%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">PythonTutor »</a></li>
+</ul>
+<h3>Reto: valida las lecturas de una red de sensores<span class="chip">20 min</span></h3><ol class="tareas">
+<li>Escribe validar(lectura) que exija: estacion (texto no vacío), temp (número que no sea bool; si llega como texto numérico, conviértelo) y humedad (entero de 0 a 100).</li>
+<li>Lanza ValueError o TypeError con un mensaje que diga la estación, el campo y el valor que llegó.</li>
+<li>Recorre las lecturas con try/except: imprime las válidas, los errores con su motivo y el promedio de temperatura de las válidas.</li>
+</ol>
+<p class="pista"><b>Pista:</b> Revisa primero que el campo exista (in) y después su tipo. float(&quot;24,8&quot;) lanza ValueError: la coma no es punto decimal, y ese error también se registra.</p>
+<h3>Código de partida</h3><div class="bloque">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 7</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 8</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 9</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">10</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">11</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">12</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>json
+
+texto = <span style="color: #00F">&quot;&quot;&quot;[</span>
+<span style="color: #00F"> {&quot;estacion&quot;: &quot;Centro&quot;, &quot;temp&quot;: 24.7, &quot;humedad&quot;: 45},</span>
+<span style="color: #00F"> {&quot;estacion&quot;: &quot;Norte&quot;, &quot;temp&quot;: &quot;25.1&quot;, &quot;humedad&quot;: 50},</span>
+<span style="color: #00F"> {&quot;estacion&quot;: &quot;Sur&quot;, &quot;temp&quot;: null, &quot;humedad&quot;: 61},</span>
+<span style="color: #00F"> {&quot;estacion&quot;: &quot;Obispado&quot;, &quot;temp&quot;: 23.9, &quot;humedad&quot;: 140},</span>
+<span style="color: #00F"> {&quot;estacion&quot;: &quot;&quot;, &quot;temp&quot;: 22.4, &quot;humedad&quot;: 58},</span>
+<span style="color: #00F"> {&quot;estacion&quot;: &quot;Valle&quot;, &quot;temp&quot;: true, &quot;humedad&quot;: 47},</span>
+<span style="color: #00F"> {&quot;estacion&quot;: &quot;Cumbres&quot;, &quot;temp&quot;: &quot;24,8&quot;, &quot;humedad&quot;: 52},</span>
+<span style="color: #00F"> {&quot;estacion&quot;: &quot;Apodaca&quot;, &quot;temp&quot;: 26.0}</span>
+<span style="color: #00F">]&quot;&quot;&quot;</span>
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="codigo-4">import json
+
+texto = &quot;&quot;&quot;[
+ {&quot;estacion&quot;: &quot;Centro&quot;, &quot;temp&quot;: 24.7, &quot;humedad&quot;: 45},
+ {&quot;estacion&quot;: &quot;Norte&quot;, &quot;temp&quot;: &quot;25.1&quot;, &quot;humedad&quot;: 50},
+ {&quot;estacion&quot;: &quot;Sur&quot;, &quot;temp&quot;: null, &quot;humedad&quot;: 61},
+ {&quot;estacion&quot;: &quot;Obispado&quot;, &quot;temp&quot;: 23.9, &quot;humedad&quot;: 140},
+ {&quot;estacion&quot;: &quot;&quot;, &quot;temp&quot;: 22.4, &quot;humedad&quot;: 58},
+ {&quot;estacion&quot;: &quot;Valle&quot;, &quot;temp&quot;: true, &quot;humedad&quot;: 47},
+ {&quot;estacion&quot;: &quot;Cumbres&quot;, &quot;temp&quot;: &quot;24,8&quot;, &quot;humedad&quot;: 52},
+ {&quot;estacion&quot;: &quot;Apodaca&quot;, &quot;temp&quot;: 26.0}
+]&quot;&quot;&quot;</textarea>
+<div class="acciones"><button class="copiar" data-copiar="codigo-4">Copiar código</button><a href="https://pythontutor.com/visualize.html#code=import%20json%0A%0Atexto%20%3D%20%22%22%22%5B%0A%20%7B%22estacion%22%3A%20%22Centro%22%2C%20%22temp%22%3A%2024.7%2C%20%22humedad%22%3A%2045%7D%2C%0A%20%7B%22estacion%22%3A%20%22Norte%22%2C%20%22temp%22%3A%20%2225.1%22%2C%20%22humedad%22%3A%2050%7D%2C%0A%20%7B%22estacion%22%3A%20%22Sur%22%2C%20%22temp%22%3A%20null%2C%20%22humedad%22%3A%2061%7D%2C%0A%20%7B%22estacion%22%3A%20%22Obispado%22%2C%20%22temp%22%3A%2023.9%2C%20%22humedad%22%3A%20140%7D%2C%0A%20%7B%22estacion%22%3A%20%22%22%2C%20%22temp%22%3A%2022.4%2C%20%22humedad%22%3A%2058%7D%2C%0A%20%7B%22estacion%22%3A%20%22Valle%22%2C%20%22temp%22%3A%20true%2C%20%22humedad%22%3A%2047%7D%2C%0A%20%7B%22estacion%22%3A%20%22Cumbres%22%2C%20%22temp%22%3A%20%2224%2C8%22%2C%20%22humedad%22%3A%2052%7D%2C%0A%20%7B%22estacion%22%3A%20%22Apodaca%22%2C%20%22temp%22%3A%2026.0%7D%0A%5D%22%22%22%0A&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">Abrir en PythonTutor »</a></div></div>
+<h3>Prompt sugerido para la IA</h3><div class="bloque">
+<p class="prompt">Estoy validando lecturas que llegan de una API en Python con isinstance y raise. Cada lectura debe tener estacion (texto), temp (número) y humedad (entero de 0 a 100). No me des el código: pregúntame qué debe pasar con cada caso raro (null, true, &quot;25.1&quot;, &quot;24,8&quot;, un campo que falta) y en qué orden conviene revisar.</p><textarea class="crudo" id="prompt-4">Estoy validando lecturas que llegan de una API en Python con isinstance y raise. Cada lectura debe tener estacion (texto), temp (número) y humedad (entero de 0 a 100). No me des el código: pregúntame qué debe pasar con cada caso raro (null, true, &quot;25.1&quot;, &quot;24,8&quot;, un campo que falta) y en qué orden conviene revisar.</textarea>
+<div class="acciones"><button class="copiar" data-copiar="prompt-4">Copiar prompt</button><span class="sub">Si la IA te da el código completo, pídele que mejor te haga una pregunta.</span></div></div>
+<h3>Checkpoint y entrega</h3><div class="entrega"><ol>
+<li>Escribe la <b>palabra clave</b> que diga el profesor como comentario en la línea 1: <code># clave: ______</code></li>
+<li>Aplica el <b>cambio sorpresa</b> que se proyectará al terminar el ejercicio (sin IA, 5 min).</li>
+<li>Sube <b>S12D4_matricula.py</b> a la tarea de Teams del día antes de salir: la tarea cierra al terminar la clase.</li>
+<li>Prepárate: el profesor puede pedirte que expliques una línea de tu código.</li>
+</ol></div>
+</section>
+<section class="dia" id="dia5"><div class="num">DÍA 5</div>
+<h2>Errores comunes y un pipeline completo</h2><p class="sub">Errores comunes con APIs y un pipeline completo: pedir, revisar, convertir, normalizar, validar y guardar</p>
+<h3>Ejemplos para correr en tu computadora</h3>
+<p class="sub">PythonTutor no puede correr estos ejemplos: copia cada uno a un archivo .py y ejecútalo con Python.</p>
+<div class="bloque"><b>Una URL con un error de dedo (así no: usa la respuesta sin revisarla)</b> <span class="sub">(PythonTutor no puede importar requests ni conectarse a internet.)</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">6</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>requests
+
+url = <span style="color: #00F">&quot;https://jsonplaceholder.typicode.com/user/1&quot;</span>
+r = requests.get(url, timeout=<span style="color: #00F">10</span>)
+datos = r.json()
+print(datos[<span style="color: #00F">&quot;name&quot;</span>])
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="ejemplo-5-1">import requests
+
+url = &quot;https://jsonplaceholder.typicode.com/user/1&quot;
+r = requests.get(url, timeout=10)
+datos = r.json()
+print(datos[&quot;name&quot;])</textarea>
+<div class="acciones"><button class="copiar" data-copiar="ejemplo-5-1">Copiar código</button></div></div>
+<div class="bloque"><b>Una URL con un error de dedo (así sí: raise_for_status dentro de try)</b> <span class="sub">(PythonTutor no puede importar requests ni conectarse a internet.)</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">7</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">8</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">9</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>requests
+
+url = <span style="color: #00F">&quot;https://jsonplaceholder.typicode.com/user/1&quot;</span>
+<span style="color: #000080; font-weight: bold">try</span>:
+    r = requests.get(url, timeout=<span style="color: #00F">10</span>)
+    r.raise_for_status()
+    print(r.json()[<span style="color: #00F">&quot;name&quot;</span>])
+<span style="color: #000080; font-weight: bold">except</span> requests.RequestException <span style="color: #000080; font-weight: bold">as</span> e:
+    print(<span style="color: #00F">&quot;Falló la consulta:&quot;</span>, e)
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="ejemplo-5-2">import requests
+
+url = &quot;https://jsonplaceholder.typicode.com/user/1&quot;
+try:
+    r = requests.get(url, timeout=10)
+    r.raise_for_status()
+    print(r.json()[&quot;name&quot;])
+except requests.RequestException as e:
+    print(&quot;Falló la consulta:&quot;, e)</textarea>
+<div class="acciones"><button class="copiar" data-copiar="ejemplo-5-2">Copiar código</button></div></div>
+<div class="bloque"><b>Un pipeline completo con el pronóstico</b> <span class="sub">(PythonTutor no puede importar requests ni conectarse a internet.)</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 7</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 8</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 9</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">10</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">11</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">12</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">13</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">14</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">15</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">16</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">17</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">18</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">19</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">20</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">21</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">22</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">23</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>json
+<span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>requests
+
+URL = <span style="color: #00F">&quot;https://api.open-meteo.com/v1/forecast&quot;</span>
+PARAMS = {<span style="color: #00F">&quot;latitude&quot;</span>: <span style="color: #00F">25.67</span>, <span style="color: #00F">&quot;longitude&quot;</span>: -<span style="color: #00F">100.31</span>,
+          <span style="color: #00F">&quot;timezone&quot;</span>: <span style="color: #00F">&quot;America/Monterrey&quot;</span>,
+          <span style="color: #00F">&quot;daily&quot;</span>: <span style="color: #00F">&quot;temperature_2m_max,temperature_2m_min&quot;</span>}
+
+<span style="color: #000080; font-weight: bold">def</span><span style="color: #BBB"> </span>obtener(url, params):
+    r = requests.get(url, params=params, timeout=<span style="color: #00F">10</span>)
+    r.raise_for_status()
+    <span style="color: #000080; font-weight: bold">return</span> r.json()
+
+<span style="color: #000080; font-weight: bold">def</span><span style="color: #BBB"> </span>normalizar(d):
+    filas = zip(d[<span style="color: #00F">&quot;time&quot;</span>], d[<span style="color: #00F">&quot;temperature_2m_max&quot;</span>],
+                d[<span style="color: #00F">&quot;temperature_2m_min&quot;</span>])
+    <span style="color: #000080; font-weight: bold">return</span> [{<span style="color: #00F">&quot;fecha&quot;</span>: f, <span style="color: #00F">&quot;tmax&quot;</span>: a, <span style="color: #00F">&quot;tmin&quot;</span>: b} <span style="color: #000080; font-weight: bold">for</span> f, a, b <span style="font-weight: bold">in</span> filas]
+
+registros = normalizar(obtener(URL, PARAMS)[<span style="color: #00F">&quot;daily&quot;</span>])
+validos = [r <span style="color: #000080; font-weight: bold">for</span> r <span style="font-weight: bold">in</span> registros <span style="color: #000080; font-weight: bold">if</span> <span style="color: #000080; font-weight: bold">None</span> <span style="font-weight: bold">not</span> <span style="font-weight: bold">in</span> r.values()]
+<span style="color: #000080; font-weight: bold">with</span> open(<span style="color: #00F">&quot;pronostico.json&quot;</span>, <span style="color: #00F">&quot;w&quot;</span>, encoding=<span style="color: #00F">&quot;utf-8&quot;</span>) <span style="color: #000080; font-weight: bold">as</span> f:
+    json.dump(validos, f, indent=<span style="color: #00F">2</span>)
+print(len(validos), <span style="color: #00F">&quot;días guardados:&quot;</span>, validos[<span style="color: #00F">0</span>])
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="ejemplo-5-3">import json
+import requests
+
+URL = &quot;https://api.open-meteo.com/v1/forecast&quot;
+PARAMS = {&quot;latitude&quot;: 25.67, &quot;longitude&quot;: -100.31,
+          &quot;timezone&quot;: &quot;America/Monterrey&quot;,
+          &quot;daily&quot;: &quot;temperature_2m_max,temperature_2m_min&quot;}
+
+def obtener(url, params):
+    r = requests.get(url, params=params, timeout=10)
+    r.raise_for_status()
+    return r.json()
+
+def normalizar(d):
+    filas = zip(d[&quot;time&quot;], d[&quot;temperature_2m_max&quot;],
+                d[&quot;temperature_2m_min&quot;])
+    return [{&quot;fecha&quot;: f, &quot;tmax&quot;: a, &quot;tmin&quot;: b} for f, a, b in filas]
+
+registros = normalizar(obtener(URL, PARAMS)[&quot;daily&quot;])
+validos = [r for r in registros if None not in r.values()]
+with open(&quot;pronostico.json&quot;, &quot;w&quot;, encoding=&quot;utf-8&quot;) as f:
+    json.dump(validos, f, indent=2)
+print(len(validos), &quot;días guardados:&quot;, validos[0])</textarea>
+<div class="acciones"><button class="copiar" data-copiar="ejemplo-5-3">Copiar código</button></div></div>
+<h3>Reto integrador: módulo de consumo de datos<span class="chip">20 min</span></h3><ol class="tareas">
+<li>obtener(): pide al archivo histórico de Open-Meteo las máximas, mínimas y lluvia diarias de Monterrey de septiembre de 2026, con timeout y raise_for_status dentro de try/except.</li>
+<li>normalizar() → lista de registros {fecha, tmax, tmin, lluvia_mm}; validar() → solo números (no bool) y tmin ≤ tmax; registra los inválidos con su motivo.</li>
+<li>Guarda los válidos en clima_septiembre.json e imprime cuántos días se guardaron, el día más caluroso y la lluvia total del mes.</li>
+</ol>
+<p class="pista"><b>Pista:</b> Usa los PARAMS del código de partida tal cual: la API los pide con esos nombres. La lluvia viene en precipitation_sum. sum() y max() funcionan sobre listas por comprensión.</p>
+<h3>Código de partida</h3><div class="bloque">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">7</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">8</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>json
+<span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>requests
+
+URL = <span style="color: #00F">&quot;https://archive-api.open-meteo.com/v1/archive&quot;</span>
+PARAMS = {<span style="color: #00F">&quot;latitude&quot;</span>: <span style="color: #00F">25.67</span>, <span style="color: #00F">&quot;longitude&quot;</span>: -<span style="color: #00F">100.31</span>,
+          <span style="color: #00F">&quot;start_date&quot;</span>: <span style="color: #00F">&quot;2026-09-01&quot;</span>, <span style="color: #00F">&quot;end_date&quot;</span>: <span style="color: #00F">&quot;2026-09-30&quot;</span>,
+          <span style="color: #00F">&quot;daily&quot;</span>: <span style="color: #00F">&quot;temperature_2m_max,temperature_2m_min,precipitation_sum&quot;</span>,
+          <span style="color: #00F">&quot;timezone&quot;</span>: <span style="color: #00F">&quot;America/Monterrey&quot;</span>}
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="codigo-5">import json
+import requests
+
+URL = &quot;https://archive-api.open-meteo.com/v1/archive&quot;
+PARAMS = {&quot;latitude&quot;: 25.67, &quot;longitude&quot;: -100.31,
+          &quot;start_date&quot;: &quot;2026-09-01&quot;, &quot;end_date&quot;: &quot;2026-09-30&quot;,
+          &quot;daily&quot;: &quot;temperature_2m_max,temperature_2m_min,precipitation_sum&quot;,
+          &quot;timezone&quot;: &quot;America/Monterrey&quot;}</textarea>
+<div class="acciones"><button class="copiar" data-copiar="codigo-5">Copiar código</button><span class="sub">Solo en tu computadora: PythonTutor no puede importar requests ni conectarse a internet.</span></div></div>
+<h3>Prompt sugerido para la IA</h3><div class="bloque">
+<p class="prompt">Estoy armando en Python un módulo que consume una API del clima con requests: obtener, normalizar, validar y guardar en JSON. No me des el código: ayúdame a decidir qué debe recibir y regresar cada función, y pregúntame qué haría mi programa si la API no responde.</p><textarea class="crudo" id="prompt-5">Estoy armando en Python un módulo que consume una API del clima con requests: obtener, normalizar, validar y guardar en JSON. No me des el código: ayúdame a decidir qué debe recibir y regresar cada función, y pregúntame qué haría mi programa si la API no responde.</textarea>
+<div class="acciones"><button class="copiar" data-copiar="prompt-5">Copiar prompt</button><span class="sub">Si la IA te da el código completo, pídele que mejor te haga una pregunta.</span></div></div>
+<h3>Checkpoint y entrega</h3><div class="entrega"><ol>
+<li>Escribe la <b>palabra clave</b> que diga el profesor como comentario en la línea 1: <code># clave: ______</code></li>
+<li>Aplica el <b>cambio sorpresa</b> que se proyectará al terminar el ejercicio (sin IA, 5 min).</li>
+<li>Sube <b>S12D5_matricula.py</b> a la tarea de Teams del día antes de salir: la tarea cierra al terminar la clase.</li>
+<li>Prepárate: el profesor puede pedirte que expliques una línea de tu código.</li>
+</ol></div>
+</section>
+<section class="dia" id="chuleta"><h2>Chuleta: requests y json</h2>
+<p class="sub">requests se instala una vez con pip install requests; json ya viene con Python.</p>
+<table class="chuleta"><tr><th>Instrucción</th><th>Qué hace</th><th>Ejemplo</th><th>Resultado</th></tr>
+<tr><td class="mono">requests.get(url, ...)</td><td>Hace una petición GET</td><td class="mono">requests.get(u, timeout=10)</td><td class="mono">&lt;Response [200]&gt;</td></tr>
+<tr><td class="mono">params={...}</td><td>Parámetros ?clave=valor</td><td class="mono">params={&quot;id&quot;: 3}</td><td class="mono">...?id=3</td></tr>
+<tr><td class="mono">r.status_code / r.ok</td><td>Código / ¿salió bien?</td><td class="mono">r.status_code</td><td class="mono">200</td></tr>
+<tr><td class="mono">r.raise_for_status()</td><td>HTTPError si es 4xx o 5xx</td><td class="mono">r.raise_for_status()</td><td class="mono">None si salió bien</td></tr>
+<tr><td class="mono">r.text / r.url</td><td>Texto recibido / URL final</td><td class="mono">type(r.text)</td><td class="mono">&lt;class &#x27;str&#x27;&gt;</td></tr>
+<tr><td class="mono">r.json()</td><td>JSON de la respuesta → Python</td><td class="mono">r.json()[&quot;current&quot;]</td><td class="mono">un dict</td></tr>
+<tr><td class="mono">json.loads(texto)</td><td>Texto JSON → Python</td><td class="mono">json.loads(&#x27;[1, null]&#x27;)</td><td class="mono">[1, None]</td></tr>
+<tr><td class="mono">json.dumps(obj)</td><td>Python → texto JSON</td><td class="mono">json.dumps({&quot;a&quot;: True})</td><td class="mono">&#x27;{&quot;a&quot;: true}&#x27;</td></tr>
+<tr><td class="mono">isinstance(v, tipos)</td><td>¿v es de esos tipos?</td><td class="mono">isinstance(True, int)</td><td class="mono">True (¡ojo!)</td></tr>
+<tr><td class="mono">d.get(clave, x)</td><td>Lee sin KeyError</td><td class="mono">{}.get(&quot;t&quot;, 0)</td><td class="mono">0</td></tr>
+<tr><td class="mono">zip(a, b)</td><td>Recorre listas en paralelo</td><td class="mono">list(zip([1, 2], &quot;ab&quot;))</td><td class="mono">[(1, &#x27;a&#x27;), (2, &#x27;b&#x27;)]</td></tr>
+<tr><td class="mono">except requests.RequestException</td><td>Atrapa cualquier falla de requests</td><td class="mono">ConnectionError, HTTPError...</td><td class="mono">—</td></tr>
+</table></section>
+<section class="dia" id="interactivos"><h2>Simuladores y ejercicios de la semana</h2>
+<p class="sub">Funcionan en el navegador del celular o de la computadora, sin instalar nada. Los de todas las semanas están en <a href="https://memosanchezg.github.io/programacion-basica-interactivos/" target="_blank" rel="noopener">memosanchezg.github.io/programacion-basica-interactivos/</a>.</p>
+<ul class="links">
+<li><a href="https://memosanchezg.github.io/programacion-basica-interactivos/semana-12-explorador-api.html" target="_blank" rel="noopener">Explorador de APIs</a> <span class="sub">· Simulador</span><br><span class="sub">Arma una petición a una API real, envíala y recorre el JSON que responde: cada dato con su ruta y su tipo en Python.</span></li>
+<li><a href="https://memosanchezg.github.io/programacion-basica-interactivos/semana-12-atrapa-el-dato.html" target="_blank" rel="noopener">Atrapa el dato</a> <span class="sub">· Simulador</span><br><span class="sub">Diez respuestas reales de APIs y una pregunta en cada una: escribe la ruta en Python que llega al dato y la página te contesta como Python.</span></li>
+<li><a href="https://memosanchezg.github.io/programacion-basica-interactivos/semana-12-validador.html" target="_blank" rel="noopener">Valida las lecturas de una red de sensores</a> <span class="sub">· Ejercicio con Python</span><br><span class="sub">Escribe validar(lectura) para separar las lecturas buenas de las que llegaron mal de la API, sin que tu programa se detenga.</span></li>
+</ul></section>
+<section class="dia" id="recursos"><h2>Recursos</h2><ul class="links">
+<li><a href="https://jsonplaceholder.typicode.com/" target="_blank" rel="noopener">JSONPlaceholder: API de práctica</a><br><span class="sub">Usuarios, publicaciones y tareas inventados que nunca cambian: ideal para practicar peticiones y códigos de estado.</span></li>
+<li><a href="https://open-meteo.com/en/docs" target="_blank" rel="noopener">Open-Meteo: clima sin clave de acceso</a><br><span class="sub">Documentación con un constructor de URL: eliges variables y ciudad, y te da la URL lista para requests.</span></li>
+<li><a href="https://github.com/public-apis/public-apis" target="_blank" rel="noopener">Lista de APIs públicas y gratuitas (para tu PIA)</a><br><span class="sub">Cientos de APIs por tema. Prefiere las marcadas &#x27;No&#x27; en Auth (no piden clave).</span></li>
+<li><a href="https://requests.readthedocs.io/en/latest/user/quickstart/" target="_blank" rel="noopener">requests: guía de inicio rápido (en inglés)</a><br><span class="sub">get, params, timeout, status_code, json() y raise_for_status, con ejemplos cortos.</span></li>
+<li><a href="https://docs.python.org/es/3/library/json.html" target="_blank" rel="noopener">Documentación oficial del módulo json</a><br><span class="sub">loads, dumps, load y dump, y la tabla de conversión entre JSON y Python.</span></li>
+<li><a href="https://developer.mozilla.org/es/docs/Web/HTTP/Reference/Status" target="_blank" rel="noopener">Códigos de estado HTTP (MDN)</a><br><span class="sub">Qué significa cada código, agrupado por familias.</span></li>
+</ul></section>
+<footer>Hoja del estudiante del Tema 12 · Programación Básica · FCFM-UANL. <a href="index.html">Índice de simuladores</a> · <a href="#qr-sitio" class="qr-abrir">Abrir en el celular (QR)</a></footer>
+</main><script>
+document.querySelectorAll('button.copiar').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var el = document.getElementById(btn.getAttribute('data-copiar'));
+    var texto = el.value !== undefined ? el.value : el.textContent;
+    var listo = function () {
+      var antes = btn.textContent;
+      btn.textContent = 'Copiado \u2713';
+      setTimeout(function () { btn.textContent = antes; }, 1500);
+    };
+    var respaldo = function () {
+      var t = document.createElement('textarea');
+      t.value = texto; document.body.appendChild(t); t.select();
+      try { document.execCommand('copy'); listo(); } catch (e) {}
+      document.body.removeChild(t);
+    };
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(texto).then(listo, respaldo);
+    } else { respaldo(); }
+  });
+});
+</script><div id="qr-sitio" class="qr-capa" hidden>
+  <div class="qr-caja" role="dialog" aria-modal="true" aria-label="Código QR de esta página">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 41 41" role="img" aria-label="Código QR de https://memosanchezg.github.io/programacion-basica-interactivos/hoja-tema-12.html" shape-rendering="crispEdges"><rect width="41" height="41" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM10 2h2v1h-2zM14 2h1v1h-1zM17 2h2v1h-2zM20 2h1v1h-1zM22 2h1v1h-1zM24 2h1v1h-1zM27 2h1v1h-1zM32 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM10 3h1v1h-1zM12 3h4v1h-4zM18 3h2v1h-2zM21 3h2v1h-2zM26 3h1v1h-1zM28 3h1v1h-1zM30 3h1v1h-1zM32 3h1v1h-1zM38 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM10 4h1v1h-1zM12 4h1v1h-1zM15 4h3v1h-3zM23 4h6v1h-6zM30 4h1v1h-1zM32 4h1v1h-1zM34 4h3v1h-3zM38 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM12 5h1v1h-1zM14 5h1v1h-1zM18 5h2v1h-2zM22 5h2v1h-2zM25 5h3v1h-3zM30 5h1v1h-1zM32 5h1v1h-1zM34 5h3v1h-3zM38 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h1v1h-1zM13 6h1v1h-1zM15 6h1v1h-1zM20 6h2v1h-2zM23 6h2v1h-2zM28 6h1v1h-1zM30 6h1v1h-1zM32 6h1v1h-1zM34 6h3v1h-3zM38 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM11 7h2v1h-2zM14 7h3v1h-3zM24 7h3v1h-3zM28 7h1v1h-1zM30 7h1v1h-1zM32 7h1v1h-1zM38 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM30 8h1v1h-1zM32 8h7v1h-7zM18 9h1v1h-1zM20 9h1v1h-1zM22 9h1v1h-1zM24 9h1v1h-1zM27 9h4v1h-4zM2 10h1v1h-1zM5 10h7v1h-7zM13 10h2v1h-2zM17 10h3v1h-3zM21 10h2v1h-2zM24 10h1v1h-1zM26 10h1v1h-1zM28 10h1v1h-1zM30 10h2v1h-2zM34 10h1v1h-1zM36 10h3v1h-3zM2 11h1v1h-1zM4 11h4v1h-4zM11 11h3v1h-3zM20 11h3v1h-3zM24 11h2v1h-2zM27 11h3v1h-3zM33 11h2v1h-2zM36 11h2v1h-2zM4 12h2v1h-2zM8 12h2v1h-2zM11 12h2v1h-2zM14 12h2v1h-2zM23 12h3v1h-3zM28 12h3v1h-3zM33 12h4v1h-4zM38 12h1v1h-1zM3 13h3v1h-3zM9 13h1v1h-1zM11 13h3v1h-3zM17 13h1v1h-1zM19 13h1v1h-1zM30 13h1v1h-1zM32 13h7v1h-7zM3 14h1v1h-1zM8 14h1v1h-1zM10 14h2v1h-2zM13 14h1v1h-1zM15 14h2v1h-2zM18 14h1v1h-1zM21 14h1v1h-1zM29 14h2v1h-2zM32 14h2v1h-2zM35 14h1v1h-1zM38 14h1v1h-1zM2 15h2v1h-2zM6 15h1v1h-1zM9 15h6v1h-6zM17 15h3v1h-3zM23 15h1v1h-1zM25 15h1v1h-1zM28 15h3v1h-3zM34 15h2v1h-2zM3 16h1v1h-1zM5 16h2v1h-2zM8 16h1v1h-1zM14 16h4v1h-4zM20 16h2v1h-2zM23 16h1v1h-1zM27 16h1v1h-1zM29 16h1v1h-1zM34 16h5v1h-5zM2 17h1v1h-1zM5 17h1v1h-1zM7 17h1v1h-1zM10 17h1v1h-1zM12 17h3v1h-3zM16 17h1v1h-1zM18 17h1v1h-1zM20 17h1v1h-1zM22 17h1v1h-1zM26 17h1v1h-1zM30 17h4v1h-4zM35 17h4v1h-4zM2 18h3v1h-3zM7 18h2v1h-2zM11 18h2v1h-2zM18 18h1v1h-1zM24 18h1v1h-1zM26 18h2v1h-2zM29 18h1v1h-1zM32 18h1v1h-1zM36 18h1v1h-1zM3 19h1v1h-1zM6 19h2v1h-2zM9 19h3v1h-3zM14 19h3v1h-3zM18 19h2v1h-2zM21 19h1v1h-1zM28 19h2v1h-2zM31 19h1v1h-1zM36 19h1v1h-1zM5 20h2v1h-2zM8 20h2v1h-2zM11 20h1v1h-1zM15 20h1v1h-1zM17 20h1v1h-1zM20 20h2v1h-2zM24 20h4v1h-4zM29 20h2v1h-2zM32 20h1v1h-1zM34 20h1v1h-1zM36 20h1v1h-1zM38 20h1v1h-1zM2 21h1v1h-1zM4 21h2v1h-2zM10 21h2v1h-2zM14 21h3v1h-3zM20 21h2v1h-2zM26 21h2v1h-2zM29 21h1v1h-1zM31 21h5v1h-5zM38 21h1v1h-1zM5 22h1v1h-1zM7 22h5v1h-5zM13 22h1v1h-1zM17 22h3v1h-3zM22 22h1v1h-1zM24 22h3v1h-3zM28 22h7v1h-7zM3 23h1v1h-1zM5 23h1v1h-1zM7 23h1v1h-1zM9 23h1v1h-1zM12 23h6v1h-6zM20 23h2v1h-2zM24 23h2v1h-2zM29 23h1v1h-1zM34 23h1v1h-1zM36 23h1v1h-1zM2 24h2v1h-2zM6 24h1v1h-1zM8 24h1v1h-1zM10 24h1v1h-1zM12 24h1v1h-1zM17 24h3v1h-3zM23 24h3v1h-3zM27 24h1v1h-1zM29 24h2v1h-2zM33 24h1v1h-1zM35 24h1v1h-1zM37 24h2v1h-2zM2 25h1v1h-1zM5 25h2v1h-2zM10 25h1v1h-1zM12 25h2v1h-2zM16 25h7v1h-7zM24 25h1v1h-1zM29 25h3v1h-3zM33 25h5v1h-5zM2 26h1v1h-1zM5 26h1v1h-1zM7 26h5v1h-5zM13 26h2v1h-2zM16 26h3v1h-3zM22 26h1v1h-1zM25 26h2v1h-2zM29 26h1v1h-1zM32 26h2v1h-2zM2 27h1v1h-1zM7 27h1v1h-1zM12 27h1v1h-1zM16 27h1v1h-1zM18 27h1v1h-1zM20 27h1v1h-1zM22 27h2v1h-2zM25 27h1v1h-1zM28 27h4v1h-4zM34 27h1v1h-1zM2 28h2v1h-2zM5 28h1v1h-1zM7 28h2v1h-2zM11 28h1v1h-1zM13 28h1v1h-1zM15 28h1v1h-1zM18 28h1v1h-1zM20 28h3v1h-3zM29 28h1v1h-1zM31 28h1v1h-1zM34 28h1v1h-1zM37 28h2v1h-2zM2 29h1v1h-1zM4 29h1v1h-1zM6 29h1v1h-1zM10 29h1v1h-1zM12 29h2v1h-2zM16 29h2v1h-2zM22 29h1v1h-1zM24 29h2v1h-2zM28 29h1v1h-1zM31 29h2v1h-2zM34 29h5v1h-5zM2 30h1v1h-1zM8 30h1v1h-1zM10 30h2v1h-2zM13 30h1v1h-1zM22 30h1v1h-1zM24 30h1v1h-1zM26 30h2v1h-2zM29 30h10v1h-10zM10 31h2v1h-2zM13 31h1v1h-1zM15 31h1v1h-1zM17 31h1v1h-1zM20 31h2v1h-2zM24 31h1v1h-1zM27 31h1v1h-1zM29 31h2v1h-2zM34 31h1v1h-1zM36 31h2v1h-2zM2 32h7v1h-7zM10 32h1v1h-1zM13 32h1v1h-1zM16 32h2v1h-2zM19 32h1v1h-1zM21 32h1v1h-1zM23 32h1v1h-1zM25 32h2v1h-2zM30 32h1v1h-1zM32 32h1v1h-1zM34 32h1v1h-1zM38 32h1v1h-1zM2 33h1v1h-1zM8 33h1v1h-1zM10 33h2v1h-2zM14 33h3v1h-3zM24 33h2v1h-2zM27 33h1v1h-1zM29 33h2v1h-2zM34 33h1v1h-1zM37 33h1v1h-1zM2 34h1v1h-1zM4 34h3v1h-3zM8 34h1v1h-1zM10 34h4v1h-4zM15 34h1v1h-1zM17 34h3v1h-3zM25 34h2v1h-2zM28 34h7v1h-7zM37 34h1v1h-1zM2 35h1v1h-1zM4 35h3v1h-3zM8 35h1v1h-1zM10 35h3v1h-3zM15 35h1v1h-1zM18 35h4v1h-4zM23 35h4v1h-4zM29 35h1v1h-1zM31 35h2v1h-2zM37 35h2v1h-2zM2 36h1v1h-1zM4 36h3v1h-3zM8 36h1v1h-1zM13 36h1v1h-1zM17 36h1v1h-1zM19 36h1v1h-1zM23 36h1v1h-1zM25 36h1v1h-1zM27 36h1v1h-1zM30 36h2v1h-2zM34 36h1v1h-1zM38 36h1v1h-1zM2 37h1v1h-1zM8 37h1v1h-1zM11 37h1v1h-1zM13 37h1v1h-1zM16 37h1v1h-1zM19 37h1v1h-1zM22 37h1v1h-1zM26 37h1v1h-1zM28 37h1v1h-1zM32 37h1v1h-1zM34 37h5v1h-5zM2 38h7v1h-7zM10 38h1v1h-1zM13 38h1v1h-1zM15 38h2v1h-2zM18 38h1v1h-1zM22 38h1v1h-1zM25 38h2v1h-2zM28 38h1v1h-1zM30 38h4v1h-4zM35 38h1v1h-1zM38 38h1v1h-1z"/></svg>
+    <p class="qr-texto">Escanea con la cámara del celular para abrir esta página</p>
+    <p class="qr-url">https://memosanchezg.github.io/programacion-basica-interactivos/hoja-tema-12.html</p>
+    <button type="button" class="qr-cerrar">Cerrar</button>
+  </div>
+</div>
+<style>
+  .qr-capa { position:fixed; top:0; right:0; bottom:0; left:0; z-index:10000; display:flex; align-items:center;
+             justify-content:center; padding:16px; background:#fff; }
+  .qr-capa[hidden] { display:none; }
+  .qr-caja { max-width:100%; text-align:center; color:#0A2A57; font:16px/1.4 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .qr-caja svg { display:block; width:min(62vh, 84vw); height:auto; margin:0 auto; }
+  .qr-texto { margin:12px 0 2px; font-size:1.15rem; font-weight:bold; }
+  .qr-url { margin:0 0 12px; color:#5B6472; word-break:break-all; }
+  .qr-cerrar { font:inherit; padding:6px 20px; border:2px solid #00408F; border-radius:4px; background:#fff;
+               color:#00408F; cursor:pointer; }
+</style>
+<script>
+  (function () {
+    var capa = document.getElementById("qr-sitio");
+    document.querySelectorAll("a.qr-abrir").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        capa.hidden = false;
+        capa.querySelector(".qr-cerrar").focus();
+      });
+    });
+    capa.addEventListener("click", function (e) {
+      if (e.target === capa || e.target.classList.contains("qr-cerrar")) capa.hidden = true;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !capa.hidden) capa.hidden = true;
+    });
+  })();
+</script>
+</body></html>

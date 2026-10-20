@@ -1,0 +1,1098 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="tipo" content="simulador">
+<title>Estadística en vivo</title>
+
+<style>
+  :root {
+    --azul:#00408F; --azul-oscuro:#0A2A57; --guinda:#8C1D35; --oro:#B8975A; --oro-texto:#8A6A2E;
+    --azul-claro:#E8EEF7; --oro-claro:#F7F1E6; --guinda-claro:#F5E6EA; --verde:#2F7D5B;
+    --tinta:#1B1F2A; --gris:#5B6472; --gris-claro:#E9ECF1; --borde:#D9DEE6; --fondo:#FFFFFF;
+    --cmd-fondo:#0C0C0C; --cmd-texto:#E6E6E6;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--fondo); color:var(--tinta);
+         font:16px/1.45 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .franja { height:8px; background:var(--azul); border-bottom:3px solid var(--oro); }
+  header { max-width:1280px; margin:0 auto; padding:12px 18px 4px; }
+  .semana { color:var(--guinda); font-weight:bold; letter-spacing:.04em; font-size:.85rem; text-transform:uppercase; }
+  h1 { font-family:Cambria,Georgia,serif; color:var(--azul-oscuro); font-size:1.7rem; margin:2px 0 2px; }
+  .sub { color:var(--gris); margin:0; }
+  main { max-width:1280px; margin:0 auto; padding:8px 18px 24px; }
+  nav.pestanas { display:flex; gap:4px; flex-wrap:wrap; border-bottom:2px solid var(--gris-claro); margin:6px 0 12px; }
+  nav.pestanas button { font:inherit; font-weight:bold; border:none; background:none; color:var(--gris);
+                        padding:8px 14px; cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; }
+  nav.pestanas button.activo { color:var(--azul-oscuro); border-bottom-color:var(--azul); }
+  nav.pestanas button:focus-visible { outline:2px solid var(--azul); }
+  section.vista { display:none; }
+  section.vista.activo { display:block; }
+  .fila { display:grid; grid-template-columns:minmax(260px,360px) minmax(0,1fr); gap:16px; align-items:start; }
+  .panel { background:#fff; border:1px solid var(--borde); border-radius:10px; padding:12px 14px; }
+  .panel h2 { font-size:1.02rem; color:var(--azul-oscuro); margin:0 0 8px; }
+  label { display:block; font-weight:bold; color:var(--azul-oscuro); margin-top:10px; }
+  label small { font-weight:normal; color:var(--gris); }
+  input[type=range] { width:100%; }
+  input[type=number], input[type=text], select, textarea { font:inherit; padding:4px 6px; border:1px solid var(--borde);
+                        border-radius:6px; }
+  input.mono, textarea.mono { font-family:Consolas,"Courier New",monospace; }
+  button.accion { font:inherit; font-weight:bold; border-radius:8px; padding:7px 12px; margin:8px 6px 0 0;
+                  border:1px solid var(--azul); background:#fff; color:var(--azul); cursor:pointer; }
+  button.accion:hover, button.accion:focus-visible { background:var(--azul); color:#fff; outline:none; }
+  canvas { width:100%; display:block; border:1px solid var(--borde); border-radius:10px; background:#fff; }
+  .lectura { background:var(--oro-claro); border-left:4px solid var(--oro); border-radius:8px; padding:10px 12px;
+             margin-top:12px; line-height:1.55; }
+  .lectura b { color:var(--azul-oscuro); }
+  .ok { color:var(--verde); font-weight:bold; }
+  .mal { color:var(--guinda); font-weight:bold; }
+  .preguntas { background:var(--azul-claro); border-radius:8px; padding:10px 14px; margin-top:12px; }
+  .preguntas h3 { margin:0 0 4px; font-size:.95rem; color:var(--azul-oscuro); }
+  .preguntas ol { margin:0; padding-left:20px; }
+  /* Código Python con los colores del curso (minted, estilo borland) y salida de consola (cmd). */
+  .codigo { border:1px solid var(--tinta); background:#fff; font:15px/1.5 Consolas,"Courier New",monospace;
+            overflow-x:auto; margin:8px 0; }
+  .codigo ol { margin:0; padding:8px 12px 8px 3.4em; }
+  .codigo li { white-space:pre; }
+  .codigo li::marker { color:var(--gris); font:11px Cambria,Georgia,serif; }
+  .codigo .kw { color:#000080; font-weight:bold; }
+  .codigo .str, .codigo .num { color:#0000FF; }
+  .codigo .com { color:#008800; font-style:italic; }
+  .codigo .marca { background:var(--oro-claro); outline:1px solid var(--oro); }
+  .consola { background:var(--cmd-fondo); color:var(--cmd-texto); font:15px/1.45 Consolas,"Courier New",monospace;
+             white-space:pre-wrap; word-break:break-word; padding:8px 12px; border-radius:4px; margin:8px 0; min-height:2.2em; }
+  footer { max-width:1280px; margin:0 auto; padding:6px 18px 18px; color:var(--gris); font-size:.85rem; }
+  footer a { color:var(--azul); }
+  @media (max-width: 820px) { .fila { grid-template-columns:1fr; } }
+
+  /* Propios de este simulador */
+  .fila > * { min-width:0; }
+  .panel h3 { font-size:.98rem; color:var(--azul-oscuro); margin:14px 0 4px; }
+  .nota { color:var(--gris); font-size:.93rem; margin:6px 0 0; }
+  fieldset.grupo { border:0; padding:0; margin:0; min-width:0; }
+  fieldset.grupo legend { font-weight:bold; color:var(--azul-oscuro); padding:0; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  .chip { display:inline-block; margin:0; font-weight:normal; position:relative; }
+  .chip input { position:absolute; opacity:0; width:1px; height:1px; margin:0; }
+  .chip span { display:inline-block; border:1px solid var(--azul); color:var(--azul); border-radius:999px;
+               padding:3px 11px; font-weight:bold; cursor:pointer; background:#fff; }
+  .chip input:checked + span { background:var(--azul); color:#fff; }
+  .chip input:focus-visible + span { outline:2px solid var(--oro); outline-offset:2px; }
+  textarea#datos { width:100%; min-height:3.4em; resize:vertical; font:14px/1.4 Consolas,"Courier New",monospace; }
+  .controles { display:flex; flex-wrap:wrap; gap:6px 18px; align-items:flex-end; margin-top:6px; }
+  .controles label { margin-top:4px; }
+  .controles input[type=number] { width:7em; }
+  label.casilla { display:flex; gap:8px; align-items:center; font-weight:normal; color:var(--tinta); cursor:pointer; }
+  label.casilla input { width:18px; height:18px; margin:0; flex:none; }
+  .aviso { color:var(--guinda); font-weight:bold; }
+  .valor { color:var(--guinda); font-weight:bold; }
+  .mono { font-family:Consolas,"Courier New",monospace; }
+  #puntos { touch-action:none; cursor:crosshair; margin-top:10px; }
+  #puntos:focus-visible { outline:3px solid var(--oro); outline-offset:2px; }
+  .medidas { display:grid; grid-template-columns:auto 1fr; gap:2px 12px; margin:0; }
+  .medidas dt { font-weight:bold; color:var(--azul-oscuro); }
+  .medidas dd { margin:0; font-family:Consolas,"Courier New",monospace; overflow-wrap:anywhere; }
+  .medidas dd small { font-family:Calibri,"Segoe UI",system-ui,sans-serif; color:var(--gris); }
+  .media-c { color:var(--guinda); }
+  .mediana-c { color:var(--azul); }
+  .tabla-scroll { max-height:360px; overflow:auto; margin-top:10px; border:1px solid var(--borde); border-radius:8px; }
+  table { border-collapse:collapse; width:100%; font-size:15px; }
+  th, td { padding:3px 8px; text-align:right; border-bottom:1px solid var(--gris-claro); white-space:nowrap; }
+  th { position:sticky; top:0; background:var(--gris-claro); color:var(--azul-oscuro); }
+  td.mono, th.izq, td.izq { text-align:left; }
+  tr.sel td { background:var(--oro-claro); font-weight:bold; }
+  tfoot td { font-weight:bold; border-top:2px solid var(--borde); }
+  .en-linea { display:flex; gap:8px; align-items:center; }
+  .en-linea input[type=range] { flex:1 1 140px; width:auto; }
+  @media (max-width: 480px) {
+    main, header, footer { padding-left:12px; padding-right:12px; }
+    .panel { padding:10px; }
+    .codigo, .consola { font-size:13.5px; }
+  }
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header>
+  <div class="semana">Semana 13 · Matemáticas con Python</div>
+  <h1>Estadística en vivo</h1>
+  <p class="sub">Arrastra, agrega o quita datos y mira cómo cambian la media, la mediana, la desviación estándar y la tabla de frecuencias.</p>
+</header>
+<main>
+  <div class="panel">
+    <fieldset class="grupo">
+      <legend>Datos</legend>
+      <div class="chips" id="conjuntos"></div>
+    </fieldset>
+    <p class="nota" id="descripcion"></p>
+    <label for="datos">Los datos <small>(puedes escribirlos o pegarlos, separados por comas)</small></label>
+    <textarea id="datos" spellcheck="false" autocomplete="off"></textarea>
+    <p class="nota aviso" id="avisoDatos" hidden></p>
+    <canvas id="puntos" tabindex="0" aria-label="Gráfica de puntos de los datos sobre una recta, con la media, la mediana y la banda de una desviación estándar alrededor de la media. Arrastra un punto, haz clic en un espacio vacío para agregar uno o usa el teclado."></canvas>
+    <div class="controles">
+      <div>
+        <label for="valorSel">Valor del punto seleccionado</label>
+        <input id="valorSel" type="number" step="any">
+      </div>
+      <div>
+        <button type="button" class="accion" id="quitar">Quitar el punto seleccionado</button>
+        <button type="button" class="accion" id="restaurar">Datos originales</button>
+      </div>
+      <label class="casilla"><input type="checkbox" id="poblacion"> Los datos son toda la población (pvariance y pstdev)</label>
+    </div>
+    <p class="nota">Arrastra un punto (con el mouse o el dedo), haz clic en un espacio vacío para agregar uno, y quita el seleccionado con el botón o la tecla Supr. Con la gráfica seleccionada: ← → mueven el punto, ↑ ↓ cambian de punto y + agrega una copia.</p>
+  </div>
+
+  <nav class="pestanas" role="tablist" aria-label="Vistas del simulador" style="margin-top:16px">
+    <button type="button" class="activo" data-vista="v1" role="tab" id="tab-v1" aria-controls="v1" aria-selected="true">Centro y dispersión</button>
+    <button type="button" data-vista="v2" role="tab" id="tab-v2" aria-controls="v2" aria-selected="false">Tabla de frecuencias</button>
+  </nav>
+
+  
+  <section class="vista activo" id="v1" role="tabpanel" aria-labelledby="tab-v1">
+    <div class="fila">
+      <div class="panel">
+        <h2>Valores en vivo</h2>
+        <dl class="medidas" id="medidas"></dl>
+        <div class="lectura" id="lectura1"></div>
+      </div>
+      <div class="panel">
+        <h2>El código en Python</h2>
+        <div id="codigo1"></div>
+        <div class="consola" id="salida1" aria-label="Salida del programa"></div>
+        <div class="preguntas">
+          <h3>Para explorar</h3>
+          <ol>
+            <li>Ingresos: arrastra el 120 hacia la izquierda hasta 12. ¿Qué le pasa a la media? ¿Y a la mediana? ¿Por qué se comportan distinto?</li>
+            <li>Máximas de septiembre: escribe 60 como valor de un día (un dato atípico). ¿Cuánto cambian la media, la mediana y la desviación?</li>
+            <li>Lluvia del 1 al 15 de octubre: ¿por qué la media y la mediana están tan lejos? ¿Cuál describe mejor un día típico?</li>
+            <li>Activa "toda la población". ¿Qué cambia en el código y en la desviación? ¿Cuándo se nota más la diferencia?</li>
+            <li>¿Cuál es la moda de las calificaciones? ¿Y la de los ingresos? ¿Qué regresa multimode cuando ningún valor se repite?</li>
+            <li>¿Con qué datos la desviación estándar vale exactamente 0? Pruébalo escribiendo tus propios datos.</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  
+  <section class="vista" id="v2" role="tabpanel" aria-labelledby="tab-v2">
+    <div class="fila">
+      <div class="panel">
+        <h2>Clases (intervalos)</h2>
+        <label for="ancho">Ancho de clase: <span class="valor" id="anchoVal"></span></label>
+        <input id="ancho" type="range" min="0" max="10" step="1" value="2">
+        <label for="origen">Inicio de la primera clase (origen): <span class="valor" id="origenVal"></span></label>
+        <input id="origen" type="range" min="0" max="3" step="1" value="3">
+        <p class="nota">Cada clase incluye su inicio y excluye su final: [30, 32) tiene los datos x con 30 ≤ x &lt; 32.</p>
+        <div class="tabla-scroll"><table id="tablaFrec"></table></div>
+        <div class="lectura" id="lectura2"></div>
+      </div>
+      <div class="panel">
+        <canvas id="histograma" aria-label="Histograma: una barra por clase con su frecuencia absoluta"></canvas>
+        <h3>El código en Python</h3>
+        <div id="codigo2"></div>
+        <div class="consola" id="salida2" aria-label="Salida del programa"></div>
+        <div class="preguntas">
+          <h3>Para explorar</h3>
+          <ol>
+            <li>Horas de sueño: ¿cuántos estudiantes duermen menos de 6 horas? ¿En qué columna lo lees más rápido? ¿Cuánto vale siempre la última acumulada?</li>
+            <li>Máximas de septiembre: compara ancho 0.5, ancho 2 y ancho 10. ¿Con cuál se ve mejor la forma de los datos? ¿Qué falla con los otros dos?</li>
+            <li>Con ancho 2, mueve el origen. ¿Cambian los conteos aunque los datos sean los mismos?</li>
+            <li>¿Cuánto suman todas las frecuencias relativas? ¿Por qué la columna % de Python a veces no suma exactamente 100?</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<footer>
+  Datos del clima: Open-Meteo, archivo histórico de Monterrey (septiembre y octubre de 2026).
+  Programación Básica · FCFM-UANL · funciona sin internet. Las salidas son las de Python 3.12.
+  <a href="index.html">Índice de simuladores</a> · <a href="#qr-sitio" class="qr-abrir">Abrir en el celular (QR)</a>
+</footer>
+
+<script>
+// statistics, Counter y formato como en Python 3.12 (funciones puras, sin la página).
+var PY13 = (function () {
+  "use strict";
+
+  // ---------- Mostrar valores como los imprime Python ----------
+  // PyFloat marca un número que en Python es float aunque valga un entero (531.0, 35.0).
+  function PyFloat(valor) { this.valor = valor; }
+
+  // repr() de un float de Python: la representación más corta que vuelve al mismo número.
+  function pyFloat(x) {
+    if (Number.isNaN(x)) return "nan";
+    if (x === Infinity) return "inf";
+    if (x === -Infinity) return "-inf";
+    if (x === 0) return Object.is(x, -0) ? "-0.0" : "0.0";
+    var partes = Math.abs(x).toExponential().split("e");
+    var digitos = partes[0].replace(".", "");
+    var exp = parseInt(partes[1], 10);
+    var decpt = exp + 1, signo = x < 0 ? "-" : "";
+    if (decpt > 16 || decpt < -3) {
+      var mant = digitos.length > 1 ? digitos[0] + "." + digitos.slice(1) : digitos[0];
+      return signo + mant + "e" + (exp < 0 ? "-" : "+") + (Math.abs(exp) < 10 ? "0" : "") + Math.abs(exp);
+    }
+    if (decpt <= 0) return signo + "0." + "0".repeat(-decpt) + digitos;
+    if (decpt >= digitos.length) return signo + digitos + "0".repeat(decpt - digitos.length) + ".0";
+    return signo + digitos.slice(0, decpt) + "." + digitos.slice(decpt);
+  }
+
+  // repr() de un texto: comillas simples, o dobles si el texto trae ' y no trae ".
+  function pyStr(s) {
+    var q = (s.indexOf("'") >= 0 && s.indexOf('"') < 0) ? '"' : "'";
+    var r = "";
+    for (var i = 0; i < s.length; i++) {
+      var c = s[i], code = s.charCodeAt(i);
+      if (c === "\\") r += "\\\\";
+      else if (c === q) r += "\\" + q;
+      else if (c === "\n") r += "\\n";
+      else if (c === "\r") r += "\\r";
+      else if (c === "\t") r += "\\t";
+      else if (code < 32 || code === 127) r += "\\x" + (code < 16 ? "0" : "") + code.toString(16);
+      else r += c;
+    }
+    return q + r + q;
+  }
+
+  // repr() de un valor: None, True/False, int, float (PyFloat), str, list y dict.
+  function pyRepr(v) {
+    if (v === null || v === undefined) return "None";
+    if (v === true) return "True";
+    if (v === false) return "False";
+    if (v instanceof PyFloat) return pyFloat(v.valor);
+    if (typeof v === "number") return Number.isInteger(v) ? String(v) : pyFloat(v);
+    if (typeof v === "string") return pyStr(v);
+    if (Array.isArray(v)) return "[" + v.map(pyRepr).join(", ") + "]";
+    return "{" + Object.keys(v).map(function (k) { return pyStr(k) + ": " + pyRepr(v[k]); }).join(", ") + "}";
+  }
+
+  // ---------- Racionales exactos con BigInt ----------
+  function absB(a) { return a < 0n ? -a : a; }
+  function bitLen(a) { a = absB(a); return a === 0n ? 0 : a.toString(2).length; }
+  function mcd(a, b) { a = absB(a); b = absB(b); while (b !== 0n) { var t = a % b; a = b; b = t; } return a; }
+  function Q(n, d) {                                    // fracción reducida con denominador positivo
+    if (d < 0n) { n = -n; d = -d; }
+    var g = mcd(n, d);
+    return g > 1n ? { n: n / g, d: d / g } : { n: n, d: d };
+  }
+  function qSuma(a, b) { return Q(a.n * b.d + b.n * a.d, a.d * b.d); }
+  function qResta(a, b) { return Q(a.n * b.d - b.n * a.d, a.d * b.d); }
+  function qMult(a, b) { return Q(a.n * b.n, a.d * b.d); }
+  function qDiv(a, b) { return Q(a.n * b.d, a.d * b.n); }
+
+  var vista = new DataView(new ArrayBuffer(8)), DOS52 = 1n << 52n, DOS53 = 1n << 53n;
+  // Valor exacto de un double (lo que hace x.as_integer_ratio())
+  function racional(x) {
+    vista.setFloat64(0, x);
+    var hi = vista.getUint32(0), lo = vista.getUint32(4), ex = (hi >>> 20) & 0x7ff, m, e;
+    var mant = (BigInt(hi & 0xfffff) << 32n) | BigInt(lo);
+    if (ex === 0) { m = mant; e = -1074; } else { m = mant | DOS52; e = ex - 1075; }
+    if (m === 0n) return { n: 0n, d: 1n };
+    while (e < 0 && (m & 1n) === 0n) { m >>= 1n; e++; }
+    var n = (hi >>> 31) ? -m : m;
+    return e >= 0 ? { n: n << BigInt(e), d: 1n } : { n: n, d: 1n << BigInt(-e) };
+  }
+  function construir(q, e) {
+    var m, be;
+    if (q >= DOS52) { be = e + 1075; m = q - DOS52; } else { be = 0; m = q; }
+    vista.setUint32(0, (be << 20) | Number(m >> 32n));
+    vista.setUint32(4, Number(m & 0xffffffffn));
+    return vista.getFloat64(0);
+  }
+  // n / d al double más cercano (empates al par), como int / int y float(Fraction) en Python
+  function aFloat(n, d) {
+    if (d < 0n) { n = -n; d = -d; }
+    var neg = n < 0n; if (neg) n = -n;
+    if (n === 0n) return 0;
+    var e = bitLen(n) - bitLen(d) - 53, q, r, den;
+    function dividir(e) {
+      if (e >= 0) { den = d << BigInt(e); q = n / den; r = n % den; }
+      else { den = d; var num = n << BigInt(-e); q = num / den; r = num % den; }
+    }
+    dividir(e);
+    while (q >= DOS53) { e++; dividir(e); }
+    if (e < -1074) { e = -1074; dividir(e); }
+    var dos = 2n * r;
+    if (dos > den || (dos === den && (q & 1n) === 1n)) q += 1n;
+    if (q === DOS53) { q = DOS52; e++; }
+    if (e > 971) return neg ? -Infinity : Infinity;
+    var v = construir(q, e);
+    return neg ? -v : v;
+  }
+  function isqrt(n) {
+    if (n < 2n) return n;
+    var x = 1n << BigInt(Math.ceil(bitLen(n) / 2));
+    for (;;) { var y = (x + n / x) >> 1n; if (y >= x) return x; x = y; }
+  }
+  // statistics._float_sqrt_of_frac: raíz de n/m redondeada correctamente
+  function raizFrac(n, m) {
+    function rto(n, m) { var a = isqrt(n / m); return a | ((a * a * m !== n) ? 1n : 0n); }
+    var q = Math.floor((bitLen(n) - bitLen(m) - 109) / 2), num, den;
+    if (q >= 0) { num = rto(n, m << BigInt(2 * q)) << BigInt(q); den = 1n; }
+    else { num = rto(n << BigInt(-2 * q), m); den = 1n << BigInt(-q); }
+    return aFloat(num, den);
+  }
+  // f"{x:.Nf}" y round(x, N) de Python (redondeo correcto, empates al par)
+  function formatoF(x, nd) {
+    if (Number.isNaN(x)) return "nan";
+    if (!isFinite(x)) return x > 0 ? "inf" : "-inf";
+    var r = racional(x), neg = r.n < 0n || Object.is(x, -0), n = absB(r.n);
+    var num = n * 10n ** BigInt(nd), q = num / r.d, dos = 2n * (num % r.d);
+    if (dos > r.d || (dos === r.d && (q & 1n) === 1n)) q += 1n;
+    var s = q.toString();
+    if (nd > 0) {
+      if (s.length <= nd) s = "0".repeat(nd - s.length + 1) + s;
+      s = s.slice(0, s.length - nd) + "." + s.slice(s.length - nd);
+    }
+    return (neg ? "-" : "") + s;
+  }
+  function redondear(x, nd) { return isFinite(x) ? parseFloat(formatoF(x, nd)) : x; }
+
+  // ---------- Números de Python: { v: valor, f: true si es float } ----------
+  function N(v, f) { return { v: v === 0 && !f ? 0 : v, f: !!f }; }
+  function txt(x) { return x.f ? pyFloat(x.v) : String(x.v); }        // str() / repr() de int o float
+  function exacto(x) { return x.f ? racional(x.v) : { n: BigInt(x.v), d: 1n }; }
+  function sumar(a, b) { return N(a.v + b.v, a.f || b.f); }
+  function restar(a, b) { return N(a.v - b.v, a.f || b.f); }
+  function multiplicar(a, b) { return N(a.v * b.v, a.f || b.f); }
+  // a // b de Python: entre enteros, piso exacto; con floats, el algoritmo de floatobject.c
+  function divEntera(a, b) {
+    if (!a.f && !b.f) return N(Math.floor(a.v / b.v), false);
+    var vx = a.v, wx = b.v, mod = vx % wx, div = (vx - mod) / wx, piso;
+    if (mod) { if ((wx < 0) !== (mod < 0)) { mod += wx; div -= 1.0; } }
+    if (div) { piso = Math.floor(div); if (div - piso > 0.5) piso += 1.0; }
+    else piso = (vx / wx < 0 || Object.is(vx / wx, -0)) ? -0 : 0;
+    return N(piso, true);
+  }
+  function aInt(x) { var t = Math.trunc(x.v); return N(t === 0 ? 0 : t, false); }
+  function redondea2(x) { return x.f ? N(redondear(x.v, 2), true) : x; }   // round(x, 2)
+  function lista(xs) { return "[" + xs.map(txt).join(", ") + "]"; }
+  function hayFloat(xs) { return xs.some(function (x) { return x.f; }); }
+
+  function ErrorPy(tipo, mensaje) { this.tipo = tipo; this.mensaje = mensaje; }
+  ErrorPy.prototype.texto = function () { return this.tipo + ": " + this.mensaje; };
+
+  // ---------- statistics (Lib/statistics.py de Python 3.12) ----------
+  function sumaExacta(xs) {
+    var s = { n: 0n, d: 1n };
+    xs.forEach(function (x) { s = qSuma(s, exacto(x)); });
+    return s;
+  }
+  function convertir(q, esFloat) {                       // statistics._convert
+    if (!esFloat && q.d === 1n) return N(Number(q.n), false);
+    return N(aFloat(q.n, q.d), true);
+  }
+  function media(xs) {
+    if (!xs.length) throw new ErrorPy("statistics.StatisticsError", "mean requires at least one data point");
+    return convertir(qDiv(sumaExacta(xs), { n: BigInt(xs.length), d: 1n }), hayFloat(xs));
+  }
+  function ordenar(xs) {                                 // sorted(): estable, por valor
+    return xs.map(function (x, i) { return { x: x, i: i }; })
+      .sort(function (a, b) { return a.x.v - b.x.v || a.i - b.i; }).map(function (o) { return o.x; });
+  }
+  function mediana(xs) {
+    var s = ordenar(xs), n = s.length;
+    if (!n) throw new ErrorPy("statistics.StatisticsError", "no median for empty data");
+    if (n % 2 === 1) return s[(n - 1) / 2];
+    var a = s[n / 2 - 1], b = s[n / 2], t = sumar(a, b);
+    return t.f ? N(t.v / 2, true) : N(aFloat(BigInt(t.v), 2n), true);
+  }
+  function multimode(xs) {
+    var claves = [], cuenta = new Map(), primero = new Map();
+    xs.forEach(function (x) {
+      if (!cuenta.has(x.v)) { cuenta.set(x.v, 0); primero.set(x.v, x); claves.push(x.v); }
+      cuenta.set(x.v, cuenta.get(x.v) + 1);
+    });
+    if (!claves.length) return [];
+    var maximo = Math.max.apply(null, claves.map(function (k) { return cuenta.get(k); }));
+    return claves.filter(function (k) { return cuenta.get(k) === maximo; }).map(function (k) { return primero.get(k); });
+  }
+  function maximo(xs) { var m = xs[0]; xs.forEach(function (x) { if (x.v > m.v) m = x; }); return m; }
+  function minimo(xs) { var m = xs[0]; xs.forEach(function (x) { if (x.v < m.v) m = x; }); return m; }
+  // Suma de cuadrados de las desviaciones, exacta: (n·Σx² − (Σx)²) / n
+  function sumaCuadrados(xs) {
+    var sx = { n: 0n, d: 1n }, sxx = { n: 0n, d: 1n };
+    xs.forEach(function (x) { var e = exacto(x); sx = qSuma(sx, e); sxx = qSuma(sxx, qMult(e, e)); });
+    var n = { n: BigInt(xs.length), d: 1n };
+    return qDiv(qResta(qMult(n, sxx), qMult(sx, sx)), n);
+  }
+  function varianza(xs, poblacion) {
+    var n = xs.length;
+    if (poblacion && n < 1) throw new ErrorPy("statistics.StatisticsError", "pvariance requires at least one data point");
+    if (!poblacion && n < 2) throw new ErrorPy("statistics.StatisticsError", "variance requires at least two data points");
+    return convertir(qDiv(sumaCuadrados(xs), { n: BigInt(poblacion ? n : n - 1), d: 1n }), hayFloat(xs));
+  }
+  function desviacion(xs, poblacion) {
+    var n = xs.length;
+    if (poblacion && n < 1) throw new ErrorPy("statistics.StatisticsError", "pstdev requires at least one data point");
+    if (!poblacion && n < 2) throw new ErrorPy("statistics.StatisticsError", "stdev requires at least two data points");
+    var mss = qDiv(sumaCuadrados(xs), { n: BigInt(poblacion ? n : n - 1), d: 1n });
+    return N(raizFrac(mss.n, mss.d), true);
+  }
+
+  // ---------- Formato de f-strings: {x:>5}, {f / n:>5.0%} ----------
+  function derecha(s, w) { s = String(s); return s.length >= w ? s : " ".repeat(w - s.length) + s; }
+  function porcentaje(x, nd) { return formatoF(x * 100, nd) + "%"; }
+
+  // ---------- Tabla de frecuencias por clases ----------
+  // origen y ancho son números de Python { v, f }; regresa las clases desde la primera hasta la última
+  function tablaFrecuencias(xs, origen, ancho) {
+    var cuenta = new Map(), claseDe = [];
+    xs.forEach(function (x) {
+      var k = aInt(divEntera(restar(x, origen), ancho)).v;
+      claseDe.push(k);
+      cuenta.set(k, (cuenta.get(k) || 0) + 1);
+    });
+    var ks = Array.from(cuenta.keys()), kmin = Math.min.apply(null, ks), kmax = Math.max.apply(null, ks);
+    var filas = [], acumulada = 0;
+    for (var k = kmin; k <= kmax; k++) {
+      var ini = sumar(origen, multiplicar(N(k, false), ancho)), fin = sumar(ini, ancho), f = cuenta.get(k) || 0;
+      acumulada += f;
+      filas.push({ k: k, ini: ini, fin: fin, f: f, F: acumulada, etiqueta: "[" + txt(ini) + ", " + txt(fin) + ")" });
+    }
+    return { filas: filas, claseDe: claseDe };
+  }
+
+  // ---------- Programas: el código y lo que imprime ----------
+  function lineasDatos(xs, comentario) {
+    var partes = xs.map(txt), lineas = [], i;
+    for (i = 0; i < partes.length; i += 10) lineas.push(partes.slice(i, i + 10).join(", "));
+    var cod = comentario ? ["# " + comentario] : [];
+    if (!lineas.length) return cod.concat(["datos = []"]);
+    lineas.forEach(function (l, k) {
+      cod.push((k === 0 ? "datos = [" : "         ") + l + (k === lineas.length - 1 ? "]" : ","));
+    });
+    return cod;
+  }
+
+  function programaResumen(xs, poblacion, comentario) {
+    var fv = poblacion ? "pvariance" : "variance", fs = poblacion ? "pstdev" : "stdev";
+    var cod = ["import statistics as st", ""].concat(lineasDatos(xs, comentario), [
+      "",
+      'print("n:", len(datos))',
+      'print("Media:", round(st.mean(datos), 2))',
+      'print("Mediana:", round(st.median(datos), 2))',
+      'print("Moda(s):", st.multimode(datos))',
+      'print("Rango:", round(max(datos) - min(datos), 2))',
+      "# " + (poblacion ? "toda la población: se divide entre n" : "una muestra: se divide entre n - 1"),
+      'print("Varianza:", round(st.' + fv + "(datos), 2))",
+      'print("Desviación estándar:", round(st.' + fs + "(datos), 2))"
+    ]);
+    var sal = [], error = null, r = {};
+    try {
+      sal.push("n: " + xs.length);
+      r.media = media(xs); sal.push("Media: " + txt(redondea2(r.media)));
+      r.mediana = mediana(xs); sal.push("Mediana: " + txt(redondea2(r.mediana)));
+      r.modas = multimode(xs); sal.push("Moda(s): " + lista(r.modas));
+      if (!xs.length) throw new ErrorPy("ValueError", "max() iterable argument is empty");
+      r.rango = restar(maximo(xs), minimo(xs)); sal.push("Rango: " + txt(redondea2(r.rango)));
+      r.varianza = varianza(xs, poblacion); sal.push("Varianza: " + txt(redondea2(r.varianza)));
+      r.desviacion = desviacion(xs, poblacion); sal.push("Desviación estándar: " + txt(redondea2(r.desviacion)));
+    } catch (e) {
+      if (!(e instanceof ErrorPy)) throw e;
+      error = e.texto();
+    }
+    return { codigo: cod.join("\n"), salida: sal.join("\n"), error: error, r: r };
+  }
+
+  function programaFrecuencias(xs, origen, ancho, comentario) {
+    var t = tablaFrecuencias(xs, origen, ancho), n = xs.length;
+    var w = Math.max(5, Math.max.apply(null, t.filas.map(function (f) { return f.etiqueta.length; })));
+    var cod = ["from collections import Counter", ""].concat(lineasDatos(xs, comentario), [
+      "origen = " + txt(origen),
+      "ancho = " + txt(ancho),
+      "",
+      "n = len(datos)",
+      "clases = Counter()",
+      "for x in datos:",
+      "    k = int((x - origen) // ancho)   # número de clase",
+      "    clases[k] += 1",
+      "",
+      "print(f\"{'Clase':>" + w + "} {'f':>3} {'%':>5} {'F':>3}\")",
+      "acumulada = 0",
+      "for k in range(min(clases), max(clases) + 1):",
+      "    ini = origen + k * ancho",
+      "    f = clases[k]",
+      "    acumulada = acumulada + f",
+      "    clase = f\"[{ini}, {ini + ancho})\"",
+      "    print(f\"{clase:>" + w + "} {f:>3} {f / n:>5.0%} {acumulada:>3}  {'*' * f}\")"
+    ]);
+    var sal = [derecha("Clase", w) + " " + derecha("f", 3) + " " + derecha("%", 5) + " " + derecha("F", 3)];
+    t.filas.forEach(function (fila) {
+      var rel = aFloat(BigInt(fila.f), BigInt(n));
+      sal.push(derecha(fila.etiqueta, w) + " " + derecha(fila.f, 3) + " " + derecha(porcentaje(rel, 0), 5) + " " +
+               derecha(fila.F, 3) + "  " + "*".repeat(fila.f));
+    });
+    return { codigo: cod.join("\n"), salida: sal.join("\n"), error: null, tabla: t };
+  }
+
+  return {
+    PyFloat: PyFloat, pyFloat: pyFloat, pyStr: pyStr, pyRepr: pyRepr, N: N, txt: txt, aFloat: aFloat,
+    redondear: redondear, formatoF: formatoF, media: media, mediana: mediana, multimode: multimode,
+    maximo: maximo, minimo: minimo, varianza: varianza, desviacion: desviacion, redondea2: redondea2,
+    divEntera: divEntera, tablaFrecuencias: tablaFrecuencias, programaResumen: programaResumen,
+    programaFrecuencias: programaFrecuencias, porcentaje: porcentaje, ErrorPy: ErrorPy
+  };
+})();
+</script>
+
+<script>
+(function () {
+  "use strict";
+  var P = PY13, N = P.N;
+  // Colores FCFM para el lienzo
+  var C = { azul:"#00408F", azulOscuro:"#0A2A57", guinda:"#8C1D35", oro:"#B8975A", oroTexto:"#8A6A2E",
+            verde:"#2F7D5B", gris:"#5B6472", grisClaro:"#E9ECF1", borde:"#D9DEE6", tinta:"#1B1F2A",
+            azulClaro:"#E8EEF7", oroClaro:"#F7F1E6", guindaClaro:"#F5E6EA" };
+  var FUENTE = "Calibri, 'Segoe UI', system-ui, sans-serif";
+  function $(id) { return document.getElementById(id); }
+
+  // Pestañas
+  var botonesVista = document.querySelectorAll("nav.pestanas button");
+  function abrirVista(id) {
+    botonesVista.forEach(function (x) {
+      var activo = x.dataset.vista === id;
+      x.classList.toggle("activo", activo);
+      x.setAttribute("aria-selected", activo ? "true" : "false");
+    });
+    document.querySelectorAll("section.vista").forEach(function (x) { x.classList.toggle("activo", x.id === id); });
+    dibujarTodo();
+  }
+  botonesVista.forEach(function (b) { b.addEventListener("click", function () { abrirVista(b.dataset.vista); }); });
+
+  // Lienzo nítido en pantallas de alta densidad; proporcion = alto/ancho
+  function preparar(cv, proporcion) {
+    var dpr = window.devicePixelRatio || 1, w = cv.clientWidth || 600;
+    cv.style.height = (w * proporcion) + "px";
+    cv.width = Math.round(w * dpr); cv.height = Math.round(w * proporcion * dpr);
+    var g = cv.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { g: g, w: w, h: w * proporcion };
+  }
+
+  function esc(t) {
+    return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  // ---------- Código Python con los colores del curso ----------
+  var PY_KW = /^(False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)$/;
+  function pyResaltar(linea) {
+    var html = "", i = 0, m, resto;
+    while (i < linea.length) {
+      resto = linea.slice(i);
+      if ((m = /^#.*/.exec(resto))) { html += '<span class="com">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[rRbBfFuU]{0,2}("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/.exec(resto))) { html += '<span class="str">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[A-Za-z_\u00C0-\u024F][\w\u00C0-\u024F]*/.exec(resto))) { html += PY_KW.test(m[0]) ? '<span class="kw">' + m[0] + "</span>" : esc(m[0]); }
+      else if ((m = /^(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?j?/.exec(resto))) { html += '<span class="num">' + m[0] + "</span>"; }
+      else { m = [resto[0]]; html += esc(m[0]); }
+      i += m[0].length;
+    }
+    return html;
+  }
+  // Pinta código en un contenedor, con números de línea; marcar = número de línea (1, 2...) a resaltar.
+  function mostrarCodigo(el, codigo, marcar) {
+    var lineas = codigo.replace(/\n$/, "").split("\n");
+    el.innerHTML = '<div class="codigo"><ol>' + lineas.map(function (l, k) {
+      return "<li" + (marcar === k + 1 ? ' class="marca"' : "") + ">" + (pyResaltar(l) || " ") + "</li>";
+    }).join("") + "</ol></div>";
+  }
+  function mostrarSalida(el, prog) {
+    el.innerHTML = esc(prog.salida) + (prog.error ? (prog.salida ? "\n" : "") + '<span class="err">' + esc(prog.error) + "</span>" : "");
+  }
+  // Números para leer (no son salida de Python)
+  function f(x, dec) {
+    var s = Number(x.toFixed(dec === undefined ? 2 : dec));
+    if (Object.is(s, -0)) s = 0;
+    return String(s).replace("-", "−");
+  }
+  function texto(g, t, x, y, color, tam, alin, base, negrita) {
+    g.save(); g.fillStyle = color; g.font = (negrita ? "bold " : "") + (tam || 15) + "px " + FUENTE;
+    g.textAlign = alin || "left"; g.textBaseline = base || "alphabetic"; g.fillText(t, x, y); g.restore();
+  }
+  function linea(g, x0, y0, x1, y1, color, ancho, guiones) {
+    g.save(); g.strokeStyle = color; g.lineWidth = ancho || 1; if (guiones) g.setLineDash(guiones);
+    g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke(); g.restore();
+  }
+  function etiqueta(g, t, x, y, color, alin, tam) {
+    tam = tam || 14;
+    g.save(); g.font = "bold " + tam + "px " + FUENTE;
+    var w = g.measureText(t).width, x0 = alin === "right" ? x - w : alin === "center" ? x - w / 2 : x;
+    g.fillStyle = "rgba(255,255,255,0.88)"; g.fillRect(x0 - 3, y - tam + 1, w + 6, tam + 5);
+    g.fillStyle = color; g.textAlign = "left"; g.textBaseline = "alphabetic"; g.fillText(t, x0, y);
+    g.restore();
+    return w;
+  }
+  function pasoBonito(rango, marcas) {
+    var p = Math.pow(10, Math.floor(Math.log10(rango / marcas))), r = rango / marcas / p;
+    return (r > 5 ? 10 : r > 2 ? 5 : r > 1 ? 2 : 1) * p;
+  }
+
+  // ================================================================ Conjuntos de datos
+  function enteros(a) { return a.map(function (v) { return N(v, false); }); }
+  function decimales(a) { return a.map(function (v) { return N(v, true); }); }
+  var CONJUNTOS = {
+    tmax: { nombre: "Máximas de septiembre", unidad: "°C",
+      comentario: "temperatura máxima diaria (°C), Monterrey, septiembre de 2026",
+      descripcion: "Las 30 temperaturas máximas diarias (°C) de Monterrey en septiembre de 2026 (Open-Meteo), las del reto del Tema 12.",
+      datos: decimales([35.0, 36.5, 38.0, 34.1, 32.2, 30.2, 34.0, 33.3, 34.9, 35.1, 37.2, 35.0, 35.2, 35.8, 35.9,
+                        35.0, 34.7, 33.5, 34.5, 35.4, 35.4, 32.8, 31.8, 31.5, 33.3, 33.9, 34.2, 33.7, 33.2, 30.9]),
+      paso: 0.1, ancho: 2, origen: 30 },
+    lluvia: { nombre: "Lluvia 1-15 oct", unidad: "mm", minimo: 0,
+      comentario: "lluvia diaria (mm), Monterrey, 1 al 15 de octubre de 2026",
+      descripcion: "La lluvia diaria (mm) de Monterrey del 1 al 15 de octubre de 2026 (Open-Meteo): tres tormentas al principio del mes.",
+      datos: decimales([28.8, 70.2, 20.1, 10.9, 10.8, 0.6, 1.4, 2.1, 0.7, 0.0, 3.3, 0.8, 0.9, 0.7, 2.1]),
+      paso: 0.1, ancho: 10, origen: 0 },
+    califs: { nombre: "Calificaciones", unidad: "", minimo: 0, maximo: 10,
+      comentario: "calificaciones de 10 estudiantes",
+      descripcion: "Las calificaciones de 10 estudiantes del ejemplo de la clase (del 0 al 10).",
+      datos: enteros([8, 9, 7, 10, 6, 9, 8, 8, 7, 9]), paso: 1, ancho: 1, origen: 6 },
+    ingresos: { nombre: "Ingresos", unidad: "miles de pesos", minimo: 0,
+      comentario: "ingresos mensuales de 5 personas (miles de pesos)",
+      descripcion: "Lo que ganan al mes cinco personas, en miles de pesos (el arranque del Día 3).",
+      datos: enteros([8, 9, 10, 11, 120]), paso: 1, ancho: 20, origen: 0 },
+    horas: { nombre: "Horas de sueño", unidad: "h", minimo: 0, maximo: 24,
+      comentario: "horas de sueño de 30 estudiantes (encuesta del grupo)",
+      descripcion: "Las horas de sueño de 30 estudiantes: los datos del reto del Día 4.",
+      datos: enteros([7, 6, 8, 5, 7, 6, 7, 9, 6, 5, 7, 8, 6, 4, 7, 6, 8, 7, 5, 6, 7, 6, 8, 7, 9, 6, 7, 5, 6, 7]),
+      paso: 1, ancho: 1, origen: 4, anchoMax: 2 },
+    propio: { nombre: "Tus datos", unidad: "", comentario: "tus datos",
+      descripcion: "Escribe tus propios números en el cuadro, separados por comas (enteros o con punto decimal).",
+      datos: enteros([3, 5, 5, 6, 8]), paso: 1, ancho: 1, origen: 3 }
+  };
+  var GRANDES = [200, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000];
+  var ANCHOS_INT = [1, 2, 3, 4, 5, 10, 15, 20, 25, 50, 100].concat(GRANDES);
+  var ANCHOS_FLOAT = [0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 10, 15, 20, 25, 50, 100].concat(GRANDES);
+
+  var est = { clave: "tmax", datos: [], paso: 0.1, sel: -1, lo: 0, hi: 1, arrastre: false, ancho: 2, origen: 30, editando: false };
+  var htmlConj = "";
+  Object.keys(CONJUNTOS).forEach(function (k) {
+    htmlConj += '<label class="chip"><input type="radio" name="conj" value="' + k + '"' + (k === "tmax" ? " checked" : "") + "><span>" + CONJUNTOS[k].nombre + "</span></label>";
+  });
+  $("conjuntos").innerHTML = htmlConj;
+
+  function copia(xs) { return xs.map(function (x) { return N(x.v, x.f); }); }
+  function cargar(clave) {
+    var c = CONJUNTOS[clave];
+    est.clave = clave; est.datos = copia(c.datos); est.paso = c.paso; est.sel = -1;
+    est.ancho = c.ancho; est.origen = c.origen;
+    $("descripcion").textContent = c.descripcion;
+    $("avisoDatos").hidden = true;
+    escribirDatos();
+    ajustarEje();
+    prepararClases(true);
+    actualizar();
+  }
+  function escribirDatos() { $("datos").value = est.datos.map(P.txt).join(", "); }
+
+  // Lee el cuadro de texto: enteros (8) o con punto decimal (8.0, 33.3)
+  function leerDatos(t) {
+    var partes = t.split(/[\s,;]+/).filter(function (s) { return s !== ""; }), xs = [], dec = 0;
+    for (var i = 0; i < partes.length; i++) {
+      var s = partes[i];
+      if (/^[+-]?\d+$/.test(s)) xs.push(N(parseInt(s, 10), false));
+      else if (/^[+-]?(\d+\.\d*|\.\d+)$/.test(s)) {
+        xs.push(N(parseFloat(s), true));
+        var m = /\.(\d*)$/.exec(s); dec = Math.max(dec, m ? m[1].replace(/0+$/, "").length : 0);
+      } else return { error: 'No entiendo "' + s + '": escribe números como 8, 8.5 o 33.3.' };
+      if (Math.abs(xs[xs.length - 1].v) > 1e6) return { error: "Usa números entre −1 000 000 y 1 000 000." };
+    }
+    if (xs.length < 2) return { error: "Escribe al menos 2 datos: variance y stdev necesitan dos." };
+    if (xs.length > 200) return { error: "Usa a lo más 200 datos." };
+    return { datos: xs, decimales: Math.min(dec, 3), algunFloat: xs.some(function (x) { return x.f; }) };
+  }
+  $("datos").addEventListener("input", function () {
+    var r = leerDatos($("datos").value);
+    if (r.error) { $("avisoDatos").textContent = r.error; $("avisoDatos").hidden = false; return; }
+    $("avisoDatos").hidden = true;
+    est.datos = r.datos; est.sel = -1;
+    est.paso = r.algunFloat ? Math.pow(10, -Math.max(1, r.decimales)) : 1;
+    if (est.clave !== "propio") { est.clave = "propio"; document.querySelector('input[name="conj"][value="propio"]').checked = true; $("descripcion").textContent = CONJUNTOS.propio.descripcion; }
+    ajustarEje();
+    prepararClases(true);
+    actualizar();
+  });
+  $("conjuntos").addEventListener("change", function (ev) { cargar(ev.target.value); });
+  $("restaurar").addEventListener("click", function () { cargar(est.clave === "propio" ? "propio" : est.clave); });
+  $("poblacion").addEventListener("change", actualizar);
+
+  function esEntero() { return est.paso >= 1 && !est.datos.some(function (x) { return x.f; }); }
+  function decimalesPaso() { return est.paso >= 1 ? 0 : Math.round(-Math.log10(est.paso)); }
+  // Un valor nuevo para un punto: ajustado al paso, dentro de los límites del conjunto, con su tipo
+  function valorNuevo(v) {
+    var c = CONJUNTOS[est.clave];
+    if (c.minimo !== undefined) v = Math.max(c.minimo, v);
+    if (c.maximo !== undefined) v = Math.min(c.maximo, v);
+    v = Math.max(-1e6, Math.min(1e6, v));
+    if (esEntero()) return N(Math.round(v), false);
+    var dec = decimalesPaso();
+    return N(parseFloat((Math.round(v / est.paso) * est.paso).toFixed(dec)), true);
+  }
+
+  function ajustarEje() {
+    var vs = est.datos.map(function (x) { return x.v; }), mn = Math.min.apply(null, vs), mx = Math.max.apply(null, vs);
+    var r = mx - mn || Math.max(1, Math.abs(mx) * 0.2), pad = r * 0.14 + est.paso;
+    var lo = mn - pad, hi = mx + pad, c = CONJUNTOS[est.clave];
+    if (c.minimo !== undefined && mn >= c.minimo) lo = Math.max(lo, c.minimo - pad * 0.35);
+    var p = pasoBonito(hi - lo, 8);
+    est.lo = Math.floor(lo / p) * p; est.hi = Math.ceil(hi / p) * p;
+    // sin marcas negativas para datos que no pueden serlo (lluvia, ingresos, horas...)
+    if (c.minimo !== undefined && mn >= c.minimo) est.lo = Math.max(est.lo, c.minimo - p / 2);
+  }
+
+  // ================================================================ Clases de la tabla
+  // Anchos posibles: de cuando hay a lo más 100 clases hasta cuando todo cabe en una o dos
+  function anchos() {
+    var vs = est.datos.map(function (x) { return x.v; }), r = Math.max.apply(null, vs) - Math.min.apply(null, vs);
+    var lista = (esEntero() ? ANCHOS_INT : ANCHOS_FLOAT).filter(function (a) { return r / a <= 99; });
+    var corte = lista.findIndex(function (a) { return a > r; });
+    if (corte >= 0) lista = lista.slice(0, corte + 2);
+    var c = CONJUNTOS[est.clave];
+    if (c.anchoMax) lista = lista.filter(function (a) { return a <= c.anchoMax; });
+    return lista;
+  }
+  function pasoOrigen() { return esEntero() ? 1 : 0.5; }
+  function prepararClases(reiniciar) {
+    var lista = anchos(), i = lista.indexOf(est.ancho);
+    if (reiniciar && i < 0) {          // ancho automático: unas 6 clases
+      var vs = est.datos.map(function (x) { return x.v; }), r = Math.max.apply(null, vs) - Math.min.apply(null, vs);
+      i = 0;
+      while (i < lista.length - 1 && r / lista[i] > 8) i++;
+      est.ancho = lista[i];
+    }
+    if (i < 0) { i = 0; est.ancho = lista[0]; }
+    $("ancho").max = lista.length - 1; $("ancho").value = i;
+    rangoOrigen(reiniciar);
+  }
+  // Orígenes posibles: desde el mínimo de los datos hacia atrás, menos de un ancho de clase
+  // (a lo más 20 opciones, en múltiplos de 0.5 o de 1 para que ningún dato caiga justo en un borde dudoso)
+  function rangoOrigen(reiniciar) {
+    var po = pasoOrigen(), vs = est.datos.map(function (x) { return x.v; }), mn = Math.min.apply(null, vs);
+    var base = Math.floor(mn / po + 1e-9) * po, c = CONJUNTOS[est.clave];
+    var salto = Math.max(1, Math.ceil(est.ancho / po / 20)) * po;
+    est.origenes = [];
+    for (var k = 0; k * salto < est.ancho - 1e-9 && k < 20; k++) {
+      var o = Number((base - k * salto).toFixed(1));
+      if (c.minimo !== undefined && mn >= c.minimo && o < c.minimo) break;
+      est.origenes.unshift(o === 0 ? 0 : o);
+    }
+    if (reiniciar || est.origenes.indexOf(est.origen) < 0) {
+      if (est.origenes.indexOf(est.origen) < 0) est.origen = est.origenes[est.origenes.length - 1];
+    }
+    $("origen").max = est.origenes.length - 1;
+    $("origen").value = est.origenes.indexOf(est.origen);
+    $("origen").disabled = est.origenes.length < 2;
+  }
+  $("ancho").addEventListener("input", function () { est.ancho = anchos()[Number($("ancho").value)]; rangoOrigen(false); actualizar(); });
+  $("origen").addEventListener("input", function () { est.origen = est.origenes[Number($("origen").value)]; actualizar(); });
+  // origen y ancho como números de Python (int si son enteros)
+  function comoPy(v) { return N(v, !Number.isInteger(v)); }
+
+  // ================================================================ Actualizar todo
+  var res = null, frec = null;
+  function modificados() {
+    var orig = CONJUNTOS[est.clave].datos;
+    return est.clave !== "propio" && (orig.length !== est.datos.length ||
+      orig.some(function (x, i) { return x.v !== est.datos[i].v || x.f !== est.datos[i].f; }));
+  }
+  // Si al cambiar los datos el ancho ya no está en la lista, se toma el más cercano que sí está
+  function sincronizarAncho() {
+    var lista = anchos(), i = lista.indexOf(est.ancho);
+    if (i < 0) {
+      i = lista.findIndex(function (a) { return a >= est.ancho; });
+      if (i < 0) i = lista.length - 1;
+      est.ancho = lista[i];
+      rangoOrigen(false);
+    }
+    $("ancho").max = lista.length - 1;
+    $("ancho").value = i;
+  }
+  function actualizar() {
+    sincronizarAncho();
+    var pob = $("poblacion").checked, c = CONJUNTOS[est.clave];
+    var comentario = c.comentario + (modificados() ? " (modificados)" : "");
+    res = P.programaResumen(est.datos, pob, comentario);
+    mostrarCodigo($("codigo1"), res.codigo, 0);
+    mostrarSalida($("salida1"), res);
+    frec = P.programaFrecuencias(est.datos, comoPy(est.origen), comoPy(est.ancho), comentario);
+    mostrarCodigo($("codigo2"), frec.codigo, 0);
+    mostrarSalida($("salida2"), frec);
+    $("anchoVal").textContent = P.txt(comoPy(est.ancho)) + (c.unidad ? " " + c.unidad : "");
+    $("origenVal").textContent = P.txt(comoPy(est.origen));
+    if (est.sel >= est.datos.length) est.sel = -1;
+    $("valorSel").value = est.sel >= 0 ? P.txt(est.datos[est.sel]) : "";
+    $("valorSel").disabled = est.sel < 0;
+    $("quitar").disabled = est.sel < 0 || est.datos.length <= 2;
+    $("valorSel").step = est.paso;
+    medidas();
+    tabla();
+    dibujarTodo();
+  }
+
+  function medidas() {
+    var r = res.r, c = CONJUNTOS[est.clave], u = c.unidad ? " <small>" + esc(c.unidad) + "</small>" : "", n = est.datos.length;
+    var pob = $("poblacion").checked;
+    function fila(dt, dd, clase) { return "<dt" + (clase ? " class='" + clase + "'" : "") + ">" + dt + "</dt><dd>" + dd + "</dd>"; }
+    var modas = r.modas, todas = modas.length === n;
+    var html = fila("n", n) +
+      fila("Media", esc(P.txt(P.redondea2(r.media))) + u, "media-c") +
+      fila("Mediana", esc(P.txt(P.redondea2(r.mediana))) + u, "mediana-c") +
+      fila("Moda(s)", (todas ? "<small>ningún valor se repite</small>" : esc("[" + modas.map(P.txt).join(", ") + "]"))) +
+      fila("Rango", esc(P.txt(P.redondea2(r.rango))) + u) +
+      fila(pob ? "Varianza (población)" : "Varianza", esc(P.txt(P.redondea2(r.varianza)))) +
+      fila(pob ? "Desviación (población)" : "Desviación", esc(P.txt(P.redondea2(r.desviacion))) + u);
+    $("medidas").innerHTML = html;
+    var m = r.media.v, s = r.desviacion.v, dentro = est.datos.filter(function (x) { return x.v >= m - s && x.v <= m + s; }).length;
+    var dif = r.media.v - r.mediana.v;
+    var l = "La media queda <b>" + (Math.abs(dif) < 1e-12 ? "igual que" : f(Math.abs(dif), 2) + (dif > 0 ? " por arriba" : " por abajo") + " de") + "</b> la mediana.<br>" +
+      "Entre media − desviación y media + desviación (" + f(m - s, 2) + " a " + f(m + s, 2) + "): <b>" + dentro + " de " + n + "</b> datos.";
+    if (est.sel >= 0) l += "<br>Punto seleccionado: <b>" + esc(P.txt(est.datos[est.sel])) + "</b>" + (c.unidad ? " " + esc(c.unidad) : "") + ".";
+    $("lectura1").innerHTML = l;
+  }
+
+  function tabla() {
+    var t = frec.tabla, n = est.datos.length, claseSel = est.sel >= 0 ? t.claseDe[est.sel] : null;
+    var h = "<thead><tr><th class='izq'>Clase</th><th>f</th><th>Relativa</th><th>F</th><th>F / n</th></tr></thead><tbody>";
+    t.filas.forEach(function (fi) {
+      h += "<tr" + (fi.k === claseSel ? " class='sel'" : "") + "><td class='izq mono'>" + esc(fi.etiqueta) + "</td><td>" + fi.f + "</td><td>" + f(100 * fi.f / n, 1) + " %</td><td>" + fi.F + "</td><td>" + f(100 * fi.F / n, 1) + " %</td></tr>";
+    });
+    h += "</tbody><tfoot><tr><td class='izq'>Total</td><td>" + n + "</td><td>100 %</td><td></td><td></td></tr></tfoot>";
+    $("tablaFrec").innerHTML = h;
+    var mayor = t.filas.reduce(function (a, b) { return b.f > a.f ? b : a; }, t.filas[0]);
+    var vacias = t.filas.filter(function (fi) { return fi.f === 0; }).length;
+    $("lectura2").innerHTML = "<b>" + t.filas.length + "</b> clases" + (vacias ? " (" + vacias + (vacias === 1 ? " vacía" : " vacías") + ")" : "") +
+      ". La más frecuente: <span class='mono'>" + esc(mayor.etiqueta) + "</span> con " + mayor.f + " de " + n + " datos.";
+  }
+
+  // ================================================================ Gráfica de puntos
+  var geo = null;
+  function dibujarPuntos() {
+    var cv = $("puntos");
+    if (!cv.offsetParent) return;
+    var w = cv.clientWidth || 600, angosto = w < 560;
+    var izq = 18, der = w - 18, techo = angosto ? 58 : 40, lo = est.lo, hi = est.hi;
+    function X(v) { return izq + (v - lo) / (hi - lo) * (der - izq); }
+    // puntos: cada uno en su valor exacto; si se encima con otro, sube un nivel (iguales quedan en columna)
+    var orden = est.datos.map(function (x, i) { return i; }).sort(function (a, b) { return est.datos[a].v - est.datos[b].v || a - b; });
+    var rad = angosto ? 6 : 7.5, pos = [], maxNivel = 0;
+    function apilar() {
+      var niveles = [];
+      pos = []; maxNivel = 0;
+      orden.forEach(function (i) {
+        var x = X(est.datos[i].v), l = 0;
+        while (niveles[l] !== undefined && x - niveles[l] < 2 * rad - 0.5) l++;
+        niveles[l] = x;
+        pos[i] = { x: x, l: l };
+        maxNivel = Math.max(maxNivel, l);
+      });
+    }
+    apilar();
+    var altoMax = angosto ? 0.95 * w : 0.36 * w;
+    var alto = Math.max(190, Math.min(altoMax, techo + 14 + (maxNivel + 1) * 2 * rad + 50));
+    for (var intento = 0; intento < 4 && (maxNivel + 1) * 2 * rad > alto - techo - 58 && rad > 2.5; intento++) {
+      rad = Math.max(2.5, (alto - techo - 58) / (2 * (maxNivel + 1)));
+      apilar();
+    }
+    var d = preparar(cv, alto / w), g = d.g, h = d.h, eje = h - 34;
+    g.clearRect(0, 0, w, h);
+    pos.forEach(function (q) { q.y = eje - 4 - rad - q.l * 2 * rad; });
+    var r = res.r, m = r.media.v, s = r.desviacion.v, med = r.mediana.v, c = CONJUNTOS[est.clave];
+    // banda media ± desviación
+    var b0 = Math.max(izq, X(m - s)), b1 = Math.min(der, X(m + s));
+    g.save(); g.fillStyle = "rgba(184,151,90,0.18)"; g.fillRect(b0, techo - 6, Math.max(0, b1 - b0), eje - techo + 6); g.restore();
+    // eje y marcas
+    linea(g, izq, eje, der, eje, C.gris, 1.5);
+    var p = pasoBonito(hi - lo, angosto ? 5 : 10), k;
+    for (k = Math.ceil(lo / p - 1e-9) * p; k <= hi + 1e-9; k += p) {
+      linea(g, X(k), eje, X(k), eje + 5, C.gris, 1);
+      texto(g, f(k, p < 1 ? 1 : 0), X(k), eje + 19, C.gris, 13, "center");
+    }
+    if (c.unidad) texto(g, c.unidad, der, eje + 32, C.gris, 12, "right");
+    // media y mediana (debajo de los puntos)
+    linea(g, X(med), techo - 6, X(med), eje, C.azul, 2.5, [6, 4]);
+    linea(g, X(m), techo - 6, X(m), eje, C.guinda, 3);
+    est.datos.forEach(function (x, i) {
+      var q = pos[i], sel = i === est.sel;
+      g.save(); g.fillStyle = sel ? C.oro : C.azul; g.globalAlpha = sel ? 1 : 0.85; g.strokeStyle = "#fff"; g.lineWidth = 1.2;
+      g.beginPath(); g.arc(q.x, q.y, rad - 0.6, 0, 2 * Math.PI); g.fill(); g.stroke(); g.restore();
+      if (sel) { g.save(); g.strokeStyle = C.guinda; g.lineWidth = 2.5; g.beginPath(); g.arc(q.x, q.y, rad + 3, 0, 2 * Math.PI); g.stroke(); g.restore(); }
+    });
+    geo = { X: X, izq: izq, der: der, eje: eje, techo: techo, pos: pos, rad: rad };
+    // etiquetas de la media y la mediana, sin salirse del lienzo
+    function rotulo(t, x, y, color, haciaIzq) {
+      g.save(); g.font = "bold 14px " + FUENTE; var an = g.measureText(t).width; g.restore();
+      if (haciaIzq && x - 4 - an < 2) haciaIzq = false;
+      else if (!haciaIzq && x + 4 + an > w - 2) haciaIzq = true;
+      etiqueta(g, t, x + (haciaIzq ? -4 : 4), y, color, haciaIzq ? "right" : "left", 14);
+    }
+    var izqMedia = X(m) < X(med);
+    rotulo("media " + f(m, 2), X(m), 18, C.guinda, izqMedia);
+    rotulo("mediana " + f(med, 2), X(med), angosto ? 36 : 34, C.azul, !izqMedia);
+    // leyenda de la banda, abajo a la izquierda
+    g.save(); g.fillStyle = "rgba(184,151,90,0.35)"; g.fillRect(izq, h - 13, 14, 9); g.restore();
+    texto(g, "media ± 1 desviación", izq + 18, h - 4, C.oroTexto, 12, "left", "alphabetic", true);
+  }
+
+  function indiceEn(px, py, tol) {
+    if (!geo) return -1;
+    var mejor = -1, dmin = Infinity;
+    geo.pos.forEach(function (q, i) {
+      var dd = Math.hypot(q.x - px, q.y - py);
+      if (dd < dmin) { dmin = dd; mejor = i; }
+    });
+    return dmin <= geo.rad + tol ? mejor : -1;
+  }
+  function valorDeX(px) { return est.lo + (px - geo.izq) / (geo.der - geo.izq) * (est.hi - est.lo); }
+  var cvP = $("puntos");
+  cvP.addEventListener("pointerdown", function (ev) {
+    var rc = cvP.getBoundingClientRect(), px = ev.clientX - rc.left, py = ev.clientY - rc.top;
+    var i = indiceEn(px, py, ev.pointerType === "touch" ? 14 : 5);
+    if (i < 0) {
+      if (est.datos.length >= 200 || px < geo.izq || px > geo.der) return;
+      est.datos.push(valorNuevo(valorDeX(px)));
+      i = est.datos.length - 1;
+      escribirDatos();
+    }
+    est.sel = i; est.arrastre = true;
+    cvP.setPointerCapture(ev.pointerId);
+    ev.preventDefault();
+    actualizar();
+  });
+  cvP.addEventListener("pointermove", function (ev) {
+    if (!est.arrastre || est.sel < 0) return;
+    var rc = cvP.getBoundingClientRect(), px = Math.max(geo.izq, Math.min(geo.der, ev.clientX - rc.left));
+    var nuevo = valorNuevo(valorDeX(px)), viejo = est.datos[est.sel];
+    if (nuevo.v === viejo.v && nuevo.f === viejo.f) return;
+    est.datos[est.sel] = nuevo;
+    escribirDatos();
+    actualizar();
+  });
+  function soltar() {
+    if (!est.arrastre) return;
+    est.arrastre = false;
+    ajustarEje(); rangoOrigen(false); actualizar();
+  }
+  cvP.addEventListener("pointerup", soltar);
+  cvP.addEventListener("pointercancel", soltar);
+  cvP.addEventListener("keydown", function (ev) {
+    var k = ev.key, n = est.datos.length;
+    if (k === "ArrowUp" || k === "ArrowDown") {
+      var orden = est.datos.map(function (x, i) { return i; }).sort(function (a, b) { return est.datos[a].v - est.datos[b].v || a - b; });
+      var pos = orden.indexOf(est.sel);
+      pos = pos < 0 ? 0 : (pos + (k === "ArrowUp" ? 1 : -1) + n) % n;
+      est.sel = orden[pos];
+      ev.preventDefault(); actualizar(); return;
+    }
+    if (est.sel < 0 && (k === "ArrowLeft" || k === "ArrowRight" || k === "Delete" || k === "Backspace")) { est.sel = 0; }
+    if (k === "ArrowLeft" || k === "ArrowRight") {
+      var paso = est.paso * (ev.shiftKey ? 10 : 1) * (k === "ArrowLeft" ? -1 : 1);
+      est.datos[est.sel] = valorNuevo(est.datos[est.sel].v + paso);
+      escribirDatos(); ajustarEje(); rangoOrigen(false);
+      ev.preventDefault(); actualizar(); return;
+    }
+    if (k === "Delete" || k === "Backspace") { ev.preventDefault(); quitar(); return; }
+    if (k === "+" || k === "=" || k === "Insert") {
+      if (n >= 200) return;
+      var base = est.sel >= 0 ? est.datos[est.sel] : P.mediana(est.datos);
+      est.datos.push(valorNuevo(base.v)); est.sel = est.datos.length - 1;
+      escribirDatos(); ajustarEje(); rangoOrigen(false);
+      ev.preventDefault(); actualizar();
+    }
+  });
+  function quitar() {
+    if (est.sel < 0 || est.datos.length <= 2) return;
+    est.datos.splice(est.sel, 1);
+    est.sel = -1;
+    escribirDatos(); ajustarEje(); rangoOrigen(false); actualizar();
+  }
+  $("quitar").addEventListener("click", quitar);
+  $("valorSel").addEventListener("change", function () {
+    if (est.sel < 0) return;
+    var v = Number($("valorSel").value);
+    if ($("valorSel").value === "" || !isFinite(v)) { actualizar(); return; }
+    est.datos[est.sel] = valorNuevo(v);
+    escribirDatos(); ajustarEje(); rangoOrigen(false); actualizar();
+  });
+
+  // ================================================================ Histograma
+  function dibujarHistograma() {
+    var cv = $("histograma");
+    if (!cv.offsetParent || !frec) return;
+    var w0 = cv.clientWidth || 600, angosto = w0 < 560;
+    var d = preparar(cv, angosto ? 0.8 : 0.5), g = d.g, w = d.w, h = d.h;
+    g.clearRect(0, 0, w, h);
+    var filas = frec.tabla.filas, n = filas.length, fmax = Math.max.apply(null, filas.map(function (x) { return x.f; }));
+    var izq = 40, der = w - 12, arr = 34, abj = h - (angosto ? 58 : 40);
+    texto(g, "Histograma: frecuencia de cada clase", 10, 20, C.azulOscuro, 15, "left", "alphabetic", true);
+    var p = Math.max(1, pasoBonito(fmax, 5)), top = Math.ceil(fmax * 1.1 / p) * p || 1, k;
+    function Y(v) { return abj - v / top * (abj - arr); }
+    for (k = 0; k <= top; k += p) { linea(g, izq, Y(k), der, Y(k), k ? C.grisClaro : C.gris, 1); texto(g, String(k), izq - 6, Y(k) + 4, C.gris, 12, "right"); }
+    var ancho = (der - izq) / n, claseSel = est.sel >= 0 ? frec.tabla.claseDe[est.sel] : null;
+    var cada = Math.max(1, Math.ceil(n / Math.floor((der - izq) / (angosto ? 34 : 44))));
+    filas.forEach(function (fi, i) {
+      var x0 = izq + i * ancho;
+      g.save(); g.fillStyle = fi.k === claseSel ? C.oro : C.azul; g.fillRect(x0 + 1, Y(fi.f), Math.max(1, ancho - 2), abj - Y(fi.f)); g.restore();
+      if (fi.f && ancho >= 16) texto(g, String(fi.f), x0 + ancho / 2, Y(fi.f) - 4, C.azulOscuro, 12, "center");
+      if (i % cada === 0) {
+        g.save(); g.translate(x0, abj + 6); if (angosto) g.rotate(-Math.PI / 4);
+        texto(g, P.txt(fi.ini), 0, angosto ? 0 : 10, C.gris, 12, angosto ? "right" : "center", "alphabetic");
+        g.restore();
+      }
+    });
+    if ((n % cada) === 0) {
+      g.save(); g.translate(der, abj + 6); if (angosto) g.rotate(-Math.PI / 4);
+      texto(g, P.txt(filas[n - 1].fin), 0, angosto ? 0 : 10, C.gris, 12, angosto ? "right" : "center");
+      g.restore();
+    }
+  }
+
+  // ================================================================ general
+  function dibujarTodo() { dibujarPuntos(); dibujarHistograma(); }
+  window.addEventListener("resize", function () { if (!est.arrastre) dibujarTodo(); });
+  cargar("tmax");
+  // Abrir directamente una pestaña con #v1 o #v2 al final de la liga
+  var inicial = location.hash.slice(1);
+  if (/^v[12]$/.test(inicial)) { abrirVista(inicial); window.addEventListener("load", function () { window.scrollTo(0, 0); }); }
+})();
+</script>
+<div id="qr-sitio" class="qr-capa" hidden>
+  <div class="qr-caja" role="dialog" aria-modal="true" aria-label="Código QR de esta página">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 45" role="img" aria-label="Código QR de https://memosanchezg.github.io/programacion-basica-interactivos/semana-13-estadistica-en-vivo.html" shape-rendering="crispEdges"><rect width="45" height="45" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM11 2h3v1h-3zM16 2h1v1h-1zM18 2h1v1h-1zM20 2h3v1h-3zM24 2h4v1h-4zM30 2h2v1h-2zM33 2h2v1h-2zM36 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM12 3h2v1h-2zM18 3h1v1h-1zM20 3h1v1h-1zM24 3h1v1h-1zM27 3h4v1h-4zM34 3h1v1h-1zM36 3h1v1h-1zM42 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM10 4h6v1h-6zM17 4h1v1h-1zM22 4h1v1h-1zM26 4h1v1h-1zM29 4h2v1h-2zM33 4h2v1h-2zM36 4h1v1h-1zM38 4h3v1h-3zM42 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h1v1h-1zM12 5h7v1h-7zM20 5h1v1h-1zM23 5h2v1h-2zM26 5h3v1h-3zM31 5h1v1h-1zM33 5h2v1h-2zM36 5h1v1h-1zM38 5h3v1h-3zM42 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h2v1h-2zM17 6h1v1h-1zM21 6h1v1h-1zM25 6h1v1h-1zM30 6h2v1h-2zM33 6h2v1h-2zM36 6h1v1h-1zM38 6h3v1h-3zM42 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h1v1h-1zM13 7h3v1h-3zM17 7h1v1h-1zM22 7h1v1h-1zM26 7h1v1h-1zM29 7h2v1h-2zM34 7h1v1h-1zM36 7h1v1h-1zM42 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM30 8h1v1h-1zM32 8h1v1h-1zM34 8h1v1h-1zM36 8h7v1h-7zM10 9h1v1h-1zM13 9h1v1h-1zM17 9h2v1h-2zM20 9h1v1h-1zM23 9h1v1h-1zM25 9h2v1h-2zM28 9h1v1h-1zM33 9h2v1h-2zM2 10h1v1h-1zM4 10h5v1h-5zM13 10h3v1h-3zM17 10h1v1h-1zM19 10h1v1h-1zM22 10h1v1h-1zM24 10h1v1h-1zM27 10h3v1h-3zM31 10h1v1h-1zM36 10h5v1h-5zM3 11h1v1h-1zM5 11h3v1h-3zM9 11h1v1h-1zM12 11h3v1h-3zM19 11h5v1h-5zM25 11h1v1h-1zM27 11h1v1h-1zM30 11h1v1h-1zM32 11h3v1h-3zM36 11h3v1h-3zM40 11h1v1h-1zM42 11h1v1h-1zM2 12h1v1h-1zM4 12h1v1h-1zM6 12h1v1h-1zM8 12h6v1h-6zM18 12h1v1h-1zM22 12h2v1h-2zM29 12h4v1h-4zM34 12h2v1h-2zM37 12h1v1h-1zM2 13h2v1h-2zM5 13h3v1h-3zM10 13h2v1h-2zM13 13h1v1h-1zM23 13h2v1h-2zM28 13h1v1h-1zM32 13h3v1h-3zM38 13h2v1h-2zM42 13h1v1h-1zM2 14h2v1h-2zM8 14h1v1h-1zM12 14h3v1h-3zM16 14h2v1h-2zM19 14h1v1h-1zM21 14h1v1h-1zM24 14h1v1h-1zM26 14h4v1h-4zM31 14h1v1h-1zM33 14h1v1h-1zM35 14h1v1h-1zM37 14h1v1h-1zM39 14h3v1h-3zM2 15h2v1h-2zM7 15h1v1h-1zM9 15h3v1h-3zM13 15h1v1h-1zM15 15h1v1h-1zM20 15h1v1h-1zM22 15h3v1h-3zM26 15h1v1h-1zM32 15h2v1h-2zM35 15h8v1h-8zM3 16h1v1h-1zM5 16h1v1h-1zM8 16h3v1h-3zM15 16h1v1h-1zM17 16h1v1h-1zM20 16h2v1h-2zM26 16h1v1h-1zM29 16h4v1h-4zM35 16h1v1h-1zM37 16h1v1h-1zM40 16h1v1h-1zM2 17h2v1h-2zM6 17h1v1h-1zM11 17h1v1h-1zM14 17h2v1h-2zM21 17h4v1h-4zM28 17h1v1h-1zM30 17h1v1h-1zM33 17h2v1h-2zM36 17h2v1h-2zM39 17h1v1h-1zM41 17h1v1h-1zM2 18h3v1h-3zM6 18h6v1h-6zM15 18h5v1h-5zM21 18h2v1h-2zM25 18h1v1h-1zM27 18h2v1h-2zM31 18h3v1h-3zM35 18h1v1h-1zM37 18h1v1h-1zM40 18h1v1h-1zM6 19h1v1h-1zM9 19h4v1h-4zM14 19h1v1h-1zM18 19h6v1h-6zM25 19h3v1h-3zM30 19h1v1h-1zM32 19h3v1h-3zM36 19h4v1h-4zM41 19h2v1h-2zM2 20h3v1h-3zM7 20h2v1h-2zM11 20h1v1h-1zM14 20h1v1h-1zM16 20h1v1h-1zM19 20h1v1h-1zM22 20h2v1h-2zM29 20h3v1h-3zM35 20h1v1h-1zM38 20h2v1h-2zM41 20h1v1h-1zM9 21h3v1h-3zM13 21h2v1h-2zM16 21h6v1h-6zM23 21h2v1h-2zM29 21h2v1h-2zM32 21h4v1h-4zM38 21h2v1h-2zM41 21h2v1h-2zM3 22h2v1h-2zM7 22h2v1h-2zM11 22h3v1h-3zM16 22h3v1h-3zM23 22h1v1h-1zM25 22h5v1h-5zM31 22h1v1h-1zM39 22h3v1h-3zM3 23h2v1h-2zM9 23h1v1h-1zM12 23h1v1h-1zM14 23h1v1h-1zM16 23h10v1h-10zM27 23h2v1h-2zM30 23h1v1h-1zM32 23h3v1h-3zM36 23h4v1h-4zM41 23h2v1h-2zM3 24h2v1h-2zM6 24h1v1h-1zM8 24h2v1h-2zM11 24h3v1h-3zM17 24h2v1h-2zM20 24h1v1h-1zM22 24h1v1h-1zM24 24h1v1h-1zM27 24h4v1h-4zM34 24h1v1h-1zM37 24h1v1h-1zM2 25h2v1h-2zM6 25h2v1h-2zM12 25h2v1h-2zM18 25h1v1h-1zM20 25h2v1h-2zM23 25h2v1h-2zM29 25h1v1h-1zM33 25h3v1h-3zM38 25h2v1h-2zM41 25h2v1h-2zM3 26h1v1h-1zM6 26h1v1h-1zM8 26h5v1h-5zM14 26h1v1h-1zM19 26h1v1h-1zM25 26h7v1h-7zM33 26h1v1h-1zM40 26h2v1h-2zM2 27h2v1h-2zM6 27h2v1h-2zM9 27h1v1h-1zM14 27h2v1h-2zM18 27h2v1h-2zM21 27h3v1h-3zM25 27h1v1h-1zM27 27h1v1h-1zM30 27h1v1h-1zM32 27h2v1h-2zM35 27h5v1h-5zM42 27h1v1h-1zM2 28h3v1h-3zM8 28h1v1h-1zM16 28h1v1h-1zM18 28h1v1h-1zM20 28h1v1h-1zM22 28h1v1h-1zM26 28h5v1h-5zM32 28h1v1h-1zM34 28h1v1h-1zM36 28h3v1h-3zM2 29h3v1h-3zM6 29h2v1h-2zM9 29h1v1h-1zM12 29h2v1h-2zM15 29h2v1h-2zM18 29h1v1h-1zM21 29h4v1h-4zM26 29h1v1h-1zM28 29h1v1h-1zM30 29h1v1h-1zM33 29h2v1h-2zM38 29h2v1h-2zM2 30h2v1h-2zM5 30h4v1h-4zM11 30h1v1h-1zM15 30h1v1h-1zM17 30h1v1h-1zM19 30h1v1h-1zM22 30h1v1h-1zM24 30h5v1h-5zM31 30h1v1h-1zM33 30h1v1h-1zM39 30h4v1h-4zM2 31h1v1h-1zM6 31h1v1h-1zM11 31h4v1h-4zM16 31h2v1h-2zM20 31h1v1h-1zM25 31h1v1h-1zM27 31h1v1h-1zM30 31h7v1h-7zM38 31h1v1h-1zM40 31h1v1h-1zM42 31h1v1h-1zM2 32h1v1h-1zM4 32h1v1h-1zM8 32h3v1h-3zM12 32h2v1h-2zM15 32h2v1h-2zM18 32h1v1h-1zM22 32h3v1h-3zM27 32h3v1h-3zM31 32h1v1h-1zM34 32h4v1h-4zM39 32h1v1h-1zM2 33h1v1h-1zM4 33h3v1h-3zM10 33h2v1h-2zM13 33h3v1h-3zM17 33h2v1h-2zM20 33h1v1h-1zM23 33h2v1h-2zM30 33h1v1h-1zM34 33h4v1h-4zM39 33h1v1h-1zM41 33h2v1h-2zM2 34h1v1h-1zM7 34h2v1h-2zM10 34h1v1h-1zM15 34h1v1h-1zM17 34h3v1h-3zM22 34h1v1h-1zM24 34h6v1h-6zM31 34h1v1h-1zM34 34h5v1h-5zM40 34h1v1h-1zM42 34h1v1h-1zM10 35h3v1h-3zM15 35h1v1h-1zM18 35h1v1h-1zM20 35h3v1h-3zM25 35h2v1h-2zM30 35h2v1h-2zM33 35h2v1h-2zM38 35h1v1h-1zM41 35h2v1h-2zM2 36h7v1h-7zM16 36h1v1h-1zM18 36h1v1h-1zM20 36h1v1h-1zM22 36h1v1h-1zM24 36h1v1h-1zM28 36h3v1h-3zM32 36h3v1h-3zM36 36h1v1h-1zM38 36h1v1h-1zM40 36h1v1h-1zM2 37h1v1h-1zM8 37h1v1h-1zM10 37h4v1h-4zM15 37h1v1h-1zM17 37h1v1h-1zM22 37h1v1h-1zM26 37h1v1h-1zM33 37h2v1h-2zM38 37h2v1h-2zM2 38h1v1h-1zM4 38h3v1h-3zM8 38h1v1h-1zM10 38h2v1h-2zM13 38h2v1h-2zM18 38h1v1h-1zM20 38h1v1h-1zM23 38h2v1h-2zM26 38h4v1h-4zM31 38h1v1h-1zM34 38h5v1h-5zM40 38h1v1h-1zM2 39h1v1h-1zM4 39h3v1h-3zM8 39h1v1h-1zM10 39h1v1h-1zM15 39h2v1h-2zM18 39h2v1h-2zM21 39h2v1h-2zM25 39h2v1h-2zM30 39h2v1h-2zM33 39h1v1h-1zM35 39h1v1h-1zM37 39h1v1h-1zM40 39h3v1h-3zM2 40h1v1h-1zM4 40h3v1h-3zM8 40h1v1h-1zM10 40h1v1h-1zM14 40h6v1h-6zM22 40h1v1h-1zM24 40h1v1h-1zM26 40h2v1h-2zM29 40h2v1h-2zM34 40h6v1h-6zM2 41h1v1h-1zM8 41h1v1h-1zM12 41h2v1h-2zM16 41h2v1h-2zM19 41h1v1h-1zM23 41h1v1h-1zM25 41h1v1h-1zM28 41h3v1h-3zM34 41h2v1h-2zM38 41h2v1h-2zM41 41h1v1h-1zM2 42h7v1h-7zM10 42h3v1h-3zM15 42h7v1h-7zM24 42h5v1h-5zM31 42h1v1h-1zM33 42h1v1h-1zM35 42h4v1h-4zM40 42h1v1h-1z"/></svg>
+    <p class="qr-texto">Escanea con la cámara del celular para abrir esta página</p>
+    <p class="qr-url">https://memosanchezg.github.io/programacion-basica-interactivos/semana-13-estadistica-en-vivo.html</p>
+    <button type="button" class="qr-cerrar">Cerrar</button>
+  </div>
+</div>
+<style>
+  .qr-capa { position:fixed; top:0; right:0; bottom:0; left:0; z-index:10000; display:flex; align-items:center;
+             justify-content:center; padding:16px; background:#fff; }
+  .qr-capa[hidden] { display:none; }
+  .qr-caja { max-width:100%; text-align:center; color:#0A2A57; font:16px/1.4 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .qr-caja svg { display:block; width:min(62vh, 84vw); height:auto; margin:0 auto; }
+  .qr-texto { margin:12px 0 2px; font-size:1.15rem; font-weight:bold; }
+  .qr-url { margin:0 0 12px; color:#5B6472; word-break:break-all; }
+  .qr-cerrar { font:inherit; padding:6px 20px; border:2px solid #00408F; border-radius:4px; background:#fff;
+               color:#00408F; cursor:pointer; }
+</style>
+<script>
+  (function () {
+    var capa = document.getElementById("qr-sitio");
+    document.querySelectorAll("a.qr-abrir").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        capa.hidden = false;
+        capa.querySelector(".qr-cerrar").focus();
+      });
+    });
+    capa.addEventListener("click", function (e) {
+      if (e.target === capa || e.target.classList.contains("qr-cerrar")) capa.hidden = true;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !capa.hidden) capa.hidden = true;
+    });
+  })();
+</script>
+</body>
+</html>

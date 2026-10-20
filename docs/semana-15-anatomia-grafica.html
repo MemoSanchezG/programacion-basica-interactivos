@@ -1,0 +1,1390 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="tipo" content="simulador">
+<title>Anatomía de una gráfica</title>
+
+<style>
+  :root {
+    --azul:#00408F; --azul-oscuro:#0A2A57; --guinda:#8C1D35; --oro:#B8975A; --oro-texto:#8A6A2E;
+    --azul-claro:#E8EEF7; --oro-claro:#F7F1E6; --guinda-claro:#F5E6EA; --verde:#2F7D5B;
+    --tinta:#1B1F2A; --gris:#5B6472; --gris-claro:#E9ECF1; --borde:#D9DEE6; --fondo:#FFFFFF;
+    --cmd-fondo:#0C0C0C; --cmd-texto:#E6E6E6;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--fondo); color:var(--tinta);
+         font:16px/1.45 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .franja { height:8px; background:var(--azul); border-bottom:3px solid var(--oro); }
+  header { max-width:1280px; margin:0 auto; padding:12px 18px 4px; }
+  .semana { color:var(--guinda); font-weight:bold; letter-spacing:.04em; font-size:.85rem; text-transform:uppercase; }
+  h1 { font-family:Cambria,Georgia,serif; color:var(--azul-oscuro); font-size:1.7rem; margin:2px 0 2px; }
+  .sub { color:var(--gris); margin:0; }
+  main { max-width:1280px; margin:0 auto; padding:8px 18px 24px; }
+  .panel { background:#fff; border:1px solid var(--borde); border-radius:10px; padding:12px 14px; min-width:0; }
+  .panel h2 { font-size:1.02rem; color:var(--azul-oscuro); margin:0 0 8px; }
+  label { display:block; font-weight:bold; color:var(--azul-oscuro); margin-top:10px; }
+  label small { font-weight:normal; color:var(--gris); }
+  input[type=number], input[type=text], select { font:inherit; padding:4px 6px; border:1px solid var(--borde);
+                        border-radius:6px; }
+  button.accion { font:inherit; font-weight:bold; border-radius:8px; padding:7px 12px; margin:8px 6px 0 0;
+                  border:1px solid var(--azul); background:#fff; color:var(--azul); cursor:pointer; }
+  button.accion:hover, button.accion:focus-visible { background:var(--azul); color:#fff; outline:none; }
+  canvas { width:100%; display:block; border:1px solid var(--borde); border-radius:10px; background:#fff; }
+  .lectura { background:var(--oro-claro); border-left:4px solid var(--oro); border-radius:8px; padding:10px 12px;
+             margin-top:12px; line-height:1.55; }
+  .lectura b { color:var(--azul-oscuro); }
+  .ok { color:var(--verde); font-weight:bold; }
+  .mal { color:var(--guinda); font-weight:bold; }
+  .preguntas { background:var(--azul-claro); border-radius:8px; padding:10px 14px; margin-top:12px; }
+  .preguntas h3 { margin:0 0 4px; font-size:.95rem; color:var(--azul-oscuro); }
+  .preguntas ol { margin:0; padding-left:20px; }
+  /* Código Python con los colores del curso (minted, estilo borland). */
+  .codigo { border:1px solid var(--tinta); background:#fff; font:14px/1.55 Consolas,"Courier New",monospace;
+            overflow-x:auto; margin:8px 0; }
+  .codigo ol { margin:0; padding:8px 12px 8px 3.4em; }
+  .codigo li { white-space:pre; }
+  .codigo li::marker { color:var(--gris); font:11px Cambria,Georgia,serif; }
+  .codigo .kw { color:#000080; font-weight:bold; }
+  .codigo .str, .codigo .num { color:#0000FF; }
+  .codigo .com { color:#008800; font-style:italic; }
+  .codigo .marca { background:var(--oro-claro); outline:1px solid var(--oro); }
+  footer { max-width:1280px; margin:0 auto; padding:6px 18px 18px; color:var(--gris); font-size:.85rem; }
+  footer a { color:var(--azul); }
+
+  /* Propios de este simulador */
+  .visor { display:grid; grid-template-columns:minmax(0, 1.05fr) minmax(0, 1fr); gap:16px; align-items:start; }
+  .marco-lienzo { display:flex; justify-content:center; }
+  #lienzo { cursor:crosshair; touch-action:manipulation; border-radius:4px; }
+  #pie-lienzo { min-height:3em; margin:8px 0 0; color:var(--tinta); }
+  #pie-lienzo code, .lectura code, .preguntas code, .nota code { font-family:Consolas,"Courier New",monospace; color:var(--azul); }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .chips span { color:var(--gris); font-size:.92rem; align-self:center; margin-right:2px; }
+  .chips button { font:inherit; font-size:.92rem; border:1px solid var(--borde); border-radius:16px; background:#fff;
+                  color:var(--azul-oscuro); padding:3px 10px; cursor:pointer; }
+  .chips button[aria-pressed="true"] { background:var(--oro-claro); border-color:var(--oro); font-weight:bold; }
+  .chips button:hover, .chips button:focus-visible { border-color:var(--azul); outline:none; }
+  .codigo li[tabindex] { cursor:pointer; }
+  .codigo li[tabindex]:focus { outline:2px solid var(--azul); outline-offset:-1px; }
+  .controles { margin-top:16px; display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:12px 18px; }
+  fieldset { border:1px solid var(--borde); border-radius:8px; padding:6px 12px 12px; margin:0; min-width:0; }
+  legend { font-weight:bold; color:var(--guinda); padding:0 4px; }
+  fieldset label:first-of-type { margin-top:4px; }
+  fieldset input[type=text], fieldset select { width:100%; }
+  .opciones { display:flex; flex-wrap:wrap; gap:4px 12px; margin-top:4px; }
+  .opciones label, label.casilla { display:flex; align-items:center; gap:6px; font-weight:normal; color:var(--tinta);
+                                   margin-top:6px; cursor:pointer; }
+  .opciones input, label.casilla input { width:17px; height:17px; margin:0; flex:none; }
+  .rango { display:flex; gap:8px; align-items:center; margin-top:6px; }
+  .rango label { display:inline; margin:0; font-weight:normal; color:var(--tinta); }
+  .rango input { width:6em; }
+  .nota { color:var(--gris); font-size:.93rem; margin:6px 0 0; }
+  .deshabilitado { opacity:.55; }
+  .botonera { display:flex; flex-wrap:wrap; }
+  @media (max-width: 1000px) { .visor { grid-template-columns:1fr; } }
+  @media (max-width: 480px) {
+    header { padding:10px 12px 4px; } main { padding:8px 10px 20px; } footer { padding:6px 12px 16px; }
+    .panel { padding:10px; } h1 { font-size:1.45rem; } .codigo { font-size:13px; }
+  }
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header>
+  <div class="semana">Semana 15 · Días 1 y 4 · Matplotlib</div>
+  <h1>Anatomía de una gráfica</h1>
+  <p class="sub">Cambia cada parte de una gráfica de matplotlib y mira el código que la crea. Pasa el ratón (o toca) una parte de la gráfica para encontrar su línea, o pasa por una línea del código para ver qué dibuja.</p>
+</header>
+<main>
+  <div class="visor">
+    <div class="panel">
+      <h2>La gráfica</h2>
+      <div class="marco-lienzo" id="marco"><canvas id="lienzo" aria-label="Gráfica de matplotlib con los datos del clima de Monterrey de septiembre de 2026; cambia con los controles de abajo. Al pasar el ratón por una parte se resalta la línea de código que la crea." aria-describedby="pie-lienzo"></canvas></div>
+      <p id="pie-lienzo" aria-live="polite"></p>
+      <div class="chips" id="chips" role="group" aria-label="Partes de la gráfica"></div>
+    </div>
+    <div class="panel">
+      <h2>El código en Python</h2>
+      <div id="codigo"></div>
+      <div class="lectura" id="lectura"></div>
+    </div>
+  </div>
+
+  <div class="panel controles" id="controles">
+    <fieldset>
+      <legend>Datos y tipo</legend>
+      <label for="datos">Datos <small>(clima_septiembre.json)</small></label>
+      <select id="datos">
+        <option value="tmax">Máximas diarias</option>
+        <option value="tmin">Mínimas diarias</option>
+        <option value="ambas">Máximas y mínimas</option>
+        <option value="lluvia">Lluvia diaria</option>
+        <option value="semana">Lluvia por semana</option>
+        <option value="promedio">Máxima promedio por semana</option>
+      </select>
+      <div class="opciones" role="radiogroup" aria-label="Tipo de gráfica">
+        <label><input type="radio" name="tipo" value="plot" checked> Líneas: <code>plot</code></label>
+        <label><input type="radio" name="tipo" value="bar"> Barras: <code>bar</code></label>
+        <label><input type="radio" name="tipo" value="scatter"> Dispersión: <code>scatter</code></label>
+        <label><input type="radio" name="tipo" value="hist"> Histograma: <code>hist</code></label>
+      </div>
+      <label for="figsize">Tamaño en pulgadas <small>(figsize)</small></label>
+      <select id="figsize">
+        <option value="6.4, 4.8">(6.4, 4.8): el de matplotlib</option>
+        <option value="6, 3.4">(6, 3.4): el de las diapositivas</option>
+        <option value="8, 4">(8, 4)</option>
+        <option value="10, 3">(10, 3)</option>
+        <option value="4, 4">(4, 4)</option>
+      </select>
+    </fieldset>
+    <fieldset>
+      <legend>Textos</legend>
+      <label for="titulo">Título <small>(plt.title)</small></label>
+      <input id="titulo" type="text" maxlength="60" spellcheck="false" autocomplete="off">
+      <label for="xlabel">Nombre del eje x <small>(plt.xlabel)</small></label>
+      <input id="xlabel" type="text" maxlength="40" spellcheck="false" autocomplete="off">
+      <label for="ylabel">Nombre del eje y <small>(plt.ylabel)</small></label>
+      <input id="ylabel" type="text" maxlength="40" spellcheck="false" autocomplete="off">
+    </fieldset>
+    <fieldset>
+      <legend>Estilo de los datos</legend>
+      <div id="caja-marker">
+        <label for="marker">Marcador <small>(marker)</small></label>
+        <select id="marker">
+          <option value="">sin marcador</option>
+          <option value="o" selected>"o": círculos</option>
+          <option value="s">"s": cuadros</option>
+          <option value="^">"^": triángulos</option>
+          <option value="x">"x": cruces</option>
+          <option value=".">".": puntos chicos</option>
+        </select>
+      </div>
+      <div id="caja-ls">
+        <label for="ls">Estilo de línea <small>(linestyle)</small></label>
+        <select id="ls">
+          <option value="-">"-": continua (por omisión)</option>
+          <option value="--">"--": guiones</option>
+          <option value=":">":": puntos</option>
+          <option value="-.">"-.": guion y punto</option>
+          <option value="">"": sin línea</option>
+        </select>
+      </div>
+      <div id="caja-bins" hidden>
+        <label for="bins">Intervalos <small>(bins)</small></label>
+        <select id="bins">
+          <option value="5">5</option>
+          <option value="10" selected>10 (por omisión)</option>
+          <option value="15">15</option>
+          <option value="30">30</option>
+        </select>
+      </div>
+      <label for="color">Color <small>(color)</small></label>
+      <select id="color">
+        <option value="">C0, el azul de matplotlib (por omisión)</option>
+        <option value="#00408F">"#00408F": azul FCFM</option>
+        <option value="#8C1D35">"#8C1D35": guinda</option>
+        <option value="#B8975A">"#B8975A": oro</option>
+      </select>
+      <div id="caja-color2" hidden>
+        <label for="color2">Color de la segunda serie</label>
+        <select id="color2">
+          <option value="">el que sigue en el ciclo (por omisión)</option>
+          <option value="#00408F">"#00408F": azul FCFM</option>
+          <option value="#8C1D35">"#8C1D35": guinda</option>
+          <option value="#B8975A">"#B8975A": oro</option>
+        </select>
+      </div>
+      <label class="casilla" id="caja-borde"><input type="checkbox" id="borde"> Bordes negros: <code>edgecolor="black"</code></label>
+    </fieldset>
+    <fieldset>
+      <legend>Ejes y leyenda</legend>
+      <label class="casilla"><input type="checkbox" id="grid"> Cuadrícula: <code>plt.grid(True)</code></label>
+      <label class="casilla"><input type="checkbox" id="label"> Nombre de cada serie: <code>label=</code></label>
+      <label class="casilla"><input type="checkbox" id="legend"> Leyenda: <code>plt.legend()</code></label>
+      <label class="casilla"><input type="checkbox" id="tight"> Acomodar márgenes: <code>plt.tight_layout()</code></label>
+      <div class="opciones" role="radiogroup" aria-label="Límites del eje y">
+        <label><input type="radio" name="ylim" value="auto" checked> Eje y automático</label>
+        <label><input type="radio" name="ylim" value="cero"> Desde 0</label>
+        <label><input type="radio" name="ylim" value="manual"> Elegido: <code>plt.ylim</code></label>
+      </div>
+      <div class="rango">
+        <label for="ymin">de</label><input id="ymin" type="number" step="0.5" value="31.5" disabled>
+        <label for="ymax">a</label><input id="ymax" type="number" step="0.5" value="36" disabled>
+      </div>
+      <div class="botonera">
+        <button type="button" class="accion" id="exagera">Barras que exageran</button>
+        <button type="button" class="accion" id="reiniciar">Empezar de nuevo</button>
+      </div>
+    </fieldset>
+  </div>
+
+  <div class="preguntas">
+    <h3>Para explorar</h3>
+    <ol>
+      <li>Borra el título y los nombres de los ejes. Si vieras solo esa gráfica, ¿sabrías qué muestra y en qué unidades?</li>
+      <li>Con "Máximas y mínimas", activa <code>label=</code> sin <code>plt.legend()</code>. ¿Aparece la leyenda? ¿Y con <code>plt.legend()</code> pero sin <code>label=</code>?</li>
+      <li>Presiona "Barras que exageran". ¿Cuántas veces más alta se ve la barra de S2 que la de S5? ¿Cuánto más calurosa fue en realidad?</li>
+      <li>Si quieres que se noten diferencias de 1 °C sin engañar, ¿qué tipo de gráfica usarías? Pruébalo con el eje y automático.</li>
+      <li>Cambia el tamaño de (6.4, 4.8) a (10, 3). ¿Qué pasa con las letras? ¿Cuántos píxeles mide la imagen con dpi=100?</li>
+      <li>Con el tamaño (6, 3.4), ¿se ve completo el nombre del eje x? ¿Qué cambia al activar <code>plt.tight_layout()</code>?</li>
+      <li>Pasa el ratón por los números del eje x. ¿De qué línea del código salen?</li>
+    </ol>
+  </div>
+</main>
+<footer>
+  Datos: clima de Monterrey de septiembre de 2026 (Open-Meteo), el archivo clima_septiembre.json del Tema 12. La gráfica imita el estilo por omisión de matplotlib 3.
+  Programación Básica · FCFM-UANL · funciona sin internet.
+  <a href="index.html">Índice de simuladores</a> · <a href="#qr-sitio" class="qr-abrir">Abrir en el celular (QR)</a>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+  // ===================== Figura al estilo de matplotlib (inicio) =====================
+  // Dibuja en un <canvas> lo mismo que matplotlib 3.x con su estilo por omisión: figura en
+  // pulgadas a 100 dpi, ejes en [0.125, 0.9] x [0.11, 0.88] de la figura, márgenes de 5 %,
+  // marcas del localizador automático (MaxNLocator), números del ScalarFormatter, ciclo de
+  // colores C0, C1, ..., letra DejaVu Sans (o Verdana, con medidas casi iguales) y leyenda
+  // en la posición "best". MPL.dibujar(canvas, figura) regresa la geometría de cada parte.
+  var MPL = (function () {
+    var CICLO = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
+                 "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"];
+    var PT = 100 / 72;                          // píxeles por punto (1/72 de pulgada) a 100 dpi
+    var LETRA = '"DejaVu Sans", "Bitstream Vera Sans", Verdana, Geneva, sans-serif';
+    var TAM = 10 * PT;                          // font.size = 10 puntos
+    var ASC = 1556 / 2048, DESC = 492 / 2048;   // ascenso y descenso de DejaVu Sans (em)
+    var PASOS = [0.1 * 1, 0.1 * 2, 0.1 * 2.5, 0.1 * 5, 1, 2, 2.5, 5, 10, 20];
+    var GUIONES = { "--": [3.7, 1.6], ":": [1, 1.65], "-.": [6.4, 1.6, 1, 1.6] };
+
+    // ---------- Aritmética igual a la de Python y numpy ----------
+    function divmod(a, b) {                       // divmod() de Python para floats
+      var mod = a % b, div = (a - mod) / b, fd;
+      if (mod) { if ((b < 0) !== (mod < 0)) { mod += b; div -= 1; } }
+      else mod = b < 0 ? -0 : 0;
+      if (div) { fd = Math.floor(div); if (div - fd > 0.5) fd += 1; }
+      else fd = (a / b < 0) ? -0 : 0;
+      return [fd, mod];
+    }
+    function pot10(k) { return Number("1e" + k); }
+    function rint(v) {                            // redondeo al par, como numpy.rint
+      var f = Math.floor(v), d = v - f;
+      return d > 0.5 ? f + 1 : d < 0.5 ? f : (f % 2 === 0 ? f : f + 1);
+    }
+    function redondear(x, d) { var p = pot10(d); return rint(x * p) / p; }   // numpy.round(x, d)
+    // Exponente E tal que |x| = M * 2^E con M impar (x finito, distinto de cero)
+    function exponente2(x) {
+      var a = Math.abs(x), e = 0;
+      while (a !== Math.floor(a)) { a *= 2; e--; }
+      while (a % 2 === 0) { a /= 2; e++; }
+      return e;
+    }
+    // "%.{d}f" % x de Python: redondeo correcto y, en un empate exacto, al dígito par
+    function fijo(x, d) {
+      var s = x.toFixed(d);
+      if (x !== 0 && isFinite(x) && exponente2(x) === -(d + 1)) {
+        var u = s.charCodeAt(s.length - 1) - 48;
+        if (u % 2 === 1) s = s.slice(0, -1) + String(u - 1);
+      }
+      return s;
+    }
+    function menos(s) { return String(s).replace(/-/g, "−"); }   // signo menos tipográfico
+
+    // ---------- MaxNLocator (localizador automático de marcas) ----------
+    function noSingular(v0, v1, expansor, minimo) {
+      if (!isFinite(v0) || !isFinite(v1)) return [-expansor, expansor];
+      if (v1 < v0) { var t = v0; v0 = v1; v1 = t; }
+      var maxabs = Math.max(Math.abs(v0), Math.abs(v1));
+      if (maxabs < (1e6 / minimo) * 2.2250738585072014e-308) { v0 = -expansor; v1 = expansor; }
+      else if (v1 - v0 <= maxabs * minimo) {
+        if (v1 === 0 && v0 === 0) { v0 = -expansor; v1 = expansor; }
+        else { v0 -= expansor * Math.abs(v0); v1 += expansor * Math.abs(v1); }
+      }
+      return [v0, v1];
+    }
+    function cerca(ms, borde, paso, offset) {
+      var tol = 1e-10;
+      if (offset > 0) tol = Math.min(0.4999, Math.max(1e-10, Math.pow(10, Math.log10(offset / paso) - 12)));
+      return Math.abs(ms - borde) < tol;
+    }
+    function marcasCrudas(vmin, vmax, nbins) {
+      var dv = Math.abs(vmax - vmin), media = (vmax + vmin) / 2, offset = 0;
+      if (!(Math.abs(media) / dv < 100)) offset = (media < 0 ? -1 : 1) * pot10(Math.floor(Math.log10(Math.abs(media))));
+      var escala = pot10(Math.floor(Math.log10(dv / nbins)));
+      var v0 = vmin - offset, v1 = vmax - offset, pasos = PASOS.map(function (s) { return s * escala; });
+      var crudo = (v1 - v0) / nbins, i0 = pasos.length - 1, marcas = [], i, k;
+      for (i = 0; i < pasos.length; i++) if (pasos[i] >= crudo) { i0 = i; break; }
+      for (i = i0; i >= 0; i--) {
+        var paso = pasos[i], base = divmod(v0, paso)[0] * paso, off = Math.abs(offset);
+        var dm = divmod(v0 - base, paso), bajo = cerca(dm[1] / paso, 1, paso, off) ? dm[0] + 1 : dm[0];
+        dm = divmod(v1 - base, paso);
+        var alto = cerca(dm[1] / paso, 0, paso, off) ? dm[0] : dm[0] + 1;
+        marcas = [];
+        for (k = bajo; k <= alto; k++) marcas.push(k * paso + base);
+        var dentro = marcas.filter(function (t) { return t <= v1 && t >= v0; }).length;
+        if (dentro >= 2) break;
+      }
+      return marcas.map(function (t) { return t + offset; });
+    }
+    function marcas(vmin, vmax, nbins) {
+      var ns = noSingular(vmin, vmax, 1e-13, 1e-14);
+      return marcasCrudas(ns[0], ns[1], nbins);
+    }
+    function visibles(locs, lim) {
+      var a = Math.min(lim[0], lim[1]), b = Math.max(lim[0], lim[1]), tol = (b - a) * 1e-10;
+      return locs.filter(function (t) { return a - tol <= t && t <= b + tol; });
+    }
+
+    // ---------- ScalarFormatter (los números de las marcas) ----------
+    function piso10(x) { return Math.floor(Math.log10(x)); }
+    function formatoDato(v) {                     // ScalarFormatter.format_data (para el offset)
+      var e = piso10(Math.abs(v)), s = Math.round(v / pot10(e) * 1e10) / 1e10;
+      var sig = s % 1 === 0 ? String(s) : String(Number(s.toPrecision(10)));
+      return e === 0 ? sig : sig + "e" + e;
+    }
+    function formatear(locs, lim) {
+      if (!locs.length) return { etiquetas: [], extra: "" };
+      var a = Math.min(lim[0], lim[1]), b = Math.max(lim[0], lim[1]);
+      var vis = locs.filter(function (t) { return a <= t && t <= b; }), offset = 0, oom = 0, o;
+      if (vis.length) {
+        var lmin = Math.min.apply(null, vis), lmax = Math.max.apply(null, vis);
+        if (!(lmin === lmax || (lmin <= 0 && 0 <= lmax))) {
+          var amin = Math.min(Math.abs(lmin), Math.abs(lmax)), amax = Math.max(Math.abs(lmin), Math.abs(lmax));
+          var omax = Math.ceil(Math.log10(amax)), om = omax;
+          for (o = omax; o > omax - 400; o--) {
+            if (divmod(amin, pot10(o))[0] !== divmod(amax, pot10(o))[0]) { om = o + 1; break; }
+          }
+          if ((amax - amin) / pot10(om) <= 1e-2) {
+            for (o = omax; o > omax - 400; o--) {
+              if (divmod(amax, pot10(o))[0] - divmod(amin, pot10(o))[0] > 1) { om = o + 1; break; }
+            }
+          }
+          var q = divmod(amax, pot10(om))[0];
+          offset = q >= 1000 ? (lmin < 0 ? -1 : 1) * q * pot10(om) : 0;
+        }
+        var oo;
+        if (offset) oo = Math.floor(Math.log10(b - a));
+        else { var val = Math.max.apply(null, vis.map(Math.abs)); oo = val === 0 ? 0 : piso10(val); }
+        oom = (oo <= -5 || oo >= 6) ? oo : 0;
+      }
+      var esc = pot10(oom), base = locs.length < 2 ? locs.concat([lim[0], lim[1]]) : locs;
+      var L = base.map(function (t) { return (t - offset) / esc; });
+      var rango = Math.max.apply(null, L) - Math.min.apply(null, L);
+      if (rango === 0) rango = Math.max.apply(null, L.map(Math.abs));
+      if (rango === 0) rango = 1;
+      if (locs.length < 2) L = L.slice(0, -2);
+      var room = piso10(rango), sig = Math.max(0, 3 - room), umbral = 1e-3 * pot10(room);
+      while (sig >= 0) {
+        var err = 0;
+        L.forEach(function (l) { err = Math.max(err, Math.abs(l - redondear(l, sig))); });
+        if (err < umbral) sig -= 1; else break;
+      }
+      sig += 1;
+      var etiquetas = locs.map(function (t) {
+        var xp = (t - offset) / esc;
+        if (Math.abs(xp) < 1e-8) xp = 0;
+        return menos(fijo(xp, sig));
+      });
+      var extra = "";
+      if (oom || offset) {
+        extra = (oom ? "1e" + oom : "") + (offset ? (offset > 0 ? "+" : "") + formatoDato(offset) : "");
+      }
+      return { etiquetas: etiquetas, extra: menos(extra) };
+    }
+
+    // ---------- Histograma (numpy.histogram) ----------
+    function linspace(a, b, n) {
+      var div = n - 1, delta = b - a, y = [], i;
+      if (div > 0) {
+        var paso = delta / div;
+        for (i = 0; i < n; i++) y.push(paso === 0 ? (i / div) * delta + a : i * paso + a);
+        y[n - 1] = b;
+      } else for (i = 0; i < n; i++) y.push(i * delta + a);
+      return y;
+    }
+    function histograma(datos, bins) {
+      var v = datos.filter(isFinite), bordes, cuentas, i, j;
+      if (typeof bins === "number") {
+        var lo = Math.min.apply(null, v), hi = Math.max.apply(null, v);
+        if (!v.length) { lo = 0; hi = 1; }
+        if (lo === hi) { lo -= 0.5; hi += 0.5; }
+        bordes = linspace(lo, hi, bins + 1);
+      } else bordes = bins.slice();
+      cuentas = bordes.slice(1).map(function () { return 0; });
+      var n = cuentas.length;
+      v.forEach(function (x) {
+        if (x < bordes[0] || x > bordes[n]) return;
+        if (x === bordes[n]) { cuentas[n - 1]++; return; }
+        for (j = 0; j < n; j++) if (x >= bordes[j] && x < bordes[j + 1]) { cuentas[j]++; return; }
+      });
+      return { bordes: bordes, cuentas: cuentas };
+    }
+
+    // ---------- Texto ----------
+    function fuente(tam) { return tam + "px " + LETRA; }
+    function medir(g, s, tam) {
+      g.font = fuente(tam);
+      var m = g.measureText(s), a = m.actualBoundingBoxAscent, d = m.actualBoundingBoxDescent;
+      if (!(a >= 0)) a = 0;
+      if (!(d >= 0)) d = 0;
+      return { w: m.width, a: Math.max(a, ASC * tam), d: Math.max(d, DESC * tam) };
+    }
+    // Texto alineado como en matplotlib (ha: left, center, right; va: top, bottom, center,
+    // baseline, center_baseline). Regresa la caja que ocupa.
+    function texto(g, s, x, y, o) {
+      var tam = o.tam || TAM, m = medir(g, s, tam), va = o.va || "baseline", ha = o.ha || "left", base;
+      if (va === "top") base = y + m.a;
+      else if (va === "bottom") base = y - m.d;
+      else if (va === "center") base = y + (m.a - m.d) / 2;
+      else if (va === "center_baseline") base = y + m.a / 2;
+      else base = y;
+      var x0 = ha === "left" ? x : ha === "right" ? x - m.w : x - m.w / 2;
+      g.fillStyle = o.color || "#000000";
+      g.textAlign = "left"; g.textBaseline = "alphabetic"; g.font = fuente(tam);
+      g.fillText(s, x0, base);
+      return { x0: x0, y0: base - m.a, x1: x0 + m.w, y1: base + m.d };
+    }
+
+    // ---------- Marcadores ----------
+    function marcador(g, tipo, x, y, tam, color, grosorX) {
+      var r = tam * PT / 2;
+      g.beginPath();
+      if (tipo === "o" || tipo === ".") {
+        g.arc(x, y, tipo === "." ? r / 2 : r, 0, 2 * Math.PI);
+      } else if (tipo === "s") {
+        g.rect(x - r, y - r, 2 * r, 2 * r);
+      } else if (tipo === "^") {
+        g.moveTo(x, y - r); g.lineTo(x - r, y + r); g.lineTo(x + r, y + r); g.closePath();
+      } else if (tipo === "x") {
+        g.moveTo(x - r, y - r); g.lineTo(x + r, y + r); g.moveTo(x - r, y + r); g.lineTo(x + r, y - r);
+        g.lineWidth = (grosorX || 1) * PT; g.strokeStyle = color; g.lineCap = "butt"; g.stroke();
+        return;
+      } else return;
+      g.fillStyle = color; g.fill();
+      g.lineWidth = PT; g.strokeStyle = color; g.lineJoin = "round"; g.stroke();
+    }
+
+    // ---------- Geometría para la leyenda "best" ----------
+    function segmentoCruza(m1x, m1y, m2x, m2y, cx, cy, w, h) {
+      return Math.abs(m1x + m2x - 2 * cx) < Math.abs(m1x - m2x) + w &&
+             Math.abs(m1y + m2y - 2 * cy) < Math.abs(m1y - m2y) + h &&
+             2 * Math.abs((m1x - cx) * (m1y - m2y) - (m1y - cy) * (m1x - m2x)) <
+               w * Math.abs(m1y - m2y) + h * Math.abs(m1x - m2x);
+    }
+    function lineaCruzaCaja(pts, c) {
+      var cx = (c.x0 + c.x1) / 2, cy = (c.y0 + c.y1) / 2, w = c.x1 - c.x0, h = c.y1 - c.y0, i, ant = null;
+      for (i = 0; i < pts.length; i++) {
+        var p = pts[i];
+        if (!p) continue;
+        if (ant === null) {
+          if (2 * Math.abs(p[0] - cx) <= w && 2 * Math.abs(p[1] - cy) <= h) return true;
+        } else if (segmentoCruza(ant[0], ant[1], p[0], p[1], cx, cy, w, h)) return true;
+        ant = p;
+      }
+      return false;
+    }
+
+    function distSeg(px, py, a, b) {
+      var dx = b[0] - a[0], dy = b[1] - a[1], L = dx * dx + dy * dy, t = 0;
+      if (L > 0) t = Math.max(0, Math.min(1, ((px - a[0]) * dx + (py - a[1]) * dy) / L));
+      var qx = a[0] + t * dx - px, qy = a[1] + t * dy - py;
+      return Math.sqrt(qx * qx + qy * qy);
+    }
+    function dentro(c, x, y, m) {
+      m = m || 0;
+      return c && x >= c.x0 - m && x <= c.x1 + m && y >= c.y0 - m && y <= c.y1 + m;
+    }
+    function unir(a, b) {
+      if (!a) return b;
+      if (!b) return a;
+      return { x0: Math.min(a.x0, b.x0), y0: Math.min(a.y0, b.y0), x1: Math.max(a.x1, b.x1), y1: Math.max(a.y1, b.y1) };
+    }
+
+    // ---------- La figura ----------
+    // figura = { figsize: [6.4, 4.8], titulo, xlabel, ylabel, grid, xlim, ylim (con null = automático),
+    //   xcats: ["S1", ...] (eje x de categorías en las posiciones 0, 1, ...), leyenda: true/false,
+    //   resaltar: id de una parte, series: [
+    //     {tipo: "plot", x, y, color, lw, ls, marker, ms, label},
+    //     {tipo: "bar", x, h, ancho, color, borde, label},
+    //     {tipo: "hist", datos, bins, color, borde, label},
+    //     {tipo: "scatter", x, y, s, color, marker, label},
+    //     {tipo: "axhline", y, color, lw, ls}, {tipo: "axvline", x, color, lw, ls},
+    //     {tipo: "pie", valores, etiquetas, autopct: "%1.0f%%"}] }
+    function dibujar(cv, f) {
+      if (f.tight && !f.subplot) {                // plt.tight_layout(): mide, ajusta y vuelve a dibujar
+        var copia = {}, k0;
+        for (k0 in f) if (Object.prototype.hasOwnProperty.call(f, k0)) copia[k0] = f[k0];
+        copia.tight = false; copia.resaltar = null;
+        var sub = ajusteApretado(dibujar(cv, copia));
+        copia.resaltar = f.resaltar;
+        if (sub) copia.subplot = sub;
+        var geo0 = dibujar(cv, copia);
+        geo0.apretado = !!sub;
+        return geo0;
+      }
+      var fs = f.figsize || [6.4, 4.8], W = fs[0] * 100, H = fs[1] * 100;
+      var cssW = f.ancho || cv.clientWidth || W, esc = cssW / W, dpr = window.devicePixelRatio || 1, K = esc * dpr;
+      cv.style.height = (H * esc) + "px";
+      cv.width = Math.max(1, Math.round(cssW * dpr));
+      cv.height = Math.max(1, Math.round(H * esc * dpr));
+      var g = cv.getContext("2d");
+      g.setTransform(K, 0, 0, K, 0, 0);
+      g.fillStyle = "#ffffff"; g.fillRect(0, 0, W, H);
+      function ajustar(v, lw) {                   // alinea líneas y rectángulos a los píxeles
+        var d = v * K;
+        if (!lw) return Math.round(d) / K;
+        var n = Math.max(1, Math.round(lw * K));
+        return (n % 2 === 1 ? Math.floor(d) + 0.5 : Math.round(d)) / K;
+      }
+
+      // Colores de los ciclos (plot e hist usan el de líneas; bar, scatter y pie, el de parches)
+      var cl = 0, cp = 0, hayPastel = false;
+      var S = (f.series || []).map(function (s0, i) {
+        var s = {}, k;
+        for (k in s0) if (Object.prototype.hasOwnProperty.call(s0, k)) s[k] = s0[k];
+        s.id = "serie" + i;
+        if (s.tipo === "plot" || s.tipo === "hist") { if (!s.color) s.color = CICLO[cl++ % 10]; }
+        else if (s.tipo === "bar" || s.tipo === "scatter") { if (!s.color) s.color = CICLO[cp++ % 10]; }
+        else if (s.tipo === "axhline" || s.tipo === "axvline") { if (!s.color) s.color = CICLO[0]; }
+        if (s.tipo === "pie") hayPastel = true;
+        if (s.tipo === "hist") {
+          var hh = histograma(s.datos, s.bins === undefined ? 10 : s.bins);
+          s.x = []; s.h = []; s.anchos = [];
+          for (k = 0; k < hh.cuentas.length; k++) {
+            var wd = hh.bordes[k + 1] - hh.bordes[k];
+            s.x.push(hh.bordes[k] + wd / 2); s.h.push(hh.cuentas[k]); s.anchos.push(wd);
+          }
+          s.hist = hh;
+        } else if (s.tipo === "bar") {
+          s.anchos = s.x.map(function () { return s.ancho === undefined ? 0.8 : s.ancho; });
+        }
+        return s;
+      });
+
+      // Ejes (coordenadas del canvas: y crece hacia abajo)
+      var sp = f.subplot || { left: 0.125, right: 0.9, bottom: 0.11, top: 0.88 };
+      var E = { x0: sp.left * W, x1: sp.right * W, y0: (1 - sp.top) * H, y1: (1 - sp.bottom) * H };
+      var geo = { W: W, H: H, esc: esc, ejes: E, cajas: {}, series: [] };
+      if (hayPastel) {
+        var lado = Math.min(E.x1 - E.x0, E.y1 - E.y0), cx = (E.x0 + E.x1) / 2, cy = (E.y0 + E.y1) / 2;
+        E = { x0: cx - lado / 2, x1: cx + lado / 2, y0: cy - lado / 2, y1: cy + lado / 2 };
+        geo.ejes = E;
+      }
+
+      // Límites de los datos, márgenes de 5 % y bordes "pegajosos" (las barras empiezan en 0)
+      var dx = [Infinity, -Infinity], dy = [Infinity, -Infinity], pegY = [];
+      function incluir(l, v) { if (v < l[0]) l[0] = v; if (v > l[1]) l[1] = v; }
+      S.forEach(function (s) {
+        var i;
+        if (s.tipo === "plot" || s.tipo === "scatter") {
+          for (i = 0; i < s.x.length; i++) {
+            if (isFinite(s.x[i]) && isFinite(s.y[i])) { incluir(dx, s.x[i]); incluir(dy, s.y[i]); }
+          }
+        } else if (s.tipo === "bar" || s.tipo === "hist") {
+          for (i = 0; i < s.x.length; i++) {
+            incluir(dx, s.x[i] - s.anchos[i] / 2); incluir(dx, s.x[i] + s.anchos[i] / 2);
+            incluir(dy, Math.min(0, s.h[i])); incluir(dy, Math.max(0, s.h[i]));
+            pegY.push(0);
+          }
+        } else if (s.tipo === "axhline") incluir(dy, s.y);
+        else if (s.tipo === "axvline") incluir(dx, s.x);
+      });
+      function autoescala(l, pegajosos) {
+        if (!(l[0] <= l[1])) return [0, 1];
+        var ns = noSingular(l[0], l[1], 0.05, 1e-15), x0 = ns[0], x1 = ns[1];
+        var tol = 1e-5 * Math.max(Math.abs(x0), Math.abs(x1), Math.abs(x1 - x0)), b0 = null, b1 = null, i;
+        var p = pegajosos.slice().sort(function (a, b) { return a - b; });
+        for (i = p.length - 1; i >= 0; i--) if (p[i] < x0 + tol) { b0 = p[i]; break; }
+        for (i = 0; i < p.length; i++) if (p[i] >= x1 - tol) { b1 = p[i]; break; }
+        var d = (x1 - x0) * 0.05;
+        if (!isFinite(d)) d = 0;
+        x0 -= d; x1 += d;
+        if (b0 !== null) x0 = Math.max(x0, b0);
+        if (b1 !== null) x1 = Math.min(x1, b1);
+        return noSingular(x0, x1, 0.001, 1e-15);
+      }
+      var xlim = hayPastel ? [-1.25, 1.25] : autoescala(dx, []);
+      var ylim = hayPastel ? [-1.25, 1.25] : autoescala(dy, pegY);
+      if (f.xlim) xlim = [f.xlim[0] === null ? xlim[0] : f.xlim[0], f.xlim[1] === null ? xlim[1] : f.xlim[1]];
+      if (f.ylim) ylim = [f.ylim[0] === null ? ylim[0] : f.ylim[0], f.ylim[1] === null ? ylim[1] : f.ylim[1]];
+      geo.xlim = xlim; geo.ylim = ylim;
+      function X(x) { return E.x0 + (x - xlim[0]) / (xlim[1] - xlim[0]) * (E.x1 - E.x0); }
+      function Y(y) { return E.y1 - (y - ylim[0]) / (ylim[1] - ylim[0]) * (E.y1 - E.y0); }
+      geo.X = X; geo.Y = Y;
+
+      // Marcas y sus números
+      var mx = { pos: [], et: [], extra: "" }, my = { pos: [], et: [], extra: "" };
+      if (!hayPastel) {
+        var nbx = Math.max(1, Math.min(9, Math.floor((E.x1 - E.x0) / PT / 30)));
+        var nby = Math.max(1, Math.min(9, Math.floor((E.y1 - E.y0) / PT / 20)));
+        if (f.xcats) {
+          mx.pos = f.xcats.map(function (c, i) { return i; }); mx.et = f.xcats.slice();
+          var vxc = visibles(mx.pos, xlim);
+          mx.et = mx.et.filter(function (c, i) { return vxc.indexOf(i) >= 0; }); mx.pos = vxc;
+        } else {
+          var tx = marcas(xlim[0], xlim[1], nbx), fx = formatear(tx, xlim), vx = visibles(tx, xlim);
+          mx.pos = vx; mx.et = vx.map(function (t) { return fx.etiquetas[tx.indexOf(t)]; }); mx.extra = fx.extra;
+        }
+        var ty = marcas(ylim[0], ylim[1], nby), fy = formatear(ty, ylim), vy = visibles(ty, ylim);
+        my.pos = vy; my.et = vy.map(function (t) { return fy.etiquetas[ty.indexOf(t)]; }); my.extra = fy.extra;
+      }
+      geo.marcasX = mx; geo.marcasY = my;
+
+      // Trazo de una serie de puntos (null corta la línea)
+      function poligonal(pts, color, lw, ls) {
+        if (ls === "None" || ls === "" || ls === " ") return;
+        g.save();
+        g.beginPath();
+        var abierto = false;
+        pts.forEach(function (p) {
+          if (!p) { abierto = false; return; }
+          if (!abierto) { g.moveTo(p[0], p[1]); abierto = true; } else g.lineTo(p[0], p[1]);
+        });
+        g.lineWidth = lw * PT; g.strokeStyle = color; g.lineJoin = "round";
+        var patron = GUIONES[ls];
+        if (patron) { g.setLineDash(patron.map(function (v) { return v * lw * PT; })); g.lineCap = "butt"; }
+        else g.lineCap = "square";
+        g.stroke();
+        g.restore();
+      }
+      function recortar() { g.save(); g.beginPath(); g.rect(E.x0, E.y0, E.x1 - E.x0, E.y1 - E.y0); g.clip(); }
+
+      // 1) Parches (barras, histogramas, pastel) y colecciones (scatter): zorder 1
+      S.forEach(function (s) {
+        var i, info = { id: s.id, tipo: s.tipo, label: s.label };
+        if (s.tipo === "bar" || s.tipo === "hist") {
+          recortar();
+          info.rects = [];
+          for (i = 0; i < s.x.length; i++) {
+            var xa = ajustar(X(s.x[i] - s.anchos[i] / 2), 0), xb = ajustar(X(s.x[i] + s.anchos[i] / 2), 0);
+            var ya = ajustar(Y(Math.max(0, s.h[i])), 0), yb = ajustar(Y(Math.min(0, s.h[i])), 0);
+            g.fillStyle = s.color; g.fillRect(xa, ya, xb - xa, yb - ya);
+            if (s.borde) { g.lineWidth = PT; g.strokeStyle = s.borde; g.strokeRect(xa, ya, xb - xa, yb - ya); }
+            info.rects.push({ x0: xa, y0: ya, x1: xb, y1: yb });
+          }
+          g.restore();
+        } else if (s.tipo === "scatter") {
+          recortar();
+          info.puntos = [];
+          var tam = Math.sqrt(s.s === undefined ? 36 : s.s);
+          for (i = 0; i < s.x.length; i++) {
+            if (!isFinite(s.x[i]) || !isFinite(s.y[i])) continue;
+            marcador(g, s.marker || "o", X(s.x[i]), Y(s.y[i]), tam, s.color, 1.5);
+            info.puntos.push([X(s.x[i]), Y(s.y[i])]);
+          }
+          info.radio = tam * PT / 2 + PT / 2;
+          g.restore();
+        } else if (s.tipo === "pie") {
+          var tot = s.valores.reduce(function (a, b) { return a + b; }, 0), t1 = 0;
+          var cxp = X(0), cyp = Y(0), r = X(1) - X(0);
+          info.cuñas = []; info.centro = [cxp, cyp]; info.radio = r;
+          s.valores.forEach(function (v, k) {
+            var t2 = t1 + v / tot, a1 = 2 * Math.PI * t1, a2 = 2 * Math.PI * t2, am = (a1 + a2) / 2;
+            g.beginPath(); g.moveTo(cxp, cyp); g.arc(cxp, cyp, r, -a1, -a2, true); g.closePath();
+            g.fillStyle = CICLO[(cp + k) % 10]; g.fill();
+            info.cuñas.push([a1, a2]);
+            if (s.etiquetas) {
+              var xt = 1.1 * Math.cos(am), yt = 1.1 * Math.sin(am);
+              texto(g, s.etiquetas[k], X(xt), Y(yt), { ha: xt > 0 ? "left" : "right", va: "center" });
+            }
+            if (s.autopct) {
+              var pct = fijo(100 * v / tot, Number((/%1?\.(\d+)f/.exec(s.autopct) || [0, 0])[1])) + "%";
+              texto(g, pct, X(0.6 * Math.cos(am)), Y(0.6 * Math.sin(am)), { ha: "center", va: "center" });
+            }
+            t1 = t2;
+          });
+        }
+        if (s.tipo !== "plot" && s.tipo !== "axhline" && s.tipo !== "axvline") geo.series.push(info);
+      });
+
+      // 2) Cuadrícula, marcas y sus números (zorder 1.5)
+      var lwEje = 0.8 * PT;
+      if (f.grid && !hayPastel) {
+        g.save(); g.strokeStyle = "#b0b0b0"; g.lineWidth = lwEje; g.lineCap = "square"; g.beginPath();
+        mx.pos.forEach(function (t) { var x = ajustar(X(t), lwEje); g.moveTo(x, E.y0); g.lineTo(x, E.y1); });
+        my.pos.forEach(function (t) { var y = ajustar(Y(t), lwEje); g.moveTo(E.x0, y); g.lineTo(E.x1, y); });
+        g.stroke(); g.restore();
+      }
+      var cajaEjeX = null, cajaEjeY = null, numerosX = null, numerosY = null;
+      if (!hayPastel) {
+        g.save(); g.strokeStyle = "#000000"; g.lineWidth = lwEje; g.beginPath();
+        mx.pos.forEach(function (t) { var x = ajustar(X(t), lwEje); g.moveTo(x, E.y1); g.lineTo(x, E.y1 + 3.5 * PT); });
+        my.pos.forEach(function (t) { var y = ajustar(Y(t), lwEje); g.moveTo(E.x0 - 3.5 * PT, y); g.lineTo(E.x0, y); });
+        g.stroke(); g.restore();
+        mx.pos.forEach(function (t, i) {
+          numerosX = unir(numerosX, texto(g, mx.et[i], X(t), E.y1 + 7 * PT, { ha: "center", va: "top" }));
+        });
+        my.pos.forEach(function (t, i) {
+          numerosY = unir(numerosY, texto(g, my.et[i], E.x0 - 7 * PT, Y(t), { ha: "right", va: "center_baseline" }));
+        });
+        cajaEjeX = numerosX; cajaEjeY = numerosY;
+        if (my.extra) cajaEjeY = unir(cajaEjeY, texto(g, my.extra, E.x0, E.y0 - 3 * PT, { ha: "left", va: "baseline" }));
+        if (mx.extra) cajaEjeX = unir(cajaEjeX, texto(g, mx.extra, E.x1, (numerosX ? numerosX.y1 : E.y1) + 3 * PT, { ha: "right", va: "top" }));
+      }
+      geo.cajas.ejex = cajaEjeX ? unir(cajaEjeX, { x0: E.x0, y0: E.y1, x1: E.x1, y1: E.y1 + 7 * PT }) : null;
+      geo.cajas.ejey = cajaEjeY ? unir(cajaEjeY, { x0: E.x0 - 7 * PT, y0: E.y0, x1: E.x0, y1: E.y1 }) : null;
+
+      // 3) Líneas (zorder 2): plot, axhline, axvline
+      var lineasPx = [];
+      S.forEach(function (s) {
+        var i, pts = [], info = { id: s.id, tipo: s.tipo, label: s.label };
+        if (s.tipo === "plot") {
+          for (i = 0; i < s.x.length; i++) pts.push(isFinite(s.x[i]) && isFinite(s.y[i]) ? [X(s.x[i]), Y(s.y[i])] : null);
+          recortar();
+          poligonal(pts, s.color, s.lw === undefined ? 1.5 : s.lw, s.ls === undefined ? "-" : s.ls);
+          if (s.marker) pts.forEach(function (p) { if (p) marcador(g, s.marker, p[0], p[1], s.ms === undefined ? 6 : s.ms, s.color); });
+          g.restore();
+        } else if (s.tipo === "axhline" || s.tipo === "axvline") {
+          if (s.tipo === "axhline") { var yy = ajustar(Y(s.y), (s.lw || 1.5) * PT); pts = [[E.x0, yy], [E.x1, yy]]; }
+          else { var xx = ajustar(X(s.x), (s.lw || 1.5) * PT); pts = [[xx, E.y0], [xx, E.y1]]; }
+          recortar();
+          poligonal(pts, s.color, s.lw === undefined ? 1.5 : s.lw, s.ls === undefined ? "-" : s.ls);
+          g.restore();
+        } else return;
+        info.puntos = pts; info.marker = s.marker; info.ls = s.ls;
+        lineasPx.push(pts);
+        geo.series.push(info);
+      });
+
+      // 4) Marco de los ejes (zorder 2.5)
+      if (!hayPastel) {
+        g.save(); g.strokeStyle = "#000000"; g.lineWidth = lwEje; g.lineCap = "square";
+        var l = ajustar(E.x0, lwEje), r2 = ajustar(E.x1, lwEje), t = ajustar(E.y0, lwEje), b = ajustar(E.y1, lwEje);
+        g.strokeRect(l, t, r2 - l, b - t);
+        g.restore();
+      }
+
+      // 5) Título y nombres de los ejes
+      if (f.titulo) geo.cajas.titulo = texto(g, f.titulo, (E.x0 + E.x1) / 2, E.y0 - 6 * PT, { ha: "center", va: "baseline", tam: 12 * PT });
+      if (f.xlabel) {
+        var yx = (numerosX ? Math.max(numerosX.y1, E.y1) : E.y1) + 4 * PT;
+        geo.cajas.xlabel = texto(g, f.xlabel, (E.x0 + E.x1) / 2, yx, { ha: "center", va: "top" });
+      }
+      if (f.ylabel) {
+        var xy = (numerosY ? Math.min(numerosY.x0, E.x0) : E.x0) - 4 * PT, m = medir(g, f.ylabel, TAM), ym = (E.y0 + E.y1) / 2;
+        g.save(); g.translate(xy, ym); g.rotate(-Math.PI / 2);
+        g.fillStyle = "#000000"; g.textAlign = "left"; g.textBaseline = "alphabetic"; g.font = fuente(TAM);
+        g.fillText(f.ylabel, -m.w / 2, -m.d);
+        g.restore();
+        geo.cajas.ylabel = { x0: xy - m.a - m.d, y0: ym - m.w / 2, x1: xy, y1: ym + m.w / 2 };
+      }
+
+      // 6) Leyenda (zorder 5), en la posición con menos datos encima ("best")
+      geo.entradas = 0;
+      if (f.leyenda && !hayPastel) {
+        var ent = S.filter(function (s) { return typeof s.label === "string" && s.label !== "" && s.label.charAt(0) !== "_" && s.tipo !== "pie"; });
+        geo.entradas = ent.length;
+        if (ent.length) {
+          var pad = 0.4 * TAM, sep = 0.5 * TAM, hl = 2 * TAM, hh = 0.7 * TAM, htp = 0.8 * TAM, bap = 0.5 * TAM;
+          var med = ent.map(function (s) { return medir(g, s.label, TAM); });
+          var filas = med.map(function (mm) { return Math.max(hh, mm.a) + mm.d; });
+          var anchoL = 2 * pad + hl + htp + Math.max.apply(null, med.map(function (mm) { return mm.w; }));
+          var altoL = 2 * pad + filas.reduce(function (a, b2) { return a + b2; }, 0) + sep * (ent.length - 1);
+          var C = { x0: E.x0 + bap, x1: E.x1 - bap, y0: E.y0 + bap, y1: E.y1 - bap };
+          var cx2 = (C.x0 + C.x1) / 2 - anchoL / 2, cy2 = (C.y0 + C.y1) / 2 - altoL / 2;
+          var pos = [null, [C.x1 - anchoL, C.y0], [C.x0, C.y0], [C.x0, C.y1 - altoL], [C.x1 - anchoL, C.y1 - altoL],
+                     [C.x1 - anchoL, cy2], [C.x0, cy2], [C.x1 - anchoL, cy2], [cx2, C.y1 - altoL], [cx2, C.y0], [cx2, cy2]];
+          var rects = [], ofs = [];
+          geo.series.forEach(function (info) {
+            if (info.rects) rects = rects.concat(info.rects);
+            if (info.tipo === "scatter") ofs = ofs.concat(info.puntos);
+          });
+          var mejor = null;
+          for (var idx = 1; idx <= 10; idx++) {
+            var c = { x0: pos[idx][0], y0: pos[idx][1], x1: pos[idx][0] + anchoL, y1: pos[idx][1] + altoL }, malo = 0;
+            lineasPx.forEach(function (pts) {
+              pts.forEach(function (p) { if (p && p[0] > c.x0 && p[0] < c.x1 && p[1] > c.y0 && p[1] < c.y1) malo++; });
+              if (lineaCruzaCaja(pts, c)) malo++;
+            });
+            ofs.forEach(function (p) { if (p[0] > c.x0 && p[0] < c.x1 && p[1] > c.y0 && p[1] < c.y1) malo++; });
+            rects.forEach(function (q) { if (q.x0 < c.x1 && c.x0 < q.x1 && q.y0 < c.y1 && c.y0 < q.y1) malo++; });
+            if (!mejor || malo < mejor.malo) mejor = { malo: malo, c: c };
+            if (malo === 0) break;
+          }
+          var L = mejor.c, rad = 0.2 * TAM;
+          g.save();
+          g.globalAlpha = 0.8;
+          g.beginPath();
+          g.moveTo(L.x0 + rad, L.y0); g.arcTo(L.x1, L.y0, L.x1, L.y1, rad); g.arcTo(L.x1, L.y1, L.x0, L.y1, rad);
+          g.arcTo(L.x0, L.y1, L.x0, L.y0, rad); g.arcTo(L.x0, L.y0, L.x1, L.y0, rad); g.closePath();
+          g.fillStyle = "#ffffff"; g.fill(); g.lineWidth = PT; g.strokeStyle = "#cccccc"; g.stroke();
+          g.restore();
+          var yb2 = L.y0 + pad;
+          ent.forEach(function (s, k) {
+            var base = yb2 + Math.max(hh, med[k].a), hx0 = L.x0 + pad, hx1 = hx0 + hl;
+            if (s.tipo === "plot" || s.tipo === "axhline" || s.tipo === "axvline") {
+              poligonal([[hx0, base - hh / 2], [hx1, base - hh / 2]], s.color, s.lw === undefined ? 1.5 : s.lw, s.ls === undefined ? "-" : s.ls);
+              if (s.marker) marcador(g, s.marker, (hx0 + hx1) / 2, base - hh / 2, s.ms === undefined ? 6 : s.ms, s.color);
+            } else if (s.tipo === "scatter") {
+              marcador(g, s.marker || "o", (hx0 + hx1) / 2, base - hh * 0.6875, Math.sqrt(s.s === undefined ? 36 : s.s), s.color, 1.5);
+            } else {
+              g.fillStyle = s.color; g.fillRect(hx0, base - hh, hl, hh);
+              if (s.borde) { g.lineWidth = PT; g.strokeStyle = s.borde; g.strokeRect(hx0, base - hh, hl, hh); }
+            }
+            texto(g, s.label, hx1 + htp, base, { va: "baseline" });
+            yb2 += filas[k] + sep;
+          });
+          geo.cajas.leyenda = L;
+        }
+      }
+
+      // 7) Resaltado de una o varias partes
+      if (f.resaltar) [].concat(f.resaltar).forEach(function (id) { resaltar(g, geo, id); });
+      return geo;
+    }
+
+    // Márgenes de plt.tight_layout(): todo lo que rodea a los ejes, más 1.08 veces la letra
+    function ajusteApretado(geo) {
+      var E = geo.ejes, bb = { x0: E.x0, y0: E.y0, x1: E.x1, y1: E.y1 }, pad = 1.08 * TAM;
+      ["titulo", "xlabel", "ylabel", "ejex", "ejey"].forEach(function (k) { bb = unir(bb, geo.cajas[k]); });
+      var ml = (Math.max(E.x0 - bb.x0, 0) + pad) / geo.W, mr = (Math.max(bb.x1 - E.x1, 0) + pad) / geo.W;
+      var mt = (Math.max(E.y0 - bb.y0, 0) + pad) / geo.H, mb = (Math.max(bb.y1 - E.y1, 0) + pad) / geo.H;
+      if (ml + mr >= 1 || mt + mb >= 1) return null;
+      return { left: ml, right: 1 - mr, bottom: mb, top: 1 - mt };
+    }
+    // ¿Algún texto se sale de la figura? (en tu computadora se vería cortado)
+    function cortados(geo) {
+      var r = [];
+      ["titulo", "xlabel", "ylabel", "ejex", "ejey"].forEach(function (k) {
+        var c = geo.cajas[k];
+        if (c && (c.x0 < -0.5 || c.y0 < -0.5 || c.x1 > geo.W + 0.5 || c.y1 > geo.H + 0.5)) r.push(k);
+      });
+      return r;
+    }
+
+    var ORO = "#B8975A";
+    function marcoResaltado(g, c, m) {
+      g.save();
+      g.fillStyle = "rgba(184, 151, 90, 0.18)";
+      g.fillRect(c.x0 - m, c.y0 - m, c.x1 - c.x0 + 2 * m, c.y1 - c.y0 + 2 * m);
+      g.setLineDash([5, 3]); g.lineWidth = 2; g.strokeStyle = ORO;
+      g.strokeRect(c.x0 - m, c.y0 - m, c.x1 - c.x0 + 2 * m, c.y1 - c.y0 + 2 * m);
+      g.restore();
+    }
+    function resaltar(g, geo, id) {
+      var E = geo.ejes;
+      if (id === "figura") {
+        g.save(); g.setLineDash([8, 4]); g.lineWidth = 4; g.strokeStyle = ORO;
+        g.strokeRect(2, 2, geo.W - 4, geo.H - 4); g.restore();
+        return;
+      }
+      if (id === "grid" || id === "ejes") { marcoResaltado(g, E, 2); return; }
+      if (geo.cajas[id]) { marcoResaltado(g, geo.cajas[id], 3); return; }
+      var info = geo.series.filter(function (s) { return s.id === id; })[0];
+      if (!info) return;
+      g.save();
+      g.beginPath(); g.rect(E.x0, E.y0, E.x1 - E.x0, E.y1 - E.y0); g.clip();
+      g.strokeStyle = "rgba(184, 151, 90, 0.55)"; g.fillStyle = "rgba(184, 151, 90, 0.35)";
+      if (info.rects) {
+        g.lineWidth = 4;
+        info.rects.forEach(function (q) { g.strokeRect(q.x0 - 2, q.y0 - 2, q.x1 - q.x0 + 4, q.y1 - q.y0 + 4); });
+      } else if (info.tipo === "scatter") {
+        info.puntos.forEach(function (p) { g.beginPath(); g.arc(p[0], p[1], info.radio + 4, 0, 2 * Math.PI); g.fill(); });
+      } else if (info.puntos) {
+        g.lineWidth = 10; g.lineJoin = "round"; g.lineCap = "round"; g.beginPath();
+        var ab = false;
+        info.puntos.forEach(function (p) {
+          if (!p) { ab = false; return; }
+          if (!ab) { g.moveTo(p[0], p[1]); ab = true; } else g.lineTo(p[0], p[1]);
+        });
+        g.stroke();
+      }
+      g.restore();
+    }
+
+    // Qué parte de la figura está bajo el punto (x, y) en píxeles CSS del canvas
+    function parteEn(geo, x, y) {
+      var fx = x / geo.esc, fy = y / geo.esc, E = geo.ejes, tol = 6 / geo.esc, i, j;
+      if (dentro(geo.cajas.leyenda, fx, fy)) return "leyenda";
+      if (dentro(geo.cajas.titulo, fx, fy, 3)) return "titulo";
+      if (dentro(geo.cajas.xlabel, fx, fy, 3)) return "xlabel";
+      if (dentro(geo.cajas.ylabel, fx, fy, 3)) return "ylabel";
+      var enEjes = dentro(E, fx, fy);
+      if (enEjes) {
+        for (i = geo.series.length - 1; i >= 0; i--) {
+          var s = geo.series[i];
+          if (s.puntos && s.tipo !== "scatter") {
+            for (j = 0; j < s.puntos.length; j++) {
+              var p = s.puntos[j], q = s.puntos[j + 1];
+              if (p && q && distSeg(fx, fy, p, q) < tol) return s.id;
+              if (p && s.marker && Math.abs(p[0] - fx) < tol && Math.abs(p[1] - fy) < tol) return s.id;
+            }
+          }
+        }
+        for (i = geo.series.length - 1; i >= 0; i--) {
+          var t = geo.series[i];
+          if (t.tipo === "scatter") {
+            for (j = 0; j < t.puntos.length; j++) {
+              if (Math.abs(t.puntos[j][0] - fx) < t.radio + tol / 2 && Math.abs(t.puntos[j][1] - fy) < t.radio + tol / 2) return t.id;
+            }
+          }
+          if (t.rects) for (j = 0; j < t.rects.length; j++) if (dentro(t.rects[j], fx, fy, 1)) return t.id;
+          if (t.cuñas) {
+            var ddx = fx - t.centro[0], ddy = t.centro[1] - fy;
+            if (ddx * ddx + ddy * ddy <= t.radio * t.radio) return t.id;
+          }
+        }
+      }
+      if (dentro(geo.cajas.ejex, fx, fy, 2)) return "ejex";
+      if (dentro(geo.cajas.ejey, fx, fy, 2)) return "ejey";
+      if (enEjes) return "ejes";
+      return "figura";
+    }
+
+    return { dibujar: dibujar, parteEn: parteEn, cortados: cortados, marcas: marcas, visibles: visibles, formatear: formatear,
+             linspace: linspace, histograma: histograma, fijo: fijo, divmod: divmod, CICLO: CICLO, PT: PT };
+  })();
+  // ===================== Figura al estilo de matplotlib (fin) =====================
+
+  function $(id) { return document.getElementById(id); }
+  function esc(t) {
+    return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  // ---------- Código Python con los colores del curso ----------
+  var PY_KW = /^(False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)$/;
+  function pyResaltar(linea) {
+    var html = "", i = 0, m, resto;
+    while (i < linea.length) {
+      resto = linea.slice(i);
+      if ((m = /^#.*/.exec(resto))) { html += '<span class="com">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[rRbBfFuU]{0,2}("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/.exec(resto))) { html += '<span class="str">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[A-Za-z_\u00C0-\u024F][\w\u00C0-\u024F]*/.exec(resto))) { html += PY_KW.test(m[0]) ? '<span class="kw">' + m[0] + "</span>" : esc(m[0]); }
+      else if ((m = /^(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?j?/.exec(resto))) { html += '<span class="num">' + m[0] + "</span>"; }
+      else { m = [resto[0]]; html += esc(m[0]); }
+      i += m[0].length;
+    }
+    return html;
+  }
+  // Texto de Python entre comillas dobles
+  function pyTexto(s) { return '"' + s.replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"'; }
+
+  // ---------- Datos: clima de Monterrey, septiembre de 2026 (Open-Meteo) ----------
+  var TMAX = [35.0, 36.5, 38.0, 34.1, 32.2, 30.2, 34.0, 33.3, 34.9, 35.1, 37.2, 35.0, 35.2, 35.8, 35.9,
+              35.0, 34.7, 33.5, 34.5, 35.4, 35.4, 32.8, 31.8, 31.5, 33.3, 33.9, 34.2, 33.7, 33.2, 30.9];
+  var TMIN = [23.4, 23.7, 25.0, 25.2, 23.6, 22.3, 22.3, 21.8, 21.9, 22.3, 22.4, 23.6, 23.4, 23.6, 23.0,
+              22.6, 24.0, 23.0, 22.4, 22.0, 23.1, 22.6, 21.8, 22.0, 22.8, 23.6, 24.1, 23.5, 23.4, 23.9];
+  var LLUVIA = [1.7, 0.7, 0.2, 0.7, 6.9, 0.7, 0.0, 0.3, 0.6, 0.8, 0.2, 0.8, 0.2, 0.2, 0.0,
+                0.0, 1.9, 2.7, 0.0, 0.0, 0.0, 2.9, 3.2, 0.5, 0.9, 0.7, 2.7, 2.6, 0.3, 8.8];
+  var DIAS = [];
+  for (var d0 = 1; d0 <= 30; d0++) DIAS.push(d0);
+  var TOTALES = [0, 7, 14, 21, 28].map(function (i) {
+    return LLUVIA.slice(i, i + 7).reduce(function (a, b) { return a + b; }, 0);
+  });
+
+  var CONJUNTOS = {
+    tmax: { series: [{ v: "tmax", campo: "tmax", y: TMAX, label: "Máxima" }],
+            textos: ["Máxima diaria en Monterrey, septiembre 2026", "Día del mes", "Temperatura (°C)"],
+            hist: ["¿Qué máximas fueron típicas en septiembre?", "Temperatura máxima (°C)", "Número de días"] },
+    tmin: { series: [{ v: "tmin", campo: "tmin", y: TMIN, label: "Mínima" }],
+            textos: ["Mínima diaria en Monterrey, septiembre 2026", "Día del mes", "Temperatura (°C)"],
+            hist: ["¿Qué mínimas fueron típicas en septiembre?", "Temperatura mínima (°C)", "Número de días"] },
+    ambas: { series: [{ v: "tmax", campo: "tmax", y: TMAX, label: "Máxima" }, { v: "tmin", campo: "tmin", y: TMIN, label: "Mínima" }],
+             textos: ["Temperatura diaria en Monterrey, septiembre 2026", "Día del mes", "Temperatura (°C)"],
+             hist: ["Máximas y mínimas de septiembre", "Temperatura (°C)", "Número de días"] },
+    lluvia: { series: [{ v: "lluvia", campo: "lluvia_mm", y: LLUVIA, label: "Lluvia" }],
+              textos: ["Lluvia diaria en Monterrey, septiembre 2026", "Día del mes", "Lluvia (mm)"],
+              hist: ["¿Cuánto llovió los días de septiembre?", "Lluvia (mm)", "Número de días"] },
+    semana: { cats: ["1-7", "8-14", "15-21", "22-28", "29-30"], series: [{ v: "totales", y: TOTALES, label: "Lluvia total" }],
+              textos: ["Lluvia por semana, septiembre 2026", "Días del mes", "Lluvia total (mm)"],
+              hist: ["Lluvia total de las semanas", "Lluvia total (mm)", "Número de semanas"] },
+    promedio: { cats: ["S1", "S2", "S3", "S4", "S5"], series: [{ v: "promedio", y: [34.3, 35.2, 34.9, 33.0, 32.1], label: "Máxima promedio" }],
+                textos: ["Máxima promedio por semana", "Semana de septiembre", "Máxima promedio (°C)"],
+                hist: ["Máxima promedio de las semanas", "Máxima promedio (°C)", "Número de semanas"] }
+  };
+  var NOMBRES_COLOR = { "#00408F": "azul FCFM", "#8C1D35": "guinda", "#B8975A": "oro" };
+
+  // ---------- Estado ----------
+  var est, editado = { titulo: false, xlabel: false, ylabel: false };
+  function inicial() {
+    return { tipo: "plot", datos: "tmax", figsize: "6.4, 4.8", marker: "o", ls: "-", bins: "10", color: "", color2: "",
+             borde: false, grid: false, label: false, legend: false, tight: false, ylim: "auto", ymin: "31.5", ymax: "36" };
+  }
+  function leerControles() {
+    est.tipo = document.querySelector("input[name=tipo]:checked").value;
+    est.datos = $("datos").value; est.figsize = $("figsize").value;
+    est.marker = $("marker").value; est.ls = $("ls").value; est.bins = $("bins").value;
+    est.color = $("color").value; est.color2 = $("color2").value; est.borde = $("borde").checked;
+    est.grid = $("grid").checked; est.label = $("label").checked; est.legend = $("legend").checked;
+    est.tight = $("tight").checked;
+    est.ylim = document.querySelector("input[name=ylim]:checked").value;
+    est.ymin = $("ymin").value.trim(); est.ymax = $("ymax").value.trim();
+  }
+  function ponerControles() {
+    document.querySelectorAll("input[name=tipo]").forEach(function (r) { r.checked = r.value === est.tipo; });
+    document.querySelectorAll("input[name=ylim]").forEach(function (r) { r.checked = r.value === est.ylim; });
+    $("datos").value = est.datos; $("figsize").value = est.figsize; $("marker").value = est.marker;
+    $("ls").value = est.ls; $("bins").value = est.bins; $("color").value = est.color; $("color2").value = est.color2;
+    $("borde").checked = est.borde; $("grid").checked = est.grid; $("label").checked = est.label;
+    $("legend").checked = est.legend; $("tight").checked = est.tight; $("ymin").value = est.ymin; $("ymax").value = est.ymax;
+  }
+  // Textos sugeridos para los datos y el tipo; no cambia los que el alumno ya escribió
+  function sugerirTextos() {
+    var c = CONJUNTOS[est.datos], t = est.tipo === "hist" ? c.hist : c.textos;
+    ["titulo", "xlabel", "ylabel"].forEach(function (id, k) { if (!editado[id]) $(id).value = t[k]; });
+  }
+  function numeroValido(s) { return /^-?(\d+\.?\d*|\.\d+)$/.test(s); }
+  // Los límites como los escribiría Python (sin ceros a la izquierda: 036 sería un error)
+  function limitesTexto() { var l = limitesManuales(); return String(l[0]) + ", " + String(l[1]); }
+  function limitesManuales() {
+    if (!numeroValido(est.ymin) || !numeroValido(est.ymax)) return null;
+    var a = Number(est.ymin), b = Number(est.ymax);
+    return a < b ? [a, b] : null;
+  }
+
+  // ---------- La figura y su código ----------
+  function figura() {
+    var c = CONJUNTOS[est.datos], fs = est.figsize.split(",").map(Number);
+    var f = { figsize: fs, titulo: $("titulo").value, xlabel: $("xlabel").value, ylabel: $("ylabel").value,
+              grid: est.grid, leyenda: est.legend, tight: est.tight, series: [] };
+    var x = c.cats ? c.cats.map(function (s, i) { return i; }) : DIAS;
+    if (c.cats && est.tipo !== "hist") f.xcats = c.cats;
+    c.series.forEach(function (s, k) {
+      var color = (k === 0 ? est.color : est.color2) || undefined, label = est.label ? s.label : undefined;
+      if (est.tipo === "plot") f.series.push({ tipo: "plot", x: x, y: s.y, color: color, label: label, marker: est.marker || undefined, ls: est.ls === "" ? "None" : est.ls });
+      else if (est.tipo === "scatter") f.series.push({ tipo: "scatter", x: x, y: s.y, color: color, label: label, marker: est.marker || "o" });
+      else if (est.tipo === "bar") f.series.push({ tipo: "bar", x: x, h: s.y, color: color, label: label, borde: est.borde ? "#000000" : undefined });
+      else f.series.push({ tipo: "hist", datos: s.y, bins: Number(est.bins), color: color, label: label, borde: est.borde ? "#000000" : undefined });
+    });
+    if (est.ylim === "cero") f.ylim = [0, null];
+    else if (est.ylim === "manual" && limitesManuales()) f.ylim = limitesManuales();
+    return f;
+  }
+
+  // Una llamada de Python; si no cabe en un renglón, sigue en el siguiente alineada tras "("
+  function llamada(nombre, args, partes, L) {
+    var una = nombre + "(" + args.join(", ") + ")";
+    if (una.length <= 56 || args.length < 2) { L.push({ t: una, p: partes }); return; }
+    var sangria = " ".repeat(nombre.length + 1), actual = nombre + "(" + args[0];
+    for (var i = 1; i < args.length; i++) {
+      if ((actual + ", " + args[i]).length > 56) { L.push({ t: actual + ",", p: partes }); actual = sangria + args[i]; }
+      else actual += ", " + args[i];
+    }
+    L.push({ t: actual + ")", p: partes });
+  }
+  function codigoPython() {
+    var c = CONJUNTOS[est.datos], L = [], hist = est.tipo === "hist", json = est.datos !== "promedio";
+    function linea(t, p) { L.push({ t: t, p: p || [] }); }
+    if (json) linea("import json", ["datos"]);
+    linea("import matplotlib.pyplot as plt");
+    linea("");
+    if (json) {
+      linea('with open("clima_septiembre.json", encoding="utf-8") as f:', ["datos"]);
+      linea("    clima = json.load(f)", ["datos"]);
+    }
+    var ejeDatos = hist ? ["serie0", "ejex"] : ["serie0", "ejey"], nombreX = c.cats ? "semanas" : "dias";
+    if (est.datos === "semana") {
+      linea('lluvia = [r["lluvia_mm"] for r in clima]', ejeDatos);
+      if (!hist) linea('semanas = ["1-7", "8-14", "15-21", "22-28", "29-30"]', ["ejex"]);
+      linea("totales = [sum(lluvia[i:i + 7]) for i in range(0, 30, 7)]", ejeDatos);
+    } else if (est.datos === "promedio") {
+      if (!hist) linea('semanas = ["S1", "S2", "S3", "S4", "S5"]', ["ejex"]);
+      linea("promedio = [34.3, 35.2, 34.9, 33.0, 32.1]  # máxima promedio por semana", ejeDatos);
+    } else {
+      if (!hist) linea('dias = [int(r["fecha"][-2:]) for r in clima]', ["ejex"]);
+      c.series.forEach(function (s, k) {
+        linea(s.v + ' = [r["' + s.campo + '"] for r in clima]', hist ? ["serie" + k, "ejex"] : ["serie" + k, "ejey"]);
+      });
+    }
+    linea("");
+    linea("plt.figure(figsize=(" + est.figsize + "))", ["figura"]);
+    c.series.forEach(function (s, k) {
+      var color = k === 0 ? est.color : est.color2, args = [], partes = ["serie" + k];
+      if (hist) { args.push(s.v); if (est.bins !== "10") args.push("bins=" + est.bins); partes.push("ejex", "ejey"); }
+      else args.push(nombreX, s.v);
+      if (est.tipo === "plot" || est.tipo === "scatter") { if (est.marker) args.push('marker="' + est.marker + '"'); }
+      if (est.tipo === "plot" && est.ls !== "-") args.push('linestyle="' + est.ls + '"');
+      if (color) args.push('color="' + color + '"');
+      if ((est.tipo === "bar" || hist) && est.borde) args.push('edgecolor="black"');
+      if (est.label) { args.push("label=" + pyTexto(s.label)); partes.push("leyenda"); }
+      llamada("plt." + est.tipo, args, partes, L);
+    });
+    if ($("titulo").value) linea("plt.title(" + pyTexto($("titulo").value) + ")", ["titulo"]);
+    if ($("xlabel").value) linea("plt.xlabel(" + pyTexto($("xlabel").value) + ")", ["xlabel"]);
+    if ($("ylabel").value) linea("plt.ylabel(" + pyTexto($("ylabel").value) + ")", ["ylabel"]);
+    if (est.grid) linea("plt.grid(True)", ["grid"]);
+    if (est.legend) linea("plt.legend()", ["leyenda"]);
+    if (est.ylim === "cero") linea("plt.ylim(bottom=0)", ["ejey"]);
+    else if (est.ylim === "manual" && limitesManuales()) linea("plt.ylim(" + limitesTexto() + ")", ["ejey"]);
+    if (est.tight) linea("plt.tight_layout()", ["figura"]);
+    linea("plt.show()", ["figura"]);
+    return L;
+  }
+
+  // ---------- Partes: descripción, botones y resaltado ----------
+  function partesVisibles() {
+    var c = CONJUNTOS[est.datos], p = ["figura"];
+    if ($("titulo").value) p.push("titulo");
+    if ($("xlabel").value) p.push("xlabel");
+    if ($("ylabel").value) p.push("ylabel");
+    p.push("ejex", "ejey", "serie0");
+    if (c.series.length > 1) p.push("serie1");
+    if (est.legend && est.label) p.push("leyenda");
+    if (est.grid) p.push("grid");
+    return p;
+  }
+  var NOMBRE_PARTE = { figura: "Figura", titulo: "Título", xlabel: "Nombre del eje x", ylabel: "Nombre del eje y",
+                       ejex: "Números del eje x", ejey: "Números del eje y", serie0: "Datos", serie1: "Segunda serie",
+                       leyenda: "Leyenda", grid: "Cuadrícula", ejes: "Área de los ejes", datos: "Lectura de los datos" };
+  function describir(p) {
+    var c = CONJUNTOS[est.datos], hist = est.tipo === "hist", x = c.cats ? "semanas" : "dias";
+    switch (p) {
+      case "figura": return "<b>La figura</b> es la hoja completa: la crea <code>plt.figure(figsize=(" + esc(est.figsize) + "))</code> (en pulgadas) y la muestra <code>plt.show()</code>." +
+                            (est.tight ? " <code>plt.tight_layout()</code> recorre los ejes para que quepan los textos." : "");
+      case "titulo": return "<b>El título</b> lo pone <code>plt.title(...)</code>, en letra de 12 puntos.";
+      case "xlabel": return "<b>El nombre del eje x</b> lo pone <code>plt.xlabel(...)</code>.";
+      case "ylabel": return "<b>El nombre del eje y</b> lo pone <code>plt.ylabel(...)</code>.";
+      case "ejex": return hist ? "<b>Los números del eje x</b> salen de los valores de los datos y de <code>bins</code>: el histograma va del menor al mayor valor, más 5 % de margen." :
+                          (c.cats ? "<b>Los números del eje x</b> son las categorías de la lista <code>semanas</code>: una marca por categoría." :
+                                    "<b>Los números del eje x</b> salen de la lista <code>" + x + "</code>: matplotlib elige marcas redondas (0, 5, 10...) y deja 5 % de margen.");
+      case "ejey":
+        if (est.ylim === "manual" && limitesManuales())
+          return "<b>Los límites del eje y</b> los fija <code>plt.ylim(" + limitesTexto() + ")</code>; matplotlib pone las marcas entre ellos.";
+        if (est.ylim === "cero")
+          return "<b>El eje y</b> empieza en 0 por <code>plt.ylim(bottom=0)</code>; el máximo sale de los datos, más 5 % de margen.";
+        return hist ? "<b>Los números del eje y</b> cuentan cuántos datos caen en cada intervalo; empiezan en 0." :
+                      "<b>Los números del eje y</b> salen de los datos de y" +
+                      (est.tipo === "bar" ? "; en barras el eje empieza en 0." : "; matplotlib agrega 5 % de margen arriba y abajo.");
+      case "serie0": case "serie1":
+        var s = c.series[p === "serie0" ? 0 : 1];
+        if (!s) return "";
+        return "<b>Los datos</b> (" + esc(s.label.toLowerCase()) + ") los dibuja <code>plt." + est.tipo + "(...)</code>" +
+               (hist ? ": cada barra cuenta los días (o semanas) de un intervalo." : est.tipo === "bar" ? ": una barra por " + (c.cats ? "semana." : "día.") :
+                est.tipo === "scatter" ? ": un punto por " + (c.cats ? "semana." : "día.") : ": une los puntos con una línea.");
+      case "leyenda": return "<b>La leyenda</b> la dibuja <code>plt.legend()</code> con el <code>label=</code> de cada serie, en la esquina con menos datos.";
+      case "grid": return "<b>La cuadrícula</b> la dibuja <code>plt.grid(True)</code> en las marcas de los dos ejes.";
+      case "ejes": return "<b>El área de los ejes</b> es donde se dibujan los datos. Activa la cuadrícula para verla.";
+      case "datos": return "<b>Los datos</b> se leen de <code>clima_septiembre.json</code> con <code>json.load</code> (Tema 12).";
+    }
+    return "";
+  }
+  function idsLienzo(p) {
+    if (!p) return null;
+    if (p === "datos") return CONJUNTOS[est.datos].series.map(function (s, k) { return "serie" + k; });
+    return p;
+  }
+
+  // ---------- Dibujar ----------
+  var lienzo = $("lienzo"), geo = null, codigo = [], parteHover = null, parteFija = null;
+  function parteActiva() { return parteHover || parteFija; }
+  function redibujar() {
+    var f = figura(), W = f.figsize[0] * 100, disponible = $("marco").clientWidth || 600;
+    f.ancho = Math.min(disponible, W);
+    lienzo.style.width = f.ancho + "px";
+    f.resaltar = idsLienzo(parteActiva());
+    geo = MPL.dibujar(lienzo, f);
+    var p = parteActiva();
+    document.querySelectorAll("#codigo li").forEach(function (li) {
+      var partes = (li.getAttribute("data-p") || "").split(" ");
+      li.classList.toggle("marca", !!p && partes.indexOf(p) >= 0);
+    });
+    document.querySelectorAll("#chips button").forEach(function (b) {
+      b.setAttribute("aria-pressed", b.dataset.parte === parteFija ? "true" : "false");
+    });
+    var lineas = [];
+    codigo.forEach(function (l, i) { if (p && l.p.indexOf(p) >= 0) lineas.push(i + 1); });
+    $("pie-lienzo").innerHTML = p ? describir(p) + (lineas.length ? " <small>(línea" + (lineas.length > 1 ? "s " : " ") + lineas.join(", ") + ")</small>" : "") :
+      "Pasa el ratón (o toca) una parte de la gráfica para ver qué línea la crea.";
+  }
+  function pintarCodigo() {
+    codigo = codigoPython();
+    $("codigo").innerHTML = '<div class="codigo"><ol>' + codigo.map(function (l, k) {
+      var principal = l.p[0];
+      var attrs = l.p.length ? ' data-p="' + l.p.join(" ") + '" tabindex="0" aria-label="Línea ' + (k + 1) + ": " + esc(l.t.trim()) +
+                  '. Resalta: ' + esc((NOMBRE_PARTE[principal] || "").toLowerCase()) + '"' : "";
+      return "<li" + attrs + ">" + (pyResaltar(l.t) || " ") + "</li>";
+    }).join("") + "</ol></div>";
+  }
+  function pintarChips() {
+    $("chips").innerHTML = "<span>Partes de la gráfica:</span>" + partesVisibles().map(function (p) {
+      return '<button type="button" data-parte="' + p + '" aria-pressed="false">' + NOMBRE_PARTE[p] + "</button>";
+    }).join("");
+  }
+  function lectura() {
+    var f = figura(), fs = f.figsize, w = Math.round(fs[0] * 100), h = Math.round(fs[1] * 100), html = [];
+    html.push("<b>Tamaño:</b> <code>figsize=(" + esc(est.figsize) + ")</code> son pulgadas. Con dpi=100 la imagen mide " +
+              w + " × " + h + " píxeles; con <code>plt.savefig(\"grafica.png\", dpi=150)</code>, " +
+              Math.round(fs[0] * 150) + " × " + Math.round(fs[1] * 150) + ".");
+    var c = CONJUNTOS[est.datos];
+    if (est.legend && !est.label) html.push('<span class="mal">plt.legend() sin label=:</span> matplotlib avisa "No artists with labels found to put in legend." y no dibuja la leyenda.');
+    else if (est.label && !est.legend) html.push("Cada serie tiene <code>label=</code>, pero la leyenda no aparece hasta llamar <code>plt.legend()</code>.");
+    if (c.series.length > 1 && !est.color && !est.color2) html.push("No pediste colores: matplotlib usa C0 (azul) y luego C1 (naranja) de su ciclo.");
+    if (est.ylim === "manual" && !limitesManuales()) html.push('<span class="mal">Revisa los límites del eje y:</span> el primero debe ser menor que el segundo.');
+    // Barras que no empiezan en cero
+    if (est.tipo === "bar" && geo && geo.ylim[0] > 0) {
+      var vals = c.series[0].y, iMax = vals.indexOf(Math.max.apply(null, vals)), iMin = vals.indexOf(Math.min.apply(null, vals));
+      var abajo = geo.ylim[0], arriba = geo.ylim[1];
+      var hMax = Math.max(0, Math.min(vals[iMax], arriba) - abajo), hMin = Math.max(0, Math.min(vals[iMin], arriba) - abajo);
+      var nom = function (i) { return c.cats ? c.cats[i] : "el día " + (i + 1); };
+      if (hMin > 0) {
+        html.push('<span class="mal">Barras que exageran:</span> el eje y empieza en ' + MPL.fijo(abajo, 1) + ", no en 0. La barra de " + nom(iMax) +
+                  " se ve " + MPL.fijo(hMax / hMin, 1) + " veces más alta que la de " + nom(iMin) + ", pero su valor es solo " +
+                  MPL.fijo(100 * (vals[iMax] / vals[iMin] - 1), 1) + " % mayor.");
+      } else if (hMax > 0) {
+        html.push('<span class="mal">Barras que exageran:</span> el eje y empieza en ' + MPL.fijo(abajo, 1) + ": la barra de " + nom(iMin) +
+                  " desaparece aunque su valor (" + vals[iMin] + ") no es cero.");
+      } else {
+        html.push('<span class="mal">Con estos límites no se ve ninguna barra:</span> todos los valores quedan abajo de ' + MPL.fijo(abajo, 1) + ".");
+      }
+    }
+    var fuera0 = geo ? MPL.cortados(geo) : [];
+    if (fuera0.length) {
+      var que = fuera0.map(function (k) { return { titulo: "el título", xlabel: "el nombre del eje x", ylabel: "el nombre del eje y", ejex: "los números del eje x", ejey: "los números del eje y" }[k]; });
+      html.push('<span class="mal">No cabe ' + que.join(" ni ") + ":</span> con este tamaño se corta en la orilla, igual que en tu computadora. " +
+                "<code>plt.tight_layout()</code> acomoda los márgenes (y al guardar, <code>bbox_inches=\"tight\"</code>).");
+    } else if (est.tight) html.push("<code>plt.tight_layout()</code> recorrió los ejes para que todos los textos quepan con un pequeño margen.");
+    if (geo && (est.ylim === "manual") && limitesManuales()) {
+      var fuera = 0;
+      c.series.forEach(function (s) { s.y.forEach(function (v) { if (v < geo.ylim[0] || v > geo.ylim[1]) fuera++; }); });
+      if (fuera && est.tipo !== "hist" && est.tipo !== "bar") html.push(fuera + (fuera === 1 ? " dato queda" : " datos quedan") + " fuera de la gráfica con estos límites.");
+    }
+    if (est.tipo === "hist") {
+      var v0 = c.series[0].y;
+      html.push("<code>bins=" + esc(est.bins) + "</code>: " + est.bins + " barras de igual ancho entre el menor (" +
+                Math.min.apply(null, v0) + ") y el mayor (" + Math.max.apply(null, v0) + ") de los datos.");
+    }
+    $("lectura").innerHTML = html.join("<br>");
+  }
+  function actualizarControles() {
+    var dos = CONJUNTOS[est.datos].series.length > 1;
+    $("caja-color2").hidden = !dos;
+    $("caja-bins").hidden = est.tipo !== "hist";
+    var conMarker = est.tipo === "plot" || est.tipo === "scatter";
+    $("marker").disabled = !conMarker; $("caja-marker").classList.toggle("deshabilitado", !conMarker);
+    $("ls").disabled = est.tipo !== "plot"; $("caja-ls").classList.toggle("deshabilitado", est.tipo !== "plot");
+    var conBorde = est.tipo === "bar" || est.tipo === "hist";
+    $("borde").disabled = !conBorde; $("caja-borde").classList.toggle("deshabilitado", !conBorde);
+    $("marker").options[0].textContent = est.tipo === "scatter" ? "por omisión (círculos)" : "sin marcador";
+    $("ymin").disabled = $("ymax").disabled = est.ylim !== "manual";
+  }
+  function actualizar() {
+    leerControles();
+    actualizarControles();
+    pintarCodigo();
+    pintarChips();
+    if (partesVisibles().indexOf(parteFija) < 0) parteFija = null;
+    parteHover = null;
+    redibujar();
+    lectura();
+  }
+
+  // ---------- Eventos ----------
+  function normalizar(p) { return p === "ejes" && est.grid ? "grid" : p; }
+  lienzo.addEventListener("pointermove", function (e) {
+    if (!geo) return;
+    var r = lienzo.getBoundingClientRect(), p = normalizar(MPL.parteEn(geo, e.clientX - r.left, e.clientY - r.top));
+    if (p !== parteHover) { parteHover = p; redibujar(); }
+  });
+  lienzo.addEventListener("pointerleave", function () { if (parteHover) { parteHover = null; redibujar(); } });
+  lienzo.addEventListener("click", function (e) {
+    var r = lienzo.getBoundingClientRect(), p = normalizar(MPL.parteEn(geo, e.clientX - r.left, e.clientY - r.top));
+    parteFija = parteFija === p ? null : p;
+    parteHover = e.pointerType === "mouse" ? p : null;
+    redibujar();
+  });
+  $("codigo").addEventListener("mouseover", function (e) {
+    var li = e.target.closest && e.target.closest("li[data-p]");
+    var p = li ? li.getAttribute("data-p").split(" ")[0] : null;
+    if (p !== parteHover) { parteHover = p; redibujar(); }
+  });
+  $("codigo").addEventListener("mouseleave", function () { if (parteHover) { parteHover = null; redibujar(); } });
+  $("codigo").addEventListener("focusin", function (e) {
+    var li = e.target.closest && e.target.closest("li[data-p]");
+    if (li) { parteHover = li.getAttribute("data-p").split(" ")[0]; redibujar(); }
+  });
+  $("codigo").addEventListener("focusout", function () { parteHover = null; redibujar(); });
+  $("codigo").addEventListener("click", function (e) {
+    var li = e.target.closest && e.target.closest("li[data-p]");
+    if (!li) return;
+    var p = li.getAttribute("data-p").split(" ")[0];
+    parteFija = parteFija === p ? null : p;
+    redibujar();
+  });
+  $("codigo").addEventListener("keydown", function (e) {
+    var li = e.target.closest && e.target.closest("li[data-p]");
+    if (!li || (e.key !== "Enter" && e.key !== " ")) return;
+    e.preventDefault();
+    var p = li.getAttribute("data-p").split(" ")[0];
+    parteFija = parteFija === p ? null : p;
+    redibujar();
+  });
+  $("chips").addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest("button[data-parte]");
+    if (!b) return;
+    parteFija = parteFija === b.dataset.parte ? null : b.dataset.parte;
+    parteHover = null;
+    redibujar();
+  });
+
+  ["titulo", "xlabel", "ylabel"].forEach(function (id) {
+    $(id).addEventListener("input", function () { editado[id] = true; actualizar(); });
+  });
+  document.querySelectorAll("input[name=tipo]").forEach(function (r) {
+    r.addEventListener("change", function () { est.tipo = r.value; sugerirTextos(); actualizar(); });
+  });
+  $("datos").addEventListener("change", function () { est.datos = $("datos").value; sugerirTextos(); actualizar(); });
+  ["figsize", "marker", "ls", "bins", "color", "color2", "borde", "grid", "label", "legend", "tight"].forEach(function (id) {
+    $(id).addEventListener("change", actualizar);
+  });
+  document.querySelectorAll("input[name=ylim]").forEach(function (r) { r.addEventListener("change", actualizar); });
+  ["ymin", "ymax"].forEach(function (id) { $(id).addEventListener("input", actualizar); });
+  $("exagera").addEventListener("click", function () {
+    est.tipo = "bar"; est.datos = "promedio"; est.ylim = "manual"; est.ymin = "31.5"; est.ymax = "36"; est.figsize = "6, 3.4";
+    est.color = ""; est.label = false; est.legend = false; est.grid = false; est.tight = false;
+    ponerControles();
+    editado = { titulo: false, xlabel: false, ylabel: false };
+    sugerirTextos();
+    actualizar();
+  });
+  $("reiniciar").addEventListener("click", function () {
+    est = inicial(); editado = { titulo: false, xlabel: false, ylabel: false };
+    ponerControles(); sugerirTextos(); parteFija = null; actualizar();
+  });
+  var temporizador = null;
+  window.addEventListener("resize", function () { clearTimeout(temporizador); temporizador = setTimeout(redibujar, 80); });
+
+  est = inicial();
+  ponerControles();
+  sugerirTextos();
+  actualizar();
+})();
+</script>
+<div id="qr-sitio" class="qr-capa" hidden>
+  <div class="qr-caja" role="dialog" aria-modal="true" aria-label="Código QR de esta página">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 45" role="img" aria-label="Código QR de https://memosanchezg.github.io/programacion-basica-interactivos/semana-15-anatomia-grafica.html" shape-rendering="crispEdges"><rect width="45" height="45" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM12 2h1v1h-1zM15 2h1v1h-1zM17 2h3v1h-3zM21 2h7v1h-7zM30 2h1v1h-1zM33 2h2v1h-2zM36 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM15 3h1v1h-1zM18 3h2v1h-2zM22 3h2v1h-2zM28 3h5v1h-5zM34 3h1v1h-1zM36 3h1v1h-1zM42 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM10 4h1v1h-1zM15 4h2v1h-2zM18 4h3v1h-3zM23 4h2v1h-2zM26 4h1v1h-1zM28 4h3v1h-3zM33 4h2v1h-2zM36 4h1v1h-1zM38 4h3v1h-3zM42 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h7v1h-7zM18 5h1v1h-1zM23 5h1v1h-1zM26 5h3v1h-3zM31 5h1v1h-1zM33 5h2v1h-2zM36 5h1v1h-1zM38 5h3v1h-3zM42 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h1v1h-1zM17 6h1v1h-1zM20 6h2v1h-2zM24 6h2v1h-2zM30 6h5v1h-5zM36 6h1v1h-1zM38 6h3v1h-3zM42 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h2v1h-2zM13 7h2v1h-2zM16 7h2v1h-2zM22 7h1v1h-1zM26 7h1v1h-1zM29 7h2v1h-2zM34 7h1v1h-1zM36 7h1v1h-1zM42 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM30 8h1v1h-1zM32 8h1v1h-1zM34 8h1v1h-1zM36 8h7v1h-7zM10 9h1v1h-1zM13 9h1v1h-1zM16 9h3v1h-3zM20 9h1v1h-1zM23 9h1v1h-1zM25 9h2v1h-2zM28 9h1v1h-1zM33 9h2v1h-2zM2 10h1v1h-1zM4 10h5v1h-5zM11 10h1v1h-1zM13 10h1v1h-1zM15 10h1v1h-1zM17 10h3v1h-3zM22 10h1v1h-1zM24 10h1v1h-1zM27 10h3v1h-3zM31 10h1v1h-1zM36 10h5v1h-5zM2 11h1v1h-1zM5 11h1v1h-1zM7 11h1v1h-1zM10 11h1v1h-1zM12 11h3v1h-3zM16 11h1v1h-1zM19 11h5v1h-5zM25 11h1v1h-1zM27 11h1v1h-1zM30 11h1v1h-1zM32 11h3v1h-3zM36 11h3v1h-3zM40 11h3v1h-3zM2 12h3v1h-3zM6 12h4v1h-4zM11 12h2v1h-2zM14 12h1v1h-1zM17 12h1v1h-1zM22 12h2v1h-2zM29 12h4v1h-4zM34 12h2v1h-2zM37 12h1v1h-1zM2 13h2v1h-2zM6 13h2v1h-2zM11 13h1v1h-1zM13 13h1v1h-1zM23 13h2v1h-2zM28 13h1v1h-1zM32 13h5v1h-5zM38 13h2v1h-2zM2 14h1v1h-1zM4 14h1v1h-1zM8 14h1v1h-1zM12 14h1v1h-1zM14 14h1v1h-1zM16 14h1v1h-1zM18 14h2v1h-2zM21 14h2v1h-2zM24 14h1v1h-1zM26 14h4v1h-4zM31 14h1v1h-1zM33 14h1v1h-1zM37 14h1v1h-1zM39 14h4v1h-4zM2 15h2v1h-2zM6 15h2v1h-2zM9 15h3v1h-3zM17 15h1v1h-1zM20 15h1v1h-1zM23 15h2v1h-2zM30 15h1v1h-1zM32 15h11v1h-11zM2 16h1v1h-1zM5 16h1v1h-1zM8 16h3v1h-3zM12 16h2v1h-2zM17 16h2v1h-2zM22 16h5v1h-5zM29 16h1v1h-1zM31 16h2v1h-2zM34 16h2v1h-2zM37 16h1v1h-1zM40 16h1v1h-1zM2 17h1v1h-1zM7 17h1v1h-1zM11 17h2v1h-2zM15 17h3v1h-3zM20 17h1v1h-1zM23 17h3v1h-3zM28 17h3v1h-3zM36 17h2v1h-2zM39 17h1v1h-1zM41 17h1v1h-1zM3 18h2v1h-2zM6 18h1v1h-1zM8 18h2v1h-2zM11 18h1v1h-1zM14 18h1v1h-1zM16 18h1v1h-1zM19 18h1v1h-1zM25 18h1v1h-1zM27 18h3v1h-3zM31 18h3v1h-3zM35 18h1v1h-1zM37 18h1v1h-1zM40 18h1v1h-1zM3 19h2v1h-2zM6 19h2v1h-2zM10 19h1v1h-1zM12 19h1v1h-1zM15 19h2v1h-2zM18 19h1v1h-1zM20 19h3v1h-3zM25 19h3v1h-3zM30 19h1v1h-1zM32 19h3v1h-3zM36 19h4v1h-4zM41 19h2v1h-2zM2 20h2v1h-2zM5 20h1v1h-1zM7 20h2v1h-2zM11 20h1v1h-1zM13 20h1v1h-1zM15 20h1v1h-1zM18 20h1v1h-1zM20 20h1v1h-1zM24 20h1v1h-1zM28 20h3v1h-3zM32 20h1v1h-1zM35 20h1v1h-1zM38 20h2v1h-2zM41 20h1v1h-1zM4 21h1v1h-1zM10 21h2v1h-2zM13 21h1v1h-1zM15 21h4v1h-4zM21 21h2v1h-2zM29 21h2v1h-2zM33 21h3v1h-3zM38 21h2v1h-2zM41 21h2v1h-2zM3 22h3v1h-3zM7 22h7v1h-7zM15 22h1v1h-1zM17 22h2v1h-2zM20 22h2v1h-2zM23 22h4v1h-4zM29 22h1v1h-1zM31 22h2v1h-2zM37 22h1v1h-1zM39 22h3v1h-3zM2 23h3v1h-3zM9 23h1v1h-1zM12 23h1v1h-1zM14 23h1v1h-1zM16 23h4v1h-4zM21 23h3v1h-3zM25 23h1v1h-1zM27 23h1v1h-1zM30 23h1v1h-1zM32 23h3v1h-3zM36 23h3v1h-3zM41 23h2v1h-2zM3 24h2v1h-2zM7 24h2v1h-2zM10 24h4v1h-4zM15 24h4v1h-4zM20 24h1v1h-1zM22 24h1v1h-1zM24 24h1v1h-1zM27 24h4v1h-4zM34 24h1v1h-1zM37 24h1v1h-1zM39 24h1v1h-1zM3 25h1v1h-1zM5 25h1v1h-1zM7 25h1v1h-1zM11 25h3v1h-3zM16 25h1v1h-1zM18 25h1v1h-1zM20 25h2v1h-2zM23 25h2v1h-2zM29 25h1v1h-1zM33 25h3v1h-3zM37 25h2v1h-2zM42 25h1v1h-1zM2 26h9v1h-9zM12 26h1v1h-1zM19 26h1v1h-1zM25 26h7v1h-7zM33 26h1v1h-1zM40 26h1v1h-1zM42 26h1v1h-1zM3 27h1v1h-1zM5 27h1v1h-1zM15 27h1v1h-1zM17 27h1v1h-1zM19 27h1v1h-1zM21 27h3v1h-3zM25 27h1v1h-1zM27 27h1v1h-1zM30 27h1v1h-1zM32 27h2v1h-2zM35 27h5v1h-5zM41 27h2v1h-2zM6 28h1v1h-1zM8 28h3v1h-3zM13 28h1v1h-1zM16 28h1v1h-1zM18 28h1v1h-1zM20 28h1v1h-1zM22 28h1v1h-1zM26 28h5v1h-5zM32 28h1v1h-1zM34 28h2v1h-2zM37 28h2v1h-2zM4 29h1v1h-1zM6 29h2v1h-2zM10 29h1v1h-1zM12 29h1v1h-1zM14 29h4v1h-4zM21 29h4v1h-4zM26 29h1v1h-1zM28 29h1v1h-1zM30 29h1v1h-1zM33 29h2v1h-2zM38 29h2v1h-2zM2 30h1v1h-1zM4 30h2v1h-2zM7 30h3v1h-3zM11 30h1v1h-1zM13 30h3v1h-3zM17 30h1v1h-1zM19 30h1v1h-1zM24 30h2v1h-2zM27 30h2v1h-2zM30 30h2v1h-2zM33 30h1v1h-1zM39 30h2v1h-2zM42 30h1v1h-1zM2 31h2v1h-2zM11 31h6v1h-6zM19 31h2v1h-2zM22 31h1v1h-1zM26 31h2v1h-2zM30 31h7v1h-7zM38 31h1v1h-1zM40 31h1v1h-1zM42 31h1v1h-1zM2 32h1v1h-1zM4 32h1v1h-1zM8 32h4v1h-4zM13 32h1v1h-1zM15 32h1v1h-1zM17 32h3v1h-3zM21 32h1v1h-1zM23 32h2v1h-2zM27 32h3v1h-3zM31 32h1v1h-1zM35 32h3v1h-3zM39 32h1v1h-1zM2 33h1v1h-1zM4 33h2v1h-2zM10 33h1v1h-1zM12 33h1v1h-1zM14 33h4v1h-4zM21 33h4v1h-4zM26 33h1v1h-1zM29 33h1v1h-1zM33 33h5v1h-5zM39 33h1v1h-1zM41 33h2v1h-2zM2 34h1v1h-1zM5 34h1v1h-1zM8 34h1v1h-1zM12 34h2v1h-2zM17 34h1v1h-1zM19 34h1v1h-1zM21 34h1v1h-1zM24 34h1v1h-1zM26 34h3v1h-3zM31 34h1v1h-1zM34 34h5v1h-5zM40 34h1v1h-1zM42 34h1v1h-1zM10 35h1v1h-1zM14 35h1v1h-1zM17 35h7v1h-7zM25 35h3v1h-3zM30 35h2v1h-2zM33 35h2v1h-2zM38 35h1v1h-1zM41 35h2v1h-2zM2 36h7v1h-7zM12 36h1v1h-1zM17 36h3v1h-3zM22 36h2v1h-2zM27 36h5v1h-5zM33 36h2v1h-2zM36 36h1v1h-1zM38 36h1v1h-1zM40 36h1v1h-1zM2 37h1v1h-1zM8 37h1v1h-1zM10 37h2v1h-2zM15 37h1v1h-1zM18 37h3v1h-3zM23 37h2v1h-2zM26 37h2v1h-2zM32 37h3v1h-3zM38 37h2v1h-2zM2 38h1v1h-1zM4 38h3v1h-3zM8 38h1v1h-1zM10 38h2v1h-2zM14 38h3v1h-3zM18 38h1v1h-1zM23 38h1v1h-1zM26 38h1v1h-1zM28 38h2v1h-2zM31 38h1v1h-1zM34 38h5v1h-5zM40 38h1v1h-1zM2 39h1v1h-1zM4 39h3v1h-3zM8 39h1v1h-1zM10 39h2v1h-2zM15 39h1v1h-1zM18 39h1v1h-1zM20 39h3v1h-3zM24 39h3v1h-3zM30 39h4v1h-4zM35 39h1v1h-1zM37 39h1v1h-1zM39 39h2v1h-2zM2 40h1v1h-1zM4 40h3v1h-3zM8 40h1v1h-1zM10 40h1v1h-1zM12 40h1v1h-1zM14 40h1v1h-1zM16 40h3v1h-3zM20 40h1v1h-1zM22 40h1v1h-1zM24 40h1v1h-1zM26 40h2v1h-2zM29 40h2v1h-2zM34 40h6v1h-6zM2 41h1v1h-1zM8 41h1v1h-1zM11 41h3v1h-3zM15 41h3v1h-3zM23 41h1v1h-1zM25 41h1v1h-1zM28 41h3v1h-3zM34 41h2v1h-2zM38 41h2v1h-2zM41 41h1v1h-1zM2 42h7v1h-7zM10 42h1v1h-1zM14 42h4v1h-4zM19 42h1v1h-1zM21 42h1v1h-1zM24 42h5v1h-5zM31 42h1v1h-1zM33 42h1v1h-1zM35 42h4v1h-4zM40 42h1v1h-1z"/></svg>
+    <p class="qr-texto">Escanea con la cámara del celular para abrir esta página</p>
+    <p class="qr-url">https://memosanchezg.github.io/programacion-basica-interactivos/semana-15-anatomia-grafica.html</p>
+    <button type="button" class="qr-cerrar">Cerrar</button>
+  </div>
+</div>
+<style>
+  .qr-capa { position:fixed; top:0; right:0; bottom:0; left:0; z-index:10000; display:flex; align-items:center;
+             justify-content:center; padding:16px; background:#fff; }
+  .qr-capa[hidden] { display:none; }
+  .qr-caja { max-width:100%; text-align:center; color:#0A2A57; font:16px/1.4 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .qr-caja svg { display:block; width:min(62vh, 84vw); height:auto; margin:0 auto; }
+  .qr-texto { margin:12px 0 2px; font-size:1.15rem; font-weight:bold; }
+  .qr-url { margin:0 0 12px; color:#5B6472; word-break:break-all; }
+  .qr-cerrar { font:inherit; padding:6px 20px; border:2px solid #00408F; border-radius:4px; background:#fff;
+               color:#00408F; cursor:pointer; }
+</style>
+<script>
+  (function () {
+    var capa = document.getElementById("qr-sitio");
+    document.querySelectorAll("a.qr-abrir").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        capa.hidden = false;
+        capa.querySelector(".qr-cerrar").focus();
+      });
+    });
+    capa.addEventListener("click", function (e) {
+      if (e.target === capa || e.target.classList.contains("qr-cerrar")) capa.hidden = true;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !capa.hidden) capa.hidden = true;
+    });
+  })();
+</script>
+</body>
+</html>

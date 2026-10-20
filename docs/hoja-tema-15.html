@@ -1,0 +1,1255 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tema 15 · Hoja del estudiante</title>
+<style>
+:root {
+  --azul: #00408F; --azul-osc: #0A2A57; --guinda: #8C1D35; --oro: #B8975A;
+  --azul-claro: #E8EEF7; --oro-claro: #F7F1E6; --tinta: #1B1F2A; --gris: #5B6472; --borde: #D9DEE6;
+  --cmd-fondo: #0C0C0C; --cmd-texto: #E6E6E6;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: #FFFFFF; color: var(--tinta);
+  font-family: Calibri, "Segoe UI", system-ui, -apple-system, sans-serif; font-size: 17px; line-height: 1.55; }
+a { color: var(--azul); font-weight: 600; }
+.wrap { max-width: 940px; margin: 0 auto; padding: 0 16px; }
+header { border-left: 14px solid var(--azul); box-shadow: inset 3px 0 0 var(--oro); padding: 34px 0 24px; }
+.eyebrow { color: var(--guinda); font-weight: 700; letter-spacing: .05em; font-size: 15px;
+  font-family: Cambria, Georgia, serif; }
+h1 { font-family: Cambria, Georgia, serif; color: var(--azul-osc); font-size: clamp(30px, 5vw, 44px);
+  margin: 4px 0 6px; line-height: 1.15; }
+.sub { color: var(--gris); margin: 0 0 8px; }
+.subtitulo { color: var(--azul); font-style: italic; font-size: 19px; margin: 0 0 6px; }
+nav.dias { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+nav.dias a { border: 1px solid var(--borde); color: var(--azul-osc); text-decoration: none; padding: 5px 14px;
+  border-radius: 999px; font-size: 15px; }
+nav.dias a:hover { border-color: var(--oro); background: var(--oro-claro); }
+.franja { height: 7px; background: var(--azul); border-bottom: 3px solid var(--oro); }
+main { padding: 4px 0 48px; }
+section { padding-top: 26px; }
+h2 { font-family: Cambria, Georgia, serif; color: var(--azul-osc); font-size: 28px; margin: 0 0 4px; line-height: 1.2; }
+h3 { color: var(--azul-osc); font-size: 19px; margin: 22px 0 8px; }
+.dia { border-top: 1px solid var(--borde); margin-top: 28px; }
+.dia .num { color: var(--guinda); font-family: Cambria, Georgia, serif; font-weight: 700; font-size: 20px; }
+.chip { display: inline-block; color: var(--guinda); font-family: Cambria, Georgia, serif; font-weight: 700;
+  font-size: 17px; margin-left: 8px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.card { border: 1.5px solid var(--oro); border-radius: 10px; padding: 14px 16px; }
+.card b { display: block; margin-bottom: 4px; color: var(--azul-osc); }
+.card small { color: var(--guinda); font-weight: 700; }
+ul.links { padding-left: 20px; margin: 6px 0; }
+ul.links li { margin: 4px 0; }
+ol.tareas li { margin: 6px 0; }
+.pista { background: var(--oro-claro); border: 1px solid var(--oro); border-radius: 10px; padding: 10px 14px; }
+.pista b { color: var(--guinda); }
+.bloque { margin: 10px 0; }
+code, .mono { font-family: Consolas, "Courier New", monospace; color: var(--azul); }
+.highlight table { border-collapse: collapse; }
+.highlight td { padding: 0; vertical-align: top; }
+.highlight td.linenos pre { margin: 0; padding: 10px 8px 10px 0; text-align: right; color: var(--gris);
+  font-family: Cambria, Georgia, serif; font-size: 11px; line-height: 21px; background: transparent; }
+.highlight td.code { width: 100%; }
+.highlight td.code pre { margin: 0; padding: 10px 14px; border: 1px solid var(--tinta); background: #FFFFFF;
+  font-family: Consolas, "Courier New", monospace; font-size: 15px; line-height: 21px !important; overflow-x: auto; }
+.highlight { overflow-x: auto; }
+.prompt { background: var(--azul-claro); border-radius: 10px; padding: 14px 16px; margin: 0; font-style: italic; }
+.acciones { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 8px 0 0; }
+button.copiar { font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; border: 0; border-radius: 999px;
+  padding: 6px 14px; background: var(--azul); color: #fff; }
+button.copiar:hover { background: var(--azul-osc); }
+.entrega { border: 1px dashed var(--oro); border-radius: 10px; padding: 10px 14px; }
+table.chuleta { border-collapse: collapse; width: 100%; font-size: 15px; }
+table.chuleta th { background: var(--azul-osc); color: #fff; text-align: left; padding: 7px 10px; }
+table.chuleta td { padding: 6px 10px; border-bottom: 1px solid var(--borde); }
+table.chuleta tr:nth-child(even) td { background: var(--azul-claro); }
+footer { color: var(--gris); font-size: 14px; border-top: 1px solid var(--borde); margin-top: 36px; padding-top: 14px; }
+textarea.crudo { display: none; }
+@media print {
+  nav.dias, button.copiar { display: none; }
+  .dia { page-break-before: always; }
+}
+</style></head><body><div class="franja"></div>
+<header><div class="wrap">
+<div class="eyebrow">TEMA 15 · SEMANA 15 · HOJA DEL ESTUDIANTE</div>
+<h1>Gráficas</h1>
+<p class="sub">Programación Básica 2026 · FCFM · UANL. Aquí está el código de los ejemplos (se corren en tu computadora: PythonTutor no puede importar matplotlib), el archivo de datos, el código de partida y los prompts sugeridos de cada ejercicio.</p>
+<nav class="dias"><a href="#dia1">Día 1</a><a href="#dia2">Día 2</a><a href="#dia3">Día 3</a><a href="#dia4">Día 4</a><a href="#dia5">Día 5</a><a href="#chuleta">Chuleta</a><a href="#interactivos">Simuladores</a><a href="#recursos">Recursos</a></nav>
+</div></header><main class="wrap">
+<section><h2>Cómo usar la IA esta semana</h2>
+<p class="sub">Graficar con IA sin que piense por ti</p><ul>
+<li>Una IA genera en segundos el código de una gráfica vistosa, pero no sabe qué pregunta quieres responder con ella ni si tus datos están limpios.</li>
+<li>Primero tú: decide qué quieres mostrar (comparar, distribución, tendencia, relación) y elige el tipo de gráfica.</li>
+<li>Después la IA: pídele que te explique un parámetro (bins, marker, figsize) o cómo hacer más legible tu gráfica.</li>
+<li>Temario (Fase 3): la IA puede sugerir formas de graficar, pero no debe generar gráficas sin que entiendas los datos.</li>
+</ul><h3>Ejemplo de prompt</h3><div class="bloque">
+<p class="prompt">Quiero mostrar si llovió más en los días más calurosos de septiembre. Tengo dos listas, tmax y lluvia. No me des el código: pregúntame qué tipo de gráfica responde esa pregunta y qué debe ir en cada eje.</p><textarea class="crudo" id="prompt-ia">Quiero mostrar si llovió más en los días más calurosos de septiembre. Tengo dos listas, tmax y lluvia. No me des el código: pregúntame qué tipo de gráfica responde esa pregunta y qué debe ir en cada eje.</textarea>
+<div class="acciones"><button class="copiar" data-copiar="prompt-ia">Copiar prompt</button></div></div>
+</section>
+<section><h2>Archivo de datos: clima_septiembre.json</h2><p class="sub">El clima real de Monterrey de septiembre de 2026 (Open-Meteo): es el archivo que guardaste en el reto final del Tema 12. Si no lo tienes, cópialo de aquí.</p>
+<div class="bloque"><pre style="max-height:220px; overflow:auto; border:1px solid var(--borde); border-radius:8px; padding:10px 14px; font-family:Consolas, 'Courier New', monospace; font-size:14px; margin:0">[
+  {
+    &quot;fecha&quot;: &quot;2026-09-01&quot;,
+    &quot;tmax&quot;: 35.0,
+    &quot;tmin&quot;: 23.4,
+    &quot;lluvia_mm&quot;: 1.7
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-02&quot;,
+    &quot;tmax&quot;: 36.5,
+    &quot;tmin&quot;: 23.7,
+    &quot;lluvia_mm&quot;: 0.7
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-03&quot;,
+    &quot;tmax&quot;: 38.0,
+    &quot;tmin&quot;: 25.0,
+    &quot;lluvia_mm&quot;: 0.2
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-04&quot;,
+    &quot;tmax&quot;: 34.1,
+    &quot;tmin&quot;: 25.2,
+    &quot;lluvia_mm&quot;: 0.7
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-05&quot;,
+    &quot;tmax&quot;: 32.2,
+    &quot;tmin&quot;: 23.6,
+    &quot;lluvia_mm&quot;: 6.9
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-06&quot;,
+    &quot;tmax&quot;: 30.2,
+    &quot;tmin&quot;: 22.3,
+    &quot;lluvia_mm&quot;: 0.7
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-07&quot;,
+    &quot;tmax&quot;: 34.0,
+    &quot;tmin&quot;: 22.3,
+    &quot;lluvia_mm&quot;: 0.0
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-08&quot;,
+    &quot;tmax&quot;: 33.3,
+    &quot;tmin&quot;: 21.8,
+    &quot;lluvia_mm&quot;: 0.3
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-09&quot;,
+    &quot;tmax&quot;: 34.9,
+    &quot;tmin&quot;: 21.9,
+    &quot;lluvia_mm&quot;: 0.6
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-10&quot;,
+    &quot;tmax&quot;: 35.1,
+    &quot;tmin&quot;: 22.3,
+    &quot;lluvia_mm&quot;: 0.8
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-11&quot;,
+    &quot;tmax&quot;: 37.2,
+    &quot;tmin&quot;: 22.4,
+    &quot;lluvia_mm&quot;: 0.2
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-12&quot;,
+    &quot;tmax&quot;: 35.0,
+    &quot;tmin&quot;: 23.6,
+    &quot;lluvia_mm&quot;: 0.8
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-13&quot;,
+    &quot;tmax&quot;: 35.2,
+    &quot;tmin&quot;: 23.4,
+    &quot;lluvia_mm&quot;: 0.2
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-14&quot;,
+    &quot;tmax&quot;: 35.8,
+    &quot;tmin&quot;: 23.6,
+    &quot;lluvia_mm&quot;: 0.2
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-15&quot;,
+    &quot;tmax&quot;: 35.9,
+    &quot;tmin&quot;: 23.0,
+    &quot;lluvia_mm&quot;: 0.0
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-16&quot;,
+    &quot;tmax&quot;: 35.0,
+    &quot;tmin&quot;: 22.6,
+    &quot;lluvia_mm&quot;: 0.0
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-17&quot;,
+    &quot;tmax&quot;: 34.7,
+    &quot;tmin&quot;: 24.0,
+    &quot;lluvia_mm&quot;: 1.9
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-18&quot;,
+    &quot;tmax&quot;: 33.5,
+    &quot;tmin&quot;: 23.0,
+    &quot;lluvia_mm&quot;: 2.7
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-19&quot;,
+    &quot;tmax&quot;: 34.5,
+    &quot;tmin&quot;: 22.4,
+    &quot;lluvia_mm&quot;: 0.0
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-20&quot;,
+    &quot;tmax&quot;: 35.4,
+    &quot;tmin&quot;: 22.0,
+    &quot;lluvia_mm&quot;: 0.0
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-21&quot;,
+    &quot;tmax&quot;: 35.4,
+    &quot;tmin&quot;: 23.1,
+    &quot;lluvia_mm&quot;: 0.0
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-22&quot;,
+    &quot;tmax&quot;: 32.8,
+    &quot;tmin&quot;: 22.6,
+    &quot;lluvia_mm&quot;: 2.9
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-23&quot;,
+    &quot;tmax&quot;: 31.8,
+    &quot;tmin&quot;: 21.8,
+    &quot;lluvia_mm&quot;: 3.2
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-24&quot;,
+    &quot;tmax&quot;: 31.5,
+    &quot;tmin&quot;: 22.0,
+    &quot;lluvia_mm&quot;: 0.5
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-25&quot;,
+    &quot;tmax&quot;: 33.3,
+    &quot;tmin&quot;: 22.8,
+    &quot;lluvia_mm&quot;: 0.9
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-26&quot;,
+    &quot;tmax&quot;: 33.9,
+    &quot;tmin&quot;: 23.6,
+    &quot;lluvia_mm&quot;: 0.7
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-27&quot;,
+    &quot;tmax&quot;: 34.2,
+    &quot;tmin&quot;: 24.1,
+    &quot;lluvia_mm&quot;: 2.7
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-28&quot;,
+    &quot;tmax&quot;: 33.7,
+    &quot;tmin&quot;: 23.5,
+    &quot;lluvia_mm&quot;: 2.6
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-29&quot;,
+    &quot;tmax&quot;: 33.2,
+    &quot;tmin&quot;: 23.4,
+    &quot;lluvia_mm&quot;: 0.3
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-30&quot;,
+    &quot;tmax&quot;: 30.9,
+    &quot;tmin&quot;: 23.9,
+    &quot;lluvia_mm&quot;: 8.8
+  }
+]</pre><textarea class="crudo" id="archivo-1">[
+  {
+    &quot;fecha&quot;: &quot;2026-09-01&quot;,
+    &quot;tmax&quot;: 35.0,
+    &quot;tmin&quot;: 23.4,
+    &quot;lluvia_mm&quot;: 1.7
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-02&quot;,
+    &quot;tmax&quot;: 36.5,
+    &quot;tmin&quot;: 23.7,
+    &quot;lluvia_mm&quot;: 0.7
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-03&quot;,
+    &quot;tmax&quot;: 38.0,
+    &quot;tmin&quot;: 25.0,
+    &quot;lluvia_mm&quot;: 0.2
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-04&quot;,
+    &quot;tmax&quot;: 34.1,
+    &quot;tmin&quot;: 25.2,
+    &quot;lluvia_mm&quot;: 0.7
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-05&quot;,
+    &quot;tmax&quot;: 32.2,
+    &quot;tmin&quot;: 23.6,
+    &quot;lluvia_mm&quot;: 6.9
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-06&quot;,
+    &quot;tmax&quot;: 30.2,
+    &quot;tmin&quot;: 22.3,
+    &quot;lluvia_mm&quot;: 0.7
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-07&quot;,
+    &quot;tmax&quot;: 34.0,
+    &quot;tmin&quot;: 22.3,
+    &quot;lluvia_mm&quot;: 0.0
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-08&quot;,
+    &quot;tmax&quot;: 33.3,
+    &quot;tmin&quot;: 21.8,
+    &quot;lluvia_mm&quot;: 0.3
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-09&quot;,
+    &quot;tmax&quot;: 34.9,
+    &quot;tmin&quot;: 21.9,
+    &quot;lluvia_mm&quot;: 0.6
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-10&quot;,
+    &quot;tmax&quot;: 35.1,
+    &quot;tmin&quot;: 22.3,
+    &quot;lluvia_mm&quot;: 0.8
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-11&quot;,
+    &quot;tmax&quot;: 37.2,
+    &quot;tmin&quot;: 22.4,
+    &quot;lluvia_mm&quot;: 0.2
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-12&quot;,
+    &quot;tmax&quot;: 35.0,
+    &quot;tmin&quot;: 23.6,
+    &quot;lluvia_mm&quot;: 0.8
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-13&quot;,
+    &quot;tmax&quot;: 35.2,
+    &quot;tmin&quot;: 23.4,
+    &quot;lluvia_mm&quot;: 0.2
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-14&quot;,
+    &quot;tmax&quot;: 35.8,
+    &quot;tmin&quot;: 23.6,
+    &quot;lluvia_mm&quot;: 0.2
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-15&quot;,
+    &quot;tmax&quot;: 35.9,
+    &quot;tmin&quot;: 23.0,
+    &quot;lluvia_mm&quot;: 0.0
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-16&quot;,
+    &quot;tmax&quot;: 35.0,
+    &quot;tmin&quot;: 22.6,
+    &quot;lluvia_mm&quot;: 0.0
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-17&quot;,
+    &quot;tmax&quot;: 34.7,
+    &quot;tmin&quot;: 24.0,
+    &quot;lluvia_mm&quot;: 1.9
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-18&quot;,
+    &quot;tmax&quot;: 33.5,
+    &quot;tmin&quot;: 23.0,
+    &quot;lluvia_mm&quot;: 2.7
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-19&quot;,
+    &quot;tmax&quot;: 34.5,
+    &quot;tmin&quot;: 22.4,
+    &quot;lluvia_mm&quot;: 0.0
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-20&quot;,
+    &quot;tmax&quot;: 35.4,
+    &quot;tmin&quot;: 22.0,
+    &quot;lluvia_mm&quot;: 0.0
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-21&quot;,
+    &quot;tmax&quot;: 35.4,
+    &quot;tmin&quot;: 23.1,
+    &quot;lluvia_mm&quot;: 0.0
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-22&quot;,
+    &quot;tmax&quot;: 32.8,
+    &quot;tmin&quot;: 22.6,
+    &quot;lluvia_mm&quot;: 2.9
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-23&quot;,
+    &quot;tmax&quot;: 31.8,
+    &quot;tmin&quot;: 21.8,
+    &quot;lluvia_mm&quot;: 3.2
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-24&quot;,
+    &quot;tmax&quot;: 31.5,
+    &quot;tmin&quot;: 22.0,
+    &quot;lluvia_mm&quot;: 0.5
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-25&quot;,
+    &quot;tmax&quot;: 33.3,
+    &quot;tmin&quot;: 22.8,
+    &quot;lluvia_mm&quot;: 0.9
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-26&quot;,
+    &quot;tmax&quot;: 33.9,
+    &quot;tmin&quot;: 23.6,
+    &quot;lluvia_mm&quot;: 0.7
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-27&quot;,
+    &quot;tmax&quot;: 34.2,
+    &quot;tmin&quot;: 24.1,
+    &quot;lluvia_mm&quot;: 2.7
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-28&quot;,
+    &quot;tmax&quot;: 33.7,
+    &quot;tmin&quot;: 23.5,
+    &quot;lluvia_mm&quot;: 2.6
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-29&quot;,
+    &quot;tmax&quot;: 33.2,
+    &quot;tmin&quot;: 23.4,
+    &quot;lluvia_mm&quot;: 0.3
+  },
+  {
+    &quot;fecha&quot;: &quot;2026-09-30&quot;,
+    &quot;tmax&quot;: 30.9,
+    &quot;tmin&quot;: 23.9,
+    &quot;lluvia_mm&quot;: 8.8
+  }
+]</textarea><div class="acciones"><button class="copiar" data-copiar="archivo-1">Copiar contenido</button><span class="sub">Pégalo en un archivo nuevo llamado clima_septiembre.json, en la misma carpeta que tu .py.</span></div></div></section>
+<section><h2>Tu ejercicio cuenta si pasa el checkpoint</h2><div class="cards">
+<div class="card"><b>Palabra clave</b>Al iniciar el checkpoint el profesor dice una palabra en voz alta. Escríbela como comentario en la línea 1 de tu archivo.<br><small>Demuestra que estuviste en clase</small></div>
+<div class="card"><b>Cambio sorpresa, sin IA</b>Al terminar el tiempo del ejercicio se proyecta un cambio. Tienes 5 minutos para aplicarlo tú solo.<br><small>Demuestra que entiendes tu código</small></div>
+<div class="card"><b>Entrega antes de salir</b>Subes tu archivo .py y la imagen .png que genera a la tarea de Teams del día. La tarea se cierra al terminar la clase.<br><small>Demuestra que lo hiciste en clase</small></div>
+<div class="card"><b>Defensa rápida</b>El profesor elige 2–3 personas al azar para explicar una línea de su código en 1 minuto.<br><small>Demuestra que el código es tuyo</small></div>
+</div>
+<p class="sub">La IA sí se permite durante el ejercicio (con el prompt sugerido). El cambio sorpresa y la defensa son sin IA.</p>
+</section>
+<section class="dia" id="dia1"><div class="num">DÍA 1</div>
+<h2>Matplotlib: tu primera gráfica</h2><p class="sub">Crear una gráfica de línea con matplotlib: datos, título, ejes, mostrar y guardar</p>
+<h3>Ejemplos para correr en tu computadora</h3>
+<p class="sub">PythonTutor no puede correr estos ejemplos: copia cada uno a un archivo .py y ejecútalo con Python.</p>
+<div class="bloque"><b>Tu primera gráfica</b> <span class="sub">(PythonTutor no puede importar matplotlib.)</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">7</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>matplotlib.pyplot<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">as</span><span style="color: #BBB"> </span>plt
+
+dias = [<span style="color: #00F">1</span>, <span style="color: #00F">2</span>, <span style="color: #00F">3</span>, <span style="color: #00F">4</span>, <span style="color: #00F">5</span>, <span style="color: #00F">6</span>, <span style="color: #00F">7</span>]
+tmax = [<span style="color: #00F">35.0</span>, <span style="color: #00F">36.5</span>, <span style="color: #00F">38.0</span>, <span style="color: #00F">34.1</span>, <span style="color: #00F">32.2</span>, <span style="color: #00F">30.2</span>, <span style="color: #00F">34.0</span>]
+
+plt.plot(dias, tmax)
+plt.show()
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="ejemplo-1-1">import matplotlib.pyplot as plt
+
+dias = [1, 2, 3, 4, 5, 6, 7]
+tmax = [35.0, 36.5, 38.0, 34.1, 32.2, 30.2, 34.0]
+
+plt.plot(dias, tmax)
+plt.show()</textarea>
+<div class="acciones"><button class="copiar" data-copiar="ejemplo-1-1">Copiar código</button></div></div>
+<div class="bloque"><b>Una gráfica completa</b> <span class="sub">(PythonTutor no puede importar matplotlib.)</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 7</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 8</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 9</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">10</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">11</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">12</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">13</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">14</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">15</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">16</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>json
+<span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>matplotlib.pyplot<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">as</span><span style="color: #BBB"> </span>plt
+
+<span style="color: #000080; font-weight: bold">with</span> open(<span style="color: #00F">&quot;clima_septiembre.json&quot;</span>, encoding=<span style="color: #00F">&quot;utf-8&quot;</span>) <span style="color: #000080; font-weight: bold">as</span> f:
+    clima = json.load(f)
+dias = [int(r[<span style="color: #00F">&quot;fecha&quot;</span>][-<span style="color: #00F">2</span>:]) <span style="color: #000080; font-weight: bold">for</span> r <span style="font-weight: bold">in</span> clima]
+tmax = [r[<span style="color: #00F">&quot;tmax&quot;</span>] <span style="color: #000080; font-weight: bold">for</span> r <span style="font-weight: bold">in</span> clima]
+
+plt.figure(figsize=(<span style="color: #00F">6</span>, <span style="color: #00F">3.4</span>))
+plt.plot(dias, tmax, marker=<span style="color: #00F">&quot;o&quot;</span>)
+plt.title(<span style="color: #00F">&quot;Máxima diaria en Monterrey, septiembre 2026&quot;</span>)
+plt.xlabel(<span style="color: #00F">&quot;Día del mes&quot;</span>)
+plt.ylabel(<span style="color: #00F">&quot;Temperatura (°C)&quot;</span>)
+plt.grid(<span style="color: #000080; font-weight: bold">True</span>)
+plt.savefig(<span style="color: #00F">&quot;maximas.png&quot;</span>, dpi=<span style="color: #00F">150</span>)
+plt.show()
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="ejemplo-1-2">import json
+import matplotlib.pyplot as plt
+
+with open(&quot;clima_septiembre.json&quot;, encoding=&quot;utf-8&quot;) as f:
+    clima = json.load(f)
+dias = [int(r[&quot;fecha&quot;][-2:]) for r in clima]
+tmax = [r[&quot;tmax&quot;] for r in clima]
+
+plt.figure(figsize=(6, 3.4))
+plt.plot(dias, tmax, marker=&quot;o&quot;)
+plt.title(&quot;Máxima diaria en Monterrey, septiembre 2026&quot;)
+plt.xlabel(&quot;Día del mes&quot;)
+plt.ylabel(&quot;Temperatura (°C)&quot;)
+plt.grid(True)
+plt.savefig(&quot;maximas.png&quot;, dpi=150)
+plt.show()</textarea>
+<div class="acciones"><button class="copiar" data-copiar="ejemplo-1-2">Copiar código</button></div></div>
+<h3>Reto: grafica el pronóstico de la semana<span class="chip">20 min</span></h3><ol class="tareas">
+<li>Con las listas del pronóstico (Tema 12) grafica la máxima de cada día con plt.plot y marcadores.</li>
+<li>Agrega título, nombres de los ejes con unidades y cuadrícula; fija el tamaño con plt.figure(figsize=(6, 3.4)).</li>
+<li>Guarda la gráfica como pronostico.png (dpi=150) ANTES de plt.show() y revisa la imagen en tu carpeta.</li>
+</ol>
+<p class="pista"><b>Pista:</b> El orden importa: figure → plot → title, xlabel, ylabel, grid → savefig → show. Si la imagen sale en blanco, revisa ese orden.</p>
+<h3>Código de partida</h3><div class="bloque">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">5</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>matplotlib.pyplot<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">as</span><span style="color: #BBB"> </span>plt
+
+dias = [<span style="color: #00F">19</span>, <span style="color: #00F">20</span>, <span style="color: #00F">21</span>, <span style="color: #00F">22</span>, <span style="color: #00F">23</span>, <span style="color: #00F">24</span>, <span style="color: #00F">25</span>]          <span style="color: #080; font-style: italic"># octubre de 2026</span>
+tmax = [<span style="color: #00F">24.7</span>, <span style="color: #00F">22.0</span>, <span style="color: #00F">27.0</span>, <span style="color: #00F">27.3</span>, <span style="color: #00F">23.2</span>, <span style="color: #00F">24.0</span>, <span style="color: #00F">20.1</span>]
+tmin = [<span style="color: #00F">13.0</span>, <span style="color: #00F">16.2</span>, <span style="color: #00F">19.5</span>, <span style="color: #00F">19.8</span>, <span style="color: #00F">20.0</span>, <span style="color: #00F">18.0</span>, <span style="color: #00F">18.5</span>]
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="codigo-1">import matplotlib.pyplot as plt
+
+dias = [19, 20, 21, 22, 23, 24, 25]          # octubre de 2026
+tmax = [24.7, 22.0, 27.0, 27.3, 23.2, 24.0, 20.1]
+tmin = [13.0, 16.2, 19.5, 19.8, 20.0, 18.0, 18.5]</textarea>
+<div class="acciones"><button class="copiar" data-copiar="codigo-1">Copiar código</button><span class="sub">Solo en tu computadora: PythonTutor no puede importar matplotlib.</span></div></div>
+<h3>Prompt sugerido para la IA</h3><div class="bloque">
+<p class="prompt">Estoy aprendiendo matplotlib en Python. Quiero graficar las temperaturas máximas de una semana con título, ejes y cuadrícula, y guardarla como imagen. No me des el código: pregúntame qué va en cada eje y en qué orden llamo a savefig y show.</p><textarea class="crudo" id="prompt-1">Estoy aprendiendo matplotlib en Python. Quiero graficar las temperaturas máximas de una semana con título, ejes y cuadrícula, y guardarla como imagen. No me des el código: pregúntame qué va en cada eje y en qué orden llamo a savefig y show.</textarea>
+<div class="acciones"><button class="copiar" data-copiar="prompt-1">Copiar prompt</button><span class="sub">Si la IA te da el código completo, pídele que mejor te haga una pregunta.</span></div></div>
+<h3>Checkpoint y entrega</h3><div class="entrega"><ol>
+<li>Escribe la <b>palabra clave</b> que diga el profesor como comentario en la línea 1: <code># clave: ______</code></li>
+<li>Aplica el <b>cambio sorpresa</b> que se proyectará al terminar el ejercicio (sin IA, 5 min).</li>
+<li>Sube <b>S15D1_matricula.py y su .png</b> a la tarea de Teams del día antes de salir: la tarea cierra al terminar la clase.</li>
+<li>Prepárate: el profesor puede pedirte que expliques una línea de tu código.</li>
+</ol></div>
+</section>
+<section class="dia" id="dia2"><div class="num">DÍA 2</div>
+<h2>Gráficas de datos: la gráfica correcta</h2><p class="sub">Elegir y crear la gráfica adecuada: barras, histograma, dispersión y líneas</p>
+<h3>Ejemplos para correr en tu computadora</h3>
+<p class="sub">PythonTutor no puede correr estos ejemplos: copia cada uno a un archivo .py y ejecútalo con Python.</p>
+<div class="bloque"><b>Barras: ¿qué semana llovió más?</b> <span class="sub">(PythonTutor no puede importar matplotlib.)</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 7</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 8</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 9</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">10</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">11</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">12</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">13</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">14</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">15</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">16</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">17</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>json
+<span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>matplotlib.pyplot<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">as</span><span style="color: #BBB"> </span>plt
+
+<span style="color: #000080; font-weight: bold">with</span> open(<span style="color: #00F">&quot;clima_septiembre.json&quot;</span>, encoding=<span style="color: #00F">&quot;utf-8&quot;</span>) <span style="color: #000080; font-weight: bold">as</span> f:
+    clima = json.load(f)
+dias = [int(r[<span style="color: #00F">&quot;fecha&quot;</span>][-<span style="color: #00F">2</span>:]) <span style="color: #000080; font-weight: bold">for</span> r <span style="font-weight: bold">in</span> clima]
+lluvia = [r[<span style="color: #00F">&quot;lluvia_mm&quot;</span>] <span style="color: #000080; font-weight: bold">for</span> r <span style="font-weight: bold">in</span> clima]
+
+semanas = [<span style="color: #00F">&quot;1-7&quot;</span>, <span style="color: #00F">&quot;8-14&quot;</span>, <span style="color: #00F">&quot;15-21&quot;</span>, <span style="color: #00F">&quot;22-28&quot;</span>, <span style="color: #00F">&quot;29-30&quot;</span>]
+totales = [sum(lluvia[i:i + <span style="color: #00F">7</span>]) <span style="color: #000080; font-weight: bold">for</span> i <span style="font-weight: bold">in</span> range(<span style="color: #00F">0</span>, <span style="color: #00F">30</span>, <span style="color: #00F">7</span>)]
+
+plt.figure(figsize=(<span style="color: #00F">6</span>, <span style="color: #00F">3.4</span>))
+plt.bar(semanas, totales, color=<span style="color: #00F">&quot;#00408F&quot;</span>)
+plt.title(<span style="color: #00F">&quot;Lluvia por semana, septiembre 2026&quot;</span>)
+plt.xlabel(<span style="color: #00F">&quot;Días del mes&quot;</span>)
+plt.ylabel(<span style="color: #00F">&quot;Lluvia total (mm)&quot;</span>)
+plt.show()
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="ejemplo-2-1">import json
+import matplotlib.pyplot as plt
+
+with open(&quot;clima_septiembre.json&quot;, encoding=&quot;utf-8&quot;) as f:
+    clima = json.load(f)
+dias = [int(r[&quot;fecha&quot;][-2:]) for r in clima]
+lluvia = [r[&quot;lluvia_mm&quot;] for r in clima]
+
+semanas = [&quot;1-7&quot;, &quot;8-14&quot;, &quot;15-21&quot;, &quot;22-28&quot;, &quot;29-30&quot;]
+totales = [sum(lluvia[i:i + 7]) for i in range(0, 30, 7)]
+
+plt.figure(figsize=(6, 3.4))
+plt.bar(semanas, totales, color=&quot;#00408F&quot;)
+plt.title(&quot;Lluvia por semana, septiembre 2026&quot;)
+plt.xlabel(&quot;Días del mes&quot;)
+plt.ylabel(&quot;Lluvia total (mm)&quot;)
+plt.show()</textarea>
+<div class="acciones"><button class="copiar" data-copiar="ejemplo-2-1">Copiar código</button></div></div>
+<div class="bloque"><b>Histograma: ¿qué máximas fueron típicas?</b> <span class="sub">(PythonTutor no puede importar matplotlib.)</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 7</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 8</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 9</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">10</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">11</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">12</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">13</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">14</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">15</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>json
+<span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>matplotlib.pyplot<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">as</span><span style="color: #BBB"> </span>plt
+
+<span style="color: #000080; font-weight: bold">with</span> open(<span style="color: #00F">&quot;clima_septiembre.json&quot;</span>, encoding=<span style="color: #00F">&quot;utf-8&quot;</span>) <span style="color: #000080; font-weight: bold">as</span> f:
+    clima = json.load(f)
+dias = [int(r[<span style="color: #00F">&quot;fecha&quot;</span>][-<span style="color: #00F">2</span>:]) <span style="color: #000080; font-weight: bold">for</span> r <span style="font-weight: bold">in</span> clima]
+tmax = [r[<span style="color: #00F">&quot;tmax&quot;</span>] <span style="color: #000080; font-weight: bold">for</span> r <span style="font-weight: bold">in</span> clima]
+
+plt.figure(figsize=(<span style="color: #00F">6</span>, <span style="color: #00F">3.4</span>))
+limites = [<span style="color: #00F">30</span>, <span style="color: #00F">32</span>, <span style="color: #00F">34</span>, <span style="color: #00F">36</span>, <span style="color: #00F">38</span>, <span style="color: #00F">40</span>]
+plt.hist(tmax, bins=limites, edgecolor=<span style="color: #00F">&quot;black&quot;</span>)
+plt.title(<span style="color: #00F">&quot;¿Qué máximas fueron típicas en septiembre?&quot;</span>)
+plt.xlabel(<span style="color: #00F">&quot;Temperatura máxima (°C)&quot;</span>)
+plt.ylabel(<span style="color: #00F">&quot;Número de días&quot;</span>)
+plt.show()
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="ejemplo-2-2">import json
+import matplotlib.pyplot as plt
+
+with open(&quot;clima_septiembre.json&quot;, encoding=&quot;utf-8&quot;) as f:
+    clima = json.load(f)
+dias = [int(r[&quot;fecha&quot;][-2:]) for r in clima]
+tmax = [r[&quot;tmax&quot;] for r in clima]
+
+plt.figure(figsize=(6, 3.4))
+limites = [30, 32, 34, 36, 38, 40]
+plt.hist(tmax, bins=limites, edgecolor=&quot;black&quot;)
+plt.title(&quot;¿Qué máximas fueron típicas en septiembre?&quot;)
+plt.xlabel(&quot;Temperatura máxima (°C)&quot;)
+plt.ylabel(&quot;Número de días&quot;)
+plt.show()</textarea>
+<div class="acciones"><button class="copiar" data-copiar="ejemplo-2-2">Copiar código</button></div></div>
+<h3>Reto: tres preguntas, tres gráficas<span class="chip">20 min</span></h3><ol class="tareas">
+<li>Barras: lluvia total por semana de septiembre (rebanadas de 7 días y sum), con título y ejes.</li>
+<li>Histograma de las MÍNIMAS con intervalos de 1 °C (límites de 21 a 26) y bordes negros.</li>
+<li>Dispersión: máxima (eje x) contra lluvia (eje y). Guarda cada gráfica en su propio .png.</li>
+</ol>
+<p class="pista"><b>Pista:</b> Empieza cada gráfica con plt.figure(): si no, se dibujan encimadas en la misma figura. Llama savefig de cada una antes del plt.show() final.</p>
+<h3>Código de partida</h3><div class="bloque">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">7</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">8</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">9</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>json
+<span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>matplotlib.pyplot<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">as</span><span style="color: #BBB"> </span>plt
+
+<span style="color: #000080; font-weight: bold">with</span> open(<span style="color: #00F">&quot;clima_septiembre.json&quot;</span>, encoding=<span style="color: #00F">&quot;utf-8&quot;</span>) <span style="color: #000080; font-weight: bold">as</span> f:
+    clima = json.load(f)
+dias = [int(r[<span style="color: #00F">&quot;fecha&quot;</span>][-<span style="color: #00F">2</span>:]) <span style="color: #000080; font-weight: bold">for</span> r <span style="font-weight: bold">in</span> clima]
+tmax = [r[<span style="color: #00F">&quot;tmax&quot;</span>] <span style="color: #000080; font-weight: bold">for</span> r <span style="font-weight: bold">in</span> clima]
+tmin = [r[<span style="color: #00F">&quot;tmin&quot;</span>] <span style="color: #000080; font-weight: bold">for</span> r <span style="font-weight: bold">in</span> clima]
+lluvia = [r[<span style="color: #00F">&quot;lluvia_mm&quot;</span>] <span style="color: #000080; font-weight: bold">for</span> r <span style="font-weight: bold">in</span> clima]
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="codigo-2">import json
+import matplotlib.pyplot as plt
+
+with open(&quot;clima_septiembre.json&quot;, encoding=&quot;utf-8&quot;) as f:
+    clima = json.load(f)
+dias = [int(r[&quot;fecha&quot;][-2:]) for r in clima]
+tmax = [r[&quot;tmax&quot;] for r in clima]
+tmin = [r[&quot;tmin&quot;] for r in clima]
+lluvia = [r[&quot;lluvia_mm&quot;] for r in clima]</textarea>
+<div class="acciones"><button class="copiar" data-copiar="codigo-2">Copiar código</button><span class="sub">Solo en tu computadora: PythonTutor no puede importar matplotlib.</span></div></div>
+<h3>Prompt sugerido para la IA</h3><div class="bloque">
+<p class="prompt">Estoy haciendo tres gráficas con matplotlib: barras, histograma y dispersión. No me des el código: pregúntame qué pregunta responde cada una, qué va en cada eje y cómo evito que se dibujen encimadas.</p><textarea class="crudo" id="prompt-2">Estoy haciendo tres gráficas con matplotlib: barras, histograma y dispersión. No me des el código: pregúntame qué pregunta responde cada una, qué va en cada eje y cómo evito que se dibujen encimadas.</textarea>
+<div class="acciones"><button class="copiar" data-copiar="prompt-2">Copiar prompt</button><span class="sub">Si la IA te da el código completo, pídele que mejor te haga una pregunta.</span></div></div>
+<h3>Checkpoint y entrega</h3><div class="entrega"><ol>
+<li>Escribe la <b>palabra clave</b> que diga el profesor como comentario en la línea 1: <code># clave: ______</code></li>
+<li>Aplica el <b>cambio sorpresa</b> que se proyectará al terminar el ejercicio (sin IA, 5 min).</li>
+<li>Sube <b>S15D2_matricula.py y sus .png</b> a la tarea de Teams del día antes de salir: la tarea cierra al terminar la clase.</li>
+<li>Prepárate: el profesor puede pedirte que expliques una línea de tu código.</li>
+</ol></div>
+</section>
+<section class="dia" id="dia3"><div class="num">DÍA 3</div>
+<h2>Gráficas de funciones</h2><p class="sub">Graficar funciones matemáticas: muestrear x, evaluar f(x) y comparar varias funciones</p>
+<h3>Ejemplos para correr en tu computadora</h3>
+<p class="sub">PythonTutor no puede correr estos ejemplos: copia cada uno a un archivo .py y ejecútalo con Python.</p>
+<div class="bloque"><b>¿Cuántos puntos necesitas? (así no: 5 puntos)</b> <span class="sub">(PythonTutor no puede importar matplotlib.)</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">7</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>matplotlib.pyplot<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">as</span><span style="color: #BBB"> </span>plt
+<span style="color: #000080; font-weight: bold">def</span><span style="color: #BBB"> </span>f(x):
+    <span style="color: #000080; font-weight: bold">return</span> x**<span style="color: #00F">2</span> - <span style="color: #00F">3</span>*x + <span style="color: #00F">2</span>
+xs = [-<span style="color: #00F">2</span>, <span style="color: #00F">0</span>, <span style="color: #00F">2</span>, <span style="color: #00F">4</span>, <span style="color: #00F">5</span>]
+plt.figure(figsize=(<span style="color: #00F">5</span>, <span style="color: #00F">2.6</span>))
+plt.plot(xs, [f(x) <span style="color: #000080; font-weight: bold">for</span> x <span style="font-weight: bold">in</span> xs], marker=<span style="color: #00F">&quot;o&quot;</span>)
+plt.show()
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="ejemplo-3-1">import matplotlib.pyplot as plt
+def f(x):
+    return x**2 - 3*x + 2
+xs = [-2, 0, 2, 4, 5]
+plt.figure(figsize=(5, 2.6))
+plt.plot(xs, [f(x) for x in xs], marker=&quot;o&quot;)
+plt.show()</textarea>
+<div class="acciones"><button class="copiar" data-copiar="ejemplo-3-1">Copiar código</button></div></div>
+<div class="bloque"><b>¿Cuántos puntos necesitas? (así sí: 71 puntos (pasos de 0.1))</b> <span class="sub">(PythonTutor no puede importar matplotlib.)</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">7</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>matplotlib.pyplot<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">as</span><span style="color: #BBB"> </span>plt
+<span style="color: #000080; font-weight: bold">def</span><span style="color: #BBB"> </span>f(x):
+    <span style="color: #000080; font-weight: bold">return</span> x**<span style="color: #00F">2</span> - <span style="color: #00F">3</span>*x + <span style="color: #00F">2</span>
+xs = [x / <span style="color: #00F">10</span> <span style="color: #000080; font-weight: bold">for</span> x <span style="font-weight: bold">in</span> range(-<span style="color: #00F">20</span>, <span style="color: #00F">51</span>)]
+plt.figure(figsize=(<span style="color: #00F">5</span>, <span style="color: #00F">2.6</span>))
+plt.plot(xs, [f(x) <span style="color: #000080; font-weight: bold">for</span> x <span style="font-weight: bold">in</span> xs])
+plt.show()
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="ejemplo-3-2">import matplotlib.pyplot as plt
+def f(x):
+    return x**2 - 3*x + 2
+xs = [x / 10 for x in range(-20, 51)]
+plt.figure(figsize=(5, 2.6))
+plt.plot(xs, [f(x) for x in xs])
+plt.show()</textarea>
+<div class="acciones"><button class="copiar" data-copiar="ejemplo-3-2">Copiar código</button></div></div>
+<div class="bloque"><b>Una función y su derivada</b> <span class="sub">(PythonTutor no puede importar matplotlib.)</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 7</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 8</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 9</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">10</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">11</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">12</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">13</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">14</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">15</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">16</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>matplotlib.pyplot<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">as</span><span style="color: #BBB"> </span>plt
+<span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>numpy<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">as</span><span style="color: #BBB"> </span>np
+
+xs = np.linspace(-<span style="color: #00F">2</span>, <span style="color: #00F">5</span>, <span style="color: #00F">200</span>)
+f = xs**<span style="color: #00F">2</span> - <span style="color: #00F">3</span>*xs + <span style="color: #00F">2</span>
+df = <span style="color: #00F">2</span>*xs - <span style="color: #00F">3</span>
+
+plt.figure(figsize=(<span style="color: #00F">6</span>, <span style="color: #00F">3.6</span>))
+plt.plot(xs, f, label=<span style="color: #00F">&quot;f(x) = x² − 3x + 2&quot;</span>)
+plt.plot(xs, df, label=<span style="color: #00F">&quot;f&#39;(x) = 2x − 3&quot;</span>)
+plt.axhline(<span style="color: #00F">0</span>, color=<span style="color: #00F">&quot;gray&quot;</span>, linewidth=<span style="color: #00F">0.8</span>)
+plt.axvline(<span style="color: #00F">1.5</span>, color=<span style="color: #00F">&quot;gray&quot;</span>, linestyle=<span style="color: #00F">&quot;--&quot;</span>)
+plt.title(<span style="color: #00F">&quot;Donde f&#39; vale 0, f tiene su mínimo&quot;</span>)
+plt.legend()
+plt.grid(<span style="color: #000080; font-weight: bold">True</span>)
+plt.show()
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="ejemplo-3-3">import matplotlib.pyplot as plt
+import numpy as np
+
+xs = np.linspace(-2, 5, 200)
+f = xs**2 - 3*xs + 2
+df = 2*xs - 3
+
+plt.figure(figsize=(6, 3.6))
+plt.plot(xs, f, label=&quot;f(x) = x² − 3x + 2&quot;)
+plt.plot(xs, df, label=&quot;f&#x27;(x) = 2x − 3&quot;)
+plt.axhline(0, color=&quot;gray&quot;, linewidth=0.8)
+plt.axvline(1.5, color=&quot;gray&quot;, linestyle=&quot;--&quot;)
+plt.title(&quot;Donde f&#x27; vale 0, f tiene su mínimo&quot;)
+plt.legend()
+plt.grid(True)
+plt.show()</textarea>
+<div class="acciones"><button class="copiar" data-copiar="ejemplo-3-3">Copiar código</button></div></div>
+<h3>Reto: compara funciones<span class="chip">20 min</span></h3><ol class="tareas">
+<li>Grafica en la misma figura f(x) = x³ − 3x y g(x) = 3x² − 3 (su derivada) para x de −2.5 a 2.5 con np.linspace (300 puntos).</li>
+<li>Agrega leyenda, título, cuadrícula y las rectas de referencia x = 0 y y = 0.</li>
+<li>Marca con plt.scatter los puntos de f donde g(x) = 0 (en x = −1 y x = 1) y guarda la gráfica como funciones.png.</li>
+</ol>
+<p class="pista"><b>Pista:</b> Para los puntos: xs_criticos = [-1, 1] y ys = [x**3 - 3*x for x in xs_criticos]. plt.scatter(xs_criticos, ys, zorder=3) los dibuja encima.</p>
+<h3>Código de partida</h3><div class="bloque">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">4</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>matplotlib.pyplot<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">as</span><span style="color: #BBB"> </span>plt
+<span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>numpy<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">as</span><span style="color: #BBB"> </span>np
+
+xs = np.linspace(-<span style="color: #00F">2.5</span>, <span style="color: #00F">2.5</span>, <span style="color: #00F">300</span>)
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="codigo-3">import matplotlib.pyplot as plt
+import numpy as np
+
+xs = np.linspace(-2.5, 2.5, 300)</textarea>
+<div class="acciones"><button class="copiar" data-copiar="codigo-3">Copiar código</button><span class="sub">Solo en tu computadora: PythonTutor no puede importar matplotlib.</span></div></div>
+<h3>Prompt sugerido para la IA</h3><div class="bloque">
+<p class="prompt">Estoy graficando una función cúbica y su derivada con matplotlib y numpy. No me des el código: pregúntame cómo evaluaría las dos fórmulas con linspace, qué significa que la derivada valga cero y cómo marcaría esos puntos.</p><textarea class="crudo" id="prompt-3">Estoy graficando una función cúbica y su derivada con matplotlib y numpy. No me des el código: pregúntame cómo evaluaría las dos fórmulas con linspace, qué significa que la derivada valga cero y cómo marcaría esos puntos.</textarea>
+<div class="acciones"><button class="copiar" data-copiar="prompt-3">Copiar prompt</button><span class="sub">Si la IA te da el código completo, pídele que mejor te haga una pregunta.</span></div></div>
+<h3>Checkpoint y entrega</h3><div class="entrega"><ol>
+<li>Escribe la <b>palabra clave</b> que diga el profesor como comentario en la línea 1: <code># clave: ______</code></li>
+<li>Aplica el <b>cambio sorpresa</b> que se proyectará al terminar el ejercicio (sin IA, 5 min).</li>
+<li>Sube <b>S15D3_matricula.py y su .png</b> a la tarea de Teams del día antes de salir: la tarea cierra al terminar la clase.</li>
+<li>Prepárate: el profesor puede pedirte que expliques una línea de tu código.</li>
+</ol></div>
+</section>
+<section class="dia" id="dia4"><div class="num">DÍA 4</div>
+<h2>Gráficas profesionales</h2><p class="sub">Figure y axes, varias gráficas en una figura, detalles de estilo y exportación</p>
+<h3>Ejemplos para correr en tu computadora</h3>
+<p class="sub">PythonTutor no puede correr estos ejemplos: copia cada uno a un archivo .py y ejecútalo con Python.</p>
+<div class="bloque"><b>Dos gráficas en una figura</b> <span class="sub">(PythonTutor no puede importar matplotlib.)</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 7</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 8</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 9</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">10</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">11</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">12</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">13</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">14</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">15</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">16</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">17</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">18</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">19</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>json
+<span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>matplotlib.pyplot<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">as</span><span style="color: #BBB"> </span>plt
+
+<span style="color: #000080; font-weight: bold">with</span> open(<span style="color: #00F">&quot;clima_septiembre.json&quot;</span>, encoding=<span style="color: #00F">&quot;utf-8&quot;</span>) <span style="color: #000080; font-weight: bold">as</span> f:
+    clima = json.load(f)
+dias = [int(r[<span style="color: #00F">&quot;fecha&quot;</span>][-<span style="color: #00F">2</span>:]) <span style="color: #000080; font-weight: bold">for</span> r <span style="font-weight: bold">in</span> clima]
+tmax = [r[<span style="color: #00F">&quot;tmax&quot;</span>] <span style="color: #000080; font-weight: bold">for</span> r <span style="font-weight: bold">in</span> clima]
+lluvia = [r[<span style="color: #00F">&quot;lluvia_mm&quot;</span>] <span style="color: #000080; font-weight: bold">for</span> r <span style="font-weight: bold">in</span> clima]
+
+fig, (ax1, ax2) = plt.subplots(<span style="color: #00F">2</span>, <span style="color: #00F">1</span>, figsize=(<span style="color: #00F">6</span>, <span style="color: #00F">4.2</span>),
+                               sharex=<span style="color: #000080; font-weight: bold">True</span>)
+ax1.plot(dias, tmax, marker=<span style="color: #00F">&quot;o&quot;</span>, color=<span style="color: #00F">&quot;#8C1D35&quot;</span>)
+ax1.set_ylabel(<span style="color: #00F">&quot;Máxima (°C)&quot;</span>)
+ax1.set_title(<span style="color: #00F">&quot;Monterrey, septiembre 2026&quot;</span>)
+ax2.bar(dias, lluvia, color=<span style="color: #00F">&quot;#00408F&quot;</span>)
+ax2.set_ylabel(<span style="color: #00F">&quot;Lluvia (mm)&quot;</span>)
+ax2.set_xlabel(<span style="color: #00F">&quot;Día del mes&quot;</span>)
+fig.tight_layout()
+plt.show()
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="ejemplo-4-1">import json
+import matplotlib.pyplot as plt
+
+with open(&quot;clima_septiembre.json&quot;, encoding=&quot;utf-8&quot;) as f:
+    clima = json.load(f)
+dias = [int(r[&quot;fecha&quot;][-2:]) for r in clima]
+tmax = [r[&quot;tmax&quot;] for r in clima]
+lluvia = [r[&quot;lluvia_mm&quot;] for r in clima]
+
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(6, 4.2),
+                               sharex=True)
+ax1.plot(dias, tmax, marker=&quot;o&quot;, color=&quot;#8C1D35&quot;)
+ax1.set_ylabel(&quot;Máxima (°C)&quot;)
+ax1.set_title(&quot;Monterrey, septiembre 2026&quot;)
+ax2.bar(dias, lluvia, color=&quot;#00408F&quot;)
+ax2.set_ylabel(&quot;Lluvia (mm)&quot;)
+ax2.set_xlabel(&quot;Día del mes&quot;)
+fig.tight_layout()
+plt.show()</textarea>
+<div class="acciones"><button class="copiar" data-copiar="ejemplo-4-1">Copiar código</button></div></div>
+<div class="bloque"><b>Barras que exageran (así no: el eje empieza en 31.5)</b> <span class="sub">(PythonTutor no puede importar matplotlib.)</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">7</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>matplotlib.pyplot<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">as</span><span style="color: #BBB"> </span>plt
+semanas = [<span style="color: #00F">&quot;S1&quot;</span>, <span style="color: #00F">&quot;S2&quot;</span>, <span style="color: #00F">&quot;S3&quot;</span>, <span style="color: #00F">&quot;S4&quot;</span>, <span style="color: #00F">&quot;S5&quot;</span>]
+promedio = [<span style="color: #00F">34.3</span>, <span style="color: #00F">35.2</span>, <span style="color: #00F">34.9</span>, <span style="color: #00F">33.0</span>, <span style="color: #00F">32.1</span>]
+plt.figure(figsize=(<span style="color: #00F">5</span>, <span style="color: #00F">2.6</span>))
+plt.bar(semanas, promedio)
+plt.ylim(<span style="color: #00F">31.5</span>, <span style="color: #00F">36</span>)
+plt.show()
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="ejemplo-4-2">import matplotlib.pyplot as plt
+semanas = [&quot;S1&quot;, &quot;S2&quot;, &quot;S3&quot;, &quot;S4&quot;, &quot;S5&quot;]
+promedio = [34.3, 35.2, 34.9, 33.0, 32.1]
+plt.figure(figsize=(5, 2.6))
+plt.bar(semanas, promedio)
+plt.ylim(31.5, 36)
+plt.show()</textarea>
+<div class="acciones"><button class="copiar" data-copiar="ejemplo-4-2">Copiar código</button></div></div>
+<div class="bloque"><b>Barras que exageran (así sí: barras desde cero)</b> <span class="sub">(PythonTutor no puede importar matplotlib.)</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">7</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>matplotlib.pyplot<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">as</span><span style="color: #BBB"> </span>plt
+semanas = [<span style="color: #00F">&quot;S1&quot;</span>, <span style="color: #00F">&quot;S2&quot;</span>, <span style="color: #00F">&quot;S3&quot;</span>, <span style="color: #00F">&quot;S4&quot;</span>, <span style="color: #00F">&quot;S5&quot;</span>]
+promedio = [<span style="color: #00F">34.3</span>, <span style="color: #00F">35.2</span>, <span style="color: #00F">34.9</span>, <span style="color: #00F">33.0</span>, <span style="color: #00F">32.1</span>]
+plt.figure(figsize=(<span style="color: #00F">5</span>, <span style="color: #00F">2.6</span>))
+plt.bar(semanas, promedio)
+plt.ylabel(<span style="color: #00F">&quot;Máxima promedio (°C)&quot;</span>)
+plt.show()
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="ejemplo-4-3">import matplotlib.pyplot as plt
+semanas = [&quot;S1&quot;, &quot;S2&quot;, &quot;S3&quot;, &quot;S4&quot;, &quot;S5&quot;]
+promedio = [34.3, 35.2, 34.9, 33.0, 32.1]
+plt.figure(figsize=(5, 2.6))
+plt.bar(semanas, promedio)
+plt.ylabel(&quot;Máxima promedio (°C)&quot;)
+plt.show()</textarea>
+<div class="acciones"><button class="copiar" data-copiar="ejemplo-4-3">Copiar código</button></div></div>
+<h3>Reto: un tablero del clima<span class="chip">20 min</span></h3><ol class="tareas">
+<li>Con fig, axs = plt.subplots(2, 2, figsize=(10, 7)) arma un tablero: máxima y mínima (líneas), lluvia diaria (barras), histograma de máximas y dispersión máxima contra lluvia.</li>
+<li>Cada gráfica con título y ejes con unidades; usa los colores FCFM: #00408F (azul), #8C1D35 (guinda) y #B8975A (oro).</li>
+<li>Señala con annotate el día más caluroso y guarda tablero.png con dpi=150 y bbox_inches=&quot;tight&quot;.</li>
+</ol>
+<p class="pista"><b>Pista:</b> axs[0, 0] es la gráfica de arriba a la izquierda y axs[1, 1] la de abajo a la derecha. Termina con fig.tight_layout() antes de guardar.</p>
+<h3>Código de partida</h3><div class="bloque">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">7</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">8</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">9</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>json
+<span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>matplotlib.pyplot<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">as</span><span style="color: #BBB"> </span>plt
+
+<span style="color: #000080; font-weight: bold">with</span> open(<span style="color: #00F">&quot;clima_septiembre.json&quot;</span>, encoding=<span style="color: #00F">&quot;utf-8&quot;</span>) <span style="color: #000080; font-weight: bold">as</span> f:
+    clima = json.load(f)
+dias = [int(r[<span style="color: #00F">&quot;fecha&quot;</span>][-<span style="color: #00F">2</span>:]) <span style="color: #000080; font-weight: bold">for</span> r <span style="font-weight: bold">in</span> clima]
+tmax = [r[<span style="color: #00F">&quot;tmax&quot;</span>] <span style="color: #000080; font-weight: bold">for</span> r <span style="font-weight: bold">in</span> clima]
+tmin = [r[<span style="color: #00F">&quot;tmin&quot;</span>] <span style="color: #000080; font-weight: bold">for</span> r <span style="font-weight: bold">in</span> clima]
+lluvia = [r[<span style="color: #00F">&quot;lluvia_mm&quot;</span>] <span style="color: #000080; font-weight: bold">for</span> r <span style="font-weight: bold">in</span> clima]
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="codigo-4">import json
+import matplotlib.pyplot as plt
+
+with open(&quot;clima_septiembre.json&quot;, encoding=&quot;utf-8&quot;) as f:
+    clima = json.load(f)
+dias = [int(r[&quot;fecha&quot;][-2:]) for r in clima]
+tmax = [r[&quot;tmax&quot;] for r in clima]
+tmin = [r[&quot;tmin&quot;] for r in clima]
+lluvia = [r[&quot;lluvia_mm&quot;] for r in clima]</textarea>
+<div class="acciones"><button class="copiar" data-copiar="codigo-4">Copiar código</button><span class="sub">Solo en tu computadora: PythonTutor no puede importar matplotlib.</span></div></div>
+<h3>Prompt sugerido para la IA</h3><div class="bloque">
+<p class="prompt">Estoy armando un tablero de 2 x 2 gráficas con plt.subplots. No me des el código: pregúntame qué gráfica va en cada posición, cómo me refiero a cada eje con axs[fila, columna] y cómo evito que los títulos se encimen.</p><textarea class="crudo" id="prompt-4">Estoy armando un tablero de 2 x 2 gráficas con plt.subplots. No me des el código: pregúntame qué gráfica va en cada posición, cómo me refiero a cada eje con axs[fila, columna] y cómo evito que los títulos se encimen.</textarea>
+<div class="acciones"><button class="copiar" data-copiar="prompt-4">Copiar prompt</button><span class="sub">Si la IA te da el código completo, pídele que mejor te haga una pregunta.</span></div></div>
+<h3>Checkpoint y entrega</h3><div class="entrega"><ol>
+<li>Escribe la <b>palabra clave</b> que diga el profesor como comentario en la línea 1: <code># clave: ______</code></li>
+<li>Aplica el <b>cambio sorpresa</b> que se proyectará al terminar el ejercicio (sin IA, 5 min).</li>
+<li>Sube <b>S15D4_matricula.py y su .png</b> a la tarea de Teams del día antes de salir: la tarea cierra al terminar la clase.</li>
+<li>Prepárate: el profesor puede pedirte que expliques una línea de tu código.</li>
+</ol></div>
+</section>
+<section class="dia" id="dia5"><div class="num">DÍA 5</div>
+<h2>Errores comunes y el reporte final</h2><p class="sub">Errores comunes con matplotlib y el cierre del pipeline del PIA: de los datos a un reporte con gráficas</p>
+<h3>Ejemplos para correr en tu computadora</h3>
+<p class="sub">PythonTutor no puede correr estos ejemplos: copia cada uno a un archivo .py y ejecútalo con Python.</p>
+<div class="bloque"><b>savefig antes de show (así no: show y después savefig)</b> <span class="sub">(PythonTutor no puede importar matplotlib.)</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">7</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>matplotlib.pyplot<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">as</span><span style="color: #BBB"> </span>plt
+
+plt.figure(figsize=(<span style="color: #00F">5</span>, <span style="color: #00F">2.6</span>))
+plt.plot([<span style="color: #00F">1</span>, <span style="color: #00F">2</span>, <span style="color: #00F">3</span>, <span style="color: #00F">4</span>], [<span style="color: #00F">35.0</span>, <span style="color: #00F">36.5</span>, <span style="color: #00F">38.0</span>, <span style="color: #00F">34.1</span>])
+plt.title(<span style="color: #00F">&quot;Máximas&quot;</span>)
+plt.show()
+plt.savefig(<span style="color: #00F">&quot;grafica.png&quot;</span>)
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="ejemplo-5-1">import matplotlib.pyplot as plt
+
+plt.figure(figsize=(5, 2.6))
+plt.plot([1, 2, 3, 4], [35.0, 36.5, 38.0, 34.1])
+plt.title(&quot;Máximas&quot;)
+plt.show()
+plt.savefig(&quot;grafica.png&quot;)</textarea>
+<div class="acciones"><button class="copiar" data-copiar="ejemplo-5-1">Copiar código</button></div></div>
+<div class="bloque"><b>savefig antes de show (así sí: savefig y después show)</b> <span class="sub">(PythonTutor no puede importar matplotlib.)</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">7</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>matplotlib.pyplot<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">as</span><span style="color: #BBB"> </span>plt
+
+plt.figure(figsize=(<span style="color: #00F">5</span>, <span style="color: #00F">2.6</span>))
+plt.plot([<span style="color: #00F">1</span>, <span style="color: #00F">2</span>, <span style="color: #00F">3</span>, <span style="color: #00F">4</span>], [<span style="color: #00F">35.0</span>, <span style="color: #00F">36.5</span>, <span style="color: #00F">38.0</span>, <span style="color: #00F">34.1</span>])
+plt.title(<span style="color: #00F">&quot;Máximas&quot;</span>)
+plt.savefig(<span style="color: #00F">&quot;grafica.png&quot;</span>)
+plt.show()
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="ejemplo-5-2">import matplotlib.pyplot as plt
+
+plt.figure(figsize=(5, 2.6))
+plt.plot([1, 2, 3, 4], [35.0, 36.5, 38.0, 34.1])
+plt.title(&quot;Máximas&quot;)
+plt.savefig(&quot;grafica.png&quot;)
+plt.show()</textarea>
+<div class="acciones"><button class="copiar" data-copiar="ejemplo-5-2">Copiar código</button></div></div>
+<div class="bloque"><b>Una gráfica dentro del reporte</b> <span class="sub">(PythonTutor no puede importar matplotlib.)</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 7</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 8</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 9</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">10</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">11</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">12</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">13</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">14</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">15</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">16</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">17</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">18</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">19</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">20</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">21</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">22</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>json
+<span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>matplotlib.pyplot<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">as</span><span style="color: #BBB"> </span>plt
+<span style="color: #000080; font-weight: bold">from</span><span style="color: #BBB"> </span>openpyxl<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">import</span> Workbook
+<span style="color: #000080; font-weight: bold">from</span><span style="color: #BBB"> </span>openpyxl.drawing.image<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">import</span> Image
+
+<span style="color: #000080; font-weight: bold">with</span> open(<span style="color: #00F">&quot;clima_septiembre.json&quot;</span>, encoding=<span style="color: #00F">&quot;utf-8&quot;</span>) <span style="color: #000080; font-weight: bold">as</span> f:
+    clima = json.load(f)
+dias = [int(r[<span style="color: #00F">&quot;fecha&quot;</span>][-<span style="color: #00F">2</span>:]) <span style="color: #000080; font-weight: bold">for</span> r <span style="font-weight: bold">in</span> clima]
+tmax = [r[<span style="color: #00F">&quot;tmax&quot;</span>] <span style="color: #000080; font-weight: bold">for</span> r <span style="font-weight: bold">in</span> clima]
+
+fig, ax = plt.subplots(figsize=(<span style="color: #00F">5</span>, <span style="color: #00F">2.6</span>))
+ax.plot(dias, tmax, marker=<span style="color: #00F">&quot;o&quot;</span>, color=<span style="color: #00F">&quot;#8C1D35&quot;</span>)
+ax.set_title(<span style="color: #00F">&quot;Máxima diaria, septiembre 2026&quot;</span>)
+ax.set_xlabel(<span style="color: #00F">&quot;Día&quot;</span>)
+ax.set_ylabel(<span style="color: #00F">&quot;°C&quot;</span>)
+fig.savefig(<span style="color: #00F">&quot;tmax.png&quot;</span>, dpi=<span style="color: #00F">80</span>, bbox_inches=<span style="color: #00F">&quot;tight&quot;</span>)
+
+libro = Workbook()
+hoja = libro.active
+hoja.title = <span style="color: #00F">&quot;Gráficas&quot;</span>
+hoja.add_image(Image(<span style="color: #00F">&quot;tmax.png&quot;</span>), <span style="color: #00F">&quot;A1&quot;</span>)
+libro.save(<span style="color: #00F">&quot;reporte.xlsx&quot;</span>)
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="ejemplo-5-3">import json
+import matplotlib.pyplot as plt
+from openpyxl import Workbook
+from openpyxl.drawing.image import Image
+
+with open(&quot;clima_septiembre.json&quot;, encoding=&quot;utf-8&quot;) as f:
+    clima = json.load(f)
+dias = [int(r[&quot;fecha&quot;][-2:]) for r in clima]
+tmax = [r[&quot;tmax&quot;] for r in clima]
+
+fig, ax = plt.subplots(figsize=(5, 2.6))
+ax.plot(dias, tmax, marker=&quot;o&quot;, color=&quot;#8C1D35&quot;)
+ax.set_title(&quot;Máxima diaria, septiembre 2026&quot;)
+ax.set_xlabel(&quot;Día&quot;)
+ax.set_ylabel(&quot;°C&quot;)
+fig.savefig(&quot;tmax.png&quot;, dpi=80, bbox_inches=&quot;tight&quot;)
+
+libro = Workbook()
+hoja = libro.active
+hoja.title = &quot;Gráficas&quot;
+hoja.add_image(Image(&quot;tmax.png&quot;), &quot;A1&quot;)
+libro.save(&quot;reporte.xlsx&quot;)</textarea>
+<div class="acciones"><button class="copiar" data-copiar="ejemplo-5-3">Copiar código</button></div></div>
+<h3>Reto integrador: el reporte final del clima<span class="chip">20 min</span></h3><ol class="tareas">
+<li>Lee clima_septiembre.json (Tema 12), calcula el resumen de las máximas con statistics (Tema 13) y genera dos gráficas: temperatura diaria (máxima y mínima) e histograma de máximas.</li>
+<li>Crea un libro con las hojas Datos, Resumen (Tema 14) y Gráficas, e inserta ahí las dos imágenes con add_image (una en A1 y otra en A20).</li>
+<li>Guarda reporte_final.xlsx con try/except PermissionError y revisa en Excel que se vea completo: es el esqueleto de tu PIA.</li>
+</ol>
+<p class="pista"><b>Pista:</b> Guarda cada figura con fig.savefig ANTES de insertarla. Para no repetir código, reutiliza tu función tabla del Tema 14.</p>
+<h3>Código de partida</h3><div class="bloque">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">7</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">8</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">9</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>json
+<span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>statistics<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">as</span><span style="color: #BBB"> </span>st
+<span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>matplotlib.pyplot<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">as</span><span style="color: #BBB"> </span>plt
+<span style="color: #000080; font-weight: bold">from</span><span style="color: #BBB"> </span>openpyxl<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">import</span> Workbook
+<span style="color: #000080; font-weight: bold">from</span><span style="color: #BBB"> </span>openpyxl.drawing.image<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">import</span> Image
+<span style="color: #000080; font-weight: bold">from</span><span style="color: #BBB"> </span>openpyxl.styles<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">import</span> Font
+
+<span style="color: #000080; font-weight: bold">with</span> open(<span style="color: #00F">&quot;clima_septiembre.json&quot;</span>, encoding=<span style="color: #00F">&quot;utf-8&quot;</span>) <span style="color: #000080; font-weight: bold">as</span> f:
+    clima = json.load(f)
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="codigo-5">import json
+import statistics as st
+import matplotlib.pyplot as plt
+from openpyxl import Workbook
+from openpyxl.drawing.image import Image
+from openpyxl.styles import Font
+
+with open(&quot;clima_septiembre.json&quot;, encoding=&quot;utf-8&quot;) as f:
+    clima = json.load(f)</textarea>
+<div class="acciones"><button class="copiar" data-copiar="codigo-5">Copiar código</button><span class="sub">Solo en tu computadora: PythonTutor no puede importar matplotlib.</span></div></div>
+<h3>Prompt sugerido para la IA</h3><div class="bloque">
+<p class="prompt">Estoy haciendo un reporte final en Python: leo un JSON, calculo estadística, genero gráficas con matplotlib y las inserto en un Excel con openpyxl. No me des el código: ayúdame a ordenar los pasos y pregúntame qué función escribiría para cada uno.</p><textarea class="crudo" id="prompt-5">Estoy haciendo un reporte final en Python: leo un JSON, calculo estadística, genero gráficas con matplotlib y las inserto en un Excel con openpyxl. No me des el código: ayúdame a ordenar los pasos y pregúntame qué función escribiría para cada uno.</textarea>
+<div class="acciones"><button class="copiar" data-copiar="prompt-5">Copiar prompt</button><span class="sub">Si la IA te da el código completo, pídele que mejor te haga una pregunta.</span></div></div>
+<h3>Checkpoint y entrega</h3><div class="entrega"><ol>
+<li>Escribe la <b>palabra clave</b> que diga el profesor como comentario en la línea 1: <code># clave: ______</code></li>
+<li>Aplica el <b>cambio sorpresa</b> que se proyectará al terminar el ejercicio (sin IA, 5 min).</li>
+<li>Sube <b>S15D5_matricula.py y su .xlsx</b> a la tarea de Teams del día antes de salir: la tarea cierra al terminar la clase.</li>
+<li>Prepárate: el profesor puede pedirte que expliques una línea de tu código.</li>
+</ol></div>
+</section>
+<section class="dia" id="chuleta"><h2>Chuleta: matplotlib</h2>
+<p class="sub">Se instala con pip install matplotlib (incluye numpy). Convención: import matplotlib.pyplot as plt.</p>
+<table class="chuleta"><tr><th>Instrucción</th><th>Qué hace</th><th>Ejemplo</th></tr>
+<tr><td class="mono">plt.plot(x, y)</td><td>Líneas que unen los puntos</td><td class="mono">plt.plot(dias, tmax, marker=&quot;o&quot;)</td></tr>
+<tr><td class="mono">plt.bar(categorias, valores)</td><td>Barras: comparar categorías</td><td class="mono">plt.bar(semanas, lluvia)</td></tr>
+<tr><td class="mono">plt.hist(datos, bins)</td><td>Histograma: distribución</td><td class="mono">plt.hist(tmax, bins=[30, 32, 34, 36])</td></tr>
+<tr><td class="mono">plt.scatter(x, y)</td><td>Dispersión: relación</td><td class="mono">plt.scatter(tmax, lluvia)</td></tr>
+<tr><td class="mono">title, xlabel, ylabel</td><td>Título y nombres de los ejes</td><td class="mono">plt.ylabel(&quot;Temperatura (°C)&quot;)</td></tr>
+<tr><td class="mono">label= y plt.legend()</td><td>Leyenda de varias series</td><td class="mono">plt.plot(x, y, label=&quot;Máxima&quot;)</td></tr>
+<tr><td class="mono">plt.grid(True), axhline</td><td>Cuadrícula, recta de referencia</td><td class="mono">plt.axhline(0, color=&quot;gray&quot;)</td></tr>
+<tr><td class="mono">np.linspace(a, b, n)</td><td>n valores de a a b</td><td class="mono">xs = np.linspace(-2, 5, 200)</td></tr>
+<tr><td class="mono">plt.subplots(filas, cols)</td><td>Figura con varias gráficas</td><td class="mono">fig, ax = plt.subplots(figsize=(8, 4))</td></tr>
+<tr><td class="mono">ax.set_title, ax.set_ylim</td><td>Lo mismo, en un eje</td><td class="mono">ax.set_ylim(0, 40)</td></tr>
+<tr><td class="mono">savefig(ruta, dpi)</td><td>Guardar la imagen (antes de show)</td><td class="mono">plt.savefig(&quot;g.png&quot;, dpi=150)</td></tr>
+<tr><td class="mono">hoja.add_image(Image(r), celda)</td><td>Imagen en Excel (openpyxl)</td><td class="mono">hoja.add_image(Image(&quot;g.png&quot;), &quot;A1&quot;)</td></tr>
+</table></section>
+<section class="dia" id="interactivos"><h2>Simuladores y ejercicios de la semana</h2>
+<p class="sub">Funcionan en el navegador del celular o de la computadora, sin instalar nada. Los de todas las semanas están en <a href="https://memosanchezg.github.io/programacion-basica-interactivos/" target="_blank" rel="noopener">memosanchezg.github.io/programacion-basica-interactivos/</a>.</p>
+<ul class="links">
+<li><a href="https://memosanchezg.github.io/programacion-basica-interactivos/semana-15-anatomia-grafica.html" target="_blank" rel="noopener">Anatomía de una gráfica</a> <span class="sub">· Simulador</span><br><span class="sub">Cambia cada parte de una gráfica de matplotlib y mira el código que la crea.</span></li>
+<li><a href="https://memosanchezg.github.io/programacion-basica-interactivos/semana-15-elige-la-grafica.html" target="_blank" rel="noopener">Elige la gráfica</a> <span class="sub">· Simulador</span><br><span class="sub">Diez preguntas con sus datos. Elige la gráfica que responde cada pregunta y compárala con la adecuada, dibujadas con los mismos datos.</span></li>
+<li><a href="https://memosanchezg.github.io/programacion-basica-interactivos/semana-15-muestreo-funciones.html" target="_blank" rel="noopener">¿Cuántos puntos necesitas?</a> <span class="sub">· Simulador</span><br><span class="sub">plt.plot no grafica fórmulas: une puntos con rectas. Elige una función, un intervalo y cuántos puntos tomar, y compara la poligonal con la curva real.</span></li>
+<li><a href="https://memosanchezg.github.io/programacion-basica-interactivos/semana-15-laboratorio.html" target="_blank" rel="noopener">Laboratorio de matplotlib</a> <span class="sub">· Ejercicio con Python</span><br><span class="sub">Cinco retos con el clima real de Monterrey de septiembre de 2026: escribe el código, córrelo aquí mismo y verifica tu gráfica.</span></li>
+</ul></section>
+<section class="dia" id="recursos"><h2>Recursos</h2><ul class="links">
+<li><a href="https://matplotlib.org/stable/tutorials/pyplot.html" target="_blank" rel="noopener">Tutorial de pyplot (en inglés)</a><br><span class="sub">plot, title, xlabel, varias series, subplots y texto, paso a paso.</span></li>
+<li><a href="https://matplotlib.org/stable/plot_types/index.html" target="_blank" rel="noopener">Tipos de gráficas de matplotlib (en inglés)</a><br><span class="sub">Una miniatura con el código mínimo de cada tipo: elige la que responde tu pregunta.</span></li>
+<li><a href="https://matplotlib.org/stable/gallery/index.html" target="_blank" rel="noopener">Galería de matplotlib (en inglés)</a><br><span class="sub">Cientos de ejemplos con su código: útil para ideas del PIA.</span></li>
+<li><a href="https://numpy.org/doc/stable/reference/generated/numpy.linspace.html" target="_blank" rel="noopener">numpy.linspace (en inglés)</a><br><span class="sub">Valores igualmente espaciados para graficar funciones.</span></li>
+<li><a href="https://www.desmos.com/calculator?lang=es" target="_blank" rel="noopener">Desmos: explora una función antes de programarla</a><br><span class="sub">Calculadora gráfica en línea: compara tu gráfica de matplotlib con la de Desmos.</span></li>
+</ul></section>
+<footer>Hoja del estudiante del Tema 15 · Programación Básica · FCFM-UANL. <a href="index.html">Índice de simuladores</a> · <a href="#qr-sitio" class="qr-abrir">Abrir en el celular (QR)</a></footer>
+</main><script>
+document.querySelectorAll('button.copiar').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var el = document.getElementById(btn.getAttribute('data-copiar'));
+    var texto = el.value !== undefined ? el.value : el.textContent;
+    var listo = function () {
+      var antes = btn.textContent;
+      btn.textContent = 'Copiado \u2713';
+      setTimeout(function () { btn.textContent = antes; }, 1500);
+    };
+    var respaldo = function () {
+      var t = document.createElement('textarea');
+      t.value = texto; document.body.appendChild(t); t.select();
+      try { document.execCommand('copy'); listo(); } catch (e) {}
+      document.body.removeChild(t);
+    };
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(texto).then(listo, respaldo);
+    } else { respaldo(); }
+  });
+});
+</script><div id="qr-sitio" class="qr-capa" hidden>
+  <div class="qr-caja" role="dialog" aria-modal="true" aria-label="Código QR de esta página">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 41 41" role="img" aria-label="Código QR de https://memosanchezg.github.io/programacion-basica-interactivos/hoja-tema-15.html" shape-rendering="crispEdges"><rect width="41" height="41" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM10 2h1v1h-1zM12 2h3v1h-3zM16 2h2v1h-2zM19 2h2v1h-2zM22 2h2v1h-2zM25 2h1v1h-1zM27 2h1v1h-1zM29 2h2v1h-2zM32 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM12 3h2v1h-2zM15 3h1v1h-1zM17 3h1v1h-1zM19 3h1v1h-1zM21 3h1v1h-1zM26 3h1v1h-1zM28 3h1v1h-1zM30 3h1v1h-1zM32 3h1v1h-1zM38 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM12 4h1v1h-1zM16 4h1v1h-1zM19 4h2v1h-2zM22 4h3v1h-3zM28 4h1v1h-1zM30 4h1v1h-1zM32 4h1v1h-1zM34 4h3v1h-3zM38 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h4v1h-4zM16 5h3v1h-3zM20 5h1v1h-1zM27 5h4v1h-4zM32 5h1v1h-1zM34 5h3v1h-3zM38 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h2v1h-2zM17 6h1v1h-1zM19 6h2v1h-2zM24 6h2v1h-2zM27 6h4v1h-4zM32 6h1v1h-1zM34 6h3v1h-3zM38 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h1v1h-1zM13 7h2v1h-2zM16 7h1v1h-1zM18 7h2v1h-2zM21 7h2v1h-2zM26 7h2v1h-2zM32 7h1v1h-1zM38 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM30 8h1v1h-1zM32 8h7v1h-7zM10 9h1v1h-1zM12 9h3v1h-3zM16 9h2v1h-2zM19 9h1v1h-1zM21 9h1v1h-1zM23 9h1v1h-1zM25 9h2v1h-2zM2 10h1v1h-1zM6 10h1v1h-1zM8 10h3v1h-3zM12 10h2v1h-2zM15 10h1v1h-1zM19 10h1v1h-1zM21 10h1v1h-1zM23 10h1v1h-1zM26 10h1v1h-1zM29 10h1v1h-1zM31 10h5v1h-5zM38 10h1v1h-1zM2 11h4v1h-4zM7 11h1v1h-1zM10 11h2v1h-2zM13 11h4v1h-4zM18 11h1v1h-1zM20 11h1v1h-1zM22 11h1v1h-1zM25 11h1v1h-1zM28 11h3v1h-3zM34 11h1v1h-1zM37 11h1v1h-1zM2 12h1v1h-1zM4 12h1v1h-1zM6 12h1v1h-1zM8 12h4v1h-4zM13 12h1v1h-1zM15 12h2v1h-2zM18 12h1v1h-1zM20 12h1v1h-1zM22 12h2v1h-2zM25 12h2v1h-2zM29 12h1v1h-1zM32 12h2v1h-2zM35 12h1v1h-1zM2 13h4v1h-4zM9 13h2v1h-2zM12 13h3v1h-3zM19 13h2v1h-2zM23 13h1v1h-1zM26 13h1v1h-1zM29 13h2v1h-2zM33 13h2v1h-2zM36 13h2v1h-2zM3 14h8v1h-8zM12 14h2v1h-2zM15 14h3v1h-3zM19 14h1v1h-1zM21 14h1v1h-1zM23 14h3v1h-3zM31 14h3v1h-3zM36 14h3v1h-3zM3 15h1v1h-1zM6 15h1v1h-1zM9 15h7v1h-7zM17 15h3v1h-3zM23 15h1v1h-1zM25 15h1v1h-1zM28 15h3v1h-3zM34 15h2v1h-2zM5 16h5v1h-5zM13 16h1v1h-1zM16 16h2v1h-2zM19 16h1v1h-1zM23 16h1v1h-1zM25 16h2v1h-2zM29 16h1v1h-1zM31 16h6v1h-6zM2 17h3v1h-3zM6 17h2v1h-2zM12 17h1v1h-1zM17 17h3v1h-3zM23 17h1v1h-1zM25 17h1v1h-1zM28 17h3v1h-3zM33 17h2v1h-2zM36 17h1v1h-1zM2 18h3v1h-3zM8 18h2v1h-2zM12 18h2v1h-2zM16 18h4v1h-4zM21 18h1v1h-1zM23 18h4v1h-4zM31 18h3v1h-3zM35 18h3v1h-3zM3 19h3v1h-3zM9 19h1v1h-1zM11 19h1v1h-1zM22 19h1v1h-1zM24 19h2v1h-2zM27 19h1v1h-1zM29 19h2v1h-2zM33 19h2v1h-2zM37 19h1v1h-1zM2 20h3v1h-3zM6 20h1v1h-1zM8 20h1v1h-1zM10 20h2v1h-2zM13 20h1v1h-1zM16 20h2v1h-2zM22 20h1v1h-1zM24 20h2v1h-2zM28 20h3v1h-3zM33 20h1v1h-1zM36 20h1v1h-1zM3 21h1v1h-1zM5 21h3v1h-3zM10 21h1v1h-1zM12 21h1v1h-1zM14 21h1v1h-1zM17 21h3v1h-3zM22 21h4v1h-4zM28 21h1v1h-1zM30 21h1v1h-1zM36 21h2v1h-2zM6 22h3v1h-3zM12 22h2v1h-2zM16 22h1v1h-1zM19 22h1v1h-1zM23 22h1v1h-1zM25 22h2v1h-2zM31 22h3v1h-3zM35 22h2v1h-2zM5 23h1v1h-1zM7 23h1v1h-1zM11 23h1v1h-1zM13 23h6v1h-6zM20 23h1v1h-1zM25 23h1v1h-1zM27 23h1v1h-1zM29 23h2v1h-2zM33 23h2v1h-2zM4 24h1v1h-1zM6 24h1v1h-1zM8 24h1v1h-1zM12 24h1v1h-1zM14 24h1v1h-1zM16 24h2v1h-2zM19 24h2v1h-2zM22 24h2v1h-2zM25 24h5v1h-5zM32 24h6v1h-6zM2 25h1v1h-1zM6 25h1v1h-1zM10 25h1v1h-1zM12 25h3v1h-3zM16 25h1v1h-1zM18 25h2v1h-2zM21 25h4v1h-4zM26 25h1v1h-1zM30 25h5v1h-5zM36 25h3v1h-3zM2 26h1v1h-1zM8 26h3v1h-3zM16 26h1v1h-1zM19 26h1v1h-1zM22 26h3v1h-3zM26 26h1v1h-1zM30 26h4v1h-4zM35 26h3v1h-3zM2 27h1v1h-1zM4 27h1v1h-1zM9 27h1v1h-1zM13 27h2v1h-2zM16 27h1v1h-1zM18 27h1v1h-1zM20 27h1v1h-1zM22 27h2v1h-2zM25 27h1v1h-1zM28 27h4v1h-4zM34 27h1v1h-1zM5 28h1v1h-1zM8 28h1v1h-1zM11 28h1v1h-1zM13 28h2v1h-2zM18 28h2v1h-2zM22 28h1v1h-1zM25 28h3v1h-3zM29 28h1v1h-1zM32 28h3v1h-3zM6 29h2v1h-2zM11 29h3v1h-3zM19 29h2v1h-2zM23 29h2v1h-2zM26 29h1v1h-1zM29 29h1v1h-1zM36 29h1v1h-1zM2 30h4v1h-4zM7 30h4v1h-4zM15 30h1v1h-1zM17 30h1v1h-1zM19 30h1v1h-1zM21 30h6v1h-6zM30 30h5v1h-5zM36 30h1v1h-1zM38 30h1v1h-1zM10 31h3v1h-3zM15 31h6v1h-6zM22 31h1v1h-1zM25 31h1v1h-1zM28 31h3v1h-3zM34 31h1v1h-1zM2 32h7v1h-7zM10 32h2v1h-2zM13 32h5v1h-5zM19 32h2v1h-2zM22 32h2v1h-2zM25 32h1v1h-1zM27 32h2v1h-2zM30 32h1v1h-1zM32 32h1v1h-1zM34 32h1v1h-1zM2 33h1v1h-1zM8 33h1v1h-1zM11 33h1v1h-1zM13 33h1v1h-1zM15 33h1v1h-1zM17 33h7v1h-7zM26 33h1v1h-1zM28 33h1v1h-1zM30 33h1v1h-1zM34 33h3v1h-3zM38 33h1v1h-1zM2 34h1v1h-1zM4 34h3v1h-3zM8 34h1v1h-1zM10 34h1v1h-1zM13 34h1v1h-1zM16 34h1v1h-1zM19 34h1v1h-1zM22 34h5v1h-5zM30 34h8v1h-8zM2 35h1v1h-1zM4 35h3v1h-3zM8 35h1v1h-1zM11 35h1v1h-1zM13 35h2v1h-2zM16 35h1v1h-1zM19 35h2v1h-2zM23 35h1v1h-1zM25 35h3v1h-3zM29 35h5v1h-5zM36 35h3v1h-3zM2 36h1v1h-1zM4 36h3v1h-3zM8 36h1v1h-1zM12 36h1v1h-1zM16 36h5v1h-5zM22 36h7v1h-7zM31 36h2v1h-2zM36 36h1v1h-1zM2 37h1v1h-1zM8 37h1v1h-1zM13 37h1v1h-1zM16 37h2v1h-2zM19 37h2v1h-2zM22 37h2v1h-2zM28 37h2v1h-2zM34 37h1v1h-1zM36 37h2v1h-2zM2 38h7v1h-7zM10 38h3v1h-3zM15 38h3v1h-3zM19 38h1v1h-1zM22 38h3v1h-3zM26 38h1v1h-1zM28 38h2v1h-2zM32 38h2v1h-2zM36 38h3v1h-3z"/></svg>
+    <p class="qr-texto">Escanea con la cámara del celular para abrir esta página</p>
+    <p class="qr-url">https://memosanchezg.github.io/programacion-basica-interactivos/hoja-tema-15.html</p>
+    <button type="button" class="qr-cerrar">Cerrar</button>
+  </div>
+</div>
+<style>
+  .qr-capa { position:fixed; top:0; right:0; bottom:0; left:0; z-index:10000; display:flex; align-items:center;
+             justify-content:center; padding:16px; background:#fff; }
+  .qr-capa[hidden] { display:none; }
+  .qr-caja { max-width:100%; text-align:center; color:#0A2A57; font:16px/1.4 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .qr-caja svg { display:block; width:min(62vh, 84vw); height:auto; margin:0 auto; }
+  .qr-texto { margin:12px 0 2px; font-size:1.15rem; font-weight:bold; }
+  .qr-url { margin:0 0 12px; color:#5B6472; word-break:break-all; }
+  .qr-cerrar { font:inherit; padding:6px 20px; border:2px solid #00408F; border-radius:4px; background:#fff;
+               color:#00408F; cursor:pointer; }
+</style>
+<script>
+  (function () {
+    var capa = document.getElementById("qr-sitio");
+    document.querySelectorAll("a.qr-abrir").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        capa.hidden = false;
+        capa.querySelector(".qr-cerrar").focus();
+      });
+    });
+    capa.addEventListener("click", function (e) {
+      if (e.target === capa || e.target.classList.contains("qr-cerrar")) capa.hidden = true;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !capa.hidden) capa.hidden = true;
+    });
+  })();
+</script>
+</body></html>

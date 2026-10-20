@@ -1,0 +1,1269 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="tipo" content="simulador">
+<title>Float contra Fraction</title>
+
+<style>
+  :root {
+    --azul:#00408F; --azul-oscuro:#0A2A57; --guinda:#8C1D35; --oro:#B8975A; --oro-texto:#8A6A2E;
+    --azul-claro:#E8EEF7; --oro-claro:#F7F1E6; --guinda-claro:#F5E6EA; --verde:#2F7D5B;
+    --tinta:#1B1F2A; --gris:#5B6472; --gris-claro:#E9ECF1; --borde:#D9DEE6; --fondo:#FFFFFF;
+    --cmd-fondo:#0C0C0C; --cmd-texto:#E6E6E6;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--fondo); color:var(--tinta);
+         font:16px/1.45 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .franja { height:8px; background:var(--azul); border-bottom:3px solid var(--oro); }
+  header { max-width:1280px; margin:0 auto; padding:12px 18px 4px; }
+  .semana { color:var(--guinda); font-weight:bold; letter-spacing:.04em; font-size:.85rem; text-transform:uppercase; }
+  h1 { font-family:Cambria,Georgia,serif; color:var(--azul-oscuro); font-size:1.7rem; margin:2px 0 2px; }
+  .sub { color:var(--gris); margin:0; }
+  main { max-width:1280px; margin:0 auto; padding:8px 18px 24px; }
+  nav.pestanas { display:flex; gap:4px; flex-wrap:wrap; border-bottom:2px solid var(--gris-claro); margin:6px 0 12px; }
+  nav.pestanas button { font:inherit; font-weight:bold; border:none; background:none; color:var(--gris);
+                        padding:8px 14px; cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; }
+  nav.pestanas button.activo { color:var(--azul-oscuro); border-bottom-color:var(--azul); }
+  nav.pestanas button:focus-visible { outline:2px solid var(--azul); }
+  section.vista { display:none; }
+  section.vista.activo { display:block; }
+  .fila { display:grid; grid-template-columns:minmax(260px,360px) minmax(0,1fr); gap:16px; align-items:start; }
+  .panel { background:#fff; border:1px solid var(--borde); border-radius:10px; padding:12px 14px; }
+  .panel h2 { font-size:1.02rem; color:var(--azul-oscuro); margin:0 0 8px; }
+  label { display:block; font-weight:bold; color:var(--azul-oscuro); margin-top:10px; }
+  label small { font-weight:normal; color:var(--gris); }
+  input[type=range] { width:100%; }
+  input[type=number], input[type=text], select, textarea { font:inherit; padding:4px 6px; border:1px solid var(--borde);
+                        border-radius:6px; }
+  input.mono, textarea.mono { font-family:Consolas,"Courier New",monospace; }
+  button.accion { font:inherit; font-weight:bold; border-radius:8px; padding:7px 12px; margin:8px 6px 0 0;
+                  border:1px solid var(--azul); background:#fff; color:var(--azul); cursor:pointer; }
+  button.accion:hover, button.accion:focus-visible { background:var(--azul); color:#fff; outline:none; }
+  canvas { width:100%; display:block; border:1px solid var(--borde); border-radius:10px; background:#fff; }
+  .lectura { background:var(--oro-claro); border-left:4px solid var(--oro); border-radius:8px; padding:10px 12px;
+             margin-top:12px; line-height:1.55; }
+  .lectura b { color:var(--azul-oscuro); }
+  .ok { color:var(--verde); font-weight:bold; }
+  .mal { color:var(--guinda); font-weight:bold; }
+  .preguntas { background:var(--azul-claro); border-radius:8px; padding:10px 14px; margin-top:12px; }
+  .preguntas h3 { margin:0 0 4px; font-size:.95rem; color:var(--azul-oscuro); }
+  .preguntas ol { margin:0; padding-left:20px; }
+  /* Código Python con los colores del curso (minted, estilo borland) y salida de consola (cmd). */
+  .codigo { border:1px solid var(--tinta); background:#fff; font:15px/1.5 Consolas,"Courier New",monospace;
+            overflow-x:auto; margin:8px 0; }
+  .codigo ol { margin:0; padding:8px 12px 8px 3.4em; }
+  .codigo li { white-space:pre; }
+  .codigo li::marker { color:var(--gris); font:11px Cambria,Georgia,serif; }
+  .codigo .kw { color:#000080; font-weight:bold; }
+  .codigo .str, .codigo .num { color:#0000FF; }
+  .codigo .com { color:#008800; font-style:italic; }
+  .codigo .marca { background:var(--oro-claro); outline:1px solid var(--oro); }
+  .consola { background:var(--cmd-fondo); color:var(--cmd-texto); font:15px/1.45 Consolas,"Courier New",monospace;
+             white-space:pre-wrap; word-break:break-word; padding:8px 12px; border-radius:4px; margin:8px 0; min-height:2.2em; }
+  footer { max-width:1280px; margin:0 auto; padding:6px 18px 18px; color:var(--gris); font-size:.85rem; }
+  footer a { color:var(--azul); }
+  @media (max-width: 820px) { .fila { grid-template-columns:1fr; } }
+
+  /* Propios de este simulador */
+  .fila > * { min-width:0; }
+  .panel h3 { font-size:.98rem; color:var(--azul-oscuro); margin:14px 0 4px; }
+  .nota { color:var(--gris); font-size:.93rem; margin:6px 0 0; }
+  fieldset.grupo { border:0; padding:0; margin:10px 0 0; min-width:0; }
+  fieldset.grupo legend { font-weight:bold; color:var(--azul-oscuro); padding:0; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  .chip { display:inline-block; margin:0; font-weight:normal; position:relative; }
+  .chip input { position:absolute; opacity:0; width:1px; height:1px; margin:0; }
+  .chip span { display:inline-block; border:1px solid var(--azul); color:var(--azul); border-radius:999px;
+               padding:3px 12px; font:bold 15px Consolas,"Courier New",monospace; cursor:pointer; background:#fff; }
+  .chip input:checked + span { background:var(--azul); color:#fff; }
+  .chip input:focus-visible + span { outline:2px solid var(--oro); outline-offset:2px; }
+  .en-linea { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .en-linea input[type=range] { flex:1 1 140px; width:auto; }
+  .en-linea input[type=number] { width:6.5em; }
+  input.propio { width:9em; }
+  label.casilla { display:flex; gap:8px; align-items:center; font-weight:normal; color:var(--tinta); cursor:pointer; }
+  label.casilla input { width:18px; height:18px; margin:0; flex:none; }
+  .aviso { color:var(--guinda); font-weight:bold; }
+  .valor { color:var(--guinda); font-weight:bold; }
+  .mono { font-family:Consolas,"Courier New",monospace; }
+  .consola .err { color:#FF8A80; }
+  .tabla-scroll { max-height:320px; overflow:auto; margin-top:10px; border:1px solid var(--borde); border-radius:8px; }
+  table { border-collapse:collapse; width:100%; font-size:15px; }
+  th, td { padding:3px 8px; text-align:right; border-bottom:1px solid var(--gris-claro); white-space:nowrap; }
+  th { position:sticky; top:0; background:var(--gris-claro); color:var(--azul-oscuro); }
+  td.mono { font-family:Consolas,"Courier New",monospace; }
+  tr.raro td { color:var(--guinda); }
+  tr.elegida td { background:var(--oro-claro); font-weight:bold; }
+  .bits { font:15px/1.7 Consolas,"Courier New",monospace; overflow-wrap:anywhere; }
+  #valorExacto p, .lectura, #pasos3 { overflow-wrap:anywhere; }
+  .bits .pre { color:var(--gris); }
+  .bits .p0 { color:var(--azul); font-weight:bold; }
+  .bits .p1 { color:var(--oro-texto); font-weight:bold; }
+  .bits .resto { color:var(--gris); }
+  .bits .dif { color:var(--guinda); font-weight:bold; text-decoration:underline; }
+  .bits .s { color:var(--guinda); font-weight:bold; }
+  .bits .e { color:var(--oro-texto); font-weight:bold; }
+  .bits .m { color:var(--azul); }
+  .rotulo { display:block; color:var(--gris); font:13px Calibri,"Segoe UI",system-ui,sans-serif; margin-top:4px; }
+  .grande { font-size:1.08rem; }
+  @media (max-width: 480px) {
+    main, header, footer { padding-left:12px; padding-right:12px; }
+    .panel { padding:10px; }
+    .bits { font-size:13px; }
+    .codigo, .consola { font-size:13.5px; }
+  }
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header>
+  <div class="semana">Semana 13 · Matemáticas con Python</div>
+  <h1>Float contra Fraction</h1>
+  <p class="sub">Suma un decimal muchas veces, mira cómo guarda la computadora un float y calcula con fracciones exactas.</p>
+</header>
+<main>
+  <nav class="pestanas" role="tablist" aria-label="Vistas del simulador">
+    <button type="button" class="activo" data-vista="v1" role="tab" id="tab-v1" aria-controls="v1" aria-selected="true">Suma repetida</button>
+    <button type="button" data-vista="v2" role="tab" id="tab-v2" aria-controls="v2" aria-selected="false">¿Cómo se guarda?</button>
+    <button type="button" data-vista="v3" role="tab" id="tab-v3" aria-controls="v3" aria-selected="false">Fracciones exactas</button>
+  </nav>
+
+  
+  <section class="vista activo" id="v1" role="tabpanel" aria-labelledby="tab-v1">
+    <div class="fila">
+      <div class="panel">
+        <h2>Sumar un decimal n veces</h2>
+        <fieldset class="grupo">
+          <legend>Decimal que vas a sumar</legend>
+          <div class="chips" data-grupo="1"></div>
+        </fieldset>
+        <label for="propio1">Otro decimal <small>(por ejemplo 0.5, 0.15 o 2.675)</small></label>
+        <input id="propio1" class="propio mono" type="text" inputmode="decimal" maxlength="18" autocomplete="off" spellcheck="false">
+        <label for="n">Veces que se suma: n = <span class="valor" id="nVal"></span></label>
+        <div class="en-linea">
+          <input id="n" type="range" min="1" max="100" step="1" value="10" aria-label="Veces que se suma (deslizador)">
+          <input id="nNum" type="number" min="1" max="100" step="1" value="10" aria-label="Veces que se suma (número)">
+        </div>
+        <label class="casilla" style="margin-top:12px"><input type="checkbox" id="conProducto"> Comparar con una sola multiplicación: n * x</label>
+        <div class="lectura" id="lectura1"></div>
+      </div>
+      <div class="panel">
+        <canvas id="lienzoError" aria-label="Gráfica del error del total con float contra el valor exacto, para cada número de sumas de 1 a n"></canvas>
+        <h3>El código en Python</h3>
+        <div id="codigo1"></div>
+        <div class="consola" id="salida1" aria-label="Salida del programa"></div>
+        <h3>Paso a paso</h3>
+        <p class="nota">Cada renglón es una vuelta del ciclo. La última columna es lo que daría comparar el total con el decimal que esperas, por ejemplo <span class="mono">total == 0.3</span>.</p>
+        <div class="tabla-scroll"><table id="tablaPasos"></table></div>
+        <div class="preguntas">
+          <h3>Para explorar</h3>
+          <ol>
+            <li>Antes de mirar la tabla: al sumar 0.1, ¿en qué vuelta aparece por primera vez un total "raro"? ¿Y si sumas 0.5?</li>
+            <li>Con 0.1 y n = 10, ¿por qué <span class="mono">total == 1.0</span> da False pero <span class="mono">math.isclose(total, 1.0)</span> da True? ¿De qué tamaño es el error?</li>
+            <li>Lleva n hasta 100 con 0.1 y mira la gráfica. ¿El error crece siempre? ¿Cambia de signo?</li>
+            <li>Activa "una sola multiplicación" con n = 100. ¿Qué tiene menos error: sumar 100 veces o multiplicar una vez? ¿Por qué?</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  
+  <section class="vista" id="v2" role="tabpanel" aria-labelledby="tab-v2">
+    <div class="fila">
+      <div class="panel">
+        <h2>El decimal que escribes</h2>
+        <fieldset class="grupo">
+          <legend>Decimal</legend>
+          <div class="chips" data-grupo="2"></div>
+        </fieldset>
+        <label for="propio2">Otro decimal <small>(por ejemplo 0.5, 0.375 o 2.675)</small></label>
+        <input id="propio2" class="propio mono" type="text" inputmode="decimal" maxlength="18" autocomplete="off" spellcheck="false">
+        <div class="lectura" id="lectura2"></div>
+      </div>
+      <div class="panel">
+        <h3 style="margin-top:0">1. En binario</h3>
+        <div class="bits" id="binario"></div>
+        <h3>2. El float guarda solo 53 bits significativos</h3>
+        <div class="bits" id="mantisa"></div>
+        <h3>3. Los 64 bits que hay en la memoria</h3>
+        <div class="bits" id="memoria"></div>
+        <h3>4. Lo que de verdad vale el float</h3>
+        <div id="valorExacto"></div>
+        <canvas id="lienzoZoom" aria-label="Zoom a la recta numérica alrededor del decimal: marcas en los floats vecinos y la posición exacta del decimal entre ellos"></canvas>
+        <h3>El código en Python</h3>
+        <div id="codigo2"></div>
+        <div class="consola" id="salida2" aria-label="Salida del programa"></div>
+        <div class="preguntas">
+          <h3>Para explorar</h3>
+          <ol>
+            <li>¿Por qué 0.5, 0.25 y 0.375 sí se guardan exactos y 0.1 no? Escríbelos en "Otro decimal".</li>
+            <li>¿El float de 0.1 queda un poquito arriba o un poquito abajo de 0.1? ¿Y el de 0.3? ¿Y el de 0.7?</li>
+            <li>¿Por qué 0.1 y 1.1 tienen el mismo bloque que se repite en binario?</li>
+            <li>Mira los denominadores de Fraction(x) para varios decimales. ¿Qué tienen todos en común?</li>
+            <li>¿Cuántas cifras decimales tiene el valor exacto del float 0.1? ¿Y el de 1.1? ¿Qué tiene que ver con el denominador?</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  
+  <section class="vista" id="v3" role="tabpanel" aria-labelledby="tab-v3">
+    <div class="fila">
+      <div class="panel">
+        <h2>Calculadora de Fraction</h2>
+        <label for="fa">Fracción A <small>(6/8, -3/4, 5 o un decimal como 0.75)</small></label>
+        <input id="fa" class="mono" type="text" value="1/3" maxlength="40" autocomplete="off" spellcheck="false">
+        <fieldset class="grupo">
+          <legend>Operación</legend>
+          <div class="chips" id="ops">
+            <label class="chip"><input type="radio" name="op" value="+" checked><span>+</span></label>
+            <label class="chip"><input type="radio" name="op" value="-"><span>−</span></label>
+            <label class="chip"><input type="radio" name="op" value="*"><span>×</span></label>
+            <label class="chip"><input type="radio" name="op" value="/"><span>÷</span></label>
+          </div>
+        </fieldset>
+        <label for="fb">Fracción B</label>
+        <input id="fb" class="mono" type="text" value="1/6" maxlength="40" autocomplete="off" spellcheck="false">
+        <label class="casilla" style="margin-top:8px"><input type="checkbox" id="bSinFraction"> Usar B sin Fraction (un int o un float de Python)</label>
+        <div class="lectura" id="lectura3"></div>
+      </div>
+      <div class="panel">
+        <h2>A mano y en Python</h2>
+        <div id="pasos3"></div>
+        <div id="codigo3"></div>
+        <div class="consola" id="salida3" aria-label="Salida del programa"></div>
+        <p class="nota" id="notaError3" hidden>Antes de la última línea, Python también imprime el <i>Traceback</i>: la ruta de tu archivo y la línea donde ocurrió el error.</p>
+      </div>
+    </div>
+    <div class="fila" style="margin-top:16px">
+      <div class="panel">
+        <h2>De un float a una fracción sencilla</h2>
+        <label for="flot">El float</label>
+        <select id="flot">
+          <option value="pi" selected>math.pi</option>
+          <option value="d01">0.1</option>
+          <option value="tercio">1 / 3</option>
+          <option value="dostercios">2 / 3</option>
+          <option value="raiz2">math.sqrt(2)</option>
+          <option value="e">math.e</option>
+        </select>
+        <label for="maxDen">max_denominator: <span class="valor" id="maxVal"></span></label>
+        <div class="en-linea">
+          <input id="maxLog" type="range" min="0" max="60" step="1" value="10" aria-label="max_denominator en escala logarítmica">
+          <input id="maxDen" type="number" min="1" max="1000000" step="1" value="10">
+        </div>
+        <div>
+          <button type="button" class="accion" data-max="7">7</button>
+          <button type="button" class="accion" data-max="100">100</button>
+          <button type="button" class="accion" data-max="113">113</button>
+          <button type="button" class="accion" data-max="1000000">1 000 000 (el de omisión)</button>
+        </div>
+        <div class="lectura" id="lectura4"></div>
+      </div>
+      <div class="panel">
+        <h2>limit_denominator paso a paso</h2>
+        <p class="nota">Python recorre la fracción continua del float: cada renglón es una aproximación (convergente) mejor que la anterior. Se detiene cuando el denominador pasaría del máximo y elige la más cercana entre la última convergente y una intermedia.</p>
+        <div class="tabla-scroll"><table id="tablaLimite"></table></div>
+        <div id="codigo4"></div>
+        <div class="consola" id="salida4" aria-label="Salida del programa"></div>
+        <div class="preguntas">
+          <h3>Para explorar</h3>
+          <ol>
+            <li>Antes de calcular: ¿qué imprime <span class="mono">Fraction(6, 8)</span>? ¿Y <span class="mono">Fraction(4, 2)</span>? ¿Y su repr?</li>
+            <li>Suma 1/3 + 1/6 a mano con el MCD y compara con la calculadora.</li>
+            <li>Multiplica Fraction(1, 2) por 0.5 usando "B sin Fraction". ¿De qué tipo es el resultado? ¿Y si sumas el int 1?</li>
+            <li>Con π: ¿desde qué max_denominator aparece 22/7? ¿Y 355/113? ¿Cuántos decimales de π acierta cada una?</li>
+            <li>Con 0.1 y max_denominator = 5, ¿qué fracción sale? ¿Por qué no 0?</li>
+            <li>¿Por qué <span class="mono">Fraction(1 / 3).limit_denominator()</span> da 1/3 aunque <span class="mono">Fraction(1 / 3)</span> no sea 1/3?</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<footer>
+  Programación Básica · FCFM-UANL · funciona sin internet. Las salidas son las de Python 3.12.
+  <a href="index.html">Índice de simuladores</a> · <a href="#qr-sitio" class="qr-abrir">Abrir en el celular (QR)</a>
+</footer>
+
+<script>
+// Aritmética y formato como en Python 3.12 (funciones puras, sin la página).
+var PY13 = (function () {
+  "use strict";
+
+  // ---------- Mostrar valores como los imprime Python ----------
+  // PyFloat marca un número que en Python es float aunque valga un entero (531.0, 35.0).
+  function PyFloat(valor) { this.valor = valor; }
+
+  // repr() de un float de Python: la representación más corta que vuelve al mismo número.
+  function pyFloat(x) {
+    if (Number.isNaN(x)) return "nan";
+    if (x === Infinity) return "inf";
+    if (x === -Infinity) return "-inf";
+    if (x === 0) return Object.is(x, -0) ? "-0.0" : "0.0";
+    var partes = Math.abs(x).toExponential().split("e");
+    var digitos = partes[0].replace(".", "");
+    var exp = parseInt(partes[1], 10);
+    var decpt = exp + 1, signo = x < 0 ? "-" : "";
+    if (decpt > 16 || decpt < -3) {
+      var mant = digitos.length > 1 ? digitos[0] + "." + digitos.slice(1) : digitos[0];
+      return signo + mant + "e" + (exp < 0 ? "-" : "+") + (Math.abs(exp) < 10 ? "0" : "") + Math.abs(exp);
+    }
+    if (decpt <= 0) return signo + "0." + "0".repeat(-decpt) + digitos;
+    if (decpt >= digitos.length) return signo + digitos + "0".repeat(decpt - digitos.length) + ".0";
+    return signo + digitos.slice(0, decpt) + "." + digitos.slice(decpt);
+  }
+
+  // repr() de un texto: comillas simples, o dobles si el texto trae ' y no trae ".
+  function pyStr(s) {
+    var q = (s.indexOf("'") >= 0 && s.indexOf('"') < 0) ? '"' : "'";
+    var r = "";
+    for (var i = 0; i < s.length; i++) {
+      var c = s[i], code = s.charCodeAt(i);
+      if (c === "\\") r += "\\\\";
+      else if (c === q) r += "\\" + q;
+      else if (c === "\n") r += "\\n";
+      else if (c === "\r") r += "\\r";
+      else if (c === "\t") r += "\\t";
+      else if (code < 32 || code === 127) r += "\\x" + (code < 16 ? "0" : "") + code.toString(16);
+      else r += c;
+    }
+    return q + r + q;
+  }
+
+  // repr() de un valor: None, True/False, int, float (PyFloat), str, list y dict.
+  function pyRepr(v) {
+    if (v === null || v === undefined) return "None";
+    if (v === true) return "True";
+    if (v === false) return "False";
+    if (v instanceof PyFloat) return pyFloat(v.valor);
+    if (typeof v === "number") return Number.isInteger(v) ? String(v) : pyFloat(v);
+    if (typeof v === "string") return pyStr(v);
+    if (Array.isArray(v)) return "[" + v.map(pyRepr).join(", ") + "]";
+    return "{" + Object.keys(v).map(function (k) { return pyStr(k) + ": " + pyRepr(v[k]); }).join(", ") + "}";
+  }
+
+  // ---------- Enteros grandes (BigInt) ----------
+  function absB(a) { return a < 0n ? -a : a; }
+  function bitLen(a) { a = absB(a); return a === 0n ? 0 : a.toString(2).length; }
+  function mcd(a, b) { a = absB(a); b = absB(b); while (b !== 0n) { var t = a % b; a = b; b = t; } return a; }
+  function divPiso(a, b) { var q = a / b; if (a % b !== 0n && ((a < 0n) !== (b < 0n))) q -= 1n; return q; }
+
+  // ---------- Los bits de un double ----------
+  var vista = new DataView(new ArrayBuffer(8));
+  var DOS52 = 1n << 52n, DOS53 = 1n << 53n;
+
+  // Los 64 bits en memoria, como texto de ceros y unos
+  function bits64(x) {
+    vista.setFloat64(0, x);
+    var a = vista.getUint32(0).toString(2), b = vista.getUint32(4).toString(2);
+    return "0".repeat(32 - a.length) + a + "0".repeat(32 - b.length) + b;
+  }
+  // Signo, exponente con sesgo (0 a 2047) y los 52 bits guardados de la mantisa
+  function partes(x) {
+    vista.setFloat64(0, x);
+    var hi = vista.getUint32(0), lo = vista.getUint32(4);
+    return { signo: hi >>> 31, exp: (hi >>> 20) & 0x7ff, mant: (BigInt(hi & 0xfffff) << 32n) | BigInt(lo) };
+  }
+  // Valor exacto de un double finito como fracción n/d (lo mismo que Fraction(x))
+  function racional(x) {
+    var p = partes(x), m, e;
+    if (p.exp === 0) { m = p.mant; e = -1074; } else { m = p.mant | DOS52; e = p.exp - 1075; }
+    if (m === 0n) return { n: 0n, d: 1n };
+    while (e < 0 && (m & 1n) === 0n) { m >>= 1n; e++; }
+    var n = p.signo ? -m : m;
+    return e >= 0 ? { n: n << BigInt(e), d: 1n } : { n: n, d: 1n << BigInt(-e) };
+  }
+  // Arma el double a partir de su mantisa entera q y su exponente e
+  function construir(q, e) {
+    var m, be;
+    if (q >= DOS52) { be = e + 1075; m = q - DOS52; } else { be = 0; m = q; }
+    vista.setUint32(0, (be << 20) | Number(m >> 32n));
+    vista.setUint32(4, Number(m & 0xffffffffn));
+    return vista.getFloat64(0);
+  }
+  // n / d al double más cercano (empates al par), como la división de enteros de Python
+  function aFloat(n, d) {
+    if (d < 0n) { n = -n; d = -d; }
+    var neg = n < 0n; if (neg) n = -n;
+    if (n === 0n) return 0;
+    var e = bitLen(n) - bitLen(d) - 53, q, r, den;
+    function dividir(e) {
+      if (e >= 0) { den = d << BigInt(e); q = n / den; r = n % den; }
+      else { den = d; var num = n << BigInt(-e); q = num / den; r = num % den; }
+    }
+    dividir(e);
+    while (q >= DOS53) { e++; dividir(e); }
+    if (e < -1074) { e = -1074; dividir(e); }
+    var dos = 2n * r;
+    if (dos > den || (dos === den && (q & 1n) === 1n)) q += 1n;
+    if (q === DOS53) { q = DOS52; e++; }
+    if (e > 971) return neg ? -Infinity : Infinity;
+    var v = construir(q, e);
+    return neg ? -v : v;
+  }
+  // Todas las cifras del valor exacto de un double
+  function decimalExacto(x) {
+    var r = racional(x), neg = r.n < 0n || Object.is(x, -0), n = absB(r.n), k = bitLen(r.d) - 1;
+    var s = (n * 5n ** BigInt(k)).toString();
+    if (k === 0) return (neg ? "-" : "") + s;
+    if (s.length <= k) s = "0".repeat(k - s.length + 1) + s;
+    return (neg ? "-" : "") + s.slice(0, s.length - k) + "." + s.slice(s.length - k);
+  }
+  // Cuántas cifras decimales tiene el valor exacto de x
+  function cifrasExactas(x) { return bitLen(racional(x).d) - 1; }
+  // f"{x:.Nf}": redondeo correcto del valor exacto, con empates al par
+  function formatoF(x, nd) {
+    if (Number.isNaN(x)) return "nan";
+    if (!isFinite(x)) return x > 0 ? "inf" : "-inf";
+    var r = racional(x), neg = r.n < 0n || Object.is(x, -0), n = absB(r.n), d = r.d;
+    var num = n * 10n ** BigInt(nd), q = num / d, dos = 2n * (num % d);
+    if (dos > d || (dos === d && (q & 1n) === 1n)) q += 1n;
+    var s = q.toString();
+    if (nd > 0) {
+      if (s.length <= nd) s = "0".repeat(nd - s.length + 1) + s;
+      s = s.slice(0, s.length - nd) + "." + s.slice(s.length - nd);
+    }
+    return (neg ? "-" : "") + s;
+  }
+  // round(x, nd) de Python para un float
+  function redondear(x, nd) { return isFinite(x) ? parseFloat(formatoF(x, nd)) : x; }
+  // math.isclose(a, b) con rel_tol=1e-09 y abs_tol=0.0
+  function isclose(a, b) {
+    if (a === b) return true;
+    if (!isFinite(a) || !isFinite(b)) return false;
+    var dif = Math.abs(b - a);
+    return dif <= Math.abs(1e-9 * b) || dif <= Math.abs(1e-9 * a) || dif <= 0;
+  }
+  // math.nextafter(x, inf) con dir = 1, o math.nextafter(x, -inf) con dir = -1
+  function siguiente(x, dir) {
+    if (x === 0) return dir > 0 ? 5e-324 : -5e-324;
+    vista.setFloat64(0, x);
+    var b = (BigInt(vista.getUint32(0)) << 32n) | BigInt(vista.getUint32(4));
+    b += ((x > 0) === (dir > 0)) ? 1n : -1n;
+    vista.setUint32(0, Number(b >> 32n));
+    vista.setUint32(4, Number(b & 0xffffffffn));
+    return vista.getFloat64(0);
+  }
+
+  // ---------- Errores de Python ----------
+  function ErrorPy(tipo, mensaje) { this.tipo = tipo; this.mensaje = mensaje; }
+  ErrorPy.prototype.texto = function () { return this.tipo + ": " + this.mensaje; };
+
+  // ---------- Fraction ----------
+  // Fraction(n, d) con enteros: se simplifica sola y el signo queda en el numerador
+  function Frac(n, d) {
+    if (d === 0n) throw new ErrorPy("ZeroDivisionError", "Fraction(" + n + ", 0)");
+    var g = mcd(n, d);
+    if (d < 0n) g = -g;
+    this.n = n / g;
+    this.d = d / g;
+  }
+  Frac.prototype.str = function () { return this.d === 1n ? String(this.n) : this.n + "/" + this.d; };
+  Frac.prototype.repr = function () { return "Fraction(" + this.n + ", " + this.d + ")"; };
+  Frac.prototype.aFloat = function () { return aFloat(this.n, this.d); };
+  function fracDeFloat(x) { var r = racional(x); return new Frac(r.n, r.d); }
+  function operarF(a, op, b) {
+    if (op === "+") return new Frac(a.n * b.d + b.n * a.d, a.d * b.d);
+    if (op === "-") return new Frac(a.n * b.d - b.n * a.d, a.d * b.d);
+    if (op === "*") return new Frac(a.n * b.n, a.d * b.d);
+    if (b.n === 0n) throw new ErrorPy("ZeroDivisionError", "Fraction(" + b.d + ", 0)");
+    return new Frac(a.n * b.d, a.d * b.n);
+  }
+  function operarFloat(a, op, b) {
+    if (op === "+") return a + b;
+    if (op === "-") return a - b;
+    if (op === "*") return a * b;
+    if (b === 0) throw new ErrorPy("ZeroDivisionError", "float division by zero");
+    return a / b;
+  }
+
+  // Lee lo que el alumno escribe para una fracción: "6/8" → Fraction(6, 8), "5" → Fraction(5),
+  // "0.75" → Fraction("0.75"). Regresa { codigo, n, d, forma } o null.
+  function leerFraccion(texto) {
+    var t = String(texto).trim(), m;
+    if ((m = /^([+-]?\d+)\s*\/\s*([+-]?\d+)$/.exec(t))) {
+      var n = BigInt(m[1]), d = BigInt(m[2]);
+      return { codigo: "Fraction(" + n + ", " + d + ")", n: n, d: d, forma: "enteros" };
+    }
+    if (/^[+-]?\d+$/.test(t)) {
+      var k = BigInt(t);
+      return { codigo: "Fraction(" + k + ")", n: k, d: 1n, forma: "entero" };
+    }
+    m = /^([+-]?)(?=\d|\.\d)(\d*)(?:\.(\d*))?(?:[eE]([+-]?\d+))?$/.exec(t);
+    if (m) {
+      var num = BigInt(m[2] || "0"), den = 1n, dec = m[3] || "";
+      if (dec) { var esc = 10n ** BigInt(dec.length); num = num * esc + BigInt(dec); den = esc; }
+      if (m[4]) {
+        var ex = parseInt(m[4], 10);
+        if (Math.abs(ex) > 60) return null;
+        if (ex >= 0) num *= 10n ** BigInt(ex); else den *= 10n ** BigInt(-ex);
+      }
+      if (m[1] === "-") num = -num;
+      return { codigo: 'Fraction("' + t + '")', n: num, d: den, forma: "texto", texto: t };
+    }
+    return null;
+  }
+  // Un número de Python escrito tal cual: int o float
+  function leerNumeroPy(texto) {
+    var t = String(texto).trim();
+    if (/^[+-]?\d+$/.test(t)) { var k = BigInt(t); return { tipo: "int", valor: k, codigo: String(k) }; }
+    if (/^[+-]?(\d+\.\d*|\.\d+|\d+)([eE][+-]?\d+)?$/.test(t)) {
+      var x = parseFloat(t);
+      if (!isFinite(x)) return null;
+      return { tipo: "float", valor: x, codigo: pyFloat(x) };
+    }
+    return null;
+  }
+  // Un decimal para sumar o para ver cómo se guarda: { texto, x, frac } o null
+  function leerDecimal(texto) {
+    var t = String(texto).trim(), m = /^([+-]?)(\d*)(?:\.(\d*))?$/.exec(t);
+    if (!m || (m[2] === "" && !m[3])) return null;
+    var ent = m[2].replace(/^0+(?=\d)/, "") || "0", fr = (m[3] || "").replace(/0+$/, "");
+    if ((ent + fr).replace(/^0+/, "").length > 15 || fr.length > 12) return null;
+    var texto2 = (m[1] === "-" ? "-" : "") + ent + "." + (fr || "0");
+    var x = parseFloat(texto2);
+    if (x === 0 || Math.abs(x) >= 1e6) return null;
+    var n = BigInt(ent + fr);
+    if (m[1] === "-") n = -n;
+    return { texto: texto2, x: x, frac: new Frac(n, 10n ** BigInt(fr.length)) };
+  }
+  // Texto decimal de una fracción con desarrollo decimal finito (como literal de float: 1.0, 4.9)
+  function decimalDeFrac(f) {
+    var n = absB(f.n), d = f.d, k = 0;
+    while ((n * 10n ** BigInt(k)) % d !== 0n && k < 400) k++;
+    var s = (n * 10n ** BigInt(k) / d).toString();
+    if (k > 0) { if (s.length <= k) s = "0".repeat(k - s.length + 1) + s; s = s.slice(0, s.length - k) + "." + s.slice(s.length - k); }
+    else s += ".0";
+    return (f.n < 0n ? "-" : "") + s;
+  }
+
+  // Fraction.limit_denominator(max), con el mismo algoritmo de Python, y sus pasos
+  function limitarDenominador(f, maxDen) {
+    var pasos = [];
+    if (maxDen < 1n) throw new ErrorPy("ValueError", "max_denominator should be at least 1");
+    if (f.d <= maxDen) return { res: new Frac(f.n, f.d), pasos: pasos, directo: true };
+    var p0 = 0n, q0 = 1n, p1 = 1n, q1 = 0n, n = f.n, d = f.d, a, q2;
+    for (;;) {
+      a = divPiso(n, d);
+      q2 = q0 + a * q1;
+      if (q2 > maxDen) break;
+      var p2 = p0 + a * p1;
+      pasos.push({ a: a, p: p2, q: q2 });
+      p0 = p1; q0 = q1; p1 = p2; q1 = q2;
+      var t = d; d = n - a * d; n = t;
+    }
+    var k = (maxDen - q0) / q1;
+    var inter = { p: p0 + k * p1, q: q0 + k * q1 };
+    var siguienteConv = { p: p0 + a * p1, q: q2 };
+    var eligeConvergente = 2n * d * (q0 + k * q1) <= f.d;
+    var res = eligeConvergente ? new Frac(p1, q1) : new Frac(inter.p, inter.q);
+    return { res: res, pasos: pasos, intermedia: inter, convergente: { p: p1, q: q1 },
+             eligeConvergente: eligeConvergente, siguiente: siguienteConv, directo: false };
+  }
+
+  // Expansión binaria de n/d (n >= 0): parte entera, los primeros bits y el periodo
+  function expansionBinaria(n, d, cuantos) {
+    var g = mcd(n, d); n /= g; d /= g;
+    var dd = d, a = 0, b = 0;
+    while (dd % 2n === 0n) { dd /= 2n; a++; }
+    while (dd % 5n === 0n) { dd /= 5n; b++; }
+    var periodo = (dd === 1n && b > 0) ? 4 * Math.pow(5, b - 1) : 0;
+    var ent = n / d, r = n % d, bits = "";
+    while (bits.length < cuantos && r !== 0n) {
+      r *= 2n;
+      if (r >= d) { bits += "1"; r -= d; } else bits += "0";
+    }
+    return { entero: ent.toString(2), bits: bits, termina: r === 0n, pre: a, periodo: periodo };
+  }
+
+  // ---------- Programas: el código y lo que imprime ----------
+  function programaSuma(dec, n, conProducto) {
+    var x = dec.x, total = 0, filas = [], esperado = decimalDeFrac(new Frac(BigInt(n) * dec.frac.n, dec.frac.d));
+    for (var k = 1; k <= n; k++) {
+      total = total + x;
+      var exacto = new Frac(BigInt(k) * dec.frac.n, dec.frac.d), lit = decimalDeFrac(exacto);
+      var rt = racional(total), dif = new Frac(rt.n * exacto.d - exacto.n * rt.d, rt.d * exacto.d);
+      var prod = k * x, rp = racional(prod), difP = new Frac(rp.n * exacto.d - exacto.n * rp.d, rp.d * exacto.d);
+      filas.push({ k: k, total: total, exacto: exacto, literal: lit, igual: total === parseFloat(lit),
+                   error: dif.aFloat(), errorExacto: dif, producto: prod, errorProducto: difP.aFloat() });
+    }
+    var L = parseFloat(esperado), ult = filas[n - 1];
+    var cod = [
+      "import math",
+      "from fractions import Fraction",
+      "",
+      "total = 0",
+      "for _ in range(" + n + "):",
+      "    total = total + " + dec.texto,
+      "",
+      "exacto = " + n + ' * Fraction("' + dec.texto + '")',
+      "print(total)",
+      "print(exacto)",
+      "print(total == " + esperado + ")",
+      "print(math.isclose(total, " + esperado + "))"
+    ];
+    var sal = [pyFloat(total), ult.exacto.str(), total === L ? "True" : "False", isclose(total, L) ? "True" : "False"];
+    if (conProducto) {
+      cod.push("", "producto = " + n + " * " + dec.texto, "print(producto)", "print(producto == " + esperado + ")");
+      sal.push(pyFloat(ult.producto), ult.producto === L ? "True" : "False");
+    }
+    return { codigo: cod.join("\n"), salida: sal.join("\n"), error: null, filas: filas, esperado: esperado, L: L };
+  }
+
+  function programaGuardado(dec) {
+    var x = dec.x, f = fracDeFloat(x), k = Math.max(1, cifrasExactas(x));
+    var cod = [
+      "from fractions import Fraction",
+      "",
+      "x = " + dec.texto,
+      "print(Fraction(x))",
+      'print(Fraction("' + dec.texto + '"))',
+      'print(Fraction(x) == Fraction("' + dec.texto + '"))',
+      'print(f"{x:.' + k + 'f}")',
+      "print(Fraction(x).limit_denominator())"
+    ];
+    var igual = f.n === dec.frac.n && f.d === dec.frac.d;
+    var sal = [f.str(), dec.frac.str(), igual ? "True" : "False", formatoF(x, k),
+               limitarDenominador(f, 1000000n).res.str()];
+    return { codigo: cod.join("\n"), salida: sal.join("\n"), error: null };
+  }
+
+  function entreParentesis(c) { return c.charAt(0) === "-" ? "(" + c + ")" : c; }
+
+  function programaFraccion(textoA, op, textoB, bSinFraction) {
+    var A = leerFraccion(textoA);
+    var B = bSinFraction ? leerNumeroPy(textoB) : leerFraccion(textoB);
+    if (!A || !B) return null;
+    var cod = ["from fractions import Fraction", "", "a = " + A.codigo];
+    var sal = [], res = { codigo: "", salida: "", error: null, A: A, B: B };
+    var codB = bSinFraction ? entreParentesis(B.codigo) : "b";
+    if (!bSinFraction) cod.push("b = " + B.codigo);
+    cod.push("r = a " + op + " " + codB);
+    var esFloat = bSinFraction && B.tipo === "float";
+    if (esFloat) cod.push("print(r)", "print(type(r))");
+    else cod.push(bSinFraction ? "print(a)" : "print(a, b)", "print(r)", "print(repr(r))", "print(type(r))", "print(float(r))");
+    res.codigo = cod.join("\n");
+    try {
+      var fa = new Frac(A.n, A.d);
+      res.fa = fa;
+      var fb = null;
+      if (!bSinFraction) { fb = new Frac(B.n, B.d); res.fb = fb; }
+      var r;
+      if (esFloat) {
+        r = operarFloat(fa.aFloat(), op, B.valor);
+        res.rFloat = r;
+        sal.push(pyFloat(r), "<class 'float'>");
+      } else {
+        if (bSinFraction) fb = new Frac(B.valor, 1n);
+        res.fbOperando = fb;
+        r = operarF(fa, op, fb);
+        res.r = r;
+        sal.push(bSinFraction ? fa.str() : fa.str() + " " + fb.str(), r.str(), r.repr(), "<class 'fractions.Fraction'>", pyFloat(r.aFloat()));
+      }
+    } catch (e) {
+      if (!(e instanceof ErrorPy)) throw e;
+      res.error = e.texto();
+    }
+    res.salida = sal.join("\n");
+    return res;
+  }
+
+  var FLOTANTES = {
+    pi: { codigo: "math.pi", x: Math.PI, math: true },
+    d01: { codigo: "0.1", x: 0.1, math: false },
+    tercio: { codigo: "1 / 3", x: 1 / 3, math: false },
+    dostercios: { codigo: "2 / 3", x: 2 / 3, math: false },
+    raiz2: { codigo: "math.sqrt(2)", x: Math.sqrt(2), math: true },
+    e: { codigo: "math.e", x: Math.E, math: true }
+  };
+
+  function programaLimite(clave, maxDen) {
+    var F = FLOTANTES[clave], f = fracDeFloat(F.x), L = limitarDenominador(f, BigInt(maxDen));
+    var cod = [];
+    if (F.math) cod.push("import math");
+    cod.push("from fractions import Fraction", "", "x = " + F.codigo, "f = Fraction(x)",
+             "aprox = f.limit_denominator(" + maxDen + ")",
+             "print(f)", "print(aprox)", "print(float(aprox))", "print(abs(float(aprox) - x))");
+    var v = L.res.aFloat();
+    var sal = [f.str(), L.res.str(), pyFloat(v), pyFloat(Math.abs(v - F.x))];
+    return { codigo: cod.join("\n"), salida: sal.join("\n"), error: null, f: f, lim: L, x: F.x };
+  }
+
+  return {
+    PyFloat: PyFloat, pyFloat: pyFloat, pyStr: pyStr, pyRepr: pyRepr,
+    bitLen: bitLen, mcd: mcd, divPiso: divPiso, bits64: bits64, partes: partes, racional: racional,
+    aFloat: aFloat, decimalExacto: decimalExacto, cifrasExactas: cifrasExactas, formatoF: formatoF,
+    redondear: redondear, isclose: isclose, siguiente: siguiente, ErrorPy: ErrorPy, Frac: Frac,
+    fracDeFloat: fracDeFloat, operarF: operarF, leerFraccion: leerFraccion, leerNumeroPy: leerNumeroPy,
+    leerDecimal: leerDecimal, decimalDeFrac: decimalDeFrac, limitarDenominador: limitarDenominador,
+    expansionBinaria: expansionBinaria, programaSuma: programaSuma, programaGuardado: programaGuardado,
+    programaFraccion: programaFraccion, programaLimite: programaLimite, FLOTANTES: FLOTANTES
+  };
+})();
+</script>
+
+<script>
+(function () {
+  "use strict";
+  var P = PY13, pyFloat = P.pyFloat;
+  // Colores FCFM para el lienzo
+  var C = { azul:"#00408F", azulOscuro:"#0A2A57", guinda:"#8C1D35", oro:"#B8975A", oroTexto:"#8A6A2E",
+            verde:"#2F7D5B", gris:"#5B6472", grisClaro:"#E9ECF1", borde:"#D9DEE6", tinta:"#1B1F2A",
+            azulClaro:"#E8EEF7", oroClaro:"#F7F1E6", guindaClaro:"#F5E6EA" };
+  var FUENTE = "Calibri, 'Segoe UI', system-ui, sans-serif", MONO = "Consolas, 'Courier New', monospace";
+  function $(id) { return document.getElementById(id); }
+
+  // Pestañas
+  var botonesVista = document.querySelectorAll("nav.pestanas button");
+  function abrirVista(id) {
+    botonesVista.forEach(function (x) {
+      var activo = x.dataset.vista === id;
+      x.classList.toggle("activo", activo);
+      x.setAttribute("aria-selected", activo ? "true" : "false");
+    });
+    document.querySelectorAll("section.vista").forEach(function (x) { x.classList.toggle("activo", x.id === id); });
+    dibujarTodo();
+  }
+  botonesVista.forEach(function (b) { b.addEventListener("click", function () { abrirVista(b.dataset.vista); }); });
+
+  // Lienzo nítido en pantallas de alta densidad; proporcion = alto/ancho
+  function preparar(cv, proporcion) {
+    var dpr = window.devicePixelRatio || 1, w = cv.clientWidth || 600;
+    cv.style.height = (w * proporcion) + "px";
+    cv.width = Math.round(w * dpr); cv.height = Math.round(w * proporcion * dpr);
+    var g = cv.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { g: g, w: w, h: w * proporcion };
+  }
+
+  function esc(t) {
+    return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  // ---------- Código Python con los colores del curso ----------
+  var PY_KW = /^(False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)$/;
+  function pyResaltar(linea) {
+    var html = "", i = 0, m, resto;
+    while (i < linea.length) {
+      resto = linea.slice(i);
+      if ((m = /^#.*/.exec(resto))) { html += '<span class="com">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[rRbBfFuU]{0,2}("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/.exec(resto))) { html += '<span class="str">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[A-Za-z_\u00C0-\u024F][\w\u00C0-\u024F]*/.exec(resto))) { html += PY_KW.test(m[0]) ? '<span class="kw">' + m[0] + "</span>" : esc(m[0]); }
+      else if ((m = /^(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?j?/.exec(resto))) { html += '<span class="num">' + m[0] + "</span>"; }
+      else { m = [resto[0]]; html += esc(m[0]); }
+      i += m[0].length;
+    }
+    return html;
+  }
+  // Pinta código en un contenedor, con números de línea; marcar = número de línea (1, 2...) a resaltar.
+  function mostrarCodigo(el, codigo, marcar) {
+    var lineas = codigo.replace(/\n$/, "").split("\n");
+    el.innerHTML = '<div class="codigo"><ol>' + lineas.map(function (l, k) {
+      return "<li" + (marcar === k + 1 ? ' class="marca"' : "") + ">" + (pyResaltar(l) || " ") + "</li>";
+    }).join("") + "</ol></div>";
+  }
+  // La salida en la consola; un error se muestra en otro color
+  function mostrarSalida(el, prog) {
+    el.innerHTML = esc(prog.salida) + (prog.error ? (prog.salida ? "\n" : "") + '<span class="err">' + esc(prog.error) + "</span>" : "");
+  }
+
+  // Números para leer (no son salida de Python): 1.11 × 10⁻¹⁶
+  var SUP = { "0":"⁰", "1":"¹", "2":"²", "3":"³", "4":"⁴", "5":"⁵", "6":"⁶", "7":"⁷", "8":"⁸", "9":"⁹", "-":"⁻" };
+  function sup(n) { return String(n).split("").map(function (c) { return SUP[c] || c; }).join(""); }
+  function cientifico(x, dec) {
+    if (x === 0) return "0";
+    var s = Math.abs(x).toExponential(dec === undefined ? 2 : dec).split("e");
+    return (x < 0 ? "−" : "") + s[0] + " × 10" + sup(parseInt(s[1], 10));
+  }
+  function miles(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " "); }
+  function texto(g, t, x, y, color, tam, alin, base, negrita, fuente) {
+    g.save(); g.fillStyle = color; g.font = (negrita ? "bold " : "") + (tam || 15) + "px " + (fuente || FUENTE);
+    g.textAlign = alin || "left"; g.textBaseline = base || "alphabetic"; g.fillText(t, x, y); g.restore();
+  }
+  function linea(g, x0, y0, x1, y1, color, ancho, guiones) {
+    g.save(); g.strokeStyle = color; g.lineWidth = ancho || 1; if (guiones) g.setLineDash(guiones);
+    g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke(); g.restore();
+  }
+
+  // ================================================================ Decimal compartido (vistas 1 y 2)
+  var DECIMALES = ["0.1", "0.2", "0.3", "0.7", "1.1"];
+  var decimal = P.leerDecimal("0.1"), textoPropio = "", usarPropio = false;
+
+  document.querySelectorAll(".chips[data-grupo]").forEach(function (caja) {
+    var g = caja.dataset.grupo, html = "";
+    DECIMALES.concat(["otro"]).forEach(function (d) {
+      html += '<label class="chip"><input type="radio" name="dec' + g + '" value="' + d + '"' + (d === "0.1" ? " checked" : "") +
+              "><span>" + (d === "otro" ? "Otro" : d) + "</span></label>";
+    });
+    caja.innerHTML = html;
+    caja.addEventListener("change", function (ev) {
+      var v = ev.target.value;
+      if (v === "otro") { usarPropio = true; $("propio" + g).focus(); }
+      else { usarPropio = false; }
+      aplicarDecimal(v === "otro" ? textoPropio : v);
+    });
+  });
+  ["propio1", "propio2"].forEach(function (id) {
+    $(id).addEventListener("input", function () {
+      textoPropio = $(id).value;
+      usarPropio = true;
+      aplicarDecimal(textoPropio);
+    });
+  });
+  function aplicarDecimal(t) {
+    var d = P.leerDecimal(t);
+    decimal = d;
+    // sincroniza los dos grupos de botones y las dos cajas de texto
+    ["1", "2"].forEach(function (g) {
+      var valor = usarPropio ? "otro" : (d ? d.texto : "otro");
+      document.querySelectorAll('input[name="dec' + g + '"]').forEach(function (r) { r.checked = r.value === valor; });
+      if (document.activeElement !== $("propio" + g)) $("propio" + g).value = textoPropio;
+    });
+    actualizar1(); actualizar2();
+  }
+  function avisoDecimal() {
+    return "<span class='aviso'>Escribe un decimal distinto de cero, como 0.5, 0.15 o -2.675</span> " +
+           "(hasta 15 cifras y 12 decimales, menor que un millón).";
+  }
+
+  // ================================================================ Vista 1: suma repetida
+  var prog1 = null;
+  function nActual() { return Number($("n").value); }
+  $("n").addEventListener("input", function () { $("nNum").value = $("n").value; actualizar1(); });
+  $("nNum").addEventListener("input", function () {
+    var v = Math.round(Number($("nNum").value));
+    if (v >= 1 && v <= 100) { $("n").value = v; actualizar1(); }
+  });
+  $("nNum").addEventListener("change", function () { $("nNum").value = $("n").value; });
+  $("conProducto").addEventListener("change", actualizar1);
+
+  function actualizar1() {
+    var n = nActual();
+    $("nVal").textContent = n;
+    if (!decimal) {
+      prog1 = null;
+      $("lectura1").innerHTML = avisoDecimal();
+      $("codigo1").innerHTML = ""; $("salida1").textContent = ""; $("tablaPasos").innerHTML = "";
+      dibujarError();
+      return;
+    }
+    prog1 = P.programaSuma(decimal, n, $("conProducto").checked);
+    mostrarCodigo($("codigo1"), prog1.codigo, 6);
+    mostrarSalida($("salida1"), prog1);
+    var f = prog1.filas, ult = f[n - 1], L = prog1.L;
+    var html = "<b>Con float:</b> <span class='mono'>total = " + esc(pyFloat(ult.total)) + "</span><br>" +
+      "<b>Exacto:</b> " + n + " × " + esc(decimal.texto) + " = <span class='mono'>" + esc(prog1.esperado) + "</span>" +
+      " (Fraction: <span class='mono'>" + esc(ult.exacto.str()) + "</span>)<br>" +
+      "<b>Error:</b> total − exacto = " + cientifico(ult.error) +
+      (ult.error > 0 ? " (el float se pasa)" : ult.error < 0 ? " (al float le falta)" : " (¡exacto!)") + "<br>" +
+      "<span class='mono'>total == " + esc(prog1.esperado) + "</span> → <span class='" + (ult.total === L ? "ok" : "mal") + "'>" + (ult.total === L ? "True" : "False") + "</span> · " +
+      "<span class='mono'>math.isclose</span> → <span class='" + (P.isclose(ult.total, L) ? "ok" : "mal") + "'>" + (P.isclose(ult.total, L) ? "True" : "False") + "</span><br>";
+    var renglonesRaros = f.filter(function (r) { return !r.igual; }).length;
+    html += "Vueltas en las que <span class='mono'>print</span> deja ver el error: <b>" + renglonesRaros + "</b> de " + n +
+            " <span class='nota'>(en rojo en la tabla)</span>.";
+    if ($("conProducto").checked) {
+      html += "<br><b>Con una multiplicación:</b> <span class='mono'>" + n + " * " + esc(decimal.texto) + " = " + esc(pyFloat(ult.producto)) +
+              "</span>, error " + cientifico(ult.errorProducto) + ".";
+    }
+    $("lectura1").innerHTML = html;
+    var filas = "<thead><tr><th>Vuelta</th><th>total (print)</th><th>exacto</th><th>error</th><th>¿igual?</th></tr></thead><tbody>";
+    f.forEach(function (r) {
+      filas += "<tr" + (r.igual ? "" : " class='raro'") + "><td>" + r.k + "</td><td class='mono'>" + esc(pyFloat(r.total)) +
+        "</td><td class='mono'>" + esc(r.literal) + "</td><td>" + cientifico(r.error) + "</td><td class='mono'>" + (r.igual ? "True" : "False") + "</td></tr>";
+    });
+    $("tablaPasos").innerHTML = filas + "</tbody>";
+    dibujarError();
+  }
+
+  function pasoBonito(maxAbs) {
+    var e = Math.floor(Math.log10(maxAbs)), base = Math.pow(10, e), c = [0.5, 1, 2, 2.5, 5, 10];
+    for (var i = 0; i < c.length; i++) if (maxAbs / (c[i] * base) <= 4) return { paso: c[i] * base, e: e };
+    return { paso: 10 * base, e: e };
+  }
+
+  function dibujarError() {
+    var cv = $("lienzoError");
+    if (!cv.offsetParent) return;
+    var angosto = (cv.clientWidth || 600) < 560;
+    var d = preparar(cv, angosto ? 0.78 : 0.44), g = d.g, w = d.w, h = d.h;
+    g.clearRect(0, 0, w, h);
+    if (!prog1) { texto(g, "Escribe un decimal válido", w / 2, h / 2, C.gris, 17, "center", "middle"); return; }
+    var f = prog1.filas, n = f.length, conP = $("conProducto").checked;
+    var maxAbs = 0;
+    f.forEach(function (r) { maxAbs = Math.max(maxAbs, Math.abs(r.error), conP ? Math.abs(r.errorProducto) : 0); });
+    var izq = angosto ? 50 : 62, der = w - 14, arr = angosto ? 84 : 56, abj = h - 40;
+    texto(g, "Error del total: total − exacto", 10, 22, C.azulOscuro, 16, "left", "alphabetic", true);
+    if (maxAbs === 0) {
+      linea(g, izq, (arr + abj) / 2, der, (arr + abj) / 2, C.gris, 1.5);
+      texto(g, "Todos los errores son 0: este decimal se guarda exacto.", (izq + der) / 2, (arr + abj) / 2 - 14, C.verde, 16, "center", "alphabetic", true);
+    }
+    var esc1 = maxAbs > 0 ? pasoBonito(maxAbs) : { paso: 1, e: 0 }, paso = esc1.paso, unidad = Math.pow(10, esc1.e);
+    var ymax = maxAbs > 0 ? Math.ceil(maxAbs / paso - 1e-9) * paso : 1;
+    function Y(v) { return (arr + abj) / 2 - (v / ymax) * (abj - arr) / 2; }
+    function X(k) { return n === 1 ? (izq + der) / 2 : izq + (k - 1) / (n - 1) * (der - izq); }
+    if (maxAbs > 0) {
+      texto(g, "(en unidades de 10" + sup(esc1.e) + ")", angosto ? 10 : 280, angosto ? 42 : 22, C.gris, 15);
+      for (var v = -ymax; v <= ymax + paso / 2; v += paso) {
+        var vv = Math.abs(v) < paso / 1e6 ? 0 : v;
+        linea(g, izq, Y(vv), der, Y(vv), vv === 0 ? C.gris : C.grisClaro, vv === 0 ? 1.5 : 1);
+        var et = Number((vv / unidad).toPrecision(3));
+        texto(g, (et < 0 ? "−" : "") + Math.abs(et), izq - 6, Y(vv) + 5, C.gris, 14, "right");
+      }
+    }
+    // marcas del eje horizontal
+    var pasoK = n <= 12 ? 1 : n <= 30 ? 5 : n <= 60 ? 10 : 20;
+    for (var k = 1; k <= n; k++) {
+      if (k === 1 || k % pasoK === 0 || k === n) {
+        linea(g, X(k), abj, X(k), abj + 5, C.gris, 1);
+        if (k === 1 || k % pasoK === 0 || (k === n && n % pasoK > pasoK / 2)) texto(g, String(k), X(k), abj + 19, C.gris, 14, "center");
+      }
+    }
+    texto(g, "vuelta (número de sumas)", (izq + der) / 2, h - 4, C.tinta, 14, "center");
+    if (maxAbs === 0) return;
+    // serie de la suma repetida
+    g.save(); g.strokeStyle = C.guinda; g.lineWidth = 1.2; g.globalAlpha = 0.5; g.beginPath();
+    f.forEach(function (r, i) { if (i === 0) g.moveTo(X(r.k), Y(r.error)); else g.lineTo(X(r.k), Y(r.error)); });
+    g.stroke(); g.restore();
+    var rad = n > 60 ? 2.6 : 3.6;
+    f.forEach(function (r) {
+      g.save(); g.fillStyle = r.error === 0 ? C.verde : C.guinda;
+      g.beginPath(); g.arc(X(r.k), Y(r.error), rad, 0, 2 * Math.PI); g.fill(); g.restore();
+    });
+    if (conP) {
+      f.forEach(function (r) {
+        var x0 = X(r.k), y0 = Y(r.errorProducto);
+        g.save(); g.fillStyle = C.oro; g.beginPath(); g.moveTo(x0, y0 - 5); g.lineTo(x0 + 5, y0); g.lineTo(x0, y0 + 5); g.lineTo(x0 - 5, y0); g.closePath(); g.fill(); g.restore();
+      });
+    }
+    // leyenda
+    var ly = angosto ? 64 : 42, lx = angosto ? 16 : w - (conP ? 300 : 150);
+    g.save(); g.fillStyle = C.guinda; g.beginPath(); g.arc(lx, ly - 4, 4, 0, 2 * Math.PI); g.fill(); g.restore();
+    texto(g, "sumando " + (n === 1 ? "1 vez" : "k veces"), lx + 9, ly + 1, C.guinda, 14);
+    if (conP) {
+      var lx2 = lx + 150;
+      g.save(); g.fillStyle = C.oro; g.beginPath(); g.moveTo(lx2, ly - 9); g.lineTo(lx2 + 5, ly - 4); g.lineTo(lx2, ly + 1); g.lineTo(lx2 - 5, ly - 4); g.closePath(); g.fill(); g.restore();
+      texto(g, "k * x (una vez)", lx2 + 10, ly + 1, C.oroTexto, 14);
+    }
+  }
+
+  // ================================================================ Vista 2: ¿cómo se guarda?
+  function agrupar(bits, n) {
+    var s = "";
+    for (var i = 0; i < bits.length; i += n) s += (i ? " " : "") + bits.slice(i, i + n);
+    return s;
+  }
+  function actualizar2() {
+    if (!decimal) {
+      $("lectura2").innerHTML = avisoDecimal();
+      ["binario", "mantisa", "memoria", "valorExacto", "codigo2"].forEach(function (id) { $(id).innerHTML = ""; });
+      $("salida2").textContent = "";
+      dibujarZoom();
+      return;
+    }
+    var dec = decimal, x = dec.x, f = dec.frac, neg = f.n < 0n, nAbs = neg ? -f.n : f.n;
+    // 1. expansión binaria del decimal exacto
+    var ex = P.expansionBinaria(nAbs, f.d, 600);
+    var html = "<span class='rotulo'>" + esc(dec.texto) + " escrito en base 2:</span>" + (neg ? "−" : "") + ex.entero + ".";
+    if (!ex.bits) html += "0";
+    else if (ex.termina) html += "<span class='p0'>" + agrupar(ex.bits, 4) + "</span>";
+    else {
+      var pre = ex.bits.slice(0, ex.pre), cuerpo = ex.bits.slice(ex.pre);
+      html += pre ? "<span class='pre'>" + pre + "</span> " : "";
+      if (ex.periodo <= 20) {
+        var mostrar = Math.max(4, Math.ceil(64 / ex.periodo));
+        for (var i = 0; i < mostrar; i++) html += "<span class='p" + (i % 2) + "'>" + cuerpo.slice(i * ex.periodo, (i + 1) * ex.periodo) + "</span> ";
+      } else html += "<span class='p0'>" + agrupar(cuerpo.slice(0, 64), 4) + "</span> ";
+      html += "…";
+    }
+    var notaBin = ex.termina ? "<span class='ok'>Termina:</span> este decimal se puede escribir exacto en binario."
+      : "<span class='mal'>No termina:</span> " + (ex.periodo <= 20 ? "el bloque <b class='mono'>" + ex.bits.slice(ex.pre, ex.pre + ex.periodo) + "</b>" : "un bloque de <b>" + miles(ex.periodo) + "</b> bits") +
+        " se repite para siempre, como el 3 de 1/3 = 0.333… en decimal.";
+    $("binario").innerHTML = html + "<span class='rotulo'>" + notaBin + "</span>";
+
+    // 2. los 53 bits significativos: exacto contra guardado
+    var p = P.partes(x), eG = p.exp - 1023;
+    var guardado = "1" + p.mant.toString(2).padStart(52, "0");
+    var bitsExactos = ex.entero.replace(/^0+/, "") + ex.bits;
+    var iniFrac = ex.entero.replace(/^0+/, "").length;
+    var lider = bitsExactos.indexOf("1");
+    var eE = lider < iniFrac ? iniFrac - 1 - lider : -(lider - iniFrac + 1);
+    var sig = bitsExactos.slice(lider);
+    var cab = sig.slice(0, 53).padEnd(53, "0"), resto = sig.slice(53, 53 + 16);
+    var hayResto = sig.length > 53;
+    var difiere = cab !== guardado || eE !== eG;
+    function mant(b, marcar) {
+      var s = "", i0 = -1;
+      if (marcar) { for (var i = 0; i < 53; i++) if (b[i] !== cab[i]) { i0 = i; break; } }
+      var cuerpo = b.slice(1);
+      var grupos = agrupar(cuerpo, 4), out = "";
+      var idx = 1;
+      for (var j = 0; j < grupos.length; j++) {
+        var c = grupos[j];
+        if (c === " ") { out += " "; continue; }
+        out += (i0 >= 0 && idx >= i0) ? "<span class='dif'>" + c + "</span>" : c;
+        idx++;
+      }
+      s = b[0] + "." + out;
+      return s;
+    }
+    var h2 = "<span class='rotulo'>Valor exacto, con el primer 1 al frente (los 53 bits que caben y lo que sobra):</span>" +
+      (neg ? "−" : "") + "<span class='m'>" + mant(cab, false) + "</span>" + (hayResto ? " <span class='resto'>| " + agrupar(resto, 4) + " …</span>" : "") +
+      " × 2" + sup(eE) +
+      "<span class='rotulo'>Lo que guarda el float (redondeado al más cercano):</span>" + (neg ? "−" : "") +
+      "<span class='m'>" + mant(guardado, true) + "</span> × 2" + sup(eG);
+    var notaM = !hayResto ? "<span class='ok'>Cabe completo</span>: no hubo que redondear."
+      : difiere ? "Se cortó en el bit 53 y se <b>redondeó hacia arriba</b>: los bits subrayados cambiaron."
+      : "Se cortó en el bit 53 y se <b>redondeó hacia abajo</b>: lo que sobraba se tiró.";
+    $("mantisa").innerHTML = h2 + "<span class='rotulo'>" + notaM + "</span>";
+
+    // 3. los 64 bits en memoria
+    var b = P.bits64(x);
+    $("memoria").innerHTML = "<span class='s'>" + b[0] + "</span> <span class='e'>" + b.slice(1, 12) + "</span> <span class='m'>" + agrupar(b.slice(12), 4) + "</span>" +
+      "<span class='rotulo'><span class='s'>signo</span> (" + b[0] + " = " + (b[0] === "1" ? "negativo" : "positivo") + ") · " +
+      "<span class='e'>exponente</span> " + parseInt(b.slice(1, 12), 2) + " − 1023 = " + String(eG).replace("-", "−") + " · " +
+      "<span class='m'>mantisa</span>: los 52 bits después del primer 1 (ese 1 no se guarda)</span>";
+
+    // 4. el valor exacto
+    var fx = P.fracDeFloat(x), dx = P.decimalExacto(x), objetivo = dec.texto;
+    var k = 0;
+    while (k < dx.length && k < objetivo.length && dx[k] === objetivo[k]) k++;
+    while (k < dx.length && k >= objetivo.length && dx[k] === "0") k++;
+    var exacto = fx.n === f.n && fx.d === f.d;
+    var difExacta = P.operarF(fx, "-", f);
+    var potencia = P.bitLen(fx.d) - 1;
+    var hv = "<p class='grande' style='margin:4px 0'><span class='mono'>Fraction(" + esc(dec.texto) + ") = " + esc(fx.str()) + "</span>" +
+      (potencia > 0 ? " <span class='nota'>(el denominador es 2" + sup(potencia) + ")</span>" : "") + "</p>" +
+      "<div class='bits'>" + (exacto ? "<span class='p0'>" + esc(dx) + "</span>"
+        : esc(dx.slice(0, k)) + "<span class='dif'>" + esc(dx.slice(k)) + "</span>") + "</div>" +
+      "<p class='nota'>" + (exacto ? "<span class='ok'>Es exactamente " + esc(dec.texto) + ".</span>"
+        : "Las cifras subrayadas son el error: el float " + (difExacta.n > 0n ? "<b>se pasa</b>" : "<b>se queda corto</b>") + " por " +
+          cientifico(difExacta.aFloat(), 3) + ".") + " Fraction(\"" + esc(dec.texto) + "\") = " + esc(f.str()) + ".</p>";
+    $("valorExacto").innerHTML = hv;
+
+    // lectura
+    var anterior = P.siguiente(x, -1), posterior = P.siguiente(x, 1);
+    $("lectura2").innerHTML = "<b>Escribes:</b> <span class='mono'>" + esc(dec.texto) + "</span> = " + esc(f.str()) + "<br>" +
+      "<b>Se guarda:</b> " + (exacto ? "<span class='ok'>exacto</span>" : "<span class='mal'>aproximado</span>") + "<br>" +
+      "<b>Python lo imprime como</b> <span class='mono'>" + esc(pyFloat(x)) + "</span>" + (exacto ? "" : ", aunque no sea exacto: es el float más cercano a " + esc(dec.texto) + " y la forma más corta de nombrarlo") + ".<br>" +
+      "<b>Floats vecinos:</b> <span class='mono'>" + esc(pyFloat(anterior)) + "</span> y <span class='mono'>" + esc(pyFloat(posterior)) + "</span>; entre ellos no hay ningún otro.";
+
+    var prog = P.programaGuardado(dec);
+    mostrarCodigo($("codigo2"), prog.codigo, 4);
+    mostrarSalida($("salida2"), prog);
+    dibujarZoom();
+  }
+
+  function dibujarZoom() {
+    var cv = $("lienzoZoom");
+    if (!cv.offsetParent) return;
+    var w0 = cv.clientWidth || 600, angosto = w0 < 560, alto = angosto ? 250 : 236;
+    var d = preparar(cv, alto / w0), g = d.g, w = d.w, h = d.h;
+    g.clearRect(0, 0, w, h);
+    if (!decimal) return;
+    var x = decimal.x, f = decimal.frac;
+    var vec = angosto ? [P.siguiente(x, -1), x, P.siguiente(x, 1)]
+                      : [P.siguiente(P.siguiente(x, -1), -1), P.siguiente(x, -1), x, P.siguiente(x, 1), P.siguiente(P.siguiente(x, 1), 1)];
+    var u = P.siguiente(x, 1) - x;                                // distancia al float siguiente
+    var fx = P.fracDeFloat(x), dif = P.operarF(f, "-", fx).aFloat() / u;   // dónde queda el decimal, en esos pasos
+    var izq = 20, der = w - 20, eje = angosto ? 92 : 84, ancho = angosto ? 3.4 : 5.4;
+    function X(t) { return (izq + der) / 2 + t * (der - izq) / ancho; }
+    texto(g, angosto ? "Zoom a la recta numérica" : "Zoom a la recta: los únicos floats que hay cerca de " + decimal.texto,
+          10, 22, C.azulOscuro, 16, "left", "alphabetic", true);
+    if (angosto) texto(g, "los únicos floats que hay cerca de " + decimal.texto, 10, 42, C.gris, 14);
+    linea(g, izq - 10, eje, der + 10, eje, C.gris, 2);
+    var medio = (vec.length - 1) / 2;
+    vec.forEach(function (v, i) {
+      var t = (v - x) / u, xx = X(t), esX = i === medio;
+      linea(g, xx, eje - (esX ? 16 : 11), xx, eje + (esX ? 16 : 11), esX ? C.azul : C.gris, esX ? 3 : 2);
+      var fila = (i % 2) === (medio % 2) ? 0 : 1;
+      texto(g, pyFloat(v), xx, eje + 32 + fila * 18, esX ? C.azul : C.gris, esX ? 15 : 13, "center", "alphabetic", esX, MONO);
+    });
+    texto(g, "↑ el float", X(0), eje + 70, C.azul, 14, "center", "alphabetic", true);
+    // el decimal exacto
+    var xd = X(dif);
+    g.save(); g.fillStyle = C.guinda; g.beginPath(); g.moveTo(xd, eje - 4); g.lineTo(xd - 8, eje - 20); g.lineTo(xd + 8, eje - 20); g.closePath(); g.fill(); g.restore();
+    if (Math.abs(dif) > 1e-12) {
+      texto(g, decimal.texto + " exacto", xd + (dif > 0 ? -4 : 4), eje - 26, C.guinda, 15, dif > 0 ? "left" : "right", "alphabetic", true);
+      var yb = eje + 90;
+      linea(g, X(0), yb, xd, yb, C.guinda, 1.5);
+      linea(g, X(0), yb - 5, X(0), yb + 5, C.guinda, 1.5);
+      linea(g, xd, yb - 5, xd, yb + 5, C.guinda, 1.5);
+      texto(g, "diferencia: " + cientifico(P.operarF(fx, "-", f).aFloat(), 2), (X(0) + xd) / 2, yb + 20, C.guinda, 14, "center");
+    } else {
+      texto(g, decimal.texto + " exacto: es este mismo float", X(0), eje - 26, C.verde, 15, "center", "alphabetic", true);
+    }
+    texto(g, "separación entre este float y el siguiente: " + cientifico(u, 2), w - 10, h - 8, C.gris, 13, "right");
+  }
+
+  // ================================================================ Vista 3: fracciones exactas
+  function opActual() { var r = document.querySelector('input[name="op"]:checked'); return r ? r.value : "+"; }
+  var SIMBOLO = { "+": "+", "-": "−", "*": "×", "/": "÷" };
+  function simplificacion(n, d) {
+    var g = P.mcd(n, d), f = new P.Frac(n, d);
+    if (g === 1n && d > 0n) return "<span class='mono'>" + esc(f.str()) + "</span> (ya está simplificada)";
+    return "<span class='mono'>" + n + "/" + d + "</span> → MCD(" + (n < 0n ? -n : n) + ", " + (d < 0n ? -d : d) + ") = " + g +
+           " → <span class='mono'>" + esc(f.str()) + "</span>";
+  }
+  function actualizar3() {
+    var op = opActual(), sinF = $("bSinFraction").checked;
+    var prog = P.programaFraccion($("fa").value, op, $("fb").value, sinF);
+    if (!prog) {
+      var A = P.leerFraccion($("fa").value), B = sinF ? P.leerNumeroPy($("fb").value) : P.leerFraccion($("fb").value);
+      $("lectura3").innerHTML = "<span class='aviso'>" + (!A ? "Revisa A" : "Revisa B") + ":</span> escribe " +
+        (sinF && A ? "un entero (3) o un decimal (0.5)." : "una fracción como 6/8 o -3/4, un entero como 5 o un decimal como 0.75.");
+      $("pasos3").innerHTML = ""; $("codigo3").innerHTML = ""; $("salida3").textContent = ""; $("notaError3").hidden = true;
+      return;
+    }
+    mostrarCodigo($("codigo3"), prog.codigo, sinF ? 4 : 5);
+    mostrarSalida($("salida3"), prog);
+    $("notaError3").hidden = !prog.error;
+    var html = "", A2 = prog.A, B2 = prog.B;
+    html += "<b>A:</b> " + (A2.d === 0n ? "<span class='mono'>" + A2.n + "/0</span>" : simplificacion(A2.n, A2.d)) + "<br>";
+    if (!sinF) html += "<b>B:</b> " + (B2.d === 0n ? "<span class='mono'>" + B2.n + "/0</span>" : simplificacion(B2.n, B2.d)) + "<br>";
+    else html += "<b>B:</b> <span class='mono'>" + esc(B2.codigo) + "</span>, un <b>" + B2.tipo + "</b> de Python<br>";
+    var denCero = A2.d === 0n || (!sinF && B2.d === 0n);
+    if (prog.error) html += "<span class='mal'>" + esc(prog.error) + "</span>" + (denCero ? ": una fracción no puede tener denominador 0." : ": no se puede dividir entre cero.");
+    else if (prog.r) html += "<b>Resultado:</b> <span class='mono'>" + esc(prog.r.str()) + "</span>, una Fraction exacta (" + esc(prog.r.repr()) + ")";
+    else html += "<b>Resultado:</b> <span class='mono'>" + esc(pyFloat(prog.rFloat)) + "</span>, un <b>float</b>: Python convirtió A a float antes de operar.";
+    $("lectura3").innerHTML = html;
+    // a mano
+    var pasos = "";
+    if (prog.fa && (prog.fbOperando || prog.fb) && !prog.error && prog.r) {
+      var a = prog.fa, b = prog.fbOperando || prog.fb, n, d, regla;
+      if (op === "+" || op === "-") {
+        n = op === "+" ? a.n * b.d + b.n * a.d : a.n * b.d - b.n * a.d; d = a.d * b.d;
+        regla = "(" + a.n + "·" + b.d + " " + SIMBOLO[op] + " " + par(b.n) + "·" + a.d + ") / (" + a.d + "·" + b.d + ")";
+      } else if (op === "*") { n = a.n * b.n; d = a.d * b.d; regla = "(" + a.n + "·" + par(b.n) + ") / (" + a.d + "·" + b.d + ")"; }
+      else { n = a.n * b.d; d = a.d * b.n; regla = "(" + a.n + "·" + b.d + ") / (" + a.d + "·" + par(b.n) + ")"; }
+      if (d < 0n) { n = -n; d = -d; }
+      var g = P.mcd(n, d);
+      pasos = "<p class='grande' style='margin:0 0 6px'><b>A mano:</b> <span class='mono'>" + esc(a.str()) + " " + SIMBOLO[op] + " " + esc(b.str()) + " = " + regla + " = " + n + "/" + d + "</span>" +
+        (g > 1n ? " → MCD = " + g + " → <span class='mono'><b>" + esc(prog.r.str()) + "</b></span>" : " <span class='nota'>(ya está simplificada)</span>") + "</p>";
+    } else if (prog.fa && prog.rFloat !== undefined && !prog.error) {
+      pasos = "<p class='grande' style='margin:0 0 6px'><b>Con un float:</b> Python calcula <span class='mono'>float(a) " + esc(op) + " " +
+        esc(prog.B.codigo) + " = " + esc(pyFloat(prog.fa.aFloat())) + " " + esc(op) + " " + esc(prog.B.codigo) + " = " + esc(pyFloat(prog.rFloat)) +
+        "</span>: el resultado ya no es una fracción exacta.</p>";
+    }
+    $("pasos3").innerHTML = pasos;
+  }
+  function par(n) { return n < 0n ? "(" + n + ")" : String(n); }
+  ["fa", "fb"].forEach(function (id) { $(id).addEventListener("input", actualizar3); });
+  $("ops").addEventListener("change", actualizar3);
+  $("bSinFraction").addEventListener("change", function () {
+    if ($("bSinFraction").checked && /\//.test($("fb").value)) $("fb").value = "0.5";
+    $("fb").setAttribute("aria-label", $("bSinFraction").checked ? "Número B de Python (int o float)" : "Fracción B");
+    actualizar3();
+  });
+
+  // ---------- limit_denominator ----------
+  function ponerMax(v, desdeLog) {
+    v = Math.max(1, Math.min(1000000, Math.round(v)));
+    $("maxDen").value = v;
+    if (!desdeLog) $("maxLog").value = Math.round(10 * Math.log10(v));
+    actualizar4();
+  }
+  $("maxLog").addEventListener("input", function () { ponerMax(Math.pow(10, Number($("maxLog").value) / 10), true); });
+  $("maxDen").addEventListener("input", function () {
+    var v = Number($("maxDen").value);
+    if (v >= 1 && v <= 1000000 && Number.isInteger(v)) { $("maxLog").value = Math.round(10 * Math.log10(v)); actualizar4(); }
+  });
+  $("maxDen").addEventListener("change", function () { ponerMax(Number($("maxDen").value) || 1, false); });
+  document.querySelectorAll("[data-max]").forEach(function (b) {
+    b.addEventListener("click", function () { ponerMax(Number(b.dataset.max), false); });
+  });
+  $("flot").addEventListener("change", actualizar4);
+
+  function cifrasCorrectas(aprox, x) {
+    var a = P.formatoF(aprox, 17), b = P.formatoF(x, 17), i = 0, punto = b.indexOf(".");
+    while (i < a.length && a[i] === b[i]) i++;
+    return Math.max(0, i - punto - 1);
+  }
+  function actualizar4() {
+    var maxD = Math.max(1, Math.min(1000000, Math.round(Number($("maxDen").value) || 1)));
+    $("maxVal").textContent = miles(maxD);
+    var prog = P.programaLimite($("flot").value, maxD), L = prog.lim, x = prog.x;
+    mostrarCodigo($("codigo4"), prog.codigo, prog.codigo.split("\n").indexOf("aprox = f.limit_denominator(" + maxD + ")") + 1);
+    mostrarSalida($("salida4"), prog);
+    var v = L.res.aFloat(), err = Math.abs(v - x);
+    var html = "<b>Fraction(x)</b> = <span class='mono'>" + esc(prog.f.str()) + "</span><br>" +
+      "<b>Con denominador de hasta " + miles(maxD) + ":</b> <span class='mono grande'><b>" + esc(L.res.str()) + "</b></span> = " +
+      "<span class='mono'>" + esc(pyFloat(v)) + "</span><br>";
+    var cifras = cifrasCorrectas(v, x);
+    if (L.directo) html += "El denominador de Fraction(x) ya cabe en el límite: regresa la misma fracción.";
+    else {
+      html += v === x ? "Al pasarla a float da <b>el mismo float</b> que x.<br>"
+                      : "Error: " + cientifico(err, 2) + " · acierta <b>" + cifras + "</b> " + (cifras === 1 ? "decimal" : "decimales") + ".<br>";
+      html += "La siguiente convergente, <span class='mono'>" + L.siguiente.p + "/" + L.siguiente.q + "</span>, necesitaría denominador " + miles(L.siguiente.q) + ".";
+    }
+    $("lectura4").innerHTML = html;
+    var filas = "<thead><tr><th>Paso</th><th>a</th><th>Fracción</th><th>Valor</th><th>Error</th></tr></thead><tbody>";
+    var res = L.res, yaEsta = false;
+    function renglon(nombre, a, f) {
+      var val = f.aFloat(), elegida = f.n === res.n && f.d === res.d;
+      var errExacto = Math.abs(P.operarF(f, "-", prog.f).aFloat());     // |p/q − Fraction(x)| sin redondeos intermedios
+      return "<tr" + (elegida ? " class='elegida'" : "") + "><td>" + nombre + "</td><td>" + a + "</td><td class='mono'>" + esc(f.str()) +
+        "</td><td class='mono'>" + esc(pyFloat(val)) + "</td><td>" + cientifico(errExacto, 2) + "</td></tr>";
+    }
+    L.pasos.forEach(function (p, i) {
+      if (p.p === L.intermedia.p && p.q === L.intermedia.q) yaEsta = true;
+      filas += renglon(i + 1, p.a, new P.Frac(p.p, p.q));
+    });
+    if (L.directo) filas += renglon("—", "", res);
+    else if (!yaEsta && L.intermedia.q !== L.convergente.q) filas += renglon("intermedia", "", new P.Frac(L.intermedia.p, L.intermedia.q));
+    $("tablaLimite").innerHTML = filas + "</tbody>";
+  }
+
+  // ================================================================ general
+  function dibujarTodo() { dibujarError(); dibujarZoom(); }
+  window.addEventListener("resize", dibujarTodo);
+  aplicarDecimal("0.1");
+  actualizar3();
+  actualizar4();
+  // Abrir directamente una vista con #v1, #v2 o #v3 al final de la liga
+  var inicial = location.hash.slice(1);
+  if (/^v[123]$/.test(inicial)) { abrirVista(inicial); window.addEventListener("load", function () { window.scrollTo(0, 0); }); }
+})();
+</script>
+<div id="qr-sitio" class="qr-capa" hidden>
+  <div class="qr-caja" role="dialog" aria-modal="true" aria-label="Código QR de esta página">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 45" role="img" aria-label="Código QR de https://memosanchezg.github.io/programacion-basica-interactivos/semana-13-float-vs-fraction.html" shape-rendering="crispEdges"><rect width="45" height="45" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM11 2h1v1h-1zM15 2h3v1h-3zM20 2h3v1h-3zM24 2h3v1h-3zM30 2h2v1h-2zM33 2h2v1h-2zM36 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM11 3h1v1h-1zM18 3h1v1h-1zM20 3h1v1h-1zM22 3h1v1h-1zM24 3h1v1h-1zM28 3h3v1h-3zM32 3h1v1h-1zM34 3h1v1h-1zM36 3h1v1h-1zM42 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM10 4h1v1h-1zM12 4h3v1h-3zM16 4h2v1h-2zM21 4h2v1h-2zM26 4h1v1h-1zM29 4h2v1h-2zM33 4h2v1h-2zM36 4h1v1h-1zM38 4h3v1h-3zM42 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h2v1h-2zM13 5h2v1h-2zM17 5h2v1h-2zM20 5h2v1h-2zM23 5h2v1h-2zM26 5h3v1h-3zM31 5h1v1h-1zM33 5h2v1h-2zM36 5h1v1h-1zM38 5h3v1h-3zM42 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM15 6h1v1h-1zM17 6h1v1h-1zM21 6h1v1h-1zM25 6h1v1h-1zM30 6h5v1h-5zM36 6h1v1h-1zM38 6h3v1h-3zM42 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h1v1h-1zM13 7h2v1h-2zM16 7h2v1h-2zM22 7h1v1h-1zM26 7h1v1h-1zM29 7h2v1h-2zM34 7h1v1h-1zM36 7h1v1h-1zM42 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM30 8h1v1h-1zM32 8h1v1h-1zM34 8h1v1h-1zM36 8h7v1h-7zM10 9h2v1h-2zM13 9h1v1h-1zM15 9h4v1h-4zM20 9h1v1h-1zM23 9h1v1h-1zM25 9h2v1h-2zM28 9h1v1h-1zM33 9h2v1h-2zM2 10h1v1h-1zM4 10h5v1h-5zM11 10h1v1h-1zM13 10h1v1h-1zM16 10h2v1h-2zM19 10h1v1h-1zM22 10h1v1h-1zM24 10h1v1h-1zM27 10h3v1h-3zM31 10h1v1h-1zM36 10h5v1h-5zM3 11h1v1h-1zM12 11h2v1h-2zM16 11h1v1h-1zM19 11h5v1h-5zM25 11h1v1h-1zM27 11h1v1h-1zM30 11h1v1h-1zM32 11h3v1h-3zM36 11h3v1h-3zM40 11h1v1h-1zM42 11h1v1h-1zM2 12h2v1h-2zM5 12h5v1h-5zM11 12h2v1h-2zM14 12h1v1h-1zM22 12h2v1h-2zM29 12h4v1h-4zM34 12h2v1h-2zM37 12h1v1h-1zM2 13h1v1h-1zM4 13h1v1h-1zM6 13h1v1h-1zM10 13h2v1h-2zM14 13h1v1h-1zM17 13h1v1h-1zM23 13h2v1h-2zM28 13h1v1h-1zM32 13h5v1h-5zM38 13h2v1h-2zM41 13h2v1h-2zM2 14h1v1h-1zM6 14h1v1h-1zM8 14h2v1h-2zM12 14h1v1h-1zM16 14h2v1h-2zM19 14h1v1h-1zM21 14h1v1h-1zM24 14h1v1h-1zM27 14h5v1h-5zM33 14h1v1h-1zM37 14h1v1h-1zM39 14h2v1h-2zM2 15h1v1h-1zM6 15h2v1h-2zM9 15h2v1h-2zM13 15h1v1h-1zM18 15h1v1h-1zM20 15h1v1h-1zM22 15h3v1h-3zM26 15h1v1h-1zM30 15h1v1h-1zM32 15h11v1h-11zM3 16h1v1h-1zM5 16h8v1h-8zM15 16h4v1h-4zM20 16h2v1h-2zM29 16h1v1h-1zM31 16h2v1h-2zM35 16h1v1h-1zM37 16h1v1h-1zM40 16h1v1h-1zM2 17h2v1h-2zM7 17h1v1h-1zM11 17h1v1h-1zM13 17h3v1h-3zM18 17h1v1h-1zM21 17h4v1h-4zM26 17h1v1h-1zM28 17h2v1h-2zM34 17h1v1h-1zM36 17h2v1h-2zM39 17h1v1h-1zM41 17h1v1h-1zM2 18h4v1h-4zM7 18h4v1h-4zM13 18h1v1h-1zM17 18h1v1h-1zM19 18h1v1h-1zM21 18h1v1h-1zM27 18h2v1h-2zM31 18h2v1h-2zM35 18h1v1h-1zM37 18h1v1h-1zM40 18h1v1h-1zM3 19h1v1h-1zM6 19h1v1h-1zM10 19h4v1h-4zM15 19h5v1h-5zM21 19h3v1h-3zM25 19h3v1h-3zM30 19h5v1h-5zM36 19h4v1h-4zM41 19h2v1h-2zM2 20h3v1h-3zM7 20h5v1h-5zM14 20h6v1h-6zM23 20h1v1h-1zM28 20h4v1h-4zM35 20h1v1h-1zM38 20h2v1h-2zM41 20h1v1h-1zM4 21h2v1h-2zM10 21h2v1h-2zM13 21h1v1h-1zM15 21h2v1h-2zM19 21h2v1h-2zM22 21h3v1h-3zM28 21h3v1h-3zM33 21h3v1h-3zM38 21h2v1h-2zM41 21h2v1h-2zM3 22h2v1h-2zM7 22h2v1h-2zM10 22h2v1h-2zM15 22h2v1h-2zM18 22h1v1h-1zM21 22h1v1h-1zM23 22h1v1h-1zM25 22h5v1h-5zM31 22h1v1h-1zM37 22h1v1h-1zM39 22h3v1h-3zM3 23h1v1h-1zM5 23h1v1h-1zM14 23h1v1h-1zM16 23h10v1h-10zM27 23h1v1h-1zM30 23h1v1h-1zM32 23h3v1h-3zM36 23h3v1h-3zM41 23h2v1h-2zM3 24h1v1h-1zM5 24h1v1h-1zM7 24h3v1h-3zM13 24h1v1h-1zM15 24h4v1h-4zM20 24h1v1h-1zM22 24h1v1h-1zM24 24h1v1h-1zM27 24h4v1h-4zM34 24h1v1h-1zM39 24h2v1h-2zM2 25h3v1h-3zM6 25h2v1h-2zM9 25h1v1h-1zM12 25h2v1h-2zM18 25h1v1h-1zM20 25h2v1h-2zM23 25h2v1h-2zM29 25h1v1h-1zM33 25h3v1h-3zM37 25h2v1h-2zM41 25h1v1h-1zM2 26h2v1h-2zM5 26h1v1h-1zM7 26h5v1h-5zM18 26h2v1h-2zM25 26h7v1h-7zM33 26h1v1h-1zM40 26h2v1h-2zM2 27h4v1h-4zM12 27h1v1h-1zM14 27h3v1h-3zM19 27h1v1h-1zM21 27h3v1h-3zM25 27h1v1h-1zM27 27h1v1h-1zM30 27h1v1h-1zM32 27h2v1h-2zM35 27h5v1h-5zM42 27h1v1h-1zM3 28h1v1h-1zM5 28h6v1h-6zM16 28h3v1h-3zM20 28h1v1h-1zM22 28h1v1h-1zM26 28h5v1h-5zM32 28h1v1h-1zM34 28h2v1h-2zM37 28h2v1h-2zM3 29h2v1h-2zM6 29h1v1h-1zM9 29h2v1h-2zM12 29h5v1h-5zM18 29h1v1h-1zM21 29h4v1h-4zM26 29h1v1h-1zM28 29h1v1h-1zM30 29h1v1h-1zM33 29h2v1h-2zM38 29h2v1h-2zM2 30h7v1h-7zM11 30h1v1h-1zM13 30h3v1h-3zM18 30h2v1h-2zM22 30h1v1h-1zM24 30h5v1h-5zM31 30h1v1h-1zM33 30h2v1h-2zM39 30h2v1h-2zM42 30h1v1h-1zM2 31h1v1h-1zM11 31h4v1h-4zM16 31h1v1h-1zM20 31h1v1h-1zM27 31h1v1h-1zM30 31h7v1h-7zM38 31h1v1h-1zM40 31h1v1h-1zM42 31h1v1h-1zM2 32h1v1h-1zM4 32h1v1h-1zM7 32h4v1h-4zM14 32h2v1h-2zM22 32h8v1h-8zM31 32h1v1h-1zM34 32h4v1h-4zM39 32h1v1h-1zM2 33h1v1h-1zM4 33h2v1h-2zM7 33h1v1h-1zM10 33h2v1h-2zM14 33h3v1h-3zM20 33h1v1h-1zM23 33h3v1h-3zM30 33h1v1h-1zM33 33h1v1h-1zM35 33h3v1h-3zM39 33h1v1h-1zM41 33h2v1h-2zM2 34h1v1h-1zM5 34h1v1h-1zM8 34h1v1h-1zM10 34h1v1h-1zM15 34h1v1h-1zM17 34h1v1h-1zM19 34h2v1h-2zM24 34h5v1h-5zM31 34h1v1h-1zM34 34h5v1h-5zM40 34h1v1h-1zM42 34h1v1h-1zM10 35h6v1h-6zM18 35h1v1h-1zM20 35h3v1h-3zM25 35h3v1h-3zM30 35h2v1h-2zM33 35h2v1h-2zM38 35h1v1h-1zM41 35h2v1h-2zM2 36h7v1h-7zM13 36h1v1h-1zM15 36h2v1h-2zM20 36h1v1h-1zM24 36h1v1h-1zM28 36h4v1h-4zM33 36h2v1h-2zM36 36h1v1h-1zM38 36h1v1h-1zM40 36h1v1h-1zM2 37h1v1h-1zM8 37h1v1h-1zM10 37h1v1h-1zM13 37h4v1h-4zM18 37h1v1h-1zM21 37h2v1h-2zM26 37h1v1h-1zM32 37h3v1h-3zM38 37h2v1h-2zM2 38h1v1h-1zM4 38h3v1h-3zM8 38h1v1h-1zM10 38h1v1h-1zM13 38h2v1h-2zM18 38h1v1h-1zM20 38h1v1h-1zM23 38h2v1h-2zM26 38h1v1h-1zM29 38h1v1h-1zM31 38h2v1h-2zM34 38h5v1h-5zM40 38h1v1h-1zM2 39h1v1h-1zM4 39h3v1h-3zM8 39h1v1h-1zM10 39h2v1h-2zM15 39h2v1h-2zM18 39h2v1h-2zM21 39h2v1h-2zM25 39h2v1h-2zM30 39h4v1h-4zM35 39h1v1h-1zM37 39h1v1h-1zM39 39h4v1h-4zM2 40h1v1h-1zM4 40h3v1h-3zM8 40h1v1h-1zM10 40h1v1h-1zM12 40h1v1h-1zM14 40h5v1h-5zM20 40h1v1h-1zM22 40h1v1h-1zM24 40h1v1h-1zM26 40h2v1h-2zM29 40h2v1h-2zM34 40h6v1h-6zM2 41h1v1h-1zM8 41h1v1h-1zM13 41h1v1h-1zM15 41h3v1h-3zM19 41h2v1h-2zM23 41h1v1h-1zM25 41h1v1h-1zM28 41h3v1h-3zM34 41h2v1h-2zM38 41h2v1h-2zM41 41h1v1h-1zM2 42h7v1h-7zM10 42h1v1h-1zM12 42h1v1h-1zM17 42h1v1h-1zM19 42h3v1h-3zM24 42h5v1h-5zM31 42h1v1h-1zM33 42h1v1h-1zM35 42h4v1h-4zM40 42h1v1h-1z"/></svg>
+    <p class="qr-texto">Escanea con la cámara del celular para abrir esta página</p>
+    <p class="qr-url">https://memosanchezg.github.io/programacion-basica-interactivos/semana-13-float-vs-fraction.html</p>
+    <button type="button" class="qr-cerrar">Cerrar</button>
+  </div>
+</div>
+<style>
+  .qr-capa { position:fixed; top:0; right:0; bottom:0; left:0; z-index:10000; display:flex; align-items:center;
+             justify-content:center; padding:16px; background:#fff; }
+  .qr-capa[hidden] { display:none; }
+  .qr-caja { max-width:100%; text-align:center; color:#0A2A57; font:16px/1.4 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .qr-caja svg { display:block; width:min(62vh, 84vw); height:auto; margin:0 auto; }
+  .qr-texto { margin:12px 0 2px; font-size:1.15rem; font-weight:bold; }
+  .qr-url { margin:0 0 12px; color:#5B6472; word-break:break-all; }
+  .qr-cerrar { font:inherit; padding:6px 20px; border:2px solid #00408F; border-radius:4px; background:#fff;
+               color:#00408F; cursor:pointer; }
+</style>
+<script>
+  (function () {
+    var capa = document.getElementById("qr-sitio");
+    document.querySelectorAll("a.qr-abrir").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        capa.hidden = false;
+        capa.querySelector(".qr-cerrar").focus();
+      });
+    });
+    capa.addEventListener("click", function (e) {
+      if (e.target === capa || e.target.classList.contains("qr-cerrar")) capa.hidden = true;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !capa.hidden) capa.hidden = true;
+    });
+  })();
+</script>
+</body>
+</html>

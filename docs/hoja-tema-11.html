@@ -1,0 +1,437 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tema 11 · Hoja del estudiante</title>
+<style>
+:root {
+  --azul: #00408F; --azul-osc: #0A2A57; --guinda: #8C1D35; --oro: #B8975A;
+  --azul-claro: #E8EEF7; --oro-claro: #F7F1E6; --tinta: #1B1F2A; --gris: #5B6472; --borde: #D9DEE6;
+  --cmd-fondo: #0C0C0C; --cmd-texto: #E6E6E6;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: #FFFFFF; color: var(--tinta);
+  font-family: Calibri, "Segoe UI", system-ui, -apple-system, sans-serif; font-size: 17px; line-height: 1.55; }
+a { color: var(--azul); font-weight: 600; }
+.wrap { max-width: 940px; margin: 0 auto; padding: 0 16px; }
+header { border-left: 14px solid var(--azul); box-shadow: inset 3px 0 0 var(--oro); padding: 34px 0 24px; }
+.eyebrow { color: var(--guinda); font-weight: 700; letter-spacing: .05em; font-size: 15px;
+  font-family: Cambria, Georgia, serif; }
+h1 { font-family: Cambria, Georgia, serif; color: var(--azul-osc); font-size: clamp(30px, 5vw, 44px);
+  margin: 4px 0 6px; line-height: 1.15; }
+.sub { color: var(--gris); margin: 0 0 8px; }
+.subtitulo { color: var(--azul); font-style: italic; font-size: 19px; margin: 0 0 6px; }
+nav.dias { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+nav.dias a { border: 1px solid var(--borde); color: var(--azul-osc); text-decoration: none; padding: 5px 14px;
+  border-radius: 999px; font-size: 15px; }
+nav.dias a:hover { border-color: var(--oro); background: var(--oro-claro); }
+.franja { height: 7px; background: var(--azul); border-bottom: 3px solid var(--oro); }
+main { padding: 4px 0 48px; }
+section { padding-top: 26px; }
+h2 { font-family: Cambria, Georgia, serif; color: var(--azul-osc); font-size: 28px; margin: 0 0 4px; line-height: 1.2; }
+h3 { color: var(--azul-osc); font-size: 19px; margin: 22px 0 8px; }
+.dia { border-top: 1px solid var(--borde); margin-top: 28px; }
+.dia .num { color: var(--guinda); font-family: Cambria, Georgia, serif; font-weight: 700; font-size: 20px; }
+.chip { display: inline-block; color: var(--guinda); font-family: Cambria, Georgia, serif; font-weight: 700;
+  font-size: 17px; margin-left: 8px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.card { border: 1.5px solid var(--oro); border-radius: 10px; padding: 14px 16px; }
+.card b { display: block; margin-bottom: 4px; color: var(--azul-osc); }
+.card small { color: var(--guinda); font-weight: 700; }
+ul.links { padding-left: 20px; margin: 6px 0; }
+ul.links li { margin: 4px 0; }
+ol.tareas li { margin: 6px 0; }
+.pista { background: var(--oro-claro); border: 1px solid var(--oro); border-radius: 10px; padding: 10px 14px; }
+.pista b { color: var(--guinda); }
+.bloque { margin: 10px 0; }
+code, .mono { font-family: Consolas, "Courier New", monospace; color: var(--azul); }
+.highlight table { border-collapse: collapse; }
+.highlight td { padding: 0; vertical-align: top; }
+.highlight td.linenos pre { margin: 0; padding: 10px 8px 10px 0; text-align: right; color: var(--gris);
+  font-family: Cambria, Georgia, serif; font-size: 11px; line-height: 21px; background: transparent; }
+.highlight td.code { width: 100%; }
+.highlight td.code pre { margin: 0; padding: 10px 14px; border: 1px solid var(--tinta); background: #FFFFFF;
+  font-family: Consolas, "Courier New", monospace; font-size: 15px; line-height: 21px !important; overflow-x: auto; }
+.highlight { overflow-x: auto; }
+.prompt { background: var(--azul-claro); border-radius: 10px; padding: 14px 16px; margin: 0; font-style: italic; }
+.acciones { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 8px 0 0; }
+button.copiar { font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; border: 0; border-radius: 999px;
+  padding: 6px 14px; background: var(--azul); color: #fff; }
+button.copiar:hover { background: var(--azul-osc); }
+.entrega { border: 1px dashed var(--oro); border-radius: 10px; padding: 10px 14px; }
+table.chuleta { border-collapse: collapse; width: 100%; font-size: 15px; }
+table.chuleta th { background: var(--azul-osc); color: #fff; text-align: left; padding: 7px 10px; }
+table.chuleta td { padding: 6px 10px; border-bottom: 1px solid var(--borde); }
+table.chuleta tr:nth-child(even) td { background: var(--azul-claro); }
+footer { color: var(--gris); font-size: 14px; border-top: 1px solid var(--borde); margin-top: 36px; padding-top: 14px; }
+textarea.crudo { display: none; }
+@media print {
+  nav.dias, button.copiar { display: none; }
+  .dia { page-break-before: always; }
+}
+</style></head><body><div class="franja"></div>
+<header><div class="wrap">
+<div class="eyebrow">TEMA 11 · SEMANA 11 · HOJA DEL ESTUDIANTE</div>
+<h1>Expresiones regulares</h1>
+<p class="sub">Programación Básica 2026 · FCFM · UANL. Aquí están los enlaces a PythonTutor y regex101, el código de partida y los prompts sugeridos de cada ejercicio, listos para copiar.</p>
+<nav class="dias"><a href="#dia1">Día 1</a><a href="#dia2">Día 2</a><a href="#dia3">Día 3</a><a href="#dia4">Día 4</a><a href="#dia5">Día 5</a><a href="#chuleta">Chuleta</a><a href="#interactivos">Simuladores</a><a href="#recursos">Recursos</a></nav>
+</div></header><main class="wrap">
+<section><h2>Cómo usar la IA esta semana</h2>
+<p class="sub">Aprender regex con IA sin que piense por ti</p><ul>
+<li>Las IA escriben expresiones regulares muy rápido, y por eso es fácil copiar un patrón que no entiendes. Si no puedes explicar cada símbolo, el patrón no es tuyo.</li>
+<li>Primero tú: escribe el patrón y pruébalo en regex101 con textos que SÍ deben coincidir y otros que NO.</li>
+<li>Después la IA: pídele que te explique un símbolo, que te proponga casos de prueba difíciles o que te pregunte por qué falla tu patrón.</li>
+<li>Temario (Fase 3): la IA puede explicar y proponer mejoras, pero no hacer el trabajo sin que entiendas los datos.</li>
+</ul><h3>Ejemplo de prompt</h3><div class="bloque">
+<p class="prompt">Mi patrón es \d{3}-\d{4}. Debe aceptar 555-1234 y rechazar 5551234. No me des otro patrón: dame 3 casos de prueba difíciles y pregúntame qué creo que pasará con cada uno.</p><textarea class="crudo" id="prompt-ia">Mi patrón es \d{3}-\d{4}. Debe aceptar 555-1234 y rechazar 5551234. No me des otro patrón: dame 3 casos de prueba difíciles y pregúntame qué creo que pasará con cada uno.</textarea>
+<div class="acciones"><button class="copiar" data-copiar="prompt-ia">Copiar prompt</button></div></div>
+</section>
+<section><h2>Tu ejercicio cuenta si pasa el checkpoint</h2><div class="cards">
+<div class="card"><b>Palabra clave</b>Al iniciar el checkpoint el profesor dice una palabra en voz alta. Escríbela como comentario en la línea 1 de tu archivo.<br><small>Demuestra que estuviste en clase</small></div>
+<div class="card"><b>Cambio sorpresa, sin IA</b>Al terminar el tiempo del ejercicio se proyecta un cambio. Tienes 5 minutos para aplicarlo tú solo.<br><small>Demuestra que entiendes tu código</small></div>
+<div class="card"><b>Entrega antes de salir</b>Subes tu archivo .py a la tarea de Teams del día. La tarea se cierra al terminar la clase.<br><small>Demuestra que lo hiciste en clase</small></div>
+<div class="card"><b>Defensa rápida</b>El profesor elige 2–3 personas al azar para explicar una línea de su código en 1 minuto.<br><small>Demuestra que el código es tuyo</small></div>
+</div>
+<p class="sub">La IA sí se permite durante el ejercicio (con el prompt sugerido). El cambio sorpresa y la defensa son sin IA.</p>
+</section>
+<section class="dia" id="dia1"><div class="num">DÍA 1</div>
+<h2>Búsqueda: tu primer patrón</h2><p class="sub">Qué es una expresión regular y cómo buscar un patrón con re.search</p>
+<h3>Ejemplos de la clase</h3><ul class="links">
+<li>re.search en acción — <a href="https://pythontutor.com/visualize.html#code=import%20re%0A%0Atexto%20%3D%20%22Nos%20vemos%20en%20el%20sal%C3%B3n%204-201%20a%20las%207%3A00%22%0Am%20%3D%20re.search%28r%22%5Cd-%5Cd%5Cd%5Cd%22%2C%20texto%29%0A%0Aprint%28m%29%0Aprint%28m.group%28%29%29%0Aprint%28m.start%28%29%2C%20m.end%28%29%29%0A%0Am2%20%3D%20re.search%28r%22%5Cd-%5Cd%5Cd%5Cd%22%2C%20%22Clase%20en%20l%C3%ADnea%22%29%0Aprint%28m2%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">PythonTutor »</a></li>
+<li>Leer un patrón símbolo por símbolo: r&quot;[A-Z][A-Z]-\d\d\d\d&quot; — <a href="https://regex101.com/?regex=%5BA-Z%5D%5BA-Z%5D-%5Cd%5Cd%5Cd%5Cd&amp;testString=Pedido%20de%20TL-4521%20y%20MX-0007%0Aclave%20tl-4521%20en%20min%C3%BAsculas%0AProducto%20T-4521%20incompleto%0ALote%20AB-12345%20con%20cinco%20d%C3%ADgitos&amp;flags=gm&amp;flavor=python" target="_blank" rel="noopener">regex101 »</a> · <a href="https://pythontutor.com/visualize.html#code=import%20re%0A%0Apatron%20%3D%20r%22%5BA-Z%5D%5BA-Z%5D-%5Cd%5Cd%5Cd%5Cd%22%0Atextos%20%3D%20%5B%0A%20%20%20%20%27Pedido%20de%20TL-4521%20y%20MX-0007%27%2C%0A%20%20%20%20%27clave%20tl-4521%20en%20min%C3%BAsculas%27%2C%0A%20%20%20%20%27Producto%20T-4521%20incompleto%27%2C%0A%20%20%20%20%27Lote%20AB-12345%20con%20cinco%20d%C3%ADgitos%27%2C%0A%5D%0A%0Afor%20texto%20in%20textos%3A%0A%20%20%20%20print%28re.search%28patron%2C%20texto%29%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">PythonTutor »</a></li>
+</ul>
+<h3>Reto: detective de patrones<span class="chip">20 min</span></h3><ol class="tareas">
+<li>Con re.search encuentra en el aviso: el primer salón (como 6-104), la hora (hh:mm) y la matrícula de 7 dígitos.</li>
+<li>Imprime cada coincidencia con .group() y su posición con .start(). Si algo no se encuentra, imprime un aviso en lugar de tronar.</li>
+<li>Prueba cada patrón en regex101 (sabor Python) antes de usarlo en tu programa.</li>
+</ol>
+<p class="pista"><b>Pista:</b> Hoy puedes escribir \d siete veces para la matrícula (mañana verás una forma corta). Pregunta if m: antes de m.group().</p>
+<h3>Código de partida</h3><div class="bloque">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">5</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>re
+
+aviso = (<span style="color: #00F">&quot;Examen de Programación Básica: salón 6-104, a las 09:30. &quot;</span>
+         <span style="color: #00F">&quot;Dudas en la oficina 2-215. &quot;</span>
+         <span style="color: #00F">&quot;Trae tu matrícula (7 dígitos), por ejemplo 2087451.&quot;</span>)
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="codigo-1">import re
+
+aviso = (&quot;Examen de Programación Básica: salón 6-104, a las 09:30. &quot;
+         &quot;Dudas en la oficina 2-215. &quot;
+         &quot;Trae tu matrícula (7 dígitos), por ejemplo 2087451.&quot;)</textarea>
+<div class="acciones"><button class="copiar" data-copiar="codigo-1">Copiar código</button><a href="https://pythontutor.com/visualize.html#code=import%20re%0A%0Aaviso%20%3D%20%28%22Examen%20de%20Programaci%C3%B3n%20B%C3%A1sica%3A%20sal%C3%B3n%206-104%2C%20a%20las%2009%3A30.%20%22%0A%20%20%20%20%20%20%20%20%20%22Dudas%20en%20la%20oficina%202-215.%20%22%0A%20%20%20%20%20%20%20%20%20%22Trae%20tu%20matr%C3%ADcula%20%287%20d%C3%ADgitos%29%2C%20por%20ejemplo%202087451.%22%29%0A&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">Abrir en PythonTutor »</a></div></div>
+<h3>Prompt sugerido para la IA</h3><div class="bloque">
+<p class="prompt">Estoy aprendiendo re.search en Python. Tengo un aviso con un salón (como 6-104), una hora (09:30) y una matrícula de 7 dígitos. No me des los patrones: hazme preguntas sobre qué símbolos necesito (\d, el guion, los dos puntos) y pídeme ejemplos de texto que deban coincidir y que no.</p><textarea class="crudo" id="prompt-1">Estoy aprendiendo re.search en Python. Tengo un aviso con un salón (como 6-104), una hora (09:30) y una matrícula de 7 dígitos. No me des los patrones: hazme preguntas sobre qué símbolos necesito (\d, el guion, los dos puntos) y pídeme ejemplos de texto que deban coincidir y que no.</textarea>
+<div class="acciones"><button class="copiar" data-copiar="prompt-1">Copiar prompt</button><span class="sub">Si la IA te da el código completo, pídele que mejor te haga una pregunta.</span></div></div>
+<h3>Checkpoint y entrega</h3><div class="entrega"><ol>
+<li>Escribe la <b>palabra clave</b> que diga el profesor como comentario en la línea 1: <code># clave: ______</code></li>
+<li>Aplica el <b>cambio sorpresa</b> que se proyectará al terminar el ejercicio (sin IA, 5 min).</li>
+<li>Sube <b>S11D1_matricula.py</b> a la tarea de Teams del día antes de salir: la tarea cierra al terminar la clase.</li>
+<li>Prepárate: el profesor puede pedirte que expliques una línea de tu código.</li>
+</ol></div>
+</section>
+<section class="dia" id="dia2"><div class="num">DÍA 2</div>
+<h2>Búsqueda: cuantificadores y todas las coincidencias</h2><p class="sub">Cuantificadores y cómo encontrar todas las coincidencias con re.findall</p>
+<h3>Ejemplos de la clase</h3><ul class="links">
+<li>Cuantificadores en acción: r&quot;\d{1,2}:\d{2}&quot; — <a href="https://regex101.com/?regex=%5Cd%7B1%2C2%7D%3A%5Cd%7B2%7D&amp;testString=Clases%20a%20las%207%3A00%2C%2010%3A30%20y%2013%3A45%0AEl%20examen%20dura%20120%20minutos%0AHora%20l%C3%ADmite%3A%2023%3A59%20%28no%2024%3A00%29&amp;flags=gm&amp;flavor=python" target="_blank" rel="noopener">regex101 »</a> · <a href="https://pythontutor.com/visualize.html#code=import%20re%0A%0Apatron%20%3D%20r%22%5Cd%7B1%2C2%7D%3A%5Cd%7B2%7D%22%0Atextos%20%3D%20%5B%0A%20%20%20%20%27Clases%20a%20las%207%3A00%2C%2010%3A30%20y%2013%3A45%27%2C%0A%20%20%20%20%27El%20examen%20dura%20120%20minutos%27%2C%0A%20%20%20%20%27Hora%20l%C3%ADmite%3A%2023%3A59%20%28no%2024%3A00%29%27%2C%0A%5D%0A%0Afor%20texto%20in%20textos%3A%0A%20%20%20%20print%28re.findall%28patron%2C%20texto%29%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">PythonTutor »</a></li>
+<li>Todas las coincidencias de un mensaje — <a href="https://pythontutor.com/visualize.html#code=import%20re%0A%0Amensaje%20%3D%20%22Pago%201%3A%20%24250%2C%20pago%202%3A%20%241200%20y%20pago%203%3A%20%2475%22%0A%0Amontos%20%3D%20re.findall%28r%22%5C%24%5Cd%2B%22%2C%20mensaje%29%0Aprint%28montos%29%0Aprint%28%22Pagos%20encontrados%3A%22%2C%20len%28montos%29%29%0A%0Atotal%20%3D%200%0Afor%20monto%20in%20montos%3A%0A%20%20%20%20total%20%3D%20total%20%2B%20int%28monto%5B1%3A%5D%29%20%20%20%23%20sin%20el%20%24%0Aprint%28%22Total%3A%22%2C%20total%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">PythonTutor »</a></li>
+</ul>
+<h3>Reto: analizador de publicaciones<span class="chip">20 min</span></h3><ol class="tareas">
+<li>Para cada publicación usa re.findall para obtener sus hashtags (# seguido de una o más letras, dígitos o _) y sus menciones (@ seguido de lo mismo).</li>
+<li>Imprime por publicación cuántos hashtags y menciones tiene, y la lista de cada uno.</li>
+<li>Al final junta todos los hashtags en una sola lista y muéstralos sin repetir (pista: set, Tema 6).</li>
+</ol>
+<p class="pista"><b>Pista:</b> El patrón de un hashtag es # seguido de \w+. findall regresa [] si no hay ninguno: aquí no necesitas if m:.</p>
+<h3>Código de partida</h3><div class="bloque">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">7</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">8</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>re
+
+publicaciones = [
+    <span style="color: #00F">&quot;Hoy aprendí #regex en #Python con @profe_pb&quot;</span>,
+    <span style="color: #00F">&quot;¿Alguien entendió el #Tema11? cc @ana_gz @luis&quot;</span>,
+    <span style="color: #00F">&quot;Repasando #regex para el examen&quot;</span>,
+    <span style="color: #00F">&quot;Sin etiquetas en esta publicación&quot;</span>,
+]
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="codigo-2">import re
+
+publicaciones = [
+    &quot;Hoy aprendí #regex en #Python con @profe_pb&quot;,
+    &quot;¿Alguien entendió el #Tema11? cc @ana_gz @luis&quot;,
+    &quot;Repasando #regex para el examen&quot;,
+    &quot;Sin etiquetas en esta publicación&quot;,
+]</textarea>
+<div class="acciones"><button class="copiar" data-copiar="codigo-2">Copiar código</button><a href="https://pythontutor.com/visualize.html#code=import%20re%0A%0Apublicaciones%20%3D%20%5B%0A%20%20%20%20%22Hoy%20aprend%C3%AD%20%23regex%20en%20%23Python%20con%20%40profe_pb%22%2C%0A%20%20%20%20%22%C2%BFAlguien%20entendi%C3%B3%20el%20%23Tema11%3F%20cc%20%40ana_gz%20%40luis%22%2C%0A%20%20%20%20%22Repasando%20%23regex%20para%20el%20examen%22%2C%0A%20%20%20%20%22Sin%20etiquetas%20en%20esta%20publicaci%C3%B3n%22%2C%0A%5D%0A&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">Abrir en PythonTutor »</a></div></div>
+<h3>Prompt sugerido para la IA</h3><div class="bloque">
+<p class="prompt">Estoy practicando re.findall en Python. Tengo publicaciones con hashtags (#regex) y menciones (@ana_gz) y quiero listarlos y contarlos. No me des el código: pregúntame con qué carácter empieza cada uno, qué símbolo uso para &#x27;una o más letras&#x27; y qué regresa findall cuando no hay coincidencias.</p><textarea class="crudo" id="prompt-2">Estoy practicando re.findall en Python. Tengo publicaciones con hashtags (#regex) y menciones (@ana_gz) y quiero listarlos y contarlos. No me des el código: pregúntame con qué carácter empieza cada uno, qué símbolo uso para &#x27;una o más letras&#x27; y qué regresa findall cuando no hay coincidencias.</textarea>
+<div class="acciones"><button class="copiar" data-copiar="prompt-2">Copiar prompt</button><span class="sub">Si la IA te da el código completo, pídele que mejor te haga una pregunta.</span></div></div>
+<h3>Checkpoint y entrega</h3><div class="entrega"><ol>
+<li>Escribe la <b>palabra clave</b> que diga el profesor como comentario en la línea 1: <code># clave: ______</code></li>
+<li>Aplica el <b>cambio sorpresa</b> que se proyectará al terminar el ejercicio (sin IA, 5 min).</li>
+<li>Sube <b>S11D2_matricula.py</b> a la tarea de Teams del día antes de salir: la tarea cierra al terminar la clase.</li>
+<li>Prepárate: el profesor puede pedirte que expliques una línea de tu código.</li>
+</ol></div>
+</section>
+<section class="dia" id="dia3"><div class="num">DÍA 3</div>
+<h2>Validación: fullmatch, anclas y grupos</h2><p class="sub">Validar que un dato completo cumple su formato con fullmatch y grupos</p>
+<h3>Ejemplos de la clase</h3><ul class="links">
+<li>¿Pasa la validación?: r&quot;[a-z0-9._]+@uanl\.edu\.mx&quot; — <a href="https://regex101.com/?regex=%5E%28%3F%3A%5Ba-z0-9._%5D%2B%40uanl%5C.edu%5C.mx%29%24&amp;testString=ana.garza%40uanl.edu.mx%0AAna.Garza%40uanl.edu.mx%0Aana%20garza%40uanl.edu.mx%0Aana%40uanl.edu.mx.falso.com&amp;flags=gm&amp;flavor=python" target="_blank" rel="noopener">regex101 »</a> · <a href="https://pythontutor.com/visualize.html#code=import%20re%0A%0Apatron%20%3D%20r%22%5Ba-z0-9._%5D%2B%40uanl%5C.edu%5C.mx%22%0Atextos%20%3D%20%5B%0A%20%20%20%20%27ana.garza%40uanl.edu.mx%27%2C%0A%20%20%20%20%27Ana.Garza%40uanl.edu.mx%27%2C%0A%20%20%20%20%27ana%20garza%40uanl.edu.mx%27%2C%0A%20%20%20%20%27ana%40uanl.edu.mx.falso.com%27%2C%0A%5D%0A%0Afor%20texto%20in%20textos%3A%0A%20%20%20%20print%28texto%2C%20%27-%3E%27%2C%20re.fullmatch%28patron%2C%20texto%29%20is%20not%20None%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">PythonTutor »</a></li>
+<li>Validar y extraer una fecha — <a href="https://pythontutor.com/visualize.html#code=import%20re%0A%0Adef%20leer_fecha%28texto%29%3A%0A%20%20%20%20m%20%3D%20re.fullmatch%28r%22%28%5Cd%7B2%7D%29/%28%5Cd%7B2%7D%29/%28%5Cd%7B4%7D%29%22%2C%20texto%29%0A%20%20%20%20if%20m%20is%20None%3A%0A%20%20%20%20%20%20%20%20raise%20ValueError%28f%22%27%7Btexto%7D%27%20no%20es%20dd/mm/aaaa%22%29%0A%20%20%20%20dia%2C%20mes%2C%20anio%20%3D%20m.groups%28%29%0A%20%20%20%20if%20int%28mes%29%20%3E%2012%3A%0A%20%20%20%20%20%20%20%20raise%20ValueError%28f%22mes%20inv%C3%A1lido%3A%20%7Bmes%7D%22%29%0A%20%20%20%20return%20dia%2C%20mes%2C%20anio%0A%0Afor%20t%20in%20%5B%2212/10/2026%22%2C%20%222026-10-12%22%2C%20%2231/13/2026%22%5D%3A%0A%20%20%20%20try%3A%0A%20%20%20%20%20%20%20%20print%28t%2C%20%22-%3E%22%2C%20leer_fecha%28t%29%29%0A%20%20%20%20except%20ValueError%20as%20e%3A%0A%20%20%20%20%20%20%20%20print%28t%2C%20%22-%3E%22%2C%20e%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">PythonTutor »</a></li>
+</ul>
+<h3>Reto: validador de un formulario de inscripción<span class="chip">20 min</span></h3><ol class="tareas">
+<li>Completa validar(alumno): con re.fullmatch revisa que la matrícula tenga 7 dígitos, el teléfono 10 dígitos y el correo termine en @uanl.edu.mx.</li>
+<li>Por cada campo que no cumpla, agrega a la lista errores un mensaje con el campo y el valor.</li>
+<li>Recorre alumnos e imprime &#x27;OK&#x27; o la lista de errores de cada uno.</li>
+</ol>
+<p class="pista"><b>Pista:</b> Usa fullmatch, no search: &#x27;81-1234-5678&#x27; contiene dígitos, pero no es un teléfono de 10 dígitos. En el dominio escapa los puntos: uanl\.edu\.mx</p>
+<h3>Código de partida</h3><div class="bloque">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 7</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 8</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 9</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">10</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">11</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">12</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">13</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">14</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">15</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>re
+
+alumnos = [
+    {<span style="color: #00F">&quot;nombre&quot;</span>: <span style="color: #00F">&quot;Ana Garza&quot;</span>, <span style="color: #00F">&quot;matricula&quot;</span>: <span style="color: #00F">&quot;2087451&quot;</span>,
+     <span style="color: #00F">&quot;correo&quot;</span>: <span style="color: #00F">&quot;ana.garza@uanl.edu.mx&quot;</span>, <span style="color: #00F">&quot;telefono&quot;</span>: <span style="color: #00F">&quot;8112345678&quot;</span>},
+    {<span style="color: #00F">&quot;nombre&quot;</span>: <span style="color: #00F">&quot;Luis Pérez&quot;</span>, <span style="color: #00F">&quot;matricula&quot;</span>: <span style="color: #00F">&quot;208745&quot;</span>,
+     <span style="color: #00F">&quot;correo&quot;</span>: <span style="color: #00F">&quot;luis@gmail.com&quot;</span>, <span style="color: #00F">&quot;telefono&quot;</span>: <span style="color: #00F">&quot;81-1234-5678&quot;</span>},
+    {<span style="color: #00F">&quot;nombre&quot;</span>: <span style="color: #00F">&quot;Eva Ríos&quot;</span>, <span style="color: #00F">&quot;matricula&quot;</span>: <span style="color: #00F">&quot;1990345&quot;</span>,
+     <span style="color: #00F">&quot;correo&quot;</span>: <span style="color: #00F">&quot;eva.rios@uanl.edu.mx&quot;</span>, <span style="color: #00F">&quot;telefono&quot;</span>: <span style="color: #00F">&quot;8187654321&quot;</span>},
+]
+
+<span style="color: #000080; font-weight: bold">def</span><span style="color: #BBB"> </span>validar(alumno):
+    errores = []
+    <span style="color: #080; font-style: italic"># agrega aquí una regla por campo con re.fullmatch</span>
+    <span style="color: #000080; font-weight: bold">return</span> errores
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="codigo-3">import re
+
+alumnos = [
+    {&quot;nombre&quot;: &quot;Ana Garza&quot;, &quot;matricula&quot;: &quot;2087451&quot;,
+     &quot;correo&quot;: &quot;ana.garza@uanl.edu.mx&quot;, &quot;telefono&quot;: &quot;8112345678&quot;},
+    {&quot;nombre&quot;: &quot;Luis Pérez&quot;, &quot;matricula&quot;: &quot;208745&quot;,
+     &quot;correo&quot;: &quot;luis@gmail.com&quot;, &quot;telefono&quot;: &quot;81-1234-5678&quot;},
+    {&quot;nombre&quot;: &quot;Eva Ríos&quot;, &quot;matricula&quot;: &quot;1990345&quot;,
+     &quot;correo&quot;: &quot;eva.rios@uanl.edu.mx&quot;, &quot;telefono&quot;: &quot;8187654321&quot;},
+]
+
+def validar(alumno):
+    errores = []
+    # agrega aquí una regla por campo con re.fullmatch
+    return errores</textarea>
+<div class="acciones"><button class="copiar" data-copiar="codigo-3">Copiar código</button><a href="https://pythontutor.com/visualize.html#code=import%20re%0A%0Aalumnos%20%3D%20%5B%0A%20%20%20%20%7B%22nombre%22%3A%20%22Ana%20Garza%22%2C%20%22matricula%22%3A%20%222087451%22%2C%0A%20%20%20%20%20%22correo%22%3A%20%22ana.garza%40uanl.edu.mx%22%2C%20%22telefono%22%3A%20%228112345678%22%7D%2C%0A%20%20%20%20%7B%22nombre%22%3A%20%22Luis%20P%C3%A9rez%22%2C%20%22matricula%22%3A%20%22208745%22%2C%0A%20%20%20%20%20%22correo%22%3A%20%22luis%40gmail.com%22%2C%20%22telefono%22%3A%20%2281-1234-5678%22%7D%2C%0A%20%20%20%20%7B%22nombre%22%3A%20%22Eva%20R%C3%ADos%22%2C%20%22matricula%22%3A%20%221990345%22%2C%0A%20%20%20%20%20%22correo%22%3A%20%22eva.rios%40uanl.edu.mx%22%2C%20%22telefono%22%3A%20%228187654321%22%7D%2C%0A%5D%0A%0Adef%20validar%28alumno%29%3A%0A%20%20%20%20errores%20%3D%20%5B%5D%0A%20%20%20%20%23%20agrega%20aqu%C3%AD%20una%20regla%20por%20campo%20con%20re.fullmatch%0A%20%20%20%20return%20errores%0A&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">Abrir en PythonTutor »</a></div></div>
+<h3>Prompt sugerido para la IA</h3><div class="bloque">
+<p class="prompt">Estoy aprendiendo a validar datos con re.fullmatch en Python. Tengo alumnos con matrícula (7 dígitos), teléfono (10 dígitos) y correo institucional @uanl.edu.mx. No me des los patrones: hazme preguntas para decidir cada uno y pídeme ejemplos de datos que deban pasar y que no.</p><textarea class="crudo" id="prompt-3">Estoy aprendiendo a validar datos con re.fullmatch en Python. Tengo alumnos con matrícula (7 dígitos), teléfono (10 dígitos) y correo institucional @uanl.edu.mx. No me des los patrones: hazme preguntas para decidir cada uno y pídeme ejemplos de datos que deban pasar y que no.</textarea>
+<div class="acciones"><button class="copiar" data-copiar="prompt-3">Copiar prompt</button><span class="sub">Si la IA te da el código completo, pídele que mejor te haga una pregunta.</span></div></div>
+<h3>Checkpoint y entrega</h3><div class="entrega"><ol>
+<li>Escribe la <b>palabra clave</b> que diga el profesor como comentario en la línea 1: <code># clave: ______</code></li>
+<li>Aplica el <b>cambio sorpresa</b> que se proyectará al terminar el ejercicio (sin IA, 5 min).</li>
+<li>Sube <b>S11D3_matricula.py</b> a la tarea de Teams del día antes de salir: la tarea cierra al terminar la clase.</li>
+<li>Prepárate: el profesor puede pedirte que expliques una línea de tu código.</li>
+</ol></div>
+</section>
+<section class="dia" id="dia4"><div class="num">DÍA 4</div>
+<h2>Limpieza de datos con re.sub y re.split</h2><p class="sub">Limpiar datos de texto con re.sub y re.split</p>
+<h3>Ejemplos de la clase</h3><ul class="links">
+<li>Antes y después de limpiar: r&quot;\D&quot; — <a href="https://regex101.com/?regex=%5CD&amp;testString=%2881%29%201234-5678&amp;flags=gm&amp;flavor=python&amp;subst=" target="_blank" rel="noopener">regex101 »</a> · <a href="https://pythontutor.com/visualize.html#code=import%20re%0A%0Apatron%20%3D%20r%22%5CD%22%0Areemplazo%20%3D%20%27%27%0Atextos%20%3D%20%5B%0A%20%20%20%20%27%2881%29%201234-5678%27%2C%0A%20%20%20%20%2781%201234%205678%27%2C%0A%20%20%20%20%2781.1234.5678%27%2C%0A%20%20%20%20%27811-234-5678%27%2C%0A%5D%0A%0Afor%20texto%20in%20textos%3A%0A%20%20%20%20print%28re.sub%28patron%2C%20reemplazo%2C%20texto%29%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">PythonTutor »</a></li>
+<li>Limpieza paso a paso de un registro — <a href="https://pythontutor.com/visualize.html#code=import%20re%0A%0Acrudo%20%3D%20%22%20%20Ana%20%20%20GARZA%20%3B%20%20%2881%29%201234-5678%20%3B%202026-10-12%20%20%22%0A%0Anombre%2C%20tel%2C%20fecha%20%3D%20re.split%28r%22%5Cs%2A%3B%5Cs%2A%22%2C%20crudo.strip%28%29%29%0A%0Anombre%20%3D%20re.sub%28r%22%5Cs%2B%22%2C%20%22%20%22%2C%20nombre%29.title%28%29%0Atel%20%3D%20re.sub%28r%22%5CD%22%2C%20%22%22%2C%20tel%29%0Afecha%20%3D%20re.sub%28r%22%28%5Cd%7B4%7D%29-%28%5Cd%7B2%7D%29-%28%5Cd%7B2%7D%29%22%2C%20r%22%5C3/%5C2/%5C1%22%2C%20fecha%29%0A%0Aprint%28nombre%29%0Aprint%28tel%2C%20re.fullmatch%28r%22%5Cd%7B10%7D%22%2C%20tel%29%20is%20not%20None%29%0Aprint%28fecha%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">PythonTutor »</a></li>
+</ul>
+<h3>Reto: limpia una lista de contactos<span class="chip">20 min</span></h3><ol class="tareas">
+<li>Separa cada contacto en nombre, teléfono y correo con re.split (la coma puede tener espacios alrededor).</li>
+<li>Limpia: nombre con un solo espacio entre palabras y en formato Título; teléfono solo con dígitos; correo en minúsculas.</li>
+<li>Valida el teléfono limpio con fullmatch (10 dígitos) e imprime cada contacto limpio, o un aviso si el teléfono no es válido.</li>
+</ol>
+<p class="pista"><b>Pista:</b> Patrón para separar: r&#x27;\s*,\s*&#x27;. Usa .strip() para las orillas y .lower() para el correo.</p>
+<h3>Código de partida</h3><div class="bloque">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">7</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>re
+
+contactos = [
+    <span style="color: #00F">&quot;  ana   garza , (81) 1234-5678 , ANA.GARZA@UANL.EDU.MX &quot;</span>,
+    <span style="color: #00F">&quot;Luis  Pérez,81.8765.4321,luis.perez@uanl.edu.mx&quot;</span>,
+    <span style="color: #00F">&quot;eva ríos , 81 2345 678 , Eva.Rios@uanl.edu.mx&quot;</span>,
+]
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="codigo-4">import re
+
+contactos = [
+    &quot;  ana   garza , (81) 1234-5678 , ANA.GARZA@UANL.EDU.MX &quot;,
+    &quot;Luis  Pérez,81.8765.4321,luis.perez@uanl.edu.mx&quot;,
+    &quot;eva ríos , 81 2345 678 , Eva.Rios@uanl.edu.mx&quot;,
+]</textarea>
+<div class="acciones"><button class="copiar" data-copiar="codigo-4">Copiar código</button><a href="https://pythontutor.com/visualize.html#code=import%20re%0A%0Acontactos%20%3D%20%5B%0A%20%20%20%20%22%20%20ana%20%20%20garza%20%2C%20%2881%29%201234-5678%20%2C%20ANA.GARZA%40UANL.EDU.MX%20%22%2C%0A%20%20%20%20%22Luis%20%20P%C3%A9rez%2C81.8765.4321%2Cluis.perez%40uanl.edu.mx%22%2C%0A%20%20%20%20%22eva%20r%C3%ADos%20%2C%2081%202345%20678%20%2C%20Eva.Rios%40uanl.edu.mx%22%2C%0A%5D%0A&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">Abrir en PythonTutor »</a></div></div>
+<h3>Prompt sugerido para la IA</h3><div class="bloque">
+<p class="prompt">Estoy aprendiendo a limpiar datos con re.sub y re.split en Python. Tengo contactos en texto con espacios de más, teléfonos con paréntesis, guiones o puntos, y correos en mayúsculas. No me des el código: hazme preguntas para decidir en qué orden limpiar y qué patrón usar en cada paso.</p><textarea class="crudo" id="prompt-4">Estoy aprendiendo a limpiar datos con re.sub y re.split en Python. Tengo contactos en texto con espacios de más, teléfonos con paréntesis, guiones o puntos, y correos en mayúsculas. No me des el código: hazme preguntas para decidir en qué orden limpiar y qué patrón usar en cada paso.</textarea>
+<div class="acciones"><button class="copiar" data-copiar="prompt-4">Copiar prompt</button><span class="sub">Si la IA te da el código completo, pídele que mejor te haga una pregunta.</span></div></div>
+<h3>Checkpoint y entrega</h3><div class="entrega"><ol>
+<li>Escribe la <b>palabra clave</b> que diga el profesor como comentario en la línea 1: <code># clave: ______</code></li>
+<li>Aplica el <b>cambio sorpresa</b> que se proyectará al terminar el ejercicio (sin IA, 5 min).</li>
+<li>Sube <b>S11D4_matricula.py</b> a la tarea de Teams del día antes de salir: la tarea cierra al terminar la clase.</li>
+<li>Prepárate: el profesor puede pedirte que expliques una línea de tu código.</li>
+</ol></div>
+</section>
+<section class="dia" id="dia5"><div class="num">DÍA 5</div>
+<h2>Errores comunes y un pipeline de datos reales</h2><p class="sub">Errores comunes con regex y un pipeline completo: limpiar, validar y extraer</p>
+<h3>Ejemplos de la clase</h3><ul class="links">
+<li>Un punto que coincide de más (así no: punto sin escapar) — <a href="https://pythontutor.com/visualize.html#code=import%20re%0A%0Aprecios%20%3D%20%22Precios%3A%2012.50%2C%201250%20y%203.99%22%0Aprint%28re.findall%28r%22%5Cd%2B.%5Cd%2B%22%2C%20precios%29%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">PythonTutor »</a></li>
+<li>Un punto que coincide de más (así sí: punto escapado) — <a href="https://pythontutor.com/visualize.html#code=import%20re%0A%0Aprecios%20%3D%20%22Precios%3A%2012.50%2C%201250%20y%203.99%22%0Aprint%28re.findall%28r%22%5Cd%2B%5C.%5Cd%2B%22%2C%20precios%29%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">PythonTutor »</a></li>
+<li>Un pipeline completo — <a href="https://pythontutor.com/visualize.html#code=import%20re%0A%0Aventas%20%3D%20%5B%2212/10/2026%20%3B%20%241%2C250.00%22%2C%20%2213/10/2026%3B%24980%22%2C%0A%20%20%20%20%20%20%20%20%20%20%22ayer%20%3B%20%24300%22%2C%20%2214/10/2026%20%3B%20gratis%22%5D%0Atotal%2C%20errores%20%3D%200%2C%20%5B%5D%0A%0Afor%20venta%20in%20ventas%3A%0A%20%20%20%20fecha%2C%20monto%20%3D%20re.split%28r%22%5Cs%2A%3B%5Cs%2A%22%2C%20venta%29%0A%20%20%20%20monto%20%3D%20re.sub%28r%22%5B%24%2C%5D%22%2C%20%22%22%2C%20monto%29%20%20%20%20%20%20%20%20%20%20%23%20limpiar%0A%20%20%20%20if%20not%20re.fullmatch%28r%22%5Cd%7B2%7D/%5Cd%7B2%7D/%5Cd%7B4%7D%22%2C%20fecha%29%3A%0A%20%20%20%20%20%20%20%20errores.append%28f%22%7Bventa%7D%3A%20fecha%20inv%C3%A1lida%22%29%0A%20%20%20%20elif%20not%20re.fullmatch%28r%22%5Cd%2B%28%5C.%5Cd%7B2%7D%29%3F%22%2C%20monto%29%3A%0A%20%20%20%20%20%20%20%20errores.append%28f%22%7Bventa%7D%3A%20monto%20inv%C3%A1lido%22%29%0A%20%20%20%20else%3A%0A%20%20%20%20%20%20%20%20total%20%3D%20total%20%2B%20float%28monto%29%0A%0Aprint%28%22Total%3A%22%2C%20total%29%0Aprint%28%22Errores%3A%22%2C%20errores%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">PythonTutor »</a></li>
+</ul>
+<h3>Reto integrador: registro de calificaciones<span class="chip">20 min</span></h3><ol class="tareas">
+<li>Separa cada registro con re.split (separador |, con o sin espacios) y limpia el nombre: un solo espacio y formato Título.</li>
+<li>Valida la matrícula (7 dígitos) y la calificación (de 1 a 3 dígitos y no mayor a 100); extrae la fecha con re.search y un grupo, o marca &#x27;sin entrega&#x27;.</li>
+<li>Imprime los registros válidos, los errores con su motivo (registrar y continuar) y el promedio de las calificaciones válidas.</li>
+</ol>
+<p class="pista"><b>Pista:</b> Fecha: re.search(r&#x27;(\d{2}/\d{2}/\d{4})&#x27;, entrega). Si regresa None, no hubo entrega. El | se escapa: \|</p>
+<h3>Código de partida</h3><div class="bloque">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">7</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">8</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">9</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>re
+
+registros = [
+    <span style="color: #00F">&quot;2087451 | Ana Garza | 95 | entregó 12/10/2026&quot;</span>,
+    <span style="color: #00F">&quot;208745 | Luis Pérez | 80 | entregó 12/10/2026&quot;</span>,
+    <span style="color: #00F">&quot;1990345 |  eva   ríos | noventa | entregó 13/10/2026&quot;</span>,
+    <span style="color: #00F">&quot;2101122 | beto SALAS | 70 | sin entrega&quot;</span>,
+    <span style="color: #00F">&quot;2033344 | Sofía Leal | 101 | entregó 11/10/2026&quot;</span>,
+]
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="codigo-5">import re
+
+registros = [
+    &quot;2087451 | Ana Garza | 95 | entregó 12/10/2026&quot;,
+    &quot;208745 | Luis Pérez | 80 | entregó 12/10/2026&quot;,
+    &quot;1990345 |  eva   ríos | noventa | entregó 13/10/2026&quot;,
+    &quot;2101122 | beto SALAS | 70 | sin entrega&quot;,
+    &quot;2033344 | Sofía Leal | 101 | entregó 11/10/2026&quot;,
+]</textarea>
+<div class="acciones"><button class="copiar" data-copiar="codigo-5">Copiar código</button><a href="https://pythontutor.com/visualize.html#code=import%20re%0A%0Aregistros%20%3D%20%5B%0A%20%20%20%20%222087451%20%7C%20Ana%20Garza%20%7C%2095%20%7C%20entreg%C3%B3%2012/10/2026%22%2C%0A%20%20%20%20%22208745%20%7C%20Luis%20P%C3%A9rez%20%7C%2080%20%7C%20entreg%C3%B3%2012/10/2026%22%2C%0A%20%20%20%20%221990345%20%7C%20%20eva%20%20%20r%C3%ADos%20%7C%20noventa%20%7C%20entreg%C3%B3%2013/10/2026%22%2C%0A%20%20%20%20%222101122%20%7C%20beto%20SALAS%20%7C%2070%20%7C%20sin%20entrega%22%2C%0A%20%20%20%20%222033344%20%7C%20Sof%C3%ADa%20Leal%20%7C%20101%20%7C%20entreg%C3%B3%2011/10/2026%22%2C%0A%5D%0A&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">Abrir en PythonTutor »</a></div></div>
+<h3>Prompt sugerido para la IA</h3><div class="bloque">
+<p class="prompt">Estoy haciendo un ejercicio integrador de expresiones regulares en Python: separar registros con re.split, limpiar nombres con re.sub, validar matrícula y calificación con re.fullmatch y extraer una fecha con un grupo. No me des el código: ayúdame a planear los pasos en orden y pregúntame qué patrón usaría en cada uno.</p><textarea class="crudo" id="prompt-5">Estoy haciendo un ejercicio integrador de expresiones regulares en Python: separar registros con re.split, limpiar nombres con re.sub, validar matrícula y calificación con re.fullmatch y extraer una fecha con un grupo. No me des el código: ayúdame a planear los pasos en orden y pregúntame qué patrón usaría en cada uno.</textarea>
+<div class="acciones"><button class="copiar" data-copiar="prompt-5">Copiar prompt</button><span class="sub">Si la IA te da el código completo, pídele que mejor te haga una pregunta.</span></div></div>
+<h3>Checkpoint y entrega</h3><div class="entrega"><ol>
+<li>Escribe la <b>palabra clave</b> que diga el profesor como comentario en la línea 1: <code># clave: ______</code></li>
+<li>Aplica el <b>cambio sorpresa</b> que se proyectará al terminar el ejercicio (sin IA, 5 min).</li>
+<li>Sube <b>S11D5_matricula.py</b> a la tarea de Teams del día antes de salir: la tarea cierra al terminar la clase.</li>
+<li>Prepárate: el profesor puede pedirte que expliques una línea de tu código.</li>
+</ol></div>
+</section>
+<section class="dia" id="chuleta"><h2>Chuleta: los símbolos de la semana</h2>
+<p class="sub">Pruébalos todos en regex101 (elige el sabor Python).</p>
+<table class="chuleta"><tr><th>Símbolo</th><th>Significa</th><th>Ejemplo</th><th>Coincide con</th></tr>
+<tr><td class="mono">\d  \w  \s</td><td>dígito · letra, dígito o _ · espacio</td><td class="mono">\d\d</td><td>42</td></tr>
+<tr><td class="mono">\D  \W  \S</td><td>lo contrario de cada uno</td><td class="mono">\D+</td><td>abc</td></tr>
+<tr><td class="mono">.</td><td>cualquier carácter (menos salto de línea)</td><td class="mono">a.c</td><td>abc, a-c</td></tr>
+<tr><td class="mono">\.</td><td>un punto literal (igual \$, \( ...)</td><td class="mono">\d+\.\d+</td><td>3.14</td></tr>
+<tr><td class="mono">[ ]</td><td>uno de los caracteres de adentro</td><td class="mono">[aeiou]</td><td>e</td></tr>
+<tr><td class="mono">[^ ]</td><td>ninguno de los de adentro</td><td class="mono">[^0-9]</td><td>x</td></tr>
+<tr><td class="mono">+  *  ?</td><td>1 o más · 0 o más · 0 o 1</td><td class="mono">colou?r</td><td>color, colour</td></tr>
+<tr><td class="mono">{n}  {n,m}</td><td>exactamente n · de n a m veces</td><td class="mono">\d{2,4}</td><td>123</td></tr>
+<tr><td class="mono">^  $</td><td>inicio · fin del texto</td><td class="mono">^\d+$</td><td>2026</td></tr>
+<tr><td class="mono">( )</td><td>grupo: guarda esa parte</td><td class="mono">(\d{2})/(\d{2})</td><td>12/10 → 12 y 10</td></tr>
+<tr><td class="mono">|</td><td>o</td><td class="mono">si|no</td><td>no</td></tr>
+<tr><td class="mono">\1  \2</td><td>en re.sub: lo que capturó cada grupo</td><td class="mono">\2/\1</td><td>10/12</td></tr>
+</table></section>
+<section class="dia" id="interactivos"><h2>Simuladores y ejercicios de la semana</h2>
+<p class="sub">Funcionan en el navegador del celular o de la computadora, sin instalar nada. Los de todas las semanas están en <a href="https://memosanchezg.github.io/programacion-basica-interactivos/" target="_blank" rel="noopener">memosanchezg.github.io/programacion-basica-interactivos/</a>.</p>
+<ul class="links">
+<li><a href="https://memosanchezg.github.io/programacion-basica-interactivos/semana-11-laboratorio-regex.html" target="_blank" rel="noopener">Laboratorio de expresiones regulares (como en Python)</a> <span class="sub">· Simulador</span><br><span class="sub">Escribe un patrón, elige la función del módulo re y mira, texto por texto, qué encuentra y qué regresa exactamente Python.</span></li>
+<li><a href="https://memosanchezg.github.io/programacion-basica-interactivos/semana-11-reto-patrones.html" target="_blank" rel="noopener">Reto: escribe el patrón</a> <span class="sub">· Simulador</span><br><span class="sub">12 niveles, del Día 1 al Día 5: escribe un patrón que acepte lo que se pide y rechace las trampas. Al completar un nivel se abre el siguiente.</span></li>
+<li><a href="https://memosanchezg.github.io/programacion-basica-interactivos/semana-11-limpieza.html" target="_blank" rel="noopener">Limpia los datos con re.sub y re.split</a> <span class="sub">· Simulador</span><br><span class="sub">Seis retos con datos sucios: escribe el patrón (y el reemplazo) y revisa, renglón por renglón, si queda exactamente como se espera.</span></li>
+</ul></section>
+<section class="dia" id="recursos"><h2>Recursos</h2><ul class="links">
+<li><a href="https://regex101.com/?flavor=python" target="_blank" rel="noopener">regex101: prueba y explica tus patrones</a><br><span class="sub">Elige el sabor Python: marca las coincidencias y explica cada símbolo. Todos los patrones de la semana tienen su enlace.</span></li>
+<li><a href="https://regexone.com/" target="_blank" rel="noopener">RegexOne: lecciones interactivas (en inglés)</a><br><span class="sub">Ejercicios cortos y progresivos para practicar clases, cuantificadores, grupos y anclas.</span></li>
+<li><a href="https://pythontutor.com/python-compiler.html#mode=edit" target="_blank" rel="noopener">PythonTutor: visualiza tu propio código</a><br><span class="sub">Pega tu solución y avanza paso a paso; el módulo re sí está permitido.</span></li>
+<li><a href="https://docs.python.org/es/3/library/re.html" target="_blank" rel="noopener">Documentación oficial del módulo re (en inglés)</a><br><span class="sub">Todas las funciones (search, findall, fullmatch, sub, split, compile) y la sintaxis completa de patrones.</span></li>
+<li><a href="https://docs.python.org/es/3/howto/regex.html" target="_blank" rel="noopener">HOWTO oficial de expresiones regulares (en inglés)</a><br><span class="sub">Guía práctica, incluida la sección de problemas comunes (codicia, cadenas crudas, match vs. search).</span></li>
+</ul></section>
+<footer>Hoja del estudiante del Tema 11 · Programación Básica · FCFM-UANL. <a href="index.html">Índice de simuladores</a> · <a href="#qr-sitio" class="qr-abrir">Abrir en el celular (QR)</a></footer>
+</main><script>
+document.querySelectorAll('button.copiar').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var el = document.getElementById(btn.getAttribute('data-copiar'));
+    var texto = el.value !== undefined ? el.value : el.textContent;
+    var listo = function () {
+      var antes = btn.textContent;
+      btn.textContent = 'Copiado \u2713';
+      setTimeout(function () { btn.textContent = antes; }, 1500);
+    };
+    var respaldo = function () {
+      var t = document.createElement('textarea');
+      t.value = texto; document.body.appendChild(t); t.select();
+      try { document.execCommand('copy'); listo(); } catch (e) {}
+      document.body.removeChild(t);
+    };
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(texto).then(listo, respaldo);
+    } else { respaldo(); }
+  });
+});
+</script><div id="qr-sitio" class="qr-capa" hidden>
+  <div class="qr-caja" role="dialog" aria-modal="true" aria-label="Código QR de esta página">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 41 41" role="img" aria-label="Código QR de https://memosanchezg.github.io/programacion-basica-interactivos/hoja-tema-11.html" shape-rendering="crispEdges"><rect width="41" height="41" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM10 2h2v1h-2zM14 2h1v1h-1zM17 2h2v1h-2zM20 2h1v1h-1zM22 2h1v1h-1zM24 2h1v1h-1zM27 2h1v1h-1zM32 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM10 3h1v1h-1zM12 3h2v1h-2zM15 3h1v1h-1zM19 3h1v1h-1zM21 3h1v1h-1zM26 3h1v1h-1zM28 3h1v1h-1zM30 3h1v1h-1zM32 3h1v1h-1zM38 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM10 4h1v1h-1zM12 4h2v1h-2zM15 4h2v1h-2zM18 4h1v1h-1zM21 4h1v1h-1zM23 4h6v1h-6zM30 4h1v1h-1zM32 4h1v1h-1zM34 4h3v1h-3zM38 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM12 5h1v1h-1zM14 5h1v1h-1zM18 5h2v1h-2zM22 5h2v1h-2zM25 5h3v1h-3zM30 5h1v1h-1zM32 5h1v1h-1zM34 5h3v1h-3zM38 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h2v1h-2zM13 6h1v1h-1zM15 6h1v1h-1zM20 6h2v1h-2zM23 6h2v1h-2zM28 6h1v1h-1zM30 6h1v1h-1zM32 6h1v1h-1zM34 6h3v1h-3zM38 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM12 7h1v1h-1zM14 7h1v1h-1zM16 7h1v1h-1zM24 7h3v1h-3zM28 7h1v1h-1zM30 7h1v1h-1zM32 7h1v1h-1zM38 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM30 8h1v1h-1zM32 8h7v1h-7zM11 9h1v1h-1zM15 9h1v1h-1zM18 9h1v1h-1zM20 9h1v1h-1zM22 9h1v1h-1zM24 9h1v1h-1zM27 9h4v1h-4zM2 10h1v1h-1zM5 10h7v1h-7zM13 10h1v1h-1zM15 10h1v1h-1zM17 10h3v1h-3zM21 10h2v1h-2zM24 10h1v1h-1zM26 10h1v1h-1zM28 10h1v1h-1zM30 10h2v1h-2zM34 10h1v1h-1zM36 10h3v1h-3zM2 11h1v1h-1zM4 11h3v1h-3zM9 11h3v1h-3zM14 11h1v1h-1zM16 11h1v1h-1zM20 11h3v1h-3zM24 11h2v1h-2zM27 11h3v1h-3zM33 11h2v1h-2zM36 11h2v1h-2zM8 12h1v1h-1zM11 12h5v1h-5zM23 12h3v1h-3zM28 12h3v1h-3zM33 12h4v1h-4zM38 12h1v1h-1zM3 13h1v1h-1zM9 13h5v1h-5zM17 13h1v1h-1zM19 13h1v1h-1zM30 13h1v1h-1zM32 13h7v1h-7zM3 14h1v1h-1zM8 14h4v1h-4zM15 14h2v1h-2zM18 14h1v1h-1zM21 14h1v1h-1zM29 14h2v1h-2zM32 14h2v1h-2zM35 14h1v1h-1zM38 14h1v1h-1zM2 15h2v1h-2zM6 15h1v1h-1zM9 15h6v1h-6zM17 15h3v1h-3zM23 15h1v1h-1zM25 15h1v1h-1zM28 15h3v1h-3zM34 15h2v1h-2zM5 16h1v1h-1zM7 16h2v1h-2zM14 16h1v1h-1zM16 16h2v1h-2zM20 16h2v1h-2zM23 16h1v1h-1zM27 16h1v1h-1zM29 16h1v1h-1zM34 16h5v1h-5zM2 17h1v1h-1zM5 17h1v1h-1zM7 17h1v1h-1zM10 17h1v1h-1zM12 17h3v1h-3zM18 17h1v1h-1zM20 17h1v1h-1zM22 17h1v1h-1zM26 17h1v1h-1zM30 17h4v1h-4zM35 17h4v1h-4zM2 18h3v1h-3zM6 18h1v1h-1zM8 18h1v1h-1zM10 18h2v1h-2zM18 18h1v1h-1zM24 18h1v1h-1zM26 18h2v1h-2zM29 18h1v1h-1zM32 18h1v1h-1zM36 18h1v1h-1zM4 19h3v1h-3zM10 19h4v1h-4zM15 19h1v1h-1zM18 19h2v1h-2zM21 19h1v1h-1zM28 19h2v1h-2zM31 19h1v1h-1zM36 19h1v1h-1zM6 20h1v1h-1zM8 20h1v1h-1zM10 20h2v1h-2zM14 20h2v1h-2zM17 20h1v1h-1zM20 20h2v1h-2zM24 20h4v1h-4zM29 20h2v1h-2zM32 20h1v1h-1zM34 20h1v1h-1zM36 20h1v1h-1zM38 20h1v1h-1zM2 21h1v1h-1zM4 21h2v1h-2zM11 21h1v1h-1zM13 21h4v1h-4zM20 21h2v1h-2zM26 21h2v1h-2zM29 21h1v1h-1zM31 21h5v1h-5zM38 21h1v1h-1zM5 22h1v1h-1zM7 22h2v1h-2zM10 22h2v1h-2zM13 22h1v1h-1zM17 22h3v1h-3zM22 22h1v1h-1zM24 22h3v1h-3zM28 22h7v1h-7zM3 23h1v1h-1zM5 23h3v1h-3zM9 23h1v1h-1zM12 23h3v1h-3zM16 23h2v1h-2zM20 23h2v1h-2zM24 23h2v1h-2zM29 23h1v1h-1zM34 23h1v1h-1zM36 23h1v1h-1zM3 24h1v1h-1zM7 24h2v1h-2zM10 24h2v1h-2zM15 24h5v1h-5zM23 24h3v1h-3zM27 24h1v1h-1zM29 24h2v1h-2zM33 24h1v1h-1zM35 24h1v1h-1zM37 24h2v1h-2zM5 25h3v1h-3zM10 25h1v1h-1zM13 25h1v1h-1zM16 25h7v1h-7zM24 25h1v1h-1zM29 25h3v1h-3zM33 25h5v1h-5zM2 26h1v1h-1zM5 26h2v1h-2zM8 26h2v1h-2zM11 26h1v1h-1zM13 26h2v1h-2zM16 26h3v1h-3zM22 26h1v1h-1zM25 26h2v1h-2zM29 26h1v1h-1zM32 26h2v1h-2zM2 27h1v1h-1zM5 27h1v1h-1zM7 27h1v1h-1zM10 27h1v1h-1zM14 27h1v1h-1zM18 27h1v1h-1zM20 27h1v1h-1zM22 27h2v1h-2zM25 27h1v1h-1zM28 27h4v1h-4zM34 27h1v1h-1zM2 28h2v1h-2zM5 28h1v1h-1zM7 28h3v1h-3zM11 28h1v1h-1zM13 28h3v1h-3zM18 28h1v1h-1zM20 28h3v1h-3zM29 28h1v1h-1zM31 28h1v1h-1zM34 28h1v1h-1zM37 28h2v1h-2zM2 29h1v1h-1zM6 29h1v1h-1zM9 29h1v1h-1zM12 29h3v1h-3zM16 29h2v1h-2zM22 29h1v1h-1zM24 29h2v1h-2zM28 29h1v1h-1zM31 29h2v1h-2zM34 29h5v1h-5zM2 30h1v1h-1zM4 30h1v1h-1zM8 30h1v1h-1zM10 30h2v1h-2zM13 30h1v1h-1zM22 30h1v1h-1zM24 30h1v1h-1zM26 30h2v1h-2zM29 30h10v1h-10zM10 31h2v1h-2zM13 31h1v1h-1zM17 31h1v1h-1zM20 31h2v1h-2zM24 31h1v1h-1zM27 31h1v1h-1zM29 31h2v1h-2zM34 31h1v1h-1zM36 31h2v1h-2zM2 32h7v1h-7zM10 32h1v1h-1zM13 32h1v1h-1zM15 32h3v1h-3zM19 32h1v1h-1zM21 32h1v1h-1zM23 32h1v1h-1zM25 32h2v1h-2zM30 32h1v1h-1zM32 32h1v1h-1zM34 32h1v1h-1zM38 32h1v1h-1zM2 33h1v1h-1zM8 33h1v1h-1zM10 33h1v1h-1zM12 33h1v1h-1zM14 33h3v1h-3zM24 33h2v1h-2zM27 33h1v1h-1zM29 33h2v1h-2zM34 33h1v1h-1zM37 33h1v1h-1zM2 34h1v1h-1zM4 34h3v1h-3zM8 34h1v1h-1zM10 34h6v1h-6zM17 34h3v1h-3zM25 34h2v1h-2zM28 34h7v1h-7zM37 34h1v1h-1zM2 35h1v1h-1zM4 35h3v1h-3zM8 35h1v1h-1zM10 35h3v1h-3zM15 35h2v1h-2zM18 35h4v1h-4zM23 35h4v1h-4zM29 35h1v1h-1zM31 35h2v1h-2zM37 35h2v1h-2zM2 36h1v1h-1zM4 36h3v1h-3zM8 36h1v1h-1zM17 36h1v1h-1zM19 36h1v1h-1zM23 36h1v1h-1zM25 36h1v1h-1zM27 36h1v1h-1zM30 36h2v1h-2zM34 36h1v1h-1zM38 36h1v1h-1zM2 37h1v1h-1zM8 37h1v1h-1zM11 37h1v1h-1zM13 37h2v1h-2zM16 37h1v1h-1zM19 37h1v1h-1zM22 37h1v1h-1zM26 37h1v1h-1zM28 37h1v1h-1zM32 37h1v1h-1zM34 37h5v1h-5zM2 38h7v1h-7zM10 38h1v1h-1zM13 38h1v1h-1zM15 38h2v1h-2zM18 38h1v1h-1zM22 38h1v1h-1zM25 38h2v1h-2zM28 38h1v1h-1zM30 38h4v1h-4zM35 38h1v1h-1zM38 38h1v1h-1z"/></svg>
+    <p class="qr-texto">Escanea con la cámara del celular para abrir esta página</p>
+    <p class="qr-url">https://memosanchezg.github.io/programacion-basica-interactivos/hoja-tema-11.html</p>
+    <button type="button" class="qr-cerrar">Cerrar</button>
+  </div>
+</div>
+<style>
+  .qr-capa { position:fixed; top:0; right:0; bottom:0; left:0; z-index:10000; display:flex; align-items:center;
+             justify-content:center; padding:16px; background:#fff; }
+  .qr-capa[hidden] { display:none; }
+  .qr-caja { max-width:100%; text-align:center; color:#0A2A57; font:16px/1.4 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .qr-caja svg { display:block; width:min(62vh, 84vw); height:auto; margin:0 auto; }
+  .qr-texto { margin:12px 0 2px; font-size:1.15rem; font-weight:bold; }
+  .qr-url { margin:0 0 12px; color:#5B6472; word-break:break-all; }
+  .qr-cerrar { font:inherit; padding:6px 20px; border:2px solid #00408F; border-radius:4px; background:#fff;
+               color:#00408F; cursor:pointer; }
+</style>
+<script>
+  (function () {
+    var capa = document.getElementById("qr-sitio");
+    document.querySelectorAll("a.qr-abrir").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        capa.hidden = false;
+        capa.querySelector(".qr-cerrar").focus();
+      });
+    });
+    capa.addEventListener("click", function (e) {
+      if (e.target === capa || e.target.classList.contains("qr-cerrar")) capa.hidden = true;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !capa.hidden) capa.hidden = true;
+    });
+  })();
+</script>
+</body></html>

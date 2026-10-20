@@ -1,0 +1,1345 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="tipo" content="simulador">
+<title>Valor, formato y tipo</title>
+
+<style>
+  :root {
+    --azul:#00408F; --azul-oscuro:#0A2A57; --guinda:#8C1D35; --oro:#B8975A; --oro-texto:#8A6A2E;
+    --azul-claro:#E8EEF7; --oro-claro:#F7F1E6; --guinda-claro:#F5E6EA; --verde:#2F7D5B;
+    --tinta:#1B1F2A; --gris:#5B6472; --gris-claro:#E9ECF1; --borde:#D9DEE6; --fondo:#FFFFFF;
+    --cmd-fondo:#0C0C0C; --cmd-texto:#E6E6E6;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--fondo); color:var(--tinta);
+         font:16px/1.45 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .franja { height:8px; background:var(--azul); border-bottom:3px solid var(--oro); }
+  header { max-width:1280px; margin:0 auto; padding:12px 18px 4px; }
+  .semana { color:var(--guinda); font-weight:bold; letter-spacing:.04em; font-size:.85rem; text-transform:uppercase; }
+  h1 { font-family:Cambria,Georgia,serif; color:var(--azul-oscuro); font-size:1.7rem; margin:2px 0 2px; }
+  .sub { color:var(--gris); margin:0; }
+  main { max-width:1280px; margin:0 auto; padding:8px 18px 24px; }
+  nav.pestanas { display:flex; gap:4px; flex-wrap:wrap; border-bottom:2px solid var(--gris-claro); margin:6px 0 12px; }
+  nav.pestanas button { font:inherit; font-weight:bold; border:none; background:none; color:var(--gris);
+                        padding:8px 14px; cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; }
+  nav.pestanas button.activo { color:var(--azul-oscuro); border-bottom-color:var(--azul); }
+  nav.pestanas button:focus-visible { outline:2px solid var(--azul); }
+  section.vista { display:none; }
+  section.vista.activo { display:block; }
+  .fila { display:grid; grid-template-columns:minmax(260px,360px) minmax(0,1fr); gap:16px; align-items:start; }
+  .panel { background:#fff; border:1px solid var(--borde); border-radius:10px; padding:12px 14px; }
+  .panel h2 { font-size:1.02rem; color:var(--azul-oscuro); margin:0 0 8px; }
+  label { display:block; font-weight:bold; color:var(--azul-oscuro); margin-top:10px; }
+  label small { font-weight:normal; color:var(--gris); }
+  input[type=range] { width:100%; }
+  input[type=number], input[type=text], select, textarea { font:inherit; padding:4px 6px; border:1px solid var(--borde);
+                        border-radius:6px; }
+  input.mono, textarea.mono { font-family:Consolas,"Courier New",monospace; }
+  button.accion { font:inherit; font-weight:bold; border-radius:8px; padding:7px 12px; margin:8px 6px 0 0;
+                  border:1px solid var(--azul); background:#fff; color:var(--azul); cursor:pointer; }
+  button.accion:hover, button.accion:focus-visible { background:var(--azul); color:#fff; outline:none; }
+  .lectura { background:var(--oro-claro); border-left:4px solid var(--oro); border-radius:8px; padding:10px 12px;
+             margin-top:12px; line-height:1.55; }
+  .lectura b { color:var(--azul-oscuro); }
+  .ok { color:var(--verde); font-weight:bold; }
+  .mal { color:var(--guinda); font-weight:bold; }
+  .preguntas { background:var(--azul-claro); border-radius:8px; padding:10px 14px; margin-top:12px; }
+  .preguntas h3 { margin:0 0 4px; font-size:.95rem; color:var(--azul-oscuro); }
+  .preguntas ol { margin:0; padding-left:20px; }
+  /* Código Python con los colores del curso (minted, estilo borland) y salida de consola (cmd). */
+  .codigo { border:1px solid var(--tinta); background:#fff; font:15px/1.5 Consolas,"Courier New",monospace;
+            overflow-x:auto; margin:8px 0; }
+  .codigo ol { margin:0; padding:8px 12px 8px 3.4em; }
+  .codigo li { white-space:pre; }
+  .codigo li::marker { color:var(--gris); font:11px Cambria,Georgia,serif; }
+  .codigo .kw { color:#000080; font-weight:bold; }
+  .codigo .str, .codigo .num { color:#0000FF; }
+  .codigo .com { color:#008800; font-style:italic; }
+  .codigo .marca { background:var(--oro-claro); outline:1px solid var(--oro); }
+  .consola { background:var(--cmd-fondo); color:var(--cmd-texto); font:15px/1.45 Consolas,"Courier New",monospace;
+             white-space:pre-wrap; word-break:break-word; padding:8px 12px; border-radius:4px; margin:8px 0; min-height:2.2em; }
+  footer { max-width:1280px; margin:0 auto; padding:6px 18px 18px; color:var(--gris); font-size:.85rem; }
+  footer a { color:var(--azul); }
+  @media (max-width: 820px) { .fila { grid-template-columns:1fr; } }
+
+  /* Propios de este simulador */
+  [hidden] { display:none !important; }
+  /* Hoja de cálculo como en Excel: encabezados grises, rejilla, pestañas, filtros y paneles. */
+  .xl { border:1px solid #C6C6C6; background:#fff; max-width:100%; }
+  .xl-rejilla { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  table.xl-t { border-collapse:collapse; table-layout:fixed; font:14.667px/1.2 Calibri,Carlito,"Segoe UI",Arial,sans-serif;
+               color:#000; background:#fff; }
+  table.xl-t th { background:#F3F3F3; color:#5B6472; font:12px/1 Calibri,Carlito,"Segoe UI",Arial,sans-serif;
+                  border:1px solid #D4D4D4; height:20px; padding:0; text-align:center; }
+  table.xl-t th.xl-enc-sel { background:#E1E1E1; color:#217346; font-weight:bold; box-shadow:inset 0 -2px 0 #217346; }
+  table.xl-t tbody th.xl-enc-sel { box-shadow:inset -2px 0 0 #217346; }
+  table.xl-t td { border:1px solid #D4D4D4; height:20px; padding:0 3px; white-space:nowrap; overflow:hidden;
+                  vertical-align:bottom; position:static; }
+  table.xl-t td .xl-c { display:flex; align-items:flex-end; height:19px; overflow:hidden; pointer-events:none;
+                        white-space:pre; }
+  table.xl-t td.xl-left .xl-c { justify-content:flex-start; }
+  table.xl-t td.xl-right .xl-c { justify-content:flex-end; }
+  table.xl-t td.xl-center .xl-c { justify-content:center; }
+  table.xl-t td.xl-desborda { overflow:visible; }
+  table.xl-t td.xl-desborda .xl-c { width:var(--ancho); }
+  table.xl-t td.xl-b { font-weight:bold; }
+  table.xl-t td.xl-i { font-style:italic; }
+  table.xl-t td.xl-congela-f { border-bottom:2px solid #9A9A9A; }
+  table.xl-t td.xl-congela-c { border-right:2px solid #9A9A9A; }
+  table.xl-t td.xl-sel { outline:2px solid #217346; outline-offset:-2px; }
+  table.xl-t td:focus { outline:2px solid #217346; outline-offset:-2px; }
+  table.xl-t td:focus-visible { outline:3px solid var(--guinda); outline-offset:-3px; }
+  table.xl-t .xl-formula { color:#5B6472; font-style:italic; }
+  table.xl-t .xl-filtro { float:right; width:15px; height:15px; margin:2px -1px 0 2px; border:1px solid #A6A6A6;
+                          background:#fff; color:#5B6472; font-size:10px; line-height:13px; text-align:center;
+                          pointer-events:none; }
+  table.xl-t td.xl-triangulo { background-image:linear-gradient(135deg, #1E8E3E 0, #1E8E3E 5px, transparent 5px); }
+  table.xl-t .xl-orden { float:left; font:bold 11px/1 Calibri,"Segoe UI",sans-serif; color:var(--guinda);
+                         background:rgba(255,255,255,.85); border-radius:3px; padding:0 2px; margin:1px 2px 0 -2px;
+                         pointer-events:none; }
+  .xl-pestanas { display:flex; gap:2px; background:#F3F3F3; border-top:1px solid #D4D4D4; padding:0 8px; overflow-x:auto; }
+  .xl-pestanas button { font:13px Calibri,Carlito,"Segoe UI",Arial,sans-serif; border:none; background:none; color:#5B6472;
+                        padding:4px 14px 3px; cursor:pointer; border-bottom:3px solid transparent; white-space:nowrap; }
+  .xl-pestanas button.activa { background:#fff; color:#217346; font-weight:bold; border-bottom-color:#217346; }
+  .xl-pestanas button:focus-visible { outline:2px solid var(--guinda); outline-offset:-2px; }
+  .oculto { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+  code { font-family:Consolas,"Courier New",monospace; color:var(--azul-oscuro); }
+  .fila > * { min-width:0; }
+  .lectura, .preguntas { overflow-wrap:anywhere; }
+  fieldset { border:none; padding:0; margin:0; }
+  legend { font-weight:bold; color:var(--azul-oscuro); padding:0; }
+  .radios { display:flex; flex-wrap:wrap; gap:4px 14px; margin-top:4px; }
+  .radios label { display:flex; gap:6px; align-items:center; font-weight:normal; color:var(--tinta); margin:0; cursor:pointer; }
+  .radios input { width:18px; height:18px; margin:0; }
+  .casilla { display:flex; gap:8px; align-items:center; font-weight:normal; color:var(--tinta); margin-top:12px; cursor:pointer; }
+  .casilla input { width:18px; height:18px; margin:0; flex:none; }
+  .valor { float:right; color:var(--guinda); font-weight:bold; }
+  .error { color:var(--guinda); font-size:.92rem; margin:4px 0 0; min-height:1.2em; }
+  #numero, #texto { width:100%; }
+  #formato, #formatoFechas { width:100%; font-family:Consolas,"Courier New",monospace; }
+  .ejemplos { display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
+  .ejemplos button.accion { margin:0; padding:5px 9px; font-weight:normal; font-size:.92rem; }
+  h3.rotulo { font-size:.98rem; color:var(--azul-oscuro); margin:14px 0 4px; }
+  h2.rotulo { margin-top:14px !important; }
+  table.tipos { width:100%; border-collapse:collapse; margin-top:6px; }
+  table.tipos th, table.tipos td { border:1px solid var(--borde); padding:4px 8px; text-align:left; }
+  table.tipos thead th { background:var(--gris-claro); color:var(--azul-oscuro); }
+  table.tipos td label { display:flex; gap:6px; align-items:center; font-weight:normal; color:var(--tinta); margin:0; cursor:pointer;
+                         font-family:Consolas,"Courier New",monospace; }
+  table.tipos td input { width:18px; height:18px; margin:0; }
+  .botonera { display:flex; flex-wrap:wrap; gap:6px; }
+  .botonera button.accion { margin:6px 0 0; }
+  .mini-hoja { max-width:420px; }
+  #hojaCalif td[data-c="B2"], #hojaCalif td[data-c="B3"], #hojaCalif td[data-c="B4"], #hojaCalif td[data-c="B5"] { cursor:pointer; }
+  .nota-calif { color:var(--gris); font-size:.92rem; margin:6px 0 0; }
+  button.accion[aria-pressed="true"] { background:var(--azul); color:#fff; }
+  @media (max-width: 480px) {
+    header { padding:10px 12px 4px; }
+    main { padding:8px 10px 20px; }
+    footer { padding:6px 12px 16px; }
+    .panel { padding:10px; }
+    h1 { font-size:1.45rem; }
+    nav.pestanas button { padding:8px 9px; }
+    .codigo { font-size:13px; }
+    .codigo ol { padding-left:2.9em; }
+    table.tipos th, table.tipos td { padding:4px 5px; }
+  }
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header>
+  <div class="semana">Semana 14 · Días 3 y 4 · Excel y reportes</div>
+  <h1>Valor, formato y tipo</h1>
+  <p class="sub">Lo que guardas en una celda, cómo lo muestra Excel según su number_format y por qué un número como texto o una fecha como texto no sirven para hacer cuentas.</p>
+</header>
+<main>
+  <nav class="pestanas" role="tablist">
+    <button type="button" class="activo" data-vista="v1" role="tab" aria-selected="true">1 · Valor y formato</button>
+    <button type="button" data-vista="v2" role="tab" aria-selected="false">2 · ¿Texto o número?</button>
+    <button type="button" data-vista="v3" role="tab" aria-selected="false">3 · Fechas</button>
+  </nav>
+
+  
+  <section class="vista activo" id="v1" role="tabpanel">
+    <div class="fila">
+      <div class="panel">
+        <h2>La celda A1</h2>
+        <fieldset>
+          <legend>¿Qué guardas en la celda?</legend>
+          <div class="radios">
+            <label><input type="radio" name="tipo" value="numero" checked> Un número</label>
+            <label><input type="radio" name="tipo" value="fecha"> Una fecha</label>
+            <label><input type="radio" name="tipo" value="texto"> Un texto</label>
+          </div>
+        </fieldset>
+        <div id="cajaNumero">
+          <label for="numero">Número <small>(como en Python: 0.785, 35, -2.5)</small></label>
+          <input type="text" id="numero" class="mono" value="0.7825" inputmode="decimal" autocomplete="off" spellcheck="false" aria-describedby="errNumero">
+          <p class="error" id="errNumero" aria-live="polite"></p>
+        </div>
+        <div id="cajaFecha" hidden>
+          <label for="fecha">Fecha</label>
+          <input type="date" id="fecha" value="2026-09-15" min="1900-03-01" max="9999-12-31">
+          <label for="hora">Hora <small>(opcional; con hora es un datetime)</small></label>
+          <input type="time" id="hora">
+        </div>
+        <div id="cajaTexto" hidden>
+          <label for="texto">Texto</label>
+          <input type="text" id="texto" class="mono" value="95" autocomplete="off" spellcheck="false">
+        </div>
+        <label for="formato">number_format</label>
+        <select id="formato"></select>
+        <label class="casilla"><input type="checkbox" id="cambiarAncho"> Cambiar el ancho de la columna A</label>
+        <label for="ancho">Ancho de la columna A <span class="valor" id="anchoTxt"></span></label>
+        <input type="range" id="ancho" min="2" max="30" step="0.5" value="12" disabled>
+        <h3 class="rotulo">Prueba con</h3>
+        <div class="ejemplos" id="ejemplos"></div>
+      </div>
+      <div class="panel">
+        <h2>Así se ve en Excel</h2>
+        <div class="mini-hoja" id="hojaValor"></div>
+        <div class="lectura" id="lecturaValor" aria-live="polite"></div>
+        <h2 class="rotulo">El código en Python</h2>
+        <div id="codigoValor"></div>
+        <div class="consola" id="salidaValor"></div>
+        <div class="preguntas">
+          <h3>Para explorar</h3>
+          <ol>
+            <li>En Python, <code>f"{0.7825:.1%}"</code> da <code>78.2%</code>. ¿Qué muestra Excel con 0.7825 y <code>"0.0%"</code>? ¿Por qué no coinciden? Prueba también con 0.7835.</li>
+            <li>Pon 1234567.891 con <code>"#,##0.00"</code> y cambia el ancho de la columna. ¿Desde qué ancho aparece <code>#####</code>? ¿Cambia lo que imprime Python?</li>
+            <li>Elige una fecha y el formato <code>General</code>. ¿Qué número aparece? ¿Qué cuenta ese número?</li>
+            <li>Escribe el texto <code>95</code> y elige <code>"0.00"</code>. ¿Por qué no se ve 95.00?</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  
+  <section class="vista" id="v2" role="tabpanel">
+    <div class="fila">
+      <div class="panel">
+        <h2>¿Cómo guardas cada calificación?</h2>
+        <table class="tipos">
+          <thead><tr><th scope="col">Nombre</th><th scope="col">Texto (str)</th><th scope="col">Número (int)</th></tr></thead>
+          <tbody id="tiposCalif"></tbody>
+        </table>
+        <p class="nota-calif">También puedes tocar una calificación en la hoja para cambiarla.</p>
+        <div class="botonera">
+          <button type="button" class="accion" id="todasTexto">Todas como texto</button>
+          <button type="button" class="accion" id="todasNumero">Todas como número</button>
+        </div>
+        <div class="lectura" id="lecturaCalif" aria-live="polite"></div>
+      </div>
+      <div class="panel">
+        <h2>Así se ve en Excel</h2>
+        <div class="mini-hoja" id="hojaCalif"></div>
+        <h2 class="rotulo">El código en Python</h2>
+        <div id="codigoCalif"></div>
+        <div class="consola" id="salidaCalif"></div>
+        <div class="preguntas">
+          <h3>Para explorar</h3>
+          <ol>
+            <li>Con las cuatro calificaciones como texto, ¿cuánto da <code>=SUM</code>? ¿Por qué <code>=AVERAGE</code> da error?</li>
+            <li>Si solo la de Ana está como texto, ¿cuánto da el promedio? ¿Cuál debería ser?</li>
+            <li>Los datos llegan como <code>"95"</code> (de un CSV o de una API). ¿Qué harías en Python antes del <code>append</code>?</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  
+  <section class="vista" id="v3" role="tabpanel">
+    <div class="fila">
+      <div class="panel">
+        <h2>Las mismas seis fechas, de dos maneras</h2>
+        <fieldset>
+          <legend>La columna A guarda las fechas como texto</legend>
+          <div class="radios">
+            <label><input type="radio" name="estilo" value="dmy" checked> <code>"1/10/2026"</code> (d/mm/aaaa, a mano)</label>
+            <label><input type="radio" name="estilo" value="iso"> <code>"2026-10-01"</code> (aaaa-mm-dd, como la API)</label>
+          </div>
+        </fieldset>
+        <label for="formatoFechas">number_format de las dos columnas</label>
+        <select id="formatoFechas">
+          <option value="yyyy-mm-dd">yyyy-mm-dd (el que pone openpyxl)</option>
+          <option value="dd/mm/yyyy">dd/mm/yyyy</option>
+          <option value="dd/mm/yyyy hh:mm">dd/mm/yyyy hh:mm</option>
+          <option value="General">General</option>
+        </select>
+        <h3 class="rotulo">Ordenar como en Excel (de menor a mayor)</h3>
+        <div class="botonera">
+          <button type="button" class="accion" id="ordenA">Por la columna A: de A a Z</button>
+          <button type="button" class="accion" id="ordenB">Por la columna B: de la más antigua a la más reciente</button>
+          <button type="button" class="accion" id="ordenOriginal">Orden original</button>
+        </div>
+        <div class="lectura" id="lecturaFechas" aria-live="polite"></div>
+      </div>
+      <div class="panel">
+        <h2>Así se ve en Excel</h2>
+        <div class="mini-hoja" id="hojaFechas"></div>
+        <h2 class="rotulo">El código en Python</h2>
+        <div id="codigoFechas"></div>
+        <div class="consola" id="salidaFechas"></div>
+        <div class="preguntas">
+          <h3>Para explorar</h3>
+          <ol>
+            <li>Ordena por la columna A con el texto d/mm/aaaa. ¿Qué fecha queda primero? ¿Por qué?</li>
+            <li>Cambia el texto a aaaa-mm-dd y vuelve a ordenar por A. ¿Ya está bien? ¿Qué sigue sin funcionar?</li>
+            <li>Elige <code>General</code>. ¿Qué número tiene el 1/10/2026? ¿Cuántos días hay entre el 15/09 y el 1/10?</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<footer>
+  Programación Básica · FCFM-UANL · funciona sin internet. Lo que se ve en cada celda reproduce a Excel (redondeo, ##### y formato General); el código y lo que imprime se comprobaron con Python y openpyxl.
+  <a href="index.html">Índice de simuladores</a> · <a href="#qr-sitio" class="qr-abrir">Abrir en el celular (QR)</a>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+  // ==== NÚCLEO EXCEL (puro: sin DOM) ====
+  // Valores como en Python: int (número entero de JS), float (número con decimales o PyFloat),
+  // str, bool, None (null), date (Fecha) y datetime (FechaHora).
+  function PyFloat(valor) { this.valor = valor; }
+  function Fecha(a, m, d) { this.a = a; this.m = m; this.d = d; }
+  function FechaHora(a, m, d, h, mi, s) { this.a = a; this.m = m; this.d = d; this.h = h || 0; this.mi = mi || 0; this.s = s || 0; }
+  function Tupla(items) { this.items = items; }
+  function ErrorExcel(codigo) { this.codigo = codigo; }
+
+  function esc(t) {
+    return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  function esNumero(v) { return (typeof v === "number") || (v instanceof PyFloat); }
+  function num(v) { return v instanceof PyFloat ? v.valor : v; }
+  function esFecha(v) { return v instanceof Fecha || v instanceof FechaHora; }
+
+  // repr() de un float de Python: la representación más corta que vuelve al mismo número.
+  function pyFloat(x) {
+    if (Number.isNaN(x)) return "nan";
+    if (x === Infinity) return "inf";
+    if (x === -Infinity) return "-inf";
+    if (x === 0) return Object.is(x, -0) ? "-0.0" : "0.0";
+    var partes = Math.abs(x).toExponential().split("e");
+    var digitos = partes[0].replace(".", "");
+    var exp = parseInt(partes[1], 10);
+    var decpt = exp + 1, signo = x < 0 ? "-" : "";
+    if (decpt > 16 || decpt < -3) {
+      var mant = digitos.length > 1 ? digitos[0] + "." + digitos.slice(1) : digitos[0];
+      return signo + mant + "e" + (exp < 0 ? "-" : "+") + (Math.abs(exp) < 10 ? "0" : "") + Math.abs(exp);
+    }
+    if (decpt <= 0) return signo + "0." + "0".repeat(-decpt) + digitos;
+    if (decpt >= digitos.length) return signo + digitos + "0".repeat(decpt - digitos.length) + ".0";
+    return signo + digitos.slice(0, decpt) + "." + digitos.slice(decpt);
+  }
+
+  // repr() de un texto: comillas simples, o dobles si el texto trae ' y no trae ".
+  function pyStr(s) {
+    var q = (s.indexOf("'") >= 0 && s.indexOf('"') < 0) ? '"' : "'";
+    var r = "";
+    for (var i = 0; i < s.length; i++) {
+      var c = s[i], code = s.charCodeAt(i);
+      if (c === "\\") r += "\\\\";
+      else if (c === q) r += "\\" + q;
+      else if (c === "\n") r += "\\n";
+      else if (c === "\r") r += "\\r";
+      else if (c === "\t") r += "\\t";
+      else if (code < 32 || code === 127) r += "\\x" + (code < 16 ? "0" : "") + code.toString(16);
+      else r += c;
+    }
+    return q + r + q;
+  }
+
+  // repr() de un valor: None, True/False, int, float, str, list, tuple, dict, date y datetime.
+  function pyRepr(v) {
+    if (v === null || v === undefined) return "None";
+    if (v === true) return "True";
+    if (v === false) return "False";
+    if (v instanceof PyFloat) return pyFloat(v.valor);
+    if (typeof v === "number") return Number.isInteger(v) ? String(v) : pyFloat(v);
+    if (typeof v === "string") return pyStr(v);
+    if (v instanceof Fecha) return "datetime.date(" + v.a + ", " + v.m + ", " + v.d + ")";
+    if (v instanceof FechaHora) {
+      return "datetime.datetime(" + [v.a, v.m, v.d, v.h, v.mi].concat(v.s ? [v.s] : []).join(", ") + ")";
+    }
+    if (v instanceof Tupla) return "(" + v.items.map(pyRepr).join(", ") + (v.items.length === 1 ? ",)" : ")");
+    if (typeof v.repr === "function") return v.repr();
+    if (Array.isArray(v)) return "[" + v.map(pyRepr).join(", ") + "]";
+    return "{" + Object.keys(v).map(function (k) { return pyStr(k) + ": " + pyRepr(v[k]); }).join(", ") + "}";
+  }
+
+  // ---------- Coordenadas ----------
+  function letraColumna(n) {
+    var s = "";
+    while (n > 0) { var r = (n - 1) % 26; s = String.fromCharCode(65 + r) + s; n = Math.floor((n - 1) / 26); }
+    return s;
+  }
+  function indiceColumna(letras) {
+    var n = 0;
+    for (var i = 0; i < letras.length; i++) n = n * 26 + (letras.charCodeAt(i) - 64);
+    return n;
+  }
+  function partirCoord(coord) {
+    var m = /^([A-Z]{1,3})(\d+)$/.exec(coord);
+    return { col: indiceColumna(m[1]), fila: parseInt(m[2], 10) };
+  }
+  function coord(fila, col) { return letraColumna(col) + fila; }
+
+  // ---------- Cómo muestra Excel un valor ----------
+  // El ancho de la columna se calcula en píxeles de Excel a 150 % (como el Excel con el que se
+  // calibró); lo que cabe se mide en píxeles a 100 % (px / 1.5) con los anchos de Calibri 11.
+  var XL_DIGITO = 11, XL_KG = 4.5;
+  var XL_ANCHOS = { ".": 4, ",": 4, "-": 5, "%": 11, "$": 7, "E": 7, "+": 7, ":": 3, "/": 5, " ": 3 };
+  function pxColumna(ancho) {
+    if (ancho === null || ancho === undefined) return 96;
+    return Math.trunc((256 * ancho + Math.trunc(128 / XL_DIGITO)) / 256 * XL_DIGITO);
+  }
+  function anchoTexto(t) {
+    var s = 0;
+    for (var i = 0; i < t.length; i++) {
+      var c = t[i];
+      s += (c >= "0" && c <= "9") ? 7 : (XL_ANCHOS[c] !== undefined ? XL_ANCHOS[c] : 7);
+    }
+    return s;
+  }
+  function gatos(px) { return "#".repeat(Math.max(1, Math.floor((px / 1.5 - 4.5) / 7))); }
+  function cabe(t, px) { return anchoTexto(t) <= px / 1.5 - 4.5; }
+
+  // El número con 15 cifras significativas (lo que guarda Excel), como dígitos y posición del punto.
+  function dec15(x) {
+    if (x === 0) return { neg: false, dig: "0", punto: 1 };
+    var m = /^(\d)\.(\d+)e([+-]\d+)$/.exec(Math.abs(x).toExponential(14));
+    return { neg: x < 0, dig: (m[1] + m[2]).replace(/0+$/, "") || "0", punto: parseInt(m[3], 10) + 1 };
+  }
+  // Suma 1 a un entero escrito en decimal.
+  function masUno(s) {
+    var a = s.split(""), i = a.length - 1;
+    while (i >= 0) {
+      if (a[i] === "9") { a[i] = "0"; i--; } else { a[i] = String(+a[i] + 1); break; }
+    }
+    return i < 0 ? "1" + a.join("") : a.join("");
+  }
+  // Redondea (mitad hacia arriba, sobre el decimal de 15 cifras) a nd decimales; escala = potencia de 10.
+  function redondear(x, nd, escala) {
+    var d = dec15(x);
+    var punto = d.punto + (escala || 0);
+    var entero, frac;
+    if (punto <= 0) { entero = "0"; frac = "0".repeat(-punto) + d.dig; }
+    else if (punto >= d.dig.length) { entero = d.dig + "0".repeat(punto - d.dig.length); frac = ""; }
+    else { entero = d.dig.slice(0, punto); frac = d.dig.slice(punto); }
+    if (d.dig === "0") { entero = "0"; frac = ""; }
+    frac = frac + "0".repeat(nd + 1);
+    var sube = frac[nd] >= "5";
+    var todo = (entero + frac.slice(0, nd)).replace(/^0+(?=\d)/, "");
+    if (sube) todo = masUno(todo);
+    while (todo.length < nd + 1) todo = "0" + todo;
+    var e = todo.slice(0, todo.length - nd), f = todo.slice(todo.length - nd);
+    return { neg: d.neg, entero: e, frac: f, cero: /^0*$/.test(e + f) };
+  }
+  function miles(entero) { return entero.replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
+
+  // Notación científica de Excel: 1.23457E+11 (mantisa con nd decimales, exponente de 2 cifras).
+  function cientifico(x, nd) {
+    var d = dec15(x);
+    var exp = d.punto - 1;
+    var dig = (d.dig + "0".repeat(nd + 2)).slice(0, nd + 2);
+    var todo = dig.slice(0, nd + 1);
+    if (dig[nd + 1] >= "5") todo = masUno(todo);
+    if (todo.length > nd + 1) { todo = todo.slice(0, nd + 1); exp += 1; }
+    var mant = todo[0] + (nd > 0 ? "." + todo.slice(1) : "");
+    if (mant.indexOf(".") >= 0) mant = mant.replace(/0+$/, "").replace(/\.$/, "");
+    return (x < 0 ? "-" : "") + mant + "E" + (exp >= 0 ? "+" : "-") + (Math.abs(exp) < 10 ? "0" : "") + Math.abs(exp);
+  }
+
+  // Formato General: caben tantas cifras como el ancho permita (máximo 11, sin contar el signo).
+  function formatoGeneral(x, px) {
+    if (x === 0) return "0";
+    var neg = x < 0, signo = neg ? "-" : "", a = Math.abs(x), nd, t, c;
+    var n = Math.min(11, Math.max(neg ? 0 : 1, Math.floor((px / 1.5 - XL_KG - (neg ? 5 : 0)) / 7)));
+    if (n < 1) return gatos(px);
+    if (a >= 1e11 || a < 1e-9) {
+      for (nd = 5; nd >= 0; nd--) { t = cientifico(a, nd); if (t.length <= n) return signo + t; }
+      return a < 1 ? signo + "0" : gatos(px);
+    }
+    for (nd = 10; nd >= 0; nd--) {
+      var r = redondear(a, nd);
+      t = r.entero + (nd > 0 ? "." + r.frac : "");
+      if (t.indexOf(".") >= 0) t = t.replace(/0+$/, "").replace(/\.$/, "");
+      if (t.length <= n) {
+        if (t === "0" && a < 1) {
+          for (var nd2 = 4; nd2 >= 0; nd2--) { c = cientifico(a, nd2); if (c.length <= n) return signo + c; }
+        }
+        return signo + t;
+      }
+    }
+    for (nd = 4; nd >= 0; nd--) { t = cientifico(a, nd); if (t.length <= n) return signo + t; }
+    return gatos(px);
+  }
+
+  // Serial de Excel (días desde el 30/12/1899, con el 29/02/1900 que Excel cree que existió).
+  function diasCivil(a, m, d) {   // días desde 1970-01-01
+    return Math.round(Date.UTC(a, m - 1, d) / 86400000);
+  }
+  var DIAS_EPOCA = diasCivil(1899, 12, 30);
+  function serialDe(v) {
+    if (v instanceof Fecha || v instanceof FechaHora) {
+      var s = diasCivil(v.a, v.m, v.d) - DIAS_EPOCA;
+      if (s < 61) s -= 1;    // antes del 1/03/1900 Excel cuenta un día menos
+      if (v instanceof FechaHora) s += (v.h * 3600 + v.mi * 60 + v.s) / 86400;
+      return s;
+    }
+    return num(v);
+  }
+  function fechaDeSerial(x) {
+    var dias = Math.floor(x), frac = x - dias;
+    var seg = Math.floor(frac * 86400 + 0.5), min = Math.floor(seg / 60);
+    var a, m, d;
+    if (dias === 0) { a = 1900; m = 1; d = 0; }
+    else if (dias === 60) { a = 1900; m = 2; d = 29; }
+    else {
+      var f = new Date(Date.UTC(1899, 11, dias < 60 ? 31 : 30) + dias * 86400000);
+      a = f.getUTCFullYear(); m = f.getUTCMonth() + 1; d = f.getUTCDate();
+    }
+    return { a: a, m: m, d: d, h: Math.floor(min / 60) % 24, mi: min % 60, s: seg % 60 };
+  }
+  function dos(n) { return (n < 10 ? "0" : "") + n; }
+  var MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+  var MESES_L = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre",
+                 "octubre", "noviembre", "diciembre"];
+
+  function esFormatoFecha(f) {
+    var sin = f.replace(/"[^"]*"/g, "").replace(/\[[^\]]*\]/g, "");
+    return /[dy]/i.test(sin) || /h/i.test(sin) && /m/i.test(sin) || /(^|[^0#?])s/i.test(sin) && /:/.test(sin);
+  }
+
+  function formatoFecha(x, f, px) {
+    if (x < 0 || x >= 2958466) return gatos(px);
+    var p = fechaDeSerial(x);
+    var codigo = f.replace(/\[[^\]]*\]/g, "");
+    var tokens = codigo.match(/"[^"]*"|\\.|yyyy|yy|mmmm|mmm|mm|m|dddd|ddd|dd|d|hh|h|ss|s|AM\/PM|am\/pm|./gi) || [];
+    var out = [];
+    tokens.forEach(function (t) {
+      var low = t.toLowerCase();
+      if (t[0] === '"') out.push({ t: t.slice(1, -1) });
+      else if (t[0] === "\\") out.push({ t: t.slice(1) });
+      else if (/^(yyyy|yy|mmmm|mmm|mm|m|dddd|ddd|dd|d|hh|h|ss|s|am\/pm)$/.test(low)) out.push({ tok: low });
+      else out.push({ t: t });
+    });
+    // "m" o "mm" junto a horas o segundos son minutos
+    for (var i = 0; i < out.length; i++) {
+      if (out[i].tok === "m" || out[i].tok === "mm") {
+        var antes = null, despues = null, j;
+        for (j = i - 1; j >= 0; j--) if (out[j].tok && /^[hdmys]/.test(out[j].tok)) { antes = out[j].tok; break; }
+        for (j = i + 1; j < out.length; j++) if (out[j].tok && /^[hdmys]/.test(out[j].tok)) { despues = out[j].tok; break; }
+        if ((antes && antes[0] === "h") || (despues && despues[0] === "s")) out[i].minutos = true;
+      }
+    }
+    var ampm = out.some(function (o) { return o.tok === "am/pm"; });
+    var s = out.map(function (o) {
+      if (o.t !== undefined) return o.t;
+      var k = o.tok;
+      if (k === "yyyy") return String(p.a);
+      if (k === "yy") return dos(p.a % 100);
+      if (k === "mmmm") return MESES_L[p.m - 1];
+      if (k === "mmm") return MESES[p.m - 1];
+      if (k === "mm") return o.minutos ? dos(p.mi) : dos(p.m);
+      if (k === "m") return o.minutos ? String(p.mi) : String(p.m);
+      if (k === "dd") return dos(p.d);
+      if (k === "d") return String(p.d);
+      if (k === "dddd" || k === "ddd") return String(p.d);
+      var h = ampm ? ((p.h + 11) % 12) + 1 : p.h;
+      if (k === "hh") return dos(h);
+      if (k === "h") return String(h);
+      if (k === "ss") return dos(p.s);
+      if (k === "s") return String(p.s);
+      if (k === "am/pm") return p.h < 12 ? "AM" : "PM";
+      return k;
+    }).join("");
+    return cabe(s, px) ? s : gatos(px);
+  }
+
+  // Formato de número con una sección: 0, 0.0, #,##0.00, 0%, "$"#,##0.00, 0.0 "°C"...
+  function formatoNumero(x, f, px) {
+    var secciones = f.split(";");
+    var sec = secciones[0], negSeccion = false;
+    if (x < 0 && secciones.length > 1 && secciones[1] !== "") { sec = secciones[1]; negSeccion = true; }
+    if (x === 0 && secciones.length > 2 && secciones[2] !== "") sec = secciones[2];
+    sec = sec.replace(/\[[^\]]*\]/g, "");
+    var limpio = sec.replace(/"[^"]*"/g, "").replace(/\\./g, "");
+    var pct = (limpio.match(/%/g) || []).length;
+    var mm = /[0#?]\.([0#?]+)/.exec(limpio);
+    var nd = mm ? mm[1].replace(/[^0]/g, "").length : 0;
+    var conMiles = /[0#?],[0#?]/.test(limpio);
+    var r = redondear(x, nd, 2 * pct);
+    var ent = r.entero.replace(/^0+(?=\d)/, "");
+    if (!/0/.test(limpio.split(".")[0]) && ent === "0") ent = "";
+    var numero = (conMiles ? miles(ent) : ent) + (nd > 0 ? "." + r.frac : "");
+    // Literales antes y después de los dígitos
+    var partes = sec.match(/"[^"]*"|\\.|[0#?,.]+|./g) || [];
+    var antes = "", despues = "", visto = false;
+    partes.forEach(function (t) {
+      if (/^[0#?,.]+$/.test(t)) { visto = true; return; }
+      var lit = t[0] === '"' ? t.slice(1, -1) : (t[0] === "\\" ? t.slice(1) : t);
+      if (lit === "_" || lit === "*") lit = "";
+      if (visto) despues += lit; else antes += lit;
+    });
+    var signo = (r.neg && !r.cero && !negSeccion) ? "-" : "";
+    var s = signo + antes + numero + despues;
+    return cabe(s, px) ? s : gatos(px);
+  }
+
+  // Lo que muestra Excel en una celda: {texto, derecha (números), centro (errores y booleanos)}.
+  function mostrarValor(v, fmt, px) {
+    var f = fmt || "General";
+    if (v === null || v === undefined || v === "") return { texto: "", tipo: "vacia" };
+    if (v instanceof ErrorExcel) return { texto: v.codigo, tipo: "error" };
+    if (v === true || v === false) return { texto: v ? "TRUE" : "FALSE", tipo: "bool" };
+    if (typeof v === "string") return { texto: v, tipo: "texto" };
+    var x = serialDe(v);
+    if (f === "General") return { texto: formatoGeneral(x, px), tipo: "numero" };
+    if (esFormatoFecha(f)) return { texto: formatoFecha(x, f, px), tipo: "numero" };
+    return { texto: formatoNumero(x, f, px), tipo: "numero" };
+  }
+  // ==== FIN NÚCLEO EXCEL ====
+  // ---------- Fórmulas sencillas, como las calcula Excel al abrir el archivo ----------
+  // buscarValor(hojaTitulo|null, fila, col) regresa el valor guardado de la celda (o null).
+  // Regresa un número, texto, booleano, ErrorExcel, null (celda vacía) o NO_EVALUABLE.
+  var NO_EVALUABLE = { noEvaluable: true };
+  function evaluarFormula(texto, buscarValor, profundidad) {
+    profundidad = profundidad || 0;
+    if (profundidad > 30) return new ErrorExcel("#REF!");
+    var s = texto.slice(1), i = 0;
+    function espacios() { while (i < s.length && s[i] === " ") i++; }
+    function falla() { throw NO_EVALUABLE; }
+    function valorCelda(hoja, fila, col) {
+      var v = buscarValor(hoja, fila, col);
+      if (typeof v === "string" && v.length > 1 && v[0] === "=") {
+        return evaluarFormula(v, function (h, f, c) { return buscarValor(h === null ? hoja : h, f, c); }, profundidad + 1);
+      }
+      return v;
+    }
+    function referencia() {
+      // [Hoja!]A1 o [Hoja!]A1:B5
+      var m = /^(?:'((?:[^']|'')+)'!|([A-Za-z_À-ɏ][\w.À-ɏ]*)!)?\$?([A-Z]{1,3})\$?(\d+)(?::\$?([A-Z]{1,3})\$?(\d+))?/.exec(s.slice(i));
+      if (!m) return null;
+      var despues = s.slice(i + m[0].length);
+      if (/^[A-Za-z_(]/.test(despues)) return null;
+      i += m[0].length;
+      var hoja = m[1] ? m[1].replace(/''/g, "'") : (m[2] || null);
+      var c1 = indiceColumna(m[3]), f1 = parseInt(m[4], 10);
+      if (!m[5]) return { celda: true, hoja: hoja, fila: f1, col: c1 };
+      var c2 = indiceColumna(m[5]), f2 = parseInt(m[6], 10), vals = [];
+      for (var f = Math.min(f1, f2); f <= Math.max(f1, f2); f++) {
+        for (var c = Math.min(c1, c2); c <= Math.max(c1, c2); c++) vals.push(valorCelda(hoja, f, c));
+      }
+      return { rango: vals };
+    }
+    function aNumero(v) {
+      if (v instanceof ErrorExcel) throw v;
+      if (v === null || v === undefined) return 0;
+      if (v === true) return 1;
+      if (v === false) return 0;
+      if (typeof v === "string") {
+        var t = v.trim();
+        if (t !== "" && !isNaN(Number(t))) return Number(t);
+        throw new ErrorExcel("#VALUE!");
+      }
+      return serialDe(v);
+    }
+    function primario() {
+      espacios();
+      if (s[i] === "(") { i++; var v = expresion(); espacios(); if (s[i] !== ")") falla(); i++; return v; }
+      if (s[i] === '"') {
+        var fin = s.indexOf('"', i + 1); if (fin < 0) falla();
+        var txt = s.slice(i + 1, fin); i = fin + 1; return txt;
+      }
+      var mn = /^\d+(\.\d+)?([eE][+-]?\d+)?|^\.\d+/.exec(s.slice(i));
+      if (mn) { i += mn[0].length; return Number(mn[0]); }
+      var mf = /^([A-Za-z][A-Za-z0-9.]*)\(/.exec(s.slice(i));
+      if (mf) { i += mf[0].length; return funcion(mf[1].toUpperCase()); }
+      var r = referencia();
+      if (r) return r.celda ? valorCelda(r.hoja, r.fila, r.col) : r;
+      var mb = /^(TRUE|FALSE)\b/i.exec(s.slice(i));
+      if (mb) { i += mb[0].length; return mb[0].toUpperCase() === "TRUE"; }
+      falla();
+    }
+    function argumentos() {
+      var args = [];
+      espacios();
+      if (s[i] === ")") { i++; return args; }
+      while (true) {
+        espacios();
+        var r = null, guardado = i;
+        r = referencia();
+        espacios();
+        if (r && (s[i] === "," || s[i] === ")")) args.push(r.celda ? { rango: [valorCelda(r.hoja, r.fila, r.col)], unaCelda: true } : r);
+        else { i = guardado; args.push(expresion()); }
+        espacios();
+        if (s[i] === ",") { i++; continue; }
+        if (s[i] === ")") { i++; return args; }
+        falla();
+      }
+    }
+    function numerosDe(args) {
+      var res = [];
+      args.forEach(function (a) {
+        if (a && a.rango) {
+          a.rango.forEach(function (v) {
+            if (v instanceof ErrorExcel) throw v;
+            if (esNumero(v) || esFecha(v)) res.push(serialDe(v));
+          });
+        } else res.push(aNumero(a));
+      });
+      return res;
+    }
+    function funcion(nombre) {
+      var args = argumentos(), xs, k, media;
+      switch (nombre) {
+        case "SUM": return numerosDe(args).reduce(function (a, b) { return a + b; }, 0);
+        case "AVERAGE":
+          xs = numerosDe(args);
+          if (!xs.length) return new ErrorExcel("#DIV/0!");
+          return xs.reduce(function (a, b) { return a + b; }, 0) / xs.length;
+        case "MAX": xs = numerosDe(args); return xs.length ? Math.max.apply(null, xs) : 0;
+        case "MIN": xs = numerosDe(args); return xs.length ? Math.min.apply(null, xs) : 0;
+        case "COUNT":
+          k = 0;
+          args.forEach(function (a) {
+            if (a && a.rango) a.rango.forEach(function (v) { if (esNumero(v) || esFecha(v)) k++; });
+            else if (esNumero(a)) k++;
+          });
+          return k;
+        case "COUNTA":
+          k = 0;
+          args.forEach(function (a) {
+            if (a && a.rango) a.rango.forEach(function (v) { if (v !== null && v !== undefined) k++; });
+            else k++;
+          });
+          return k;
+        case "MEDIAN":
+          xs = numerosDe(args).sort(function (a, b) { return a - b; });
+          if (!xs.length) return new ErrorExcel("#NUM!");
+          return xs.length % 2 ? xs[(xs.length - 1) / 2] : (xs[xs.length / 2 - 1] + xs[xs.length / 2]) / 2;
+        case "STDEV": case "STDEV.S": case "STDEVP": case "STDEV.P":
+          xs = numerosDe(args);
+          var pob = nombre === "STDEVP" || nombre === "STDEV.P";
+          if (xs.length < (pob ? 1 : 2)) return new ErrorExcel("#DIV/0!");
+          media = xs.reduce(function (a, b) { return a + b; }, 0) / xs.length;
+          return Math.sqrt(xs.reduce(function (a, b) { return a + (b - media) * (b - media); }, 0) / (xs.length - (pob ? 0 : 1)));
+        case "ROUND":
+          if (args.length < 1) falla();
+          var x = aNumero(args[0] && args[0].rango ? args[0].rango[0] : args[0]);
+          var nd = args.length > 1 ? Math.trunc(aNumero(args[1])) : 0;
+          if (nd < 0) { var p10 = Math.pow(10, -nd); return Math.sign(x) * Math.round(Math.abs(x) / p10) * p10; }
+          var rr = redondear(x, nd);
+          return Number((rr.neg && !rr.cero ? "-" : "") + rr.entero + (nd > 0 ? "." + rr.frac : ""));
+        case "ABS": return Math.abs(aNumero(args[0] && args[0].rango ? args[0].rango[0] : args[0]));
+        case "SQRT":
+          var y = aNumero(args[0] && args[0].rango ? args[0].rango[0] : args[0]);
+          return y < 0 ? new ErrorExcel("#NUM!") : Math.sqrt(y);
+        default: falla();
+      }
+    }
+    function unario() {
+      espacios();
+      if (s[i] === "-") { i++; return -aNumero(unario()); }
+      if (s[i] === "+") { i++; return unario(); }
+      var v = primario();
+      if (v && v.rango) { if (v.rango.length === 1) return v.rango[0]; falla(); }
+      return v;
+    }
+    function potencia() {
+      var a = unario(); espacios();
+      while (s[i] === "^") { i++; a = Math.pow(aNumero(a), aNumero(unario())); espacios(); }
+      return a;
+    }
+    function termino() {
+      var a = potencia(); espacios();
+      while (s[i] === "*" || s[i] === "/") {
+        var op = s[i]; i++;
+        var b = aNumero(potencia()), x = aNumero(a);
+        if (op === "/" && b === 0) throw new ErrorExcel("#DIV/0!");
+        a = op === "*" ? x * b : x / b; espacios();
+      }
+      return a;
+    }
+    function expresion() {
+      var a = termino(); espacios();
+      while (s[i] === "+" || s[i] === "-") {
+        var op = s[i]; i++;
+        var b = aNumero(termino()); a = op === "+" ? aNumero(a) + b : aNumero(a) - b; espacios();
+      }
+      return a;
+    }
+    try {
+      var v = expresion(); espacios();
+      if (i < s.length) return NO_EVALUABLE;
+      if (typeof v === "number" && !isFinite(v)) return new ErrorExcel("#NUM!");
+      return v;
+    } catch (e) {
+      if (e instanceof ErrorExcel) return e;
+      return NO_EVALUABLE;
+    }
+  }
+  // ---------- Dibujo de una hoja como en Excel (HTML) ----------
+  // datos: {titulo, celdas: {"A1": {v, fmt, b, i, color, relleno, alin}}, anchos: {"D": 12}, freeze, filtro}
+  // o: {filas, cols, buscar(hoja, fila, col) para las fórmulas, marcas: {"B2": "clase"}, numeros: {"B2": 1},
+  //     sel: "B2" (celda activa), pestanas: [títulos], vista: título de la hoja que se ve, foco: true si la
+  //     rejilla recibe el foco del teclado, etiqueta: texto para lectores de pantalla, elegidas: {"B2": true}
+  //     (celdas seleccionadas, para aria-selected), anchoCss: ancho en pantalla de todas las columnas}
+  var XL_ANCHO_ENC = 34;
+  function pxCss(ancho) { return pxColumna(ancho) / 1.5; }
+  function rangoA(ref) {
+    var p = ref.split(":"), a = partirCoord(p[0]), b = partirCoord(p[1] || p[0]);
+    return { f0: Math.min(a.fila, b.fila), f1: Math.max(a.fila, b.fila), c0: Math.min(a.col, b.col), c1: Math.max(a.col, b.col) };
+  }
+  // El valor que se ve en la celda (las fórmulas, calculadas como Excel).
+  function valorVisible(celda, buscar) {
+    if (!celda) return null;
+    var v = celda.v;
+    if (typeof v === "string" && v.length > 1 && v[0] === "=") {
+      var r = buscar ? evaluarFormula(v, buscar) : NO_EVALUABLE;
+      return r === NO_EVALUABLE ? { formula: v } : (r === null ? 0 : r);
+    }
+    return v;
+  }
+  function vacia(celda) { return !celda || celda.v === null || celda.v === undefined || celda.v === ""; }
+
+  function htmlHoja(datos, o) {
+    o = o || {};
+    var filas = o.filas || 10, cols = o.cols || 5, celdas = datos ? datos.celdas : {};
+    var anchos = [], total = XL_ANCHO_ENC, c, f;
+    for (c = 1; c <= cols; c++) {
+      var w = datos && datos.anchos && datos.anchos[letraColumna(c)];
+      anchos[c] = { px: pxColumna(w === undefined ? null : w), css: o.anchoCss || pxCss(w === undefined ? null : w) };
+      total += anchos[c].css;
+    }
+    var fz = datos && datos.freeze ? partirCoord(datos.freeze) : null;
+    var filtro = datos && datos.filtro ? rangoA(datos.filtro) : null;
+    var selP = o.sel ? partirCoord(o.sel) : null;
+    var h = '<div class="xl">';
+    h += '<div class="xl-rejilla"><table class="xl-t" role="grid" aria-label="' + esc(o.etiqueta || ("Hoja " + (datos ? datos.titulo : ""))) +
+         '" style="width:' + total + 'px"><colgroup><col style="width:' + XL_ANCHO_ENC + 'px">';
+    for (c = 1; c <= cols; c++) h += '<col style="width:' + anchos[c].css + 'px">';
+    h += '</colgroup><thead><tr><th class="xl-esq" scope="col"><span class="oculto">Fila</span></th>';
+    for (c = 1; c <= cols; c++) {
+      h += '<th scope="col"' + (selP && selP.col === c ? ' class="xl-enc-sel"' : "") + ">" + letraColumna(c) + "</th>";
+    }
+    h += "</tr></thead><tbody>";
+    for (f = 1; f <= filas; f++) {
+      h += '<tr><th scope="row"' + (selP && selP.fila === f ? ' class="xl-enc-sel"' : "") + ">" + f + "</th>";
+      for (c = 1; c <= cols; c++) {
+        var k = coord(f, c), celda = celdas[k], clases = [], estilo = "", contenido = "", titulo = "";
+        var vis = valorVisible(celda, o.buscar), al = celda && celda.alin, d;
+        if (vis && vis.formula) {
+          contenido = '<span class="xl-formula">' + esc(vis.formula) + "</span>";
+          titulo = "Excel calcula esta fórmula al abrir el archivo";
+          al = al || "left";
+        } else {
+          d = mostrarValor(vis, celda ? celda.fmt : "General", anchos[c].px);
+          contenido = esc(d.texto);
+          if (!al || al === "general") al = d.tipo === "numero" ? "right" : (d.tipo === "error" || d.tipo === "bool" ? "center" : "left");
+          if (d.tipo === "texto" && al === "left" && d.texto !== "") {
+            // El texto que no cabe se ve sobre las celdas vacías de la derecha
+            var extra = 0;
+            for (var c2 = c + 1; c2 <= cols && vacia(celdas[coord(f, c2)]); c2++) extra += anchos[c2].css;
+            if (extra > 0) { clases.push("xl-desborda"); estilo += "--ancho:" + (anchos[c].css + extra - 6) + "px;"; }
+          }
+          if (o.numeroComoTexto && d.tipo === "texto" && /^\s*-?\d+(\.\d+)?\s*$/.test(d.texto)) {
+            clases.push("xl-triangulo");
+            titulo = "Número almacenado como texto";
+          }
+        }
+        clases.push("xl-" + al);
+        if (celda && celda.b) clases.push("xl-b");
+        if (celda && celda.i) clases.push("xl-i");
+        if (celda && celda.relleno) estilo += "background:#" + celda.relleno + ";";
+        if (celda && celda.color) estilo += "color:#" + celda.color + ";";
+        if (fz && f === fz.fila - 1) clases.push("xl-congela-f");
+        if (fz && c === fz.col - 1) clases.push("xl-congela-c");
+        if (o.marcas && o.marcas[k]) clases.push(o.marcas[k]);
+        if (o.sel === k) clases.push("xl-sel");
+        if (o.elegidas && o.elegidas[k]) clases.push("xl-elegida");
+        var flecha = filtro && f === filtro.f0 && c >= filtro.c0 && c <= filtro.c1;
+        var num = o.numeros && o.numeros[k] ? '<span class="xl-orden">' + o.numeros[k] + "</span>" : "";
+        h += '<td data-c="' + k + '"' + (o.foco ? ' tabindex="' + (o.sel === k || (!o.sel && k === "A1") ? 0 : -1) + '"' : "") +
+             ' class="' + clases.join(" ") + '"' + (estilo ? ' style="' + estilo + '"' : "") +
+             (titulo ? ' title="' + esc(titulo) + '"' : "") +
+             (o.elegidas ? ' aria-selected="' + !!o.elegidas[k] + '"' : "") +
+             ' aria-label="' + k + (contenido ? ": " + esc(vis && vis.formula ? vis.formula : d.texto) : ", vacía") + '">' +
+             num + (flecha ? '<span class="xl-filtro" aria-hidden="true">▾</span>' : "") +
+             '<div class="xl-c">' + contenido + "</div></td>";
+      }
+      h += "</tr>";
+    }
+    h += "</tbody></table></div>";
+    if (o.pestanas) {
+      h += '<div class="xl-pestanas" role="tablist" aria-label="Hojas del libro">';
+      o.pestanas.forEach(function (t) {
+        var activa = t === o.vista;
+        h += '<button type="button" role="tab" aria-selected="' + activa + '" data-hoja="' + esc(t) + '"' +
+             (activa ? ' class="activa"' : "") + ">" + esc(t) + "</button>";
+      });
+      h += "</div>";
+    }
+    return h + "</div>";
+  }
+
+  // Mueve el foco con las flechas dentro de una rejilla (tabindex móvil).
+  function moverEnRejilla(e, alElegir) {
+    var td = e.target.closest && e.target.closest("td[data-c]");
+    if (!td) return;
+    var p = partirCoord(td.dataset.c), f = p.fila, c = p.col;
+    if (e.key === "ArrowUp") f--; else if (e.key === "ArrowDown") f++;
+    else if (e.key === "ArrowLeft") c--; else if (e.key === "ArrowRight") c++;
+    else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); alElegir(td.dataset.c, e); return; }
+    else return;
+    e.preventDefault();
+    var otro = td.closest("table").querySelector('td[data-c="' + coord(Math.max(1, f), Math.max(1, c)) + '"]');
+    if (otro) {
+      td.setAttribute("tabindex", "-1");
+      otro.setAttribute("tabindex", "0");
+      otro.focus();
+      if (e.shiftKey) alElegir(otro.dataset.c, e);
+    }
+  }
+  // ==== DATOS DE FORMATOS ====
+  var FORMATOS = ["General", "0", "0.0", "0.00", "#,##0", "#,##0.00", "0%", "0.0%", "\"$\"#,##0.00",
+                  "dd/mm/yyyy", "yyyy-mm-dd", "dd/mm/yyyy hh:mm"];
+  // Un texto como literal de Python, con comillas dobles si se puede (como en el curso).
+  function literal(s) { return s.indexOf("\"") >= 0 || s.indexOf("\\") >= 0 ? pyStr(s) : "\"" + s + "\""; }
+  // Un número escrito como en Python: int si no tiene punto ni exponente; float si sí.
+  function parsearNumero(texto) {
+    var t = texto.trim();
+    if (t === "") return { error: "Escribe un número." };
+    if (/^[+-]?\d+,\d+$/.test(t)) return { error: "En Python el punto separa los decimales: escribe " + t.replace(",", ".") + "." };
+    var m = /^([+-]?)(\d+)?(\.\d*)?([eE][+-]?\d+)?$/.exec(t);
+    if (!m || (!m[2] && !(m[3] && m[3].length > 1))) return { error: "Eso no es un número de Python. Prueba con 0.785, 35 o -2.5." };
+    var esFloat = !!(m[3] || m[4]);
+    if (!esFloat && m[2].length > 1 && m[2][0] === "0" && /[1-9]/.test(m[2])) return { error: "En Python un entero no puede empezar con 0: escribe " + String(Number(m[2])) + "." };
+    var x = Number(t);
+    if (!isFinite(x) || Math.abs(x) >= 1e16) return { error: "Usa un número más pequeño (menos de 16 cifras)." };
+    if (!esFloat) return { valor: x };
+    return { valor: Number.isInteger(x) ? new PyFloat(x) : x };
+  }
+  // Pestaña 1: el código y lo que imprime. e = {valor, formato, ancho (null = por omisión)}
+  function codigoValor(e) {
+    var v = e.valor, lineas = [];
+    var esFechaV = v instanceof Fecha || v instanceof FechaHora;
+    if (esFechaV) lineas.push(v instanceof Fecha ? "from datetime import date" : "from datetime import datetime");
+    lineas.push("from openpyxl import Workbook", "", "libro = Workbook()", "hoja = libro.active");
+    var lit = typeof v === "string" ? literal(v) :
+              v instanceof Fecha ? "date(" + v.a + ", " + v.m + ", " + v.d + ")" :
+              v instanceof FechaHora ? "datetime(" + [v.a, v.m, v.d, v.h, v.mi].join(", ") + ")" : pyRepr(v);
+    lineas.push("hoja[\"A1\"] = " + lit);
+    lineas.push("hoja[\"A1\"].number_format = " + literal(e.formato));
+    if (e.ancho !== null) lineas.push("hoja.column_dimensions[\"A\"].width = " + e.ancho);
+    lineas.push("libro.save(\"formato.xlsx\")");
+    lineas.push("print(repr(hoja[\"A1\"].value), hoja[\"A1\"].number_format)");
+    return lineas;
+  }
+  function salidaValor(e) { return pyRepr(e.valor) + " " + e.formato + "\n"; }
+
+  // Pestaña 2: calificaciones como texto o como número
+  var CALIF = [["Ana", 95], ["Luis", 80], ["Marta", 89], ["Eva", 92]];
+  function valorCalif(i, comoTexto) { return comoTexto ? String(CALIF[i][1]) : CALIF[i][1]; }
+  function codigoCalif(texto) {   // texto = [true, false, false, true]
+    var l = ["from openpyxl import Workbook", "", "libro = Workbook()", "hoja = libro.active",
+             "hoja.append([\"Nombre\", \"Calificación\"])"];
+    CALIF.forEach(function (c, i) { l.push("hoja.append([\"" + c[0] + "\", " + pyRepr(valorCalif(i, texto[i])).replace(/'/g, "\"") + "])"); });
+    l.push("hoja[\"A6\"] = \"Suma\"", "hoja[\"B6\"] = \"=SUM(B2:B5)\"", "hoja[\"A7\"] = \"Promedio\"",
+           "hoja[\"B7\"] = \"=AVERAGE(B2:B5)\"", "libro.save(\"calificaciones.xlsx\")",
+           "for fila in hoja.iter_rows(min_row=2, max_row=5, values_only=True):", "    print(fila)");
+    return l;
+  }
+  function salidaCalif(texto) {
+    return CALIF.map(function (c, i) { return pyRepr(new Tupla([c[0], valorCalif(i, texto[i])])); }).join("\n") + "\n";
+  }
+  function celdaSimple(v, fmt, b) { return { v: v, fmt: fmt || "General", b: !!b, i: false, color: null, relleno: null, alin: null }; }
+  function hojaCalif(texto) {
+    var h = { titulo: "Sheet", celdas: {}, anchos: {}, freeze: null, filtro: null };
+    h.celdas.A1 = celdaSimple("Nombre"); h.celdas.B1 = celdaSimple("Calificación");
+    CALIF.forEach(function (c, i) { h.celdas["A" + (i + 2)] = celdaSimple(c[0]); h.celdas["B" + (i + 2)] = celdaSimple(valorCalif(i, texto[i])); });
+    h.celdas.A6 = celdaSimple("Suma"); h.celdas.B6 = celdaSimple("=SUM(B2:B5)");
+    h.celdas.A7 = celdaSimple("Promedio"); h.celdas.B7 = celdaSimple("=AVERAGE(B2:B5)");
+    return h;
+  }
+
+  // Pestaña 3: fechas como texto y como date
+  var FECHAS_TXT = ["5/09/2026", "15/09/2026", "30/09/2026", "1/10/2026", "19/10/2026", "3/10/2026"];
+  var FECHAS_ISO = ["2026-09-05", "2026-09-15", "2026-09-30", "2026-10-01", "2026-10-19", "2026-10-03"];
+  function codigoFechas(iso, formato) {
+    var l = ["from datetime import date", "from openpyxl import Workbook", ""];
+    if (!iso) l.push("textos = [" + FECHAS_TXT.map(literal).join(", ") + "]");
+    l.push("isos = [" + FECHAS_ISO.map(literal).join(", ") + "]");
+    l.push("libro = Workbook()", "hoja = libro.active", "hoja.append([\"Fecha (texto)\", \"Fecha (date)\"])");
+    if (iso) l.push("for iso in isos:", "    hoja.append([iso, date.fromisoformat(iso)])");
+    else l.push("for texto, iso in zip(textos, isos):", "    hoja.append([texto, date.fromisoformat(iso)])");
+    l.push("for fila in hoja.iter_rows(min_row=2):", "    for celda in fila:", "        celda.number_format = " + literal(formato),
+           "hoja.column_dimensions[\"A\"].width = 14", "hoja.column_dimensions[\"B\"].width = 16",
+           "libro.save(\"fechas.xlsx\")",
+           "print(type(hoja[\"A2\"].value).__name__, type(hoja[\"B2\"].value).__name__)",
+           "print(sorted(" + (iso ? "isos" : "textos") + "))");
+    return l;
+  }
+  function salidaFechas(iso) {
+    var lista = (iso ? FECHAS_ISO : FECHAS_TXT).slice().sort(function (a, b) { return a < b ? -1 : a > b ? 1 : 0; });
+    return "str date\n" + pyRepr(lista) + "\n";
+  }
+  // Las filas de la hoja (texto, fecha) en el orden pedido: "original", "A" (por el texto) o "B" (por la fecha)
+  function filasFechas(iso, orden) {
+    var filas = FECHAS_ISO.map(function (s, i) {
+      var p = s.split("-");
+      return { texto: iso ? s : FECHAS_TXT[i], fecha: new Fecha(+p[0], +p[1], +p[2]) };
+    });
+    if (orden === "A") filas.sort(function (a, b) { var x = a.texto.toLowerCase(), y = b.texto.toLowerCase(); return x < y ? -1 : x > y ? 1 : 0; });
+    if (orden === "B") filas.sort(function (a, b) { return serialDe(a.fecha) - serialDe(b.fecha); });
+    return filas;
+  }
+  function hojaFechas(iso, formato, orden) {
+    var h = { titulo: "Sheet", celdas: {}, anchos: { A: 14, B: 16 }, freeze: null, filtro: null };
+    h.celdas.A1 = celdaSimple("Fecha (texto)"); h.celdas.B1 = celdaSimple("Fecha (date)");
+    filasFechas(iso, orden).forEach(function (f, i) {
+      h.celdas["A" + (i + 2)] = celdaSimple(f.texto, formato);
+      h.celdas["B" + (i + 2)] = celdaSimple(f.fecha, formato);
+    });
+    return h;
+  }
+  // ==== FIN DATOS DE FORMATOS ====
+
+  // ---------- Código Python con los colores del curso ----------
+  var PY_KW = /^(False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)$/;
+  function pyResaltar(linea) {
+    var html = "", i = 0, m, resto;
+    while (i < linea.length) {
+      resto = linea.slice(i);
+      if ((m = /^#.*/.exec(resto))) { html += '<span class="com">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[rRbBfFuU]{0,2}("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/.exec(resto))) { html += '<span class="str">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[A-Za-z_\u00C0-\u024F][\w\u00C0-\u024F]*/.exec(resto))) { html += PY_KW.test(m[0]) ? '<span class="kw">' + m[0] + "</span>" : esc(m[0]); }
+      else if ((m = /^(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?j?/.exec(resto))) { html += '<span class="num">' + m[0] + "</span>"; }
+      else { m = [resto[0]]; html += esc(m[0]); }
+      i += m[0].length;
+    }
+    return html;
+  }
+  function mostrarCodigo(el, lineas, marcar) {
+    el.innerHTML = '<div class="codigo"><ol>' + lineas.map(function (l, k) {
+      return "<li" + (marcar && marcar.indexOf(k + 1) >= 0 ? ' class="marca"' : "") + ">" + (pyResaltar(l) || " ") + "</li>";
+    }).join("") + "</ol></div>";
+  }
+  var $ = function (id) { return document.getElementById(id); };
+  function nombreTipo(v) {
+    return v instanceof Fecha ? "date" : v instanceof FechaHora ? "datetime" : typeof v === "string" ? "str" :
+           (v instanceof PyFloat || !Number.isInteger(v)) ? "float" : "int";
+  }
+  function guardar(clave, valor) { try { localStorage.setItem(clave, JSON.stringify(valor)); } catch (e) { /* sin almacenamiento */ } }
+  function leer(clave) { try { return JSON.parse(localStorage.getItem(clave)); } catch (e) { return null; } }
+
+  // ===================================================== Pestañas
+  document.querySelectorAll("nav.pestanas button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      document.querySelectorAll("nav.pestanas button").forEach(function (x) { x.classList.remove("activo"); x.setAttribute("aria-selected", "false"); });
+      document.querySelectorAll("section.vista").forEach(function (x) { x.classList.remove("activo"); });
+      b.classList.add("activo"); b.setAttribute("aria-selected", "true");
+      $(b.dataset.vista).classList.add("activo");
+    });
+  });
+
+  // ===================================================== Pestaña 1: valor y formato
+  FORMATOS.forEach(function (f) {
+    var op = document.createElement("option");
+    op.value = f; op.textContent = f;
+    $("formato").appendChild(op);
+  });
+  $("formato").value = "0.0%";
+  var EJEMPLOS = [
+    ["0.7825 con 0.0%", "numero", "0.7825", "0.0%", null],
+    ["1234.5 con #,##0.00", "numero", "1234.5", "#,##0.00", null],
+    ["35.0 con 0.0", "numero", "35.0", "0.0", null],
+    ["0.785 con 0%", "numero", "0.785", "0%", null],
+    ["1234567.891 en columna angosta", "numero", "1234567.891", "#,##0.00", 8],
+    ["-2.5 con \"$\"#,##0.00", "numero", "-2.5", "\"$\"#,##0.00", null],
+    ["fecha con General", "fecha", "2026-09-15", "General", null],
+    ["fecha con dd/mm/yyyy", "fecha", "2026-09-15", "dd/mm/yyyy", 12],
+    ["texto \"95\" con 0.00", "texto", "95", "0.00", null]
+  ];
+  EJEMPLOS.forEach(function (ej, i) {
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "accion"; b.textContent = ej[0]; b.dataset.i = i;
+    $("ejemplos").appendChild(b);
+  });
+  $("ejemplos").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-i]");
+    if (!b) return;
+    var ej = EJEMPLOS[Number(b.dataset.i)];
+    document.querySelector('input[name="tipo"][value="' + ej[1] + '"]').checked = true;
+    if (ej[1] === "numero") $("numero").value = ej[2];
+    if (ej[1] === "fecha") { $("fecha").value = ej[2]; $("hora").value = ""; }
+    if (ej[1] === "texto") $("texto").value = ej[2];
+    $("formato").value = ej[3];
+    $("cambiarAncho").checked = ej[4] !== null;
+    if (ej[4] !== null) $("ancho").value = ej[4];
+    pintarValor();
+  });
+  function tipoElegido() { return document.querySelector('input[name="tipo"]:checked').value; }
+  function leerValor() {
+    var tipo = tipoElegido();
+    if (tipo === "numero") return parsearNumero($("numero").value);
+    if (tipo === "texto") return { valor: $("texto").value };
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec($("fecha").value);
+    if (!m || +m[1] < 1900 || (+m[1] === 1900 && +m[2] < 3)) return { error: "Elige una fecha a partir del 1/03/1900." };
+    var h = /^(\d{2}):(\d{2})/.exec($("hora").value);
+    return { valor: h ? new FechaHora(+m[1], +m[2], +m[3], +h[1], +h[2]) : new Fecha(+m[1], +m[2], +m[3]) };
+  }
+  // El valor decimal (15 cifras) multiplicado por 100^pct, como texto
+  function decimalTexto(x, escala) {
+    var d = dec15(x), punto = d.punto + escala, dig = d.dig, s;
+    if (dig === "0") return "0";
+    if (punto <= 0) s = "0." + "0".repeat(-punto) + dig;
+    else if (punto >= dig.length) s = dig + "0".repeat(punto - dig.length);
+    else s = dig.slice(0, punto) + "." + dig.slice(punto);
+    return (x < 0 ? "-" : "") + s;
+  }
+  function explicar(v, fmt, d, px, ancho) {
+    var partes = [];
+    var guardado = "<b>Valor guardado:</b> <code>" + esc(pyRepr(v)) + "</code> (" + nombreTipo(v) + "). <b>Excel muestra:</b> " +
+                   (d.texto === "" ? "(nada)" : "<code>" + esc(d.texto) + "</code>") + ".";
+    partes.push(guardado);
+    var esFechaV = v instanceof Fecha || v instanceof FechaHora;
+    if (typeof v === "string") {
+      partes.push("Es <b>texto</b>: number_format no cambia un texto. Excel lo muestra tal cual, a la izquierda" +
+        (/^\s*-?\d+(\.\d+)?\s*$/.test(v) ? ", con el triangulito verde de \"número almacenado como texto\" (pestaña 2)." : "."));
+      return partes.join(" ");
+    }
+    if (/^#+$/.test(d.texto)) {
+      if (esFormatoFecha(fmt) && (serialDe(v) < 0 || serialDe(v) >= 2958466)) {
+        partes.push("<b>##### aquí no es por el ancho:</b> Excel no puede mostrar ese número como fecha (las fechas van del 1/01/1900 al 31/12/9999).");
+      } else {
+        partes.push("<b>No cabe.</b> El número con su formato ocupa más que el ancho de la columna, así que Excel muestra " +
+          "<code>#####</code>. No es un error: el valor sigue guardado. " + (ancho === null ? "Activa \"Cambiar el ancho\" y ensancha la columna." : "Ensancha la columna."));
+      }
+      return partes.join(" ");
+    }
+    var x = serialDe(v);
+    if (esFechaV) {
+      if (fmt === "General" || !esFormatoFecha(fmt)) {
+        partes.push("Para Excel una fecha <b>es un número</b>: el número de día contando desde 1900 (el 1/01/1900 es el día 1). " + mostrarValor(v, "dd/mm/yyyy", 400).texto +
+          " es el día " + Math.floor(x) + (v instanceof FechaHora ? " y la hora es la parte decimal (las " + mostrarValor(v, "hh:mm", 400).texto + " son " + (x - Math.floor(x)).toFixed(3) + " de día)" : "") +
+          ". Con un formato de número ves ese número.");
+      } else {
+        partes.push("openpyxl le pone a un " + nombreTipo(v) + " el formato <code>" + (v instanceof Fecha ? "yyyy-mm-dd" : "yyyy-mm-dd h:mm:ss") +
+          "</code>; con number_format lo cambias (dd/mm/yyyy es como se acostumbra en México). El valor guardado no cambia.");
+      }
+      return partes.join(" ");
+    }
+    if (esFormatoFecha(fmt)) {
+      partes.push("Un <b>número con formato de fecha</b>: Excel lo lee como un número de día (el 1 es el 1/01/1900), así que " + pyRepr(v) + " se ve como " + d.texto + ".");
+      return partes.join(" ");
+    }
+    if (fmt === "General") {
+      var completo = mostrarValor(v, "General", 400).texto;
+      partes.push(completo !== d.texto ?
+        "Con <b>General</b> Excel muestra las cifras que caben en la columna: con más ancho se vería <code>" + esc(completo) + "</code>." :
+        "Con <b>General</b> Excel muestra el número sin ceros de más" + (v instanceof PyFloat ? ": 35.0 se ve 35" : "") + " (hasta 11 caracteres).");
+      return partes.join(" ");
+    }
+    var pct = (fmt.match(/%/g) || []).length, mm = /\.(0+)/.exec(fmt), nd = mm ? mm[1].length : 0;
+    var exacto = pct ? decimalTexto(x, 2 * pct) : pyRepr(v);
+    var redondeado = redondear(x, nd, 2 * pct);
+    var r = (redondeado.neg && !redondeado.cero ? "-" : "") + redondeado.entero + (nd ? "." + redondeado.frac : "");
+    var cambia = Number(decimalTexto(x, 2 * pct)) !== Number(r);
+    var cuantos = nd === 0 ? "sin decimales" : "con " + nd + (nd === 1 ? " decimal" : " decimales");
+    var txt = (pct ? "El formato multiplica por 100 (" + exacto + ")" : "El valor es " + exacto) +
+              (cambia ? " y lo redondea " + (nd === 0 ? "al entero" : "a " + nd + (nd === 1 ? " decimal" : " decimales")) +
+                        ", mitad hacia arriba: " + r + "." : " y lo muestra " + cuantos + ": " + r + ".");
+    if (/,/.test(fmt) && Math.abs(x) >= 999.5) txt += " La coma separa los miles.";
+    if (/\$/.test(fmt)) txt += " El signo de pesos es parte del formato, no del valor.";
+    partes.push(txt + " Si haces cuentas con la celda, Excel usa el valor completo.");
+    return partes.join(" ");
+  }
+  function pintarValor() {
+    var tipo = tipoElegido();
+    $("cajaNumero").hidden = tipo !== "numero";
+    $("cajaFecha").hidden = tipo !== "fecha";
+    $("cajaTexto").hidden = tipo !== "texto";
+    $("ancho").disabled = !$("cambiarAncho").checked;
+    $("anchoTxt").textContent = $("cambiarAncho").checked ? $("ancho").value : "8.43 (por omisión)";
+    var r = leerValor();
+    $("errNumero").textContent = tipo === "numero" && r.error ? r.error : "";
+    if (r.error) {
+      if (tipo !== "numero") $("lecturaValor").innerHTML = esc(r.error);
+      return;
+    }
+    var fmt = $("formato").value, ancho = $("cambiarAncho").checked ? Number($("ancho").value) : null;
+    var px = pxColumna(ancho), d = mostrarValor(r.valor, fmt, px);
+    var h = { titulo: "Sheet", celdas: { A1: { v: r.valor, fmt: fmt, b: false, i: false, color: null, relleno: null, alin: null } },
+              anchos: ancho === null ? {} : { A: ancho }, freeze: null, filtro: null };
+    $("hojaValor").innerHTML = htmlHoja(h, { filas: 3, cols: 3, sel: "A1", numeroComoTexto: true,
+      etiqueta: "Celda A1 en Excel: " + (d.texto || "vacía") });
+    $("lecturaValor").innerHTML = explicar(r.valor, fmt, d, px, ancho);
+    var e = { valor: r.valor, formato: fmt, ancho: ancho };
+    mostrarCodigo($("codigoValor"), codigoValor(e));
+    $("salidaValor").textContent = salidaValor(e);
+    guardar("pb-s14-formatos-1", { tipo: tipo, numero: $("numero").value, fecha: $("fecha").value, hora: $("hora").value,
+      texto: $("texto").value, formato: fmt, cambiar: $("cambiarAncho").checked, ancho: $("ancho").value });
+  }
+  ["numero", "fecha", "hora", "texto", "formato", "cambiarAncho", "ancho"].forEach(function (id) {
+    $(id).addEventListener("input", pintarValor);
+    $(id).addEventListener("change", pintarValor);
+  });
+  document.querySelectorAll('input[name="tipo"]').forEach(function (r) { r.addEventListener("change", pintarValor); });
+
+  // ===================================================== Pestaña 2: ¿texto o número?
+  var comoTexto = [true, false, false, true];
+  $("tiposCalif").innerHTML = CALIF.map(function (c, i) {
+    return "<tr><th scope=\"row\">" + c[0] + "</th>" +
+      '<td><label><input type="radio" name="cal' + i + '" value="t"> "' + c[1] + '"</label></td>' +
+      '<td><label><input type="radio" name="cal' + i + '" value="n"> ' + c[1] + "</label></td></tr>";
+  }).join("");
+  function pintarCalif() {
+    CALIF.forEach(function (c, i) {
+      document.querySelector('input[name="cal' + i + '"][value="' + (comoTexto[i] ? "t" : "n") + '"]').checked = true;
+    });
+    var h = hojaCalif(comoTexto);
+    function buscar(t, f, c) { var x = h.celdas[coord(f, c)]; return x ? x.v : null; }
+    $("hojaCalif").innerHTML = htmlHoja(h, { filas: 8, cols: 3, buscar: buscar, numeroComoTexto: true, sel: "B6",
+      etiqueta: "Calificaciones en Excel con la suma y el promedio" });
+    var suma = evaluarFormula("=SUM(B2:B5)", buscar), prom = evaluarFormula("=AVERAGE(B2:B5)", buscar);
+    var nums = CALIF.filter(function (c, i) { return !comoTexto[i]; }).map(function (c) { return c[1]; });
+    var textos = CALIF.filter(function (c, i) { return comoTexto[i]; }).map(function (c) { return "\"" + c[1] + "\""; });
+    var html = "<b>=SUM(B2:B5)</b> da <code>" + esc(mostrarValor(suma, "General", 96).texto) + "</code> y <b>=AVERAGE(B2:B5)</b> da <code>" +
+               esc(mostrarValor(prom, "General", 96).texto) + "</code>. ";
+    if (!textos.length) html += "Las cuatro son números (a la derecha): 95 + 80 + 89 + 92 = 356 y 356 / 4 = 89. Así deben llegar a Excel.";
+    else if (!nums.length) html += "Ninguna es número: =SUM no tiene nada que sumar y =AVERAGE divide entre 0, por eso <code>#DIV/0!</code> (en Excel en español, <code>#¡DIV/0!</code>).";
+    else html += "Solo cuentan los números (" + nums.join(" + ") + (nums.length > 1 ? " = " + nums.reduce(function (a, b) { return a + b; }, 0) : "") +
+                 ", entre " + nums.length + " para el promedio). " +
+                 (textos.length === 1 ? "El texto " + textos[0] + " se ignora: está" : "Los textos " + textos.join(", ").replace(/, ([^,]*)$/, " y $1") + " se ignoran: están") +
+                 " a la izquierda y con el triangulito verde de \"número almacenado como texto\".";
+    $("lecturaCalif").innerHTML = html;
+    var lineas = codigoCalif(comoTexto), marcar = [];
+    CALIF.forEach(function (c, i) { if (comoTexto[i]) marcar.push(6 + i); });
+    mostrarCodigo($("codigoCalif"), lineas, marcar);
+    $("salidaCalif").textContent = salidaCalif(comoTexto);
+    guardar("pb-s14-formatos-2", comoTexto);
+  }
+  $("tiposCalif").addEventListener("change", function (e) {
+    var m = /^cal(\d)$/.exec(e.target.name || "");
+    if (m) { comoTexto[Number(m[1])] = e.target.value === "t"; pintarCalif(); }
+  });
+  // También se cambia tocando la calificación en la hoja
+  $("hojaCalif").addEventListener("click", function (e) {
+    var td = e.target.closest("td[data-c]"), m = td && /^B([2-5])$/.exec(td.dataset.c);
+    if (m) { comoTexto[Number(m[1]) - 2] = !comoTexto[Number(m[1]) - 2]; pintarCalif(); }
+  });
+  $("todasTexto").addEventListener("click", function () { comoTexto = [true, true, true, true]; pintarCalif(); });
+  $("todasNumero").addEventListener("click", function () { comoTexto = [false, false, false, false]; pintarCalif(); });
+
+  // ===================================================== Pestaña 3: fechas
+  var ordenFechas = "original";
+  function estiloIso() { return document.querySelector('input[name="estilo"]:checked').value === "iso"; }
+  function pintarFechas() {
+    var iso = estiloIso(), fmt = $("formatoFechas").value;
+    var h = hojaFechas(iso, fmt, ordenFechas);
+    $("hojaFechas").innerHTML = htmlHoja(h, { filas: 8, cols: 3, sel: ordenFechas === "B" ? "B1" : "A1",
+      etiqueta: "Las fechas en Excel, ordenadas: " + ordenFechas });
+    var filas = filasFechas(iso, ordenFechas);
+    var txt;
+    if (ordenFechas === "original") {
+      txt = "La columna A es <b>texto</b>: queda a la izquierda y el number_format no la cambia. La columna B tiene <b>fechas de verdad</b> " +
+            "(<code>date.fromisoformat</code>): quedan a la derecha porque para Excel son números" +
+            (fmt === "General" ? "; con General se ve su número de día (el 1/01/1900 es el día 1)." : ".") + " Prueba a ordenar.";
+    } else if (ordenFechas === "A" && !iso) {
+      txt = "Excel ordena el texto <b>carácter por carácter</b>, igual que <code>sorted()</code> en Python: \"" + filas[0].texto +
+            "\" queda antes que \"" + filas[1].texto + "\" porque compara \"1/\" con \"15\" y la diagonal va antes que los dígitos. " +
+            "¡El 1 de octubre quedó antes que el 5 de septiembre! Mira la columna B: las fechas quedaron revueltas.";
+    } else if (ordenFechas === "A") {
+      txt = "Con aaaa-mm-dd el texto <b>sí</b> queda en el orden del calendario: año, mes y día van de mayor a menor. " +
+            "Pero sigue siendo texto: está a la izquierda, el number_format no lo cambia y Excel no puede restar fechas ni filtrar por mes.";
+    } else {
+      txt = "Las fechas de verdad se ordenan por su número de día: del 5 de septiembre al 19 de octubre. Este es el orden correcto" +
+            (iso ? "." : "; la columna A, que viaja con su fila, quedó en el mismo orden.");
+    }
+    $("lecturaFechas").innerHTML = txt;
+    mostrarCodigo($("codigoFechas"), codigoFechas(iso, fmt));
+    $("salidaFechas").textContent = salidaFechas(iso);
+    ["ordenA", "ordenB", "ordenOriginal"].forEach(function (id) { $(id).setAttribute("aria-pressed", String(id === "orden" + (ordenFechas === "original" ? "Original" : ordenFechas))); });
+    guardar("pb-s14-formatos-3", { iso: iso, fmt: fmt });
+  }
+  document.querySelectorAll('input[name="estilo"]').forEach(function (r) { r.addEventListener("change", pintarFechas); });
+  $("formatoFechas").addEventListener("change", pintarFechas);
+  $("ordenA").addEventListener("click", function () { ordenFechas = "A"; pintarFechas(); });
+  $("ordenB").addEventListener("click", function () { ordenFechas = "B"; pintarFechas(); });
+  $("ordenOriginal").addEventListener("click", function () { ordenFechas = "original"; pintarFechas(); });
+
+  // Lo que el alumno dejó la última vez (si el navegador lo permite)
+  var g1 = leer("pb-s14-formatos-1");
+  if (g1 && typeof g1 === "object") {
+    var r1 = document.querySelector('input[name="tipo"][value="' + g1.tipo + '"]');
+    if (r1) r1.checked = true;
+    if (typeof g1.numero === "string") $("numero").value = g1.numero;
+    if (typeof g1.fecha === "string" && g1.fecha) $("fecha").value = g1.fecha;
+    if (typeof g1.hora === "string") $("hora").value = g1.hora;
+    if (typeof g1.texto === "string") $("texto").value = g1.texto;
+    if (FORMATOS.indexOf(g1.formato) >= 0) $("formato").value = g1.formato;
+    $("cambiarAncho").checked = !!g1.cambiar;
+    if (g1.ancho) $("ancho").value = g1.ancho;
+  }
+  var g2 = leer("pb-s14-formatos-2");
+  if (Array.isArray(g2) && g2.length === 4) comoTexto = g2.map(Boolean);
+  var g3 = leer("pb-s14-formatos-3");
+  if (g3 && typeof g3 === "object") {
+    if (g3.iso) document.querySelector('input[name="estilo"][value="iso"]').checked = true;
+    if (["yyyy-mm-dd", "dd/mm/yyyy", "dd/mm/yyyy hh:mm", "General"].indexOf(g3.fmt) >= 0) $("formatoFechas").value = g3.fmt;
+  }
+  pintarValor();
+  pintarCalif();
+  pintarFechas();
+})();
+</script>
+<div id="qr-sitio" class="qr-capa" hidden>
+  <div class="qr-caja" role="dialog" aria-modal="true" aria-label="Código QR de esta página">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 45" role="img" aria-label="Código QR de https://memosanchezg.github.io/programacion-basica-interactivos/semana-14-formatos.html" shape-rendering="crispEdges"><rect width="45" height="45" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM11 2h3v1h-3zM15 2h1v1h-1zM18 2h10v1h-10zM30 2h1v1h-1zM33 2h2v1h-2zM36 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM11 3h3v1h-3zM15 3h3v1h-3zM19 3h1v1h-1zM23 3h1v1h-1zM27 3h4v1h-4zM32 3h1v1h-1zM34 3h1v1h-1zM36 3h1v1h-1zM42 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM10 4h1v1h-1zM16 4h1v1h-1zM18 4h4v1h-4zM23 4h2v1h-2zM26 4h2v1h-2zM29 4h2v1h-2zM33 4h2v1h-2zM36 4h1v1h-1zM38 4h3v1h-3zM42 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h1v1h-1zM12 5h1v1h-1zM14 5h3v1h-3zM18 5h1v1h-1zM23 5h1v1h-1zM26 5h1v1h-1zM28 5h1v1h-1zM32 5h3v1h-3zM36 5h1v1h-1zM38 5h3v1h-3zM42 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h1v1h-1zM15 6h3v1h-3zM20 6h2v1h-2zM24 6h2v1h-2zM30 6h2v1h-2zM33 6h2v1h-2zM36 6h1v1h-1zM38 6h3v1h-3zM42 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h2v1h-2zM13 7h2v1h-2zM17 7h1v1h-1zM22 7h1v1h-1zM26 7h1v1h-1zM29 7h2v1h-2zM34 7h1v1h-1zM36 7h1v1h-1zM42 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM30 8h1v1h-1zM32 8h1v1h-1zM34 8h1v1h-1zM36 8h7v1h-7zM10 9h1v1h-1zM12 9h2v1h-2zM15 9h1v1h-1zM17 9h2v1h-2zM20 9h1v1h-1zM23 9h1v1h-1zM25 9h2v1h-2zM28 9h1v1h-1zM33 9h2v1h-2zM2 10h1v1h-1zM4 10h5v1h-5zM13 10h2v1h-2zM17 10h3v1h-3zM22 10h1v1h-1zM24 10h1v1h-1zM27 10h3v1h-3zM31 10h1v1h-1zM36 10h5v1h-5zM2 11h1v1h-1zM4 11h1v1h-1zM6 11h1v1h-1zM9 11h2v1h-2zM12 11h1v1h-1zM14 11h1v1h-1zM19 11h5v1h-5zM25 11h1v1h-1zM27 11h1v1h-1zM30 11h1v1h-1zM32 11h3v1h-3zM36 11h3v1h-3zM40 11h1v1h-1zM42 11h1v1h-1zM4 12h1v1h-1zM6 12h4v1h-4zM11 12h2v1h-2zM17 12h1v1h-1zM22 12h2v1h-2zM29 12h4v1h-4zM34 12h1v1h-1zM37 12h1v1h-1zM3 13h2v1h-2zM6 13h2v1h-2zM10 13h2v1h-2zM13 13h2v1h-2zM18 13h1v1h-1zM23 13h2v1h-2zM28 13h1v1h-1zM32 13h4v1h-4zM38 13h2v1h-2zM42 13h1v1h-1zM4 14h1v1h-1zM7 14h2v1h-2zM12 14h3v1h-3zM16 14h4v1h-4zM21 14h2v1h-2zM24 14h1v1h-1zM26 14h6v1h-6zM33 14h1v1h-1zM37 14h1v1h-1zM39 14h2v1h-2zM42 14h1v1h-1zM2 15h1v1h-1zM7 15h1v1h-1zM9 15h3v1h-3zM13 15h3v1h-3zM18 15h3v1h-3zM23 15h2v1h-2zM29 15h1v1h-1zM32 15h1v1h-1zM34 15h9v1h-9zM2 16h1v1h-1zM5 16h1v1h-1zM7 16h5v1h-5zM13 16h1v1h-1zM16 16h1v1h-1zM18 16h1v1h-1zM22 16h5v1h-5zM29 16h5v1h-5zM35 16h1v1h-1zM37 16h1v1h-1zM40 16h1v1h-1zM2 17h1v1h-1zM6 17h2v1h-2zM11 17h2v1h-2zM14 17h1v1h-1zM16 17h2v1h-2zM23 17h1v1h-1zM25 17h1v1h-1zM28 17h2v1h-2zM33 17h2v1h-2zM36 17h2v1h-2zM39 17h1v1h-1zM41 17h1v1h-1zM4 18h2v1h-2zM7 18h3v1h-3zM11 18h1v1h-1zM14 18h3v1h-3zM19 18h1v1h-1zM22 18h1v1h-1zM25 18h1v1h-1zM27 18h3v1h-3zM31 18h3v1h-3zM35 18h1v1h-1zM37 18h1v1h-1zM40 18h1v1h-1zM3 19h2v1h-2zM6 19h1v1h-1zM10 19h1v1h-1zM12 19h1v1h-1zM15 19h1v1h-1zM20 19h3v1h-3zM25 19h2v1h-2zM30 19h5v1h-5zM36 19h4v1h-4zM41 19h2v1h-2zM2 20h3v1h-3zM7 20h3v1h-3zM11 20h2v1h-2zM15 20h1v1h-1zM17 20h2v1h-2zM20 20h1v1h-1zM22 20h1v1h-1zM24 20h1v1h-1zM29 20h3v1h-3zM35 20h1v1h-1zM38 20h2v1h-2zM41 20h1v1h-1zM4 21h1v1h-1zM9 21h1v1h-1zM11 21h4v1h-4zM16 21h1v1h-1zM18 21h1v1h-1zM21 21h2v1h-2zM28 21h8v1h-8zM38 21h2v1h-2zM41 21h2v1h-2zM3 22h1v1h-1zM5 22h1v1h-1zM7 22h2v1h-2zM13 22h1v1h-1zM15 22h1v1h-1zM18 22h1v1h-1zM20 22h2v1h-2zM23 22h4v1h-4zM29 22h1v1h-1zM37 22h1v1h-1zM39 22h3v1h-3zM3 23h1v1h-1zM6 23h1v1h-1zM10 23h3v1h-3zM14 23h2v1h-2zM17 23h3v1h-3zM21 23h3v1h-3zM25 23h1v1h-1zM27 23h2v1h-2zM30 23h1v1h-1zM32 23h3v1h-3zM36 23h3v1h-3zM41 23h2v1h-2zM2 24h2v1h-2zM7 24h3v1h-3zM11 24h3v1h-3zM15 24h4v1h-4zM20 24h1v1h-1zM22 24h1v1h-1zM24 24h1v1h-1zM27 24h4v1h-4zM34 24h1v1h-1zM38 24h3v1h-3zM2 25h1v1h-1zM5 25h1v1h-1zM10 25h1v1h-1zM12 25h2v1h-2zM15 25h1v1h-1zM18 25h1v1h-1zM20 25h2v1h-2zM23 25h2v1h-2zM29 25h1v1h-1zM33 25h3v1h-3zM42 25h1v1h-1zM3 26h4v1h-4zM8 26h3v1h-3zM12 26h1v1h-1zM14 26h1v1h-1zM19 26h1v1h-1zM25 26h7v1h-7zM33 26h1v1h-1zM40 26h1v1h-1zM3 27h1v1h-1zM5 27h1v1h-1zM10 27h1v1h-1zM12 27h2v1h-2zM15 27h2v1h-2zM18 27h2v1h-2zM21 27h3v1h-3zM25 27h1v1h-1zM27 27h1v1h-1zM30 27h1v1h-1zM32 27h2v1h-2zM35 27h5v1h-5zM41 27h2v1h-2zM4 28h1v1h-1zM6 28h1v1h-1zM8 28h1v1h-1zM13 28h1v1h-1zM16 28h3v1h-3zM20 28h1v1h-1zM22 28h1v1h-1zM26 28h5v1h-5zM32 28h1v1h-1zM34 28h1v1h-1zM36 28h3v1h-3zM3 29h2v1h-2zM9 29h1v1h-1zM12 29h6v1h-6zM21 29h4v1h-4zM26 29h1v1h-1zM28 29h1v1h-1zM30 29h1v1h-1zM33 29h2v1h-2zM38 29h2v1h-2zM41 29h1v1h-1zM2 30h1v1h-1zM4 30h5v1h-5zM11 30h1v1h-1zM13 30h1v1h-1zM15 30h1v1h-1zM17 30h1v1h-1zM19 30h1v1h-1zM24 30h2v1h-2zM27 30h2v1h-2zM31 30h1v1h-1zM33 30h1v1h-1zM39 30h2v1h-2zM2 31h2v1h-2zM12 31h1v1h-1zM15 31h3v1h-3zM20 31h1v1h-1zM22 31h1v1h-1zM26 31h2v1h-2zM29 31h4v1h-4zM35 31h2v1h-2zM38 31h1v1h-1zM40 31h1v1h-1zM42 31h1v1h-1zM2 32h1v1h-1zM4 32h1v1h-1zM7 32h4v1h-4zM12 32h1v1h-1zM15 32h1v1h-1zM17 32h1v1h-1zM20 32h2v1h-2zM23 32h2v1h-2zM27 32h2v1h-2zM31 32h1v1h-1zM35 32h3v1h-3zM39 32h1v1h-1zM2 33h1v1h-1zM4 33h2v1h-2zM7 33h1v1h-1zM10 33h1v1h-1zM14 33h5v1h-5zM21 33h4v1h-4zM26 33h1v1h-1zM30 33h1v1h-1zM34 33h4v1h-4zM39 33h1v1h-1zM41 33h2v1h-2zM2 34h1v1h-1zM6 34h1v1h-1zM8 34h1v1h-1zM10 34h1v1h-1zM12 34h2v1h-2zM16 34h4v1h-4zM21 34h1v1h-1zM24 34h1v1h-1zM26 34h3v1h-3zM31 34h1v1h-1zM33 34h6v1h-6zM40 34h1v1h-1zM42 34h1v1h-1zM10 35h1v1h-1zM13 35h1v1h-1zM15 35h1v1h-1zM18 35h2v1h-2zM21 35h3v1h-3zM25 35h3v1h-3zM30 35h1v1h-1zM33 35h2v1h-2zM38 35h1v1h-1zM41 35h2v1h-2zM2 36h7v1h-7zM12 36h2v1h-2zM16 36h1v1h-1zM18 36h2v1h-2zM23 36h1v1h-1zM27 36h4v1h-4zM32 36h3v1h-3zM36 36h1v1h-1zM38 36h1v1h-1zM40 36h1v1h-1zM2 37h1v1h-1zM8 37h1v1h-1zM10 37h7v1h-7zM19 37h6v1h-6zM26 37h2v1h-2zM33 37h2v1h-2zM38 37h2v1h-2zM2 38h1v1h-1zM4 38h3v1h-3zM8 38h1v1h-1zM10 38h2v1h-2zM13 38h3v1h-3zM18 38h1v1h-1zM23 38h1v1h-1zM26 38h1v1h-1zM28 38h2v1h-2zM32 38h1v1h-1zM34 38h5v1h-5zM40 38h1v1h-1zM2 39h1v1h-1zM4 39h3v1h-3zM8 39h1v1h-1zM10 39h3v1h-3zM15 39h1v1h-1zM18 39h5v1h-5zM24 39h3v1h-3zM30 39h2v1h-2zM33 39h1v1h-1zM35 39h1v1h-1zM37 39h1v1h-1zM39 39h2v1h-2zM2 40h1v1h-1zM4 40h3v1h-3zM8 40h1v1h-1zM10 40h2v1h-2zM14 40h5v1h-5zM22 40h1v1h-1zM24 40h1v1h-1zM26 40h2v1h-2zM29 40h2v1h-2zM34 40h5v1h-5zM40 40h1v1h-1zM2 41h1v1h-1zM8 41h1v1h-1zM12 41h2v1h-2zM17 41h1v1h-1zM19 41h2v1h-2zM23 41h1v1h-1zM25 41h1v1h-1zM28 41h3v1h-3zM34 41h2v1h-2zM38 41h2v1h-2zM41 41h1v1h-1zM2 42h7v1h-7zM10 42h3v1h-3zM14 42h6v1h-6zM21 42h1v1h-1zM24 42h5v1h-5zM31 42h1v1h-1zM33 42h1v1h-1zM35 42h4v1h-4zM40 42h1v1h-1z"/></svg>
+    <p class="qr-texto">Escanea con la cámara del celular para abrir esta página</p>
+    <p class="qr-url">https://memosanchezg.github.io/programacion-basica-interactivos/semana-14-formatos.html</p>
+    <button type="button" class="qr-cerrar">Cerrar</button>
+  </div>
+</div>
+<style>
+  .qr-capa { position:fixed; top:0; right:0; bottom:0; left:0; z-index:10000; display:flex; align-items:center;
+             justify-content:center; padding:16px; background:#fff; }
+  .qr-capa[hidden] { display:none; }
+  .qr-caja { max-width:100%; text-align:center; color:#0A2A57; font:16px/1.4 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .qr-caja svg { display:block; width:min(62vh, 84vw); height:auto; margin:0 auto; }
+  .qr-texto { margin:12px 0 2px; font-size:1.15rem; font-weight:bold; }
+  .qr-url { margin:0 0 12px; color:#5B6472; word-break:break-all; }
+  .qr-cerrar { font:inherit; padding:6px 20px; border:2px solid #00408F; border-radius:4px; background:#fff;
+               color:#00408F; cursor:pointer; }
+</style>
+<script>
+  (function () {
+    var capa = document.getElementById("qr-sitio");
+    document.querySelectorAll("a.qr-abrir").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        capa.hidden = false;
+        capa.querySelector(".qr-cerrar").focus();
+      });
+    });
+    capa.addEventListener("click", function (e) {
+      if (e.target === capa || e.target.classList.contains("qr-cerrar")) capa.hidden = true;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !capa.hidden) capa.hidden = true;
+    });
+  })();
+</script>
+</body>
+</html>

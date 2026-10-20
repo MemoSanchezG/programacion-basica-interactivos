@@ -1,0 +1,2174 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="tipo" content="simulador">
+<title>Laboratorio de expresiones regulares</title>
+
+<style>
+  :root {
+    --azul:#00408F; --azul-oscuro:#0A2A57; --guinda:#8C1D35; --oro:#B8975A; --oro-texto:#8A6A2E;
+    --azul-claro:#E8EEF7; --oro-claro:#F7F1E6; --guinda-claro:#F5E6EA; --verde:#2F7D5B;
+    --tinta:#1B1F2A; --gris:#5B6472; --gris-claro:#E9ECF1; --borde:#D9DEE6; --fondo:#FFFFFF;
+    --cmd-fondo:#0C0C0C; --cmd-texto:#E6E6E6;
+    --g1:#00408F; --g2:#8C1D35; --g3:#2F7D5B; --g4:#8A6A2E; --g5:#6B3FA0; --g6:#5B6472;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--fondo); color:var(--tinta);
+         font:16px/1.45 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .franja { height:8px; background:var(--azul); border-bottom:3px solid var(--oro); }
+  header { max-width:1280px; margin:0 auto; padding:12px 18px 4px; }
+  .semana { color:var(--guinda); font-weight:bold; letter-spacing:.04em; font-size:.85rem; text-transform:uppercase; }
+  h1 { font-family:Cambria,Georgia,serif; color:var(--azul-oscuro); font-size:1.7rem; margin:2px 0 2px; }
+  .sub { color:var(--gris); margin:0; }
+  main { max-width:1280px; margin:0 auto; padding:8px 18px 24px; }
+  .panel { background:#fff; border:1px solid var(--borde); border-radius:10px; padding:12px 14px; }
+  .panel h2 { font-size:1.02rem; color:var(--azul-oscuro); margin:0 0 8px; }
+  label { display:block; font-weight:bold; color:var(--azul-oscuro); margin-top:10px; }
+  label small { font-weight:normal; color:var(--gris); }
+  input[type=number], input[type=text], select, textarea { font:inherit; padding:4px 6px; border:1px solid var(--borde);
+                        border-radius:6px; }
+  input.mono, textarea.mono { font-family:Consolas,"Courier New",monospace; }
+  button.accion { font:inherit; font-weight:bold; border-radius:8px; padding:7px 12px; margin:8px 6px 0 0;
+                  border:1px solid var(--azul); background:#fff; color:var(--azul); cursor:pointer; }
+  button.accion:hover, button.accion:focus-visible { background:var(--azul); color:#fff; outline:none; }
+  .lectura { background:var(--oro-claro); border-left:4px solid var(--oro); border-radius:8px; padding:10px 12px;
+             margin-top:12px; line-height:1.55; }
+  .lectura b { color:var(--azul-oscuro); }
+  .ok { color:var(--verde); font-weight:bold; }
+  .mal { color:var(--guinda); font-weight:bold; }
+  .preguntas { background:var(--azul-claro); border-radius:8px; padding:10px 14px; margin-top:12px; }
+  .preguntas h3 { margin:0 0 4px; font-size:.95rem; color:var(--azul-oscuro); }
+  .preguntas ol { margin:0; padding-left:20px; }
+  /* Código Python con los colores del curso (minted, estilo borland) y salida de consola (cmd). */
+  .codigo { border:1px solid var(--tinta); background:#fff; font:15px/1.5 Consolas,"Courier New",monospace;
+            overflow-x:auto; margin:8px 0; }
+  .codigo ol { margin:0; padding:8px 12px 8px 3.4em; }
+  .codigo li { white-space:pre; }
+  .codigo li::marker { color:var(--gris); font:11px Cambria,Georgia,serif; }
+  .codigo .kw { color:#000080; font-weight:bold; }
+  .codigo .str, .codigo .num { color:#0000FF; }
+  .codigo .com { color:#008800; font-style:italic; }
+  .codigo .marca { background:var(--oro-claro); outline:1px solid var(--oro); }
+  .consola { background:var(--cmd-fondo); color:var(--cmd-texto); font:15px/1.45 Consolas,"Courier New",monospace;
+             white-space:pre-wrap; word-break:break-word; padding:8px 12px; border-radius:4px; margin:8px 0; min-height:2.2em; }
+  footer { max-width:1280px; margin:0 auto; padding:6px 18px 18px; color:var(--gris); font-size:.85rem; }
+  footer a { color:var(--azul); }
+
+  /* Propios de esta página */
+  code { font-family:Consolas,"Courier New",monospace; }
+  .lab { display:grid; grid-template-columns:minmax(280px,400px) minmax(0,1fr); gap:16px; align-items:start; }
+  .col { display:flex; flex-direction:column; gap:16px; min-width:0; }
+  .panel { min-width:0; }
+  select#preajuste { width:100%; }
+  fieldset.funciones { border:0; padding:0; margin:10px 0 0; min-width:0; }
+  fieldset.funciones legend { font-weight:bold; color:var(--azul-oscuro); padding:0; }
+  .opciones { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  .pastilla { margin:0; font-weight:normal; position:relative; }
+  .pastilla input { position:absolute; opacity:0; width:1px; height:1px; margin:0; }
+  .pastilla span { display:inline-block; border:1px solid var(--azul); border-radius:999px; padding:3px 11px;
+                   font:15px Consolas,"Courier New",monospace; color:var(--azul); cursor:pointer; background:#fff; }
+  .pastilla input:checked + span { background:var(--azul); color:#fff; }
+  .pastilla input:focus-visible + span { outline:2px solid var(--oro); outline-offset:2px; }
+  .entrada { display:flex; align-items:stretch; border:1px solid var(--borde); border-radius:6px; overflow:hidden;
+             background:#fff; margin-top:4px; }
+  .entrada:focus-within { outline:2px solid var(--azul); outline-offset:1px; }
+  .entrada .pre, .entrada .suf { font:17px/1.4 Consolas,"Courier New",monospace; color:#0000FF; background:var(--gris-claro);
+                                 padding:6px 6px; user-select:none; white-space:pre; }
+  .entrada input { flex:1; min-width:0; border:0; border-radius:0; font:17px/1.4 Consolas,"Courier New",monospace;
+                   color:#0000FF; padding:6px 4px; outline:none; }
+  .entrada.con-error { border-color:var(--guinda); }
+  textarea#textos { width:100%; margin-top:4px; font:15px/1.5 Consolas,"Courier New",monospace; resize:vertical; }
+  .casilla { display:flex; gap:8px; align-items:center; font-weight:normal; color:var(--tinta); cursor:pointer; }
+  .casilla input { width:18px; height:18px; margin:0; flex:none; }
+  .casilla code { color:var(--azul-oscuro); }
+  .nota { color:var(--gris); font-size:.93rem; margin:6px 0 0; }
+  .error-patron { margin-top:8px; background:var(--guinda-claro); border-left:4px solid var(--guinda); border-radius:8px;
+                  padding:8px 10px; overflow-x:auto; }
+  .error-patron pre { margin:0 0 4px; font:16px/1.3 Consolas,"Courier New",monospace; white-space:pre; color:var(--tinta); }
+  .error-patron pre .flecha { color:var(--guinda); font-weight:bold; }
+  .error-patron .msg { font-family:Consolas,"Courier New",monospace; color:var(--guinda); font-weight:bold; word-break:break-word; }
+  .aviso { background:var(--oro-claro); border-left:4px solid var(--oro); border-radius:8px; padding:8px 10px; margin-top:10px; }
+  .nota.espacios code { font-size:16px; color:#0000FF; background:var(--gris-claro); border-radius:4px; padding:0 5px; white-space:pre; }
+  .resumen { color:var(--gris); margin:0 0 4px; }
+  .leyenda { display:flex; flex-wrap:wrap; gap:4px 14px; color:var(--gris); font-size:.93rem; margin:4px 0 2px; }
+  .leyenda span::before { content:""; display:inline-block; width:18px; height:12px; vertical-align:middle; margin-right:6px;
+                          background:var(--fondo-ley, transparent); box-shadow:inset 0 -4px 0 var(--c, transparent);
+                          border:1px solid var(--b, transparent); }
+  .caso { border:1px solid var(--borde); border-radius:10px; padding:8px 12px 10px; margin-top:10px; }
+  .caso h3 { display:flex; flex-wrap:wrap; gap:4px 10px; align-items:baseline; font-size:.95rem; color:var(--azul-oscuro); margin:0 0 4px; }
+  .caso h3 .estado { font-weight:bold; }
+  .marcado { font:18px/2.1 Consolas,"Courier New",monospace; white-space:pre-wrap; word-break:break-word; color:var(--tinta);
+             padding:0 2px; }
+  .marcado .vacio-texto { color:var(--gris); font:italic 15px Calibri,"Segoe UI",sans-serif; }
+  .marcado .m { background:var(--oro-claro); border-radius:3px; }
+  .marcado .m.alt { background:#EBDDC2; }
+  .marcado .g { padding-bottom:2px; }
+  .marcado .vacia { display:inline-block; width:3px; height:1.15em; vertical-align:-0.2em; margin:0 1px; border-radius:1px;
+                    background:var(--oro-texto); }
+  .marcado .m.tachado { background:var(--guinda-claro); color:var(--guinda); text-decoration:line-through; }
+  .marcado ins { background:#E4F1EA; color:var(--verde); text-decoration:none; border-radius:3px; box-shadow:inset 0 -2px 0 var(--verde); }
+  .marcado .flecha-sub { color:var(--gris); font:15px Calibri,"Segoe UI",sans-serif; }
+  .etq { margin:6px 0 0; color:var(--gris); font-size:.93rem; }
+  .etq code { color:var(--azul-oscuro); }
+  .consola.regresa { margin:2px 0 4px; font-size:14.5px; }
+  .piezas { display:flex; flex-wrap:wrap; gap:6px; margin:6px 0 2px; }
+  .piezas span { font:15px Consolas,"Courier New",monospace; border:1px solid var(--borde); border-radius:6px; padding:1px 7px;
+                 background:#fff; white-space:pre; }
+  .piezas span.grupo { border:1px dashed var(--g1); color:var(--g1); }
+  .piezas span.ninguno { color:var(--gris); }
+  .tabla-caja { overflow-x:auto; }
+  table.tabla { border-collapse:collapse; margin-top:6px; font-size:.95rem; }
+  table.tabla th, table.tabla td { border:1px solid var(--borde); padding:3px 8px; text-align:left; vertical-align:top; }
+  table.tabla th { background:var(--gris-claro); color:var(--azul-oscuro); }
+  table.tabla td code { white-space:pre; }
+  .chip { display:inline-block; width:12px; height:12px; border-radius:2px; margin-right:6px; vertical-align:-1px; }
+  ul.lee { list-style:none; margin:0; padding:0; }
+  ul.lee li { display:grid; grid-template-columns:minmax(3.2em, max-content) minmax(0,1fr); gap:4px 10px; align-items:baseline;
+              padding:5px 0 5px calc(var(--nivel, 0) * 18px); border-top:1px dashed var(--borde); }
+  ul.lee li:first-child { border-top:none; }
+  ul.lee code { font-size:15px; background:var(--gris-claro); border-radius:4px; padding:1px 6px; white-space:pre-wrap;
+                word-break:break-all; border-left:4px solid var(--cg, var(--gris-claro)); color:var(--tinta); }
+  .botonera { display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; }
+  .botonera button.accion { margin:0; }
+  a.liga { display:inline-block; font-weight:bold; border-radius:8px; padding:6px 12px; border:1px solid var(--guinda);
+           color:var(--guinda); text-decoration:none; }
+  a.liga:hover, a.liga:focus-visible { background:var(--guinda); color:#fff; outline:none; }
+  #estadoCalculo { color:var(--gris); font-size:.93rem; min-height:1.3em; }
+  .visual { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+  @media (max-width: 880px) {
+    .lab { grid-template-columns:1fr; }
+    .col { display:contents; }
+    #pControles { order:1; } #pResultados { order:2; } #pLectura { order:3; } #pPrograma { order:4; }
+  }
+  @media (max-width: 480px) {
+    header { padding:10px 12px 4px; }
+    main { padding:8px 10px 20px; }
+    footer { padding:6px 12px 16px; }
+    .panel { padding:10px; }
+    h1 { font-size:1.45rem; }
+    .marcado { font-size:16px; }
+    .codigo, .consola { font-size:13.5px; }
+  }
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header>
+  <div class="semana">Semana 11 · Expresiones regulares · Días 1 a 5</div>
+  <h1>Laboratorio de expresiones regulares (como en Python)</h1>
+  <p class="sub">Escribe un patrón, elige la función del módulo re y mira, texto por texto, qué encuentra y qué regresa exactamente Python; además, el patrón explicado símbolo por símbolo y el programa equivalente.</p>
+</header>
+<main>
+  <div class="lab">
+    <div class="col">
+      <section class="panel" id="pControles" aria-labelledby="tControles">
+        <h2 id="tControles">Tu patrón</h2>
+        <label for="preajuste">Ejemplos de la presentación</label>
+        <select id="preajuste"></select>
+
+        <fieldset class="funciones">
+          <legend>Función</legend>
+          <div class="opciones" id="funciones"></div>
+        </fieldset>
+
+        <label for="patron">Patrón <small>(como cadena cruda, igual que en Python)</small></label>
+        <div class="entrada" id="cajaPatron">
+          <span class="pre" id="prePatron" aria-hidden="true">r"</span>
+          <input id="patron" type="text" spellcheck="false" autocomplete="off" autocapitalize="off" aria-describedby="errorPatron">
+          <span class="suf" id="sufPatron" aria-hidden="true">"</span>
+        </div>
+        <p class="nota espacios" id="espaciosPatron" hidden></p>
+        <div id="errorPatron" aria-live="polite"></div>
+
+        <label class="casilla" for="ignorar"><input type="checkbox" id="ignorar"> <code>flags=re.IGNORECASE</code> <small>(ignora mayúsculas y minúsculas)</small></label>
+
+        <div id="bloqueReemplazo" hidden>
+          <label for="reemplazo">Reemplazo <small>(\1, \2... o \g&lt;nombre&gt; insertan lo que guardó cada grupo)</small></label>
+          <div class="entrada" id="cajaReemplazo">
+            <span class="pre" id="preReemplazo" aria-hidden="true">r"</span>
+            <input id="reemplazo" type="text" spellcheck="false" autocomplete="off" autocapitalize="off">
+            <span class="suf" id="sufReemplazo" aria-hidden="true">"</span>
+          </div>
+          <p class="nota espacios" id="espaciosReemplazo" hidden></p>
+        </div>
+
+        <label for="textos">Textos de prueba <small>(uno por renglón)</small></label>
+        <textarea id="textos" rows="6" spellcheck="false" autocapitalize="off"></textarea>
+        <p class="nota" id="notaTextos"></p>
+        <div class="lectura" id="queHace"></div>
+      </section>
+
+      <section class="panel" id="pLectura" aria-labelledby="tLectura">
+        <h2 id="tLectura">Cómo se lee</h2>
+        <div id="lectura" aria-live="polite"></div>
+      </section>
+    </div>
+
+    <div class="col">
+      <section class="panel" id="pResultados" aria-labelledby="tResultados">
+        <h2 id="tResultados">Qué encuentra Python en cada texto</h2>
+        <p class="resumen" id="resumen" aria-live="polite"></p>
+        <div class="leyenda" id="leyenda"></div>
+        <div id="avisos"></div>
+        <div id="casos"></div>
+      </section>
+
+      <section class="panel" id="pPrograma" aria-labelledby="tPrograma">
+        <h2 id="tPrograma">El programa en Python</h2>
+        <div id="codigo"></div>
+        <p class="etq">Lo que imprime:</p>
+        <div class="consola" id="salida" aria-label="Salida del programa"></div>
+        <div class="botonera">
+          <button type="button" class="accion" id="copiar">Copiar el programa</button>
+          <a class="liga" id="regex101" href="https://regex101.com/?flavor=python" target="_blank" rel="noopener">Probar en regex101 (sabor Python) ↗</a>
+          <span id="estadoCopia" class="nota" aria-live="polite"></span>
+        </div>
+        <p class="nota">regex101 marca todas las coincidencias de cada renglón, como re.findall; re.search solo regresa la primera.</p>
+        <div class="preguntas">
+          <h3>Para explorar</h3>
+          <ol>
+            <li>En "Claves de producto", ¿qué encuentra re.search en <code>Lote AB-12345 con cinco dígitos</code>? ¿Por qué no regresa <code>None</code> si esa clave tiene cinco dígitos? ¿Y qué pasa con <code>clave tl-4521 en minúsculas</code> si marcas IGNORECASE?</li>
+            <li>En "Horas" cambia entre re.findall, re.search y re.finditer. ¿Qué regresa cada una con los mismos textos?</li>
+            <li>En "Fecha con grupos" quita los paréntesis. ¿Qué pasa con <code>groups()</code>? Regresa los paréntesis y cambia a re.findall: ¿por qué aparecen tuplas? ¿Y si dejas solo un grupo?</li>
+            <li>En "Correo UANL" cambia re.fullmatch por re.search. ¿Qué textos pasan ahora que antes no pasaban?</li>
+            <li>En "Punto sin escapar", ¿por qué aparece <code>'1250'</code>? ¿Qué símbolo lo corrige?</li>
+            <li>Compara "Codicioso" y "No codicioso". ¿Cuántas coincidencias da cada uno y por qué?</li>
+            <li>En "Separadores" encierra <code>[,;]</code> entre paréntesis. ¿Qué aparece ahora en la lista de re.split?</li>
+            <li>Escribe <code>(\d{2}</code>, luego <code>\d{3,2}</code> y luego <code>*\d</code>. ¿Qué dice cada error y qué significa el número después de <code>position</code>?</li>
+          </ol>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+<footer>
+  Programación Básica · FCFM-UANL · funciona sin internet. Textos y patrones de la presentación del Tema 11; el resultado imita a Python 3.12 (módulo re).
+  <a href="index.html">Índice de simuladores</a> · <a href="#qr-sitio" class="qr-abrir">Abrir en el celular (QR)</a>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+  function $(id) { return document.getElementById(id); }
+
+  function esc(t) {
+    return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  // ---------- Código Python con los colores del curso ----------
+  var PY_KW = /^(False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)$/;
+  function pyResaltar(linea) {
+    var html = "", i = 0, m, resto;
+    while (i < linea.length) {
+      resto = linea.slice(i);
+      if ((m = /^#.*/.exec(resto))) { html += '<span class="com">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[rRbBfFuU]{0,2}("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/.exec(resto))) { html += '<span class="str">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[A-Za-z_\u00C0-\u024F][\w\u00C0-\u024F]*/.exec(resto))) { html += PY_KW.test(m[0]) ? '<span class="kw">' + m[0] + "</span>" : esc(m[0]); }
+      else if ((m = /^(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?j?/.exec(resto))) { html += '<span class="num">' + m[0] + "</span>"; }
+      else { m = [resto[0]]; html += esc(m[0]); }
+      i += m[0].length;
+    }
+    return html;
+  }
+  // Pinta código en un contenedor, con números de línea; marcar = número de línea (1, 2...) a resaltar.
+  function mostrarCodigo(el, codigo, marcar) {
+    var lineas = codigo.replace(/\n$/, "").split("\n");
+    el.innerHTML = '<div class="codigo"><ol>' + lineas.map(function (l, k) {
+      return "<li" + (marcar === k + 1 ? ' class="marca"' : "") + ">" + (pyResaltar(l) || " ") + "</li>";
+    }).join("") + "</ol></div>";
+  }
+
+  // ===================== Motor: el módulo re de Python 3.12 en JavaScript =====================
+  // Analiza el patrón con las mismas reglas (y los mismos mensajes de error) que re/_parser.py,
+  // lo traduce a una RegExp de JavaScript con la bandera u y la semántica de Python (\w y \d de
+  // Unicode, el punto, ^ y $, \b, grupos con nombre, reemplazos con \1 y \g<...>) y recorre las
+  // coincidencias como lo hace Python (también las vacías). Es una función autocontenida: la
+  // página la usa directamente y también la copia a un Web Worker para cortar patrones que
+  // tardan demasiado.
+  function crearMotor() {
+    "use strict";
+
+    var MAXREPEAT = 4294967295, MAXGROUPS = 1073741823, MAXWIDTH = Infinity, LIMITE_COINC = 5000;
+    var B_TEMPLATE = 1, B_I = 2, B_L = 4, B_M = 8, B_S = 16, B_U = 32, B_X = 64, B_DEBUG = 128, B_A = 256;
+    var FLAGS = { i: B_I, L: B_L, m: B_M, s: B_S, x: B_X, a: B_A, t: B_TEMPLATE, u: B_U };
+    var TYPE_FLAGS = B_A | B_L | B_U, GLOBAL_FLAGS = B_DEBUG | B_TEMPLATE;
+
+    function conj(s) { var o = Object.create(null); Array.from(s).forEach(function (c) { o[c] = true; }); return o; }
+    function en(c, o) { return typeof c === "string" && o[c] === true; }
+    function tiene(o, k) { return typeof k === "string" && Object.prototype.hasOwnProperty.call(o, k); }
+    function lenCP(s) { return Array.from(s).length; }
+    var DIGITS = conj("0123456789"), OCTDIGITS = conj("01234567"), HEXDIGITS = conj("0123456789abcdefABCDEF"),
+        ASCIILETTERS = conj("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"),
+        WHITESPACE = conj(" \t\n\r\v\f"), SPECIAL = conj(".\\[{()*+?^$|"), REPEAT_CHARS = conj("*+?{");
+    var ESCAPES = { "\\a": 7, "\\b": 8, "\\f": 12, "\\n": 10, "\\r": 13, "\\t": 9, "\\v": 11, "\\\\": 92 };
+    var CATEGORIES = {
+      "\\A": { at: "BEGINNING_STRING" }, "\\b": { at: "BOUNDARY" }, "\\B": { at: "NON_BOUNDARY" },
+      "\\d": { cat: "DIGIT" }, "\\D": { cat: "NOT_DIGIT" }, "\\s": { cat: "SPACE" }, "\\S": { cat: "NOT_SPACE" },
+      "\\w": { cat: "WORD" }, "\\W": { cat: "NOT_WORD" }, "\\Z": { at: "END_STRING" }
+    };
+    var RX_ID = /^[\p{XID_Start}_]\p{XID_Continue}*$/u, RX_DEC = /^\p{Nd}+$/u, RX_ALFA = /^\p{L}+$/u;
+    function esAscii(s) { for (var i = 0; i < s.length; i++) if (s.charCodeAt(i) > 127) return false; return true; }
+
+    // ---------- repr() de Python ----------
+    var NO_IMPRIMIBLE = /[\p{Cc}\p{Cf}\p{Cs}\p{Co}\p{Cn}\p{Zl}\p{Zp}\p{Zs}]/u;
+    function hex(n, d) { var h = n.toString(16); while (h.length < d) h = "0" + h; return h; }
+    function escaparCar(ch, q) {
+      var code = ch.codePointAt(0);
+      if (ch === "\\") return "\\\\";
+      if (ch === q) return "\\" + q;
+      if (ch === "\n") return "\\n";
+      if (ch === "\r") return "\\r";
+      if (ch === "\t") return "\\t";
+      if (code < 32 || code === 127) return "\\x" + hex(code, 2);
+      if (code < 128 || ch === " " || !NO_IMPRIMIBLE.test(ch)) return ch;
+      return code <= 0xff ? "\\x" + hex(code, 2) : code <= 0xffff ? "\\u" + hex(code, 4) : "\\U" + hex(code, 8);
+    }
+    function pyStr(s) {
+      var q = (s.indexOf("'") >= 0 && s.indexOf('"') < 0) ? '"' : "'", r = "";
+      for (var ch of s) r += escaparCar(ch, q);
+      return q + r + q;
+    }
+    // Literal de Python con comillas dobles (las del curso), o simples si el texto trae " y no '.
+    function literalPy(s) {
+      var q = (s.indexOf('"') >= 0 && s.indexOf("'") < 0) ? "'" : '"', r = "";
+      for (var ch of s) r += escaparCar(ch, q);
+      return q + r + q;
+    }
+    // Cadena cruda r"..." si se puede escribir así; si no, un literal normal.
+    function crudoValido(s, q) {
+      var barras = 0;
+      for (var ch of s) {
+        if (ch === "\\") { barras++; continue; }
+        if (ch === q && barras % 2 === 0) return false;
+        if (ch === "\n" || ch === "\r" || (ch !== "\t" && escaparCar(ch, q) !== ch)) return false;
+        barras = 0;
+      }
+      return barras % 2 === 0;
+    }
+    function comillasCrudo(s) {
+      if (crudoValido(s, '"')) return '"';
+      if (crudoValido(s, "'")) return "'";
+      return null;
+    }
+    function crudoPy(s) {
+      var q = comillasCrudo(s);
+      return q ? "r" + q + s + q : literalPy(s);
+    }
+    function repr(v) {
+      if (v === null || v === undefined) return "None";
+      if (typeof v === "string") return pyStr(v);
+      if (typeof v === "boolean") return v ? "True" : "False";
+      if (typeof v === "number") return String(v);
+      if (Array.isArray(v)) return "[" + v.map(repr).join(", ") + "]";
+      if (v.tupla) return "(" + v.tupla.map(repr).join(", ") + (v.tupla.length === 1 ? "," : "") + ")";
+      if (v.match) {
+        return "<re.Match object; span=(" + v.match.s + ", " + v.match.e + "), match=" +
+               Array.from(pyStr(v.match.g0)).slice(0, 50).join("") + ">";
+      }
+      return String(v);
+    }
+    function str(v) { return typeof v === "string" ? v : repr(v); }
+
+    // ---------- Errores como los de Python ----------
+    function ExcPy(tipo, mensaje, pos) { this.tipo = tipo; this.mensaje = mensaje; this.pos = pos; this.enReemplazo = false; }
+    function NoSoportado(motivo) { this.noSoportado = motivo; }
+    function errorRe(msg, cadena, pos) {
+      var texto = msg;
+      if (cadena !== undefined && cadena !== null && pos !== undefined && pos !== null) {
+        texto += " at position " + pos;
+        var cps = Array.from(cadena);
+        if (cps.indexOf("\n") >= 0) {
+          var linea = 1, ultimo = -1;
+          for (var k = 0; k < pos && k < cps.length; k++) if (cps[k] === "\n") { linea++; ultimo = k; }
+          texto += " (line " + linea + ", column " + (pos - ultimo) + ")";
+        }
+      } else pos = null;
+      return new ExcPy("re.error", texto, pos);
+    }
+
+    // ---------- Tokenizer (re/_parser.py) ----------
+    function Tok(cadena) {
+      this.cadena = cadena; this.c = Array.from(cadena);
+      this.index = 0; this.next = null; this.nlen = 0;
+      this._sig();
+    }
+    Tok.prototype._sig = function () {
+      var i = this.index;
+      if (i >= this.c.length) { this.next = null; this.nlen = 0; return; }
+      var ch = this.c[i], n = 1;
+      if (ch === "\\") {
+        i++;
+        if (i >= this.c.length) throw errorRe("bad escape (end of pattern)", this.cadena, this.c.length - 1);
+        ch += this.c[i]; n = 2;
+      }
+      this.index = i + 1; this.next = ch; this.nlen = n;
+    };
+    Tok.prototype.match = function (ch) { if (ch === this.next) { this._sig(); return true; } return false; };
+    Tok.prototype.get = function () { var t = this.next; this._sig(); return t; };
+    Tok.prototype.getwhile = function (n, conjunto) {
+      var r = "";
+      for (var k = 0; k < n; k++) {
+        var c = this.next;
+        if (!en(c, conjunto)) break;
+        r += c; this._sig();
+      }
+      return r;
+    };
+    Tok.prototype.getuntil = function (term, nombre) {
+      var r = "", rlen = 0;
+      while (true) {
+        var c = this.next, cl = this.nlen;
+        this._sig();
+        if (c === null) {
+          if (!r) throw this.error("missing " + nombre);
+          throw this.error("missing " + term + ", unterminated name", rlen);
+        }
+        if (c === term) {
+          if (!r) throw this.error("missing " + nombre, 1);
+          break;
+        }
+        r += c; rlen += cl;
+      }
+      return r;
+    };
+    Tok.prototype.tell = function () { return this.index - this.nlen; };
+    Tok.prototype.seek = function (i) { this.index = i; this._sig(); };
+    Tok.prototype.error = function (msg, offset) { return errorRe(msg, this.cadena, this.tell() - (offset || 0)); };
+    Tok.prototype.checkgroupname = function (name, offset) {
+      if (!RX_ID.test(name)) throw this.error("bad character in group name " + pyStr(name), lenCP(name) + offset);
+    };
+
+    // ---------- Estado del análisis ----------
+    function Estado() {
+      this.flags = 0; this.groupdict = new Map(); this.groupwidths = [null];
+      this.lookbehindgroups = null; this.grouprefpos = new Map(); this.notas = [];
+    }
+    Estado.prototype.groups = function () { return this.groupwidths.length; };
+    Estado.prototype.opengroup = function (name) {
+      var gid = this.groups();
+      this.groupwidths.push(null);
+      if (this.groups() > MAXGROUPS) throw { soloMsg: "too many groups" };
+      if (name !== null) {
+        if (this.groupdict.has(name)) {
+          throw { soloMsg: "redefinition of group name " + pyStr(name) + " as group " + gid + "; was group " + this.groupdict.get(name) };
+        }
+        this.groupdict.set(name, gid);
+      }
+      return gid;
+    };
+    Estado.prototype.closegroup = function (gid, p) { this.groupwidths[gid] = anchura(p, this); };
+    Estado.prototype.checkgroup = function (gid) { return gid < this.groups() && this.groupwidths[gid] !== null; };
+    Estado.prototype.checklookbehindgroup = function (gid, src) {
+      if (this.lookbehindgroups !== null) {
+        if (!this.checkgroup(gid)) throw src.error("cannot refer to an open group");
+        if (gid >= this.lookbehindgroups) throw src.error("cannot refer to group defined in the same lookbehind subpattern");
+      }
+    };
+
+    // (mín, máx) de caracteres que puede ocupar un subpatrón (SubPattern.getwidth)
+    function anchura(sub, st) {
+      if (sub.ancho) return sub.ancho;
+      var lo = 0, hi = 0, w, i, j;
+      for (var k = 0; k < sub.length; k++) {
+        var n = sub[k];
+        switch (n.op) {
+          case "BRANCH":
+            i = MAXWIDTH; j = 0;
+            n.alts.forEach(function (a) { var x = anchura(a, st); i = Math.min(i, x[0]); j = Math.max(j, x[1]); });
+            lo += i; hi += j; break;
+          case "ATOMIC_GROUP": case "SUBPATTERN":
+            w = anchura(n.p, st); lo += w[0]; hi += w[1]; break;
+          case "MAX_REPEAT": case "MIN_REPEAT": case "POSSESSIVE_REPEAT":
+            w = anchura(n.item, st);
+            if (n.min && w[0]) lo += w[0] * n.min;
+            if (n.max === MAXREPEAT && w[1]) hi = MAXWIDTH;
+            else if (n.max && w[1]) hi += w[1] * n.max;
+            break;
+          case "ANY": case "IN": case "LITERAL": case "NOT_LITERAL":
+            lo++; hi++; break;
+          case "GROUPREF":
+            w = st.groupwidths[n.g]; lo += w[0]; hi += w[1]; break;
+          case "GROUPREF_EXISTS":
+            w = anchura(n.yes, st); i = w[0]; j = w[1];
+            if (n.no !== null) { var w2 = anchura(n.no, st); i = Math.min(i, w2[0]); j = Math.max(j, w2[1]); }
+            else i = 0;
+            lo += i; hi += j; break;
+        }
+      }
+      sub.ancho = [Math.min(lo, MAXWIDTH), Math.min(hi, MAXWIDTH)];
+      return sub.ancho;
+    }
+
+    // ---------- Escapes (_class_escape y _escape) ----------
+    function escapeComun(src, escape, c) {
+      // \x, \u, \U y \N; regresa un código, o null si no es uno de ellos
+      var v;
+      if (c === "x") {
+        escape += src.getwhile(2, HEXDIGITS);
+        if (lenCP(escape) !== 4) throw src.error("incomplete escape " + escape, lenCP(escape));
+        return parseInt(escape.slice(2), 16);
+      }
+      if (c === "u") {
+        escape += src.getwhile(4, HEXDIGITS);
+        if (lenCP(escape) !== 6) throw src.error("incomplete escape " + escape, lenCP(escape));
+        return parseInt(escape.slice(2), 16);
+      }
+      if (c === "U") {
+        escape += src.getwhile(8, HEXDIGITS);
+        if (lenCP(escape) !== 10) throw src.error("incomplete escape " + escape, lenCP(escape));
+        v = parseInt(escape.slice(2), 16);
+        if (v > 0x10FFFF) throw src.error("bad escape " + escape, lenCP(escape));
+        return v;
+      }
+      if (c === "N") {
+        if (!src.match("{")) throw src.error("missing {");
+        var nombre = src.getuntil("}", "character name");
+        throw new NoSoportado("\\N{" + nombre + "}");
+      }
+      return null;
+    }
+    function escaparClase(src, escape) {
+      if (tiene(ESCAPES, escape)) return { t: "LIT", c: ESCAPES[escape] };
+      if (tiene(CATEGORIES, escape) && CATEGORIES[escape].cat) return { t: "CAT", cat: CATEGORIES[escape].cat };
+      var c = Array.from(escape)[1], v = escapeComun(src, escape, c);
+      if (v !== null) return { t: "LIT", c: v };
+      if (en(c, OCTDIGITS)) {
+        escape += src.getwhile(2, OCTDIGITS);
+        v = parseInt(escape.slice(1), 8);
+        if (v > 255) throw src.error("octal escape value " + escape + " outside of range 0-0o377", lenCP(escape));
+        return { t: "LIT", c: v };
+      }
+      if (en(c, DIGITS) || en(c, ASCIILETTERS)) throw src.error("bad escape " + escape, lenCP(escape));
+      return { t: "LIT", c: c.codePointAt(0) };
+    }
+    function escapar(src, escape, st) {
+      if (tiene(CATEGORIES, escape)) {
+        var k = CATEGORIES[escape];
+        return k.at ? { op: "AT", at: k.at } : { op: "IN", items: [{ t: "CAT", cat: k.cat }], negate: false, esc: true };
+      }
+      if (tiene(ESCAPES, escape)) return { op: "LITERAL", c: ESCAPES[escape] };
+      var c = Array.from(escape)[1], v = escapeComun(src, escape, c);
+      if (v !== null) return { op: "LITERAL", c: v };
+      if (c === "0") {
+        escape += src.getwhile(2, OCTDIGITS);
+        return { op: "LITERAL", c: parseInt(escape.slice(1), 8) };
+      }
+      if (en(c, DIGITS)) {
+        if (en(src.next, DIGITS)) {
+          escape += src.get();
+          var e = Array.from(escape);
+          if (en(e[1], OCTDIGITS) && en(e[2], OCTDIGITS) && en(src.next, OCTDIGITS)) {
+            escape += src.get();
+            v = parseInt(escape.slice(1), 8);
+            if (v > 255) throw src.error("octal escape value " + escape + " outside of range 0-0o377", lenCP(escape));
+            return { op: "LITERAL", c: v };
+          }
+        }
+        var grupo = parseInt(escape.slice(1), 10);
+        if (grupo < st.groups()) {
+          if (!st.checkgroup(grupo)) throw src.error("cannot refer to an open group", lenCP(escape));
+          st.checklookbehindgroup(grupo, src);
+          return { op: "GROUPREF", g: grupo };
+        }
+        throw src.error("invalid group reference " + grupo, lenCP(escape) - 1);
+      }
+      if (en(c, ASCIILETTERS)) throw src.error("bad escape " + escape, lenCP(escape));
+      return { op: "LITERAL", c: c.codePointAt(0) };
+    }
+
+    // ---------- _parse_sub y _parse ----------
+    function parseSub(src, st, verbose, nested) {
+      var items = [], barras = [], ini = src.tell();
+      while (true) {
+        items.push(parseSec(src, st, verbose, nested + 1, !nested && !items.length));
+        if (!src.match("|")) break;
+        barras.push(src.tell() - 1);
+        if (!nested) verbose = st.flags & B_X;
+      }
+      if (items.length === 1) return items[0];
+      return [{ op: "BRANCH", alts: items, barras: barras, ini: ini, fin: src.tell() }];
+    }
+
+    function parseSec(src, st, verbose, nested, first) {
+      var sub = [];
+      while (true) {
+        var este = src.next;
+        if (este === null || este === "|" || este === ")") break;
+        var ini = src.tell();
+        src.get();
+        if (verbose) {
+          if (en(este, WHITESPACE)) continue;
+          if (este === "#") {
+            while (true) { este = src.get(); if (este === null || este === "\n") break; }
+            continue;
+          }
+        }
+        var nodo;
+        if (este[0] === "\\") {
+          nodo = escapar(src, este, st);
+          nodo.ini = ini; nodo.fin = src.tell();
+          sub.push(nodo);
+        } else if (!en(este, SPECIAL)) {
+          sub.push({ op: "LITERAL", c: este.codePointAt(0), ini: ini, fin: src.tell() });
+        } else if (este === "[") {
+          sub.push(parseClase(src, ini));
+        } else if (en(este, REPEAT_CHARS)) {
+          var here = src.tell(), min, max;
+          if (este === "?") { min = 0; max = 1; }
+          else if (este === "*") { min = 0; max = MAXREPEAT; }
+          else if (este === "+") { min = 1; max = MAXREPEAT; }
+          else {
+            if (src.next === "}") { sub.push({ op: "LITERAL", c: 123, ini: ini, fin: here }); continue; }
+            min = 0; max = MAXREPEAT;
+            var lo = "", hi = "";
+            while (en(src.next, DIGITS)) lo += src.get();
+            if (src.match(",")) { while (en(src.next, DIGITS)) hi += src.get(); }
+            else hi = lo;
+            if (!src.match("}")) {
+              sub.push({ op: "LITERAL", c: 123, ini: ini, fin: here });
+              src.seek(here);
+              continue;
+            }
+            if (lo) {
+              min = Number(lo);
+              if (min >= MAXREPEAT) throw new ExcPy("OverflowError", "the repetition number is too large", null);
+            }
+            if (hi) {
+              max = Number(hi);
+              if (max >= MAXREPEAT) throw new ExcPy("OverflowError", "the repetition number is too large", null);
+              if (max < min) throw src.error("min repeat greater than max repeat", src.tell() - here);
+            }
+          }
+          var item = sub.length ? sub[sub.length - 1] : null;
+          if (!item || item.op === "AT") throw src.error("nothing to repeat", src.tell() - here + 1);
+          if (item.op === "MAX_REPEAT" || item.op === "MIN_REPEAT" || item.op === "POSSESSIVE_REPEAT") {
+            throw src.error("multiple repeat", src.tell() - here + 1);
+          }
+          var cuerpo = [item];
+          if (item.op === "SUBPATTERN" && item.group === null && !item.add && !item.del) cuerpo = item.p;
+          var tipo = src.match("?") ? "MIN_REPEAT" : src.match("+") ? "POSSESSIVE_REPEAT" : "MAX_REPEAT";
+          sub[sub.length - 1] = { op: tipo, min: min, max: max, item: cuerpo, atomo: item, ini: item.ini, fin: src.tell() };
+        } else if (este === ".") {
+          sub.push({ op: "ANY", ini: ini, fin: src.tell() });
+        } else if (este === "(") {
+          var r = parseGrupo(src, st, verbose, nested, first, sub, ini);
+          if (r) sub.push(r);
+          else if (r === false) verbose = st.flags & B_X;
+        } else if (este === "^") {
+          sub.push({ op: "AT", at: "BEGINNING", ini: ini, fin: src.tell() });
+        } else if (este === "$") {
+          sub.push({ op: "AT", at: "END", ini: ini, fin: src.tell() });
+        }
+      }
+      return sub;
+    }
+
+    function parseClase(src, here) {
+      var items = [], negate = src.match("^"), p0, t, code1, code2, that;
+      while (true) {
+        p0 = src.tell();
+        t = src.get();
+        if (t === null) throw src.error("unterminated character set", src.tell() - here);
+        if (t === "]" && items.length) break;
+        code1 = t[0] === "\\" ? escaparClase(src, t) : { t: "LIT", c: t.codePointAt(0) };
+        code1.ini = p0; code1.fin = src.tell();
+        if (src.match("-")) {
+          that = src.get();
+          if (that === null) throw src.error("unterminated character set", src.tell() - here);
+          if (that === "]") {
+            items.push(code1);
+            items.push({ t: "LIT", c: 45, ini: code1.fin, fin: code1.fin + 1 });
+            break;
+          }
+          code2 = that[0] === "\\" ? escaparClase(src, that) : { t: "LIT", c: that.codePointAt(0) };
+          if (code1.t !== "LIT" || code2.t !== "LIT" || code2.c < code1.c) {
+            throw src.error("bad character range " + t + "-" + that, lenCP(t) + 1 + lenCP(that));
+          }
+          items.push({ t: "RANGE", lo: code1.c, hi: code2.c, ini: p0, fin: src.tell() });
+        } else {
+          items.push(code1);
+        }
+      }
+      var vistos = Object.create(null), unicos = [];
+      items.forEach(function (it) {
+        var clave = it.t + ":" + (it.t === "RANGE" ? it.lo + "-" + it.hi : it.t === "LIT" ? it.c : it.cat);
+        if (!vistos[clave]) { vistos[clave] = true; unicos.push(it); }
+      });
+      return { op: "IN", items: unicos, negate: negate, ini: here, fin: src.tell() };
+    }
+
+    // Regresa el nodo del grupo, null si no agrega nada (comentario) o false si fueron banderas globales.
+    function parseGrupo(src, st, verbose, nested, first, sub, start) {
+      var capture = true, atomic = false, name = null, addF = 0, delF = 0, ch, p;
+      if (src.match("?")) {
+        ch = src.get();
+        if (ch === null) throw src.error("unexpected end of pattern");
+        if (ch === "P") {
+          if (src.match("<")) {
+            name = src.getuntil(">", "group name");
+            src.checkgroupname(name, 1);
+          } else if (src.match("=")) {
+            name = src.getuntil(")", "group name");
+            src.checkgroupname(name, 1);
+            var gid = st.groupdict.has(name) ? st.groupdict.get(name) : null;
+            if (gid === null) throw src.error("unknown group name " + pyStr(name), lenCP(name) + 1);
+            if (!st.checkgroup(gid)) throw src.error("cannot refer to an open group", lenCP(name) + 1);
+            st.checklookbehindgroup(gid, src);
+            return { op: "GROUPREF", g: gid, nombre: name, ini: start, fin: src.tell() };
+          } else {
+            ch = src.get();
+            if (ch === null) throw src.error("unexpected end of pattern");
+            throw src.error("unknown extension ?P" + ch, lenCP(ch) + 2);
+          }
+        } else if (ch === ":") {
+          capture = false;
+        } else if (ch === "#") {
+          while (true) {
+            if (src.next === null) throw src.error("missing ), unterminated comment", src.tell() - start);
+            if (src.get() === ")") break;
+          }
+          st.notas.push({ tipo: "comentario", ini: start, fin: src.tell() });
+          return null;
+        } else if (ch === "=" || ch === "!" || ch === "<") {
+          var dir = 1, lbg = null;
+          if (ch === "<") {
+            ch = src.get();
+            if (ch === null) throw src.error("unexpected end of pattern");
+            if (ch !== "=" && ch !== "!") throw src.error("unknown extension ?<" + ch, lenCP(ch) + 2);
+            dir = -1;
+            lbg = st.lookbehindgroups;
+            if (lbg === null) st.lookbehindgroups = st.groups();
+          }
+          p = parseSub(src, st, verbose, nested + 1);
+          if (dir < 0 && lbg === null) st.lookbehindgroups = null;
+          if (!src.match(")")) throw src.error("missing ), unterminated subpattern", src.tell() - start);
+          return { op: ch === "=" ? "ASSERT" : "ASSERT_NOT", dir: dir, p: p, ini: start, fin: src.tell() };
+        } else if (ch === "(") {
+          var condname = src.getuntil(")", "group name"), condgroup;
+          if (!(RX_DEC.test(condname) && esAscii(condname))) {
+            src.checkgroupname(condname, 1);
+            condgroup = st.groupdict.has(condname) ? st.groupdict.get(condname) : null;
+            if (condgroup === null) throw src.error("unknown group name " + pyStr(condname), lenCP(condname) + 1);
+          } else {
+            condgroup = Number(condname);
+            if (!condgroup) throw src.error("bad group number", lenCP(condname) + 1);
+            if (condgroup >= MAXGROUPS) throw src.error("invalid group reference " + condgroup, lenCP(condname) + 1);
+            if (!st.grouprefpos.has(condgroup)) st.grouprefpos.set(condgroup, src.tell() - lenCP(condname) - 1);
+          }
+          st.checklookbehindgroup(condgroup, src);
+          var yes = parseSec(src, st, verbose, nested + 1, false), no = null;
+          if (src.match("|")) {
+            no = parseSec(src, st, verbose, nested + 1, false);
+            if (src.next === "|") throw src.error("conditional backref with more than two branches");
+          }
+          if (!src.match(")")) throw src.error("missing ), unterminated subpattern", src.tell() - start);
+          return { op: "GROUPREF_EXISTS", g: condgroup, yes: yes, no: no, ini: start, fin: src.tell() };
+        } else if (ch === ">") {
+          capture = false; atomic = true;
+        } else if (tiene(FLAGS, ch) || ch === "-") {
+          var fl = parseFlags(src, st, ch);
+          if (fl === null) {
+            if (!first || sub.length) throw src.error("global flags not at the start of the expression", src.tell() - start);
+            st.notas.push({ tipo: "banderas", ini: start, fin: src.tell() });
+            return false;
+          }
+          addF = fl[0]; delF = fl[1]; capture = false;
+        } else {
+          throw src.error("unknown extension ?" + ch, lenCP(ch) + 1);
+        }
+      }
+      var group = null;
+      if (capture) {
+        try { group = st.opengroup(name); }
+        catch (err) { if (err && err.soloMsg) throw src.error(err.soloMsg, (name === null ? 0 : lenCP(name)) + 1); throw err; }
+      }
+      var subVerbose = (verbose || (addF & B_X)) && !(delF & B_X);
+      p = parseSub(src, st, subVerbose, nested + 1);
+      if (!src.match(")")) throw src.error("missing ), unterminated subpattern", src.tell() - start);
+      if (group !== null) st.closegroup(group, p);
+      if (atomic) return { op: "ATOMIC_GROUP", p: p, ini: start, fin: src.tell() };
+      return { op: "SUBPATTERN", group: group, nombre: name, add: addF, del: delF, p: p, ini: start, fin: src.tell() };
+    }
+
+    function parseFlags(src, st, ch) {
+      var addF = 0, delF = 0, flag;
+      if (ch !== "-") {
+        while (true) {
+          flag = FLAGS[ch];
+          if (ch === "L") throw src.error("bad inline flags: cannot use 'L' flag with a str pattern");
+          addF |= flag;
+          if ((flag & TYPE_FLAGS) && (addF & TYPE_FLAGS) !== flag) throw src.error("bad inline flags: flags 'a', 'u' and 'L' are incompatible");
+          ch = src.get();
+          if (ch === null) throw src.error("missing -, : or )");
+          if (ch === ")" || ch === "-" || ch === ":") break;
+          if (!tiene(FLAGS, ch)) throw src.error(RX_ALFA.test(ch) ? "unknown flag" : "missing -, : or )", lenCP(ch));
+        }
+      }
+      if (ch === ")") { st.flags |= addF; return null; }
+      if (addF & GLOBAL_FLAGS) throw src.error("bad inline flags: cannot turn on global flag", 1);
+      if (ch === "-") {
+        ch = src.get();
+        if (ch === null) throw src.error("missing flag");
+        if (!tiene(FLAGS, ch)) throw src.error(RX_ALFA.test(ch) ? "unknown flag" : "missing flag", lenCP(ch));
+        while (true) {
+          flag = FLAGS[ch];
+          if (flag & TYPE_FLAGS) throw src.error("bad inline flags: cannot turn off flags 'a', 'u' and 'L'");
+          delF |= flag;
+          ch = src.get();
+          if (ch === null) throw src.error("missing :");
+          if (ch === ":") break;
+          if (!tiene(FLAGS, ch)) throw src.error(RX_ALFA.test(ch) ? "unknown flag" : "missing :", lenCP(ch));
+        }
+      }
+      if (delF & GLOBAL_FLAGS) throw src.error("bad inline flags: cannot turn off global flag", 1);
+      if (addF & delF) throw src.error("bad inline flags: flag turned on and off", 1);
+      return [addF, delF];
+    }
+
+    // Lo que hace re.compile antes de buscar: analizar y revisar (como _compiler.py).
+    function analizar(patron, banderas) {
+      var src = new Tok(patron), st = new Estado();
+      st.flags = banderas;
+      var p = parseSub(src, st, banderas & B_X, 0);
+      if (!(st.flags & B_A)) st.flags |= B_U;
+      else if (st.flags & B_U) throw new ExcPy("ValueError", "ASCII and UNICODE flags are incompatible", null);
+      if (src.next !== null) throw src.error("unbalanced parenthesis");
+      st.grouprefpos.forEach(function (pos, g) {
+        if (g >= st.groups()) throw errorRe("invalid group reference " + g, patron, pos);
+      });
+      revisarCompilacion(p, st, st.flags);
+      return { p: p, st: st, patron: patron, grupos: st.groups() - 1 };
+    }
+    // _combine_flags de _compiler.py: (?a:...) o (?u:...) reemplazan el tipo de \w, \d y \s
+    function combinar(fl, add, del) {
+      if (add & TYPE_FLAGS) fl &= ~TYPE_FLAGS;
+      return (fl | add) & ~del;
+    }
+    function revisarCompilacion(sub, st, fl) {
+      sub.forEach(function (n) {
+        switch (n.op) {
+          case "MAX_REPEAT": case "MIN_REPEAT": case "POSSESSIVE_REPEAT":
+            if (fl & B_TEMPLATE) throw errorRe("internal: unsupported template operator " + n.op);
+            revisarCompilacion(n.item, st, fl); break;
+          case "SUBPATTERN": revisarCompilacion(n.p, st, combinar(fl, n.add, n.del)); break;
+          case "ATOMIC_GROUP": revisarCompilacion(n.p, st, fl); break;
+          case "BRANCH": n.alts.forEach(function (a) { revisarCompilacion(a, st, fl); }); break;
+          case "ASSERT": case "ASSERT_NOT":
+            if (n.dir < 0) {
+              var w = anchura(n.p, st);
+              if (w[0] !== w[1]) throw errorRe("look-behind requires fixed-width pattern");
+            }
+            revisarCompilacion(n.p, st, fl); break;
+          case "GROUPREF_EXISTS":
+            revisarCompilacion(n.yes, st, fl);
+            if (n.no) revisarCompilacion(n.no, st, fl);
+            break;
+        }
+      });
+    }
+
+    // ---------- Traducción a una RegExp de JavaScript ----------
+    var ESP_UNI = "\\t\\n\\v\\f\\r\\x1c-\\x1f\\x20\\x85\\xa0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000";
+    var ESP_ASCII = "\\t\\n\\v\\f\\r\\x20", PAL_UNI = "\\p{L}\\p{N}_", PAL_ASCII = "A-Za-z0-9_";
+    function litJS(c) {
+      if ((c >= 48 && c <= 57) || (c >= 65 && c <= 90) || (c >= 97 && c <= 122)) return String.fromCharCode(c);
+      return "\\u{" + c.toString(16) + "}";
+    }
+    function claseJS(items, negar, fl) {
+      var asc = fl & B_A, simples = "", complejos = [];
+      items.forEach(function (it) {
+        if (it.t === "LIT") simples += litJS(it.c);
+        else if (it.t === "RANGE") simples += litJS(it.lo) + "-" + litJS(it.hi);
+        else if (it.cat === "DIGIT") simples += asc ? "0-9" : "\\p{Nd}";
+        else if (it.cat === "NOT_DIGIT") simples += asc ? "\\D" : "\\P{Nd}";
+        else if (it.cat === "SPACE") simples += asc ? ESP_ASCII : ESP_UNI;
+        else if (it.cat === "NOT_SPACE") complejos.push("[^" + (asc ? ESP_ASCII : ESP_UNI) + "]");
+        else if (it.cat === "WORD") simples += asc ? PAL_ASCII : PAL_UNI;
+        else complejos.push("[^" + (asc ? PAL_ASCII : PAL_UNI) + "]");
+      });
+      if (!complejos.length) return "[" + (negar ? "^" : "") + simples + "]";
+      var alts = (simples ? ["[" + simples + "]"] : []).concat(complejos).join("|");
+      return negar ? "(?:(?!" + alts + ")[\\s\\S])" : "(?:" + alts + ")";
+    }
+    function cuantJS(min, max) {
+      if (max === MAXREPEAT) return min === 0 ? "*" : min === 1 ? "+" : "{" + min + ",}";
+      if (min === 0 && max === 1) return "?";
+      return min === max ? "{" + min + "}" : "{" + min + "," + max + "}";
+    }
+    function generar(sub, cx) { var s = ""; for (var k = 0; k < sub.length; k++) s += nodoJS(sub[k], cx); return s; }
+    function contieneCaptura(sub) {
+      return sub.some(function (n) {
+        if (n.op === "SUBPATTERN") return n.group !== null || contieneCaptura(n.p);
+        if (n.op === "BRANCH") return n.alts.some(contieneCaptura);
+        if (n.op === "GROUPREF_EXISTS") return contieneCaptura(n.yes) || (n.no !== null && contieneCaptura(n.no));
+        if (n.p) return contieneCaptura(n.p);
+        if (n.item) return contieneCaptura(n.item);
+        return false;
+      });
+    }
+    function nodoJS(n, cx) {
+      var fl = cx.flags, W, h, cuerpo, s;
+      switch (n.op) {
+        case "LITERAL": return litJS(n.c);
+        case "NOT_LITERAL": return "[^" + litJS(n.c) + "]";
+        case "ANY": return (fl & B_S) ? "[\\s\\S]" : "[^\\n]";
+        case "IN": return claseJS(n.items, n.negate, fl);
+        case "AT":
+          W = "[" + ((fl & B_A) ? PAL_ASCII : PAL_UNI) + "]";
+          switch (n.at) {
+            case "BEGINNING": return (fl & B_M) ? "(?<![^\\n])" : "(?<![\\s\\S])";
+            case "BEGINNING_STRING": return "(?<![\\s\\S])";
+            case "END": return (fl & B_M) ? "(?![^\\n])" : "(?=\\n?(?![\\s\\S]))";
+            case "END_STRING": return "(?![\\s\\S])";
+            case "BOUNDARY": return "(?:(?<=" + W + ")(?!" + W + ")|(?<!" + W + ")(?=" + W + "))";
+            default: return "(?:(?<=" + W + ")(?=" + W + ")|(?<!" + W + ")(?!" + W + ")(?:(?<=[\\s\\S])|(?=[\\s\\S])))";
+          }
+        case "BRANCH":
+          cx.opc++;
+          s = n.alts.map(function (a) { return generar(a, cx); }).join("|");
+          cx.opc--;
+          return "(?:" + s + ")";
+        case "SUBPATTERN":
+          var nf = combinar(fl, n.add, n.del), viejoI = cx.iJS, nI = !!(nf & B_I), abre = "", cierra = "";
+          if (nI !== cx.iJS) { abre = nI ? "(?i:" : "(?-i:"; cierra = ")"; cx.usaMods = true; cx.iJS = nI; }
+          cx.flags = nf;
+          if (n.group !== null) {
+            var j = ++cx.cuenta;
+            cx.mapa[n.group] = j;
+            cx.opcional[n.group] = cx.opc > 0;
+            if (cx.rep > 0 && cx.opc > cx.opcRep) cx.avisos.captura = true;
+            s = "(" + generar(n.p, cx) + ")";
+          } else s = "(?:" + generar(n.p, cx) + ")";
+          cx.flags = fl; cx.iJS = viejoI;
+          return abre + s + cierra;
+        case "MAX_REPEAT": case "MIN_REPEAT": case "POSSESSIVE_REPEAT":
+          // X? de Python es "X (aunque coincida vacío) o nada": en JavaScript, (?:X|)
+          var posesivo = n.op === "POSSESSIVE_REPEAT", hh = posesivo ? ++cx.cuenta : 0, guardado = [cx.rep, cx.opcRep];
+          // Python acepta una última vuelta vacía y JavaScript no: aquí pueden diferir
+          if (n.max > 1 && anchura(n.item, cx.st)[0] === 0) cx.avisos.vacio = true;
+          if (n.max > 1 && contieneCaptura(n.item)) {
+            if (cx.lb > 0) cx.avisos.captura = true;
+            cx.rep++; cx.opcRep = cx.opc + (n.min === 0 ? 1 : 0);
+          }
+          if (n.min === 0) cx.opc++;
+          var x = generar(n.item, cx);
+          if (n.min === 0) cx.opc--;
+          cx.rep = guardado[0]; cx.opcRep = guardado[1];
+          if (n.min === 0 && n.max === 1) s = n.op === "MIN_REPEAT" ? "(?:|" + x + ")" : "(?:" + x + "|)";
+          else s = "(?:" + x + ")" + cuantJS(n.min, n.max) + (n.op === "MIN_REPEAT" ? "?" : "");
+          return posesivo ? "(?=(" + s + "))(?:\\" + hh + ")" : s;
+        case "GROUPREF":
+          if (cx.opcional[n.g]) cx.avisos.referencia = true;
+          return "(?:\\" + cx.mapa[n.g] + ")";
+        case "GROUPREF_EXISTS":
+          throw new NoSoportado("condicional");
+        case "ASSERT": case "ASSERT_NOT":
+          if (n.op === "ASSERT_NOT") cx.opc++;
+          if (n.dir < 0) cx.lb++;
+          cuerpo = generar(n.p, cx);
+          if (n.dir < 0) cx.lb--;
+          if (n.op === "ASSERT_NOT") cx.opc--;
+          return "(?" + (n.dir < 0 ? "<" : "") + (n.op === "ASSERT" ? "=" : "!") + cuerpo + ")";
+        case "ATOMIC_GROUP":
+          h = ++cx.cuenta;
+          return "(?=(" + generar(n.p, cx) + "))(?:\\" + h + ")";
+      }
+      return "";
+    }
+
+    // re.compile: analiza, traduce y construye las RegExp de búsqueda.
+    function compilar(patron, banderas) {
+      var an = analizar(patron, banderas);
+      var cx = { flags: an.st.flags, iJS: !!(an.st.flags & B_I), mapa: [0], cuenta: 0, usaMods: false,
+                 opc: 0, rep: 0, opcRep: 0, lb: 0, opcional: [], avisos: {}, st: an.st };
+      var fuente = generar(an.p, cx), fJS = cx.iJS ? "i" : "", rx;
+      try {
+        rx = { busca: new RegExp(fuente, "dgu" + fJS), completo: new RegExp("(?:" + fuente + ")(?![\\s\\S])", "dyu" + fJS) };
+      } catch (e) {
+        throw new NoSoportado(cx.usaMods ? "modificadores" : "traduccion");
+      }
+      an.fuente = fuente; an.fJS = fJS; an.mapa = cx.mapa; an.rx = rx; an.avanza = {};
+      an.avisos = Object.keys(cx.avisos);
+      an.nombres = Array.from(an.st.groupdict.entries());
+      return an;
+    }
+    // RegExp que solo acepta una coincidencia NO vacía que empiece en la posición k (en caracteres);
+    // Python la exige después de una coincidencia vacía (sre: must_advance).
+    function rxAvanza(info, k) {
+      if (!info.avanza[k]) info.avanza[k] = new RegExp("(?:" + info.fuente + ")(?<!^[\\s\\S]{" + k + "})", "dyu" + info.fJS);
+      return info.avanza[k];
+    }
+    function prepararTexto(t) {
+      var u2c = new Array(t.length + 1), k = 0, i = 0;
+      while (i < t.length) {
+        var cp = t.codePointAt(i);
+        u2c[i] = k;
+        if (cp > 0xffff) { u2c[i + 1] = k + 1; i += 2; } else i += 1;
+        k++;
+      }
+      u2c[t.length] = k;
+      return { t: t, u2c: u2c, cps: Array.from(t) };
+    }
+    function aPy(m, info, T) {
+      var g = [], iu = m.index, fu = m.index + m[0].length;
+      for (var k = 1; k <= info.grupos; k++) {
+        var ind = m.indices[info.mapa[k]];
+        g.push(ind ? [T.u2c[ind[0]], T.u2c[ind[1]]] : null);
+      }
+      return { s: T.u2c[iu], e: T.u2c[fu], g: g, iu: iu, fu: fu };
+    }
+    function trozo(T, sp) { return sp ? T.cps.slice(sp[0], sp[1]).join("") : null; }
+    // Todas las coincidencias, como re.finditer (Python 3.7 o posterior)
+    function iterar(info, T) {
+      var res = [], pos = 0, debeAvanzar = false, n = T.t.length;
+      while (pos <= n && res.length < LIMITE_COINC) {
+        var m = null, desde = pos;
+        if (debeAvanzar) {
+          var rx = rxAvanza(info, T.u2c[pos]);
+          rx.lastIndex = pos;
+          m = rx.exec(T.t);
+          if (!m) {
+            if (pos >= n) break;
+            desde = pos + (T.t.codePointAt(pos) > 0xffff ? 2 : 1);
+          }
+        }
+        if (!m) { info.rx.busca.lastIndex = desde; m = info.rx.busca.exec(T.t); }
+        if (!m) break;
+        var pm = aPy(m, info, T);
+        res.push(pm);
+        debeAvanzar = pm.fu === pm.iu;
+        pos = pm.fu;
+      }
+      return res;
+    }
+    function valorMatch(T, pm) {
+      return { match: { s: pm.s, e: pm.e, g0: trozo(T, [pm.s, pm.e]), grupos: pm.g.map(function (sp) { return trozo(T, sp); }) } };
+    }
+
+    // parse_template: el reemplazo de re.sub, con \1, \g<1> y \g<nombre>
+    function analizarPlantilla(repl, info) {
+      var s = new Tok(repl), res = [], lit = "", t, c, nombre, indice;
+      var nombres = new Map(info.nombres);
+      function addgroup(index, pos) {
+        if (index > info.grupos) throw s.error("invalid group reference " + index, pos);
+        res.push(lit); lit = ""; res.push(index);
+      }
+      while (true) {
+        t = s.get();
+        if (t === null) break;
+        if (t[0] !== "\\") { lit += t; continue; }
+        c = Array.from(t)[1];
+        if (c === "g") {
+          if (!s.match("<")) throw s.error("missing <");
+          nombre = s.getuntil(">", "group name");
+          if (!(RX_DEC.test(nombre) && esAscii(nombre))) {
+            s.checkgroupname(nombre, 1);
+            if (!nombres.has(nombre)) throw new ExcPy("IndexError", "unknown group name " + pyStr(nombre), null);
+            indice = nombres.get(nombre);
+          } else {
+            indice = Number(nombre);
+            if (indice >= MAXGROUPS) throw s.error("invalid group reference " + indice, lenCP(nombre) + 1);
+          }
+          addgroup(indice, lenCP(nombre) + 1);
+        } else if (c === "0") {
+          if (en(s.next, OCTDIGITS)) { t += s.get(); if (en(s.next, OCTDIGITS)) t += s.get(); }
+          lit += String.fromCodePoint(parseInt(t.slice(1), 8) & 0xff);
+        } else if (en(c, DIGITS)) {
+          var octal = false;
+          if (en(s.next, DIGITS)) {
+            t += s.get();
+            if (en(c, OCTDIGITS) && en(Array.from(t)[2], OCTDIGITS) && en(s.next, OCTDIGITS)) {
+              t += s.get(); octal = true;
+              var v = parseInt(t.slice(1), 8);
+              if (v > 255) throw s.error("octal escape value " + t + " outside of range 0-0o377", lenCP(t));
+              lit += String.fromCodePoint(v);
+            }
+          }
+          if (!octal) addgroup(Number(t.slice(1)), lenCP(t) - 1);
+        } else if (tiene(ESCAPES, t)) {
+          lit += String.fromCodePoint(ESCAPES[t]);
+        } else {
+          if (en(c, ASCIILETTERS)) throw s.error("bad escape " + t, lenCP(t));
+          lit += t;
+        }
+      }
+      res.push(lit);
+      return res;
+    }
+
+    // Una llamada de re sobre un texto: regresa las coincidencias (posiciones en caracteres,
+    // como Python) y el valor que regresa la función.
+    function correrUno(info, fn, t, plantilla) {
+      var T = prepararTexto(t), out = { texto: t, ms: [] }, m, ms;
+      if (fn === "search" || fn === "fullmatch") {
+        var rx = fn === "search" ? info.rx.busca : info.rx.completo;
+        rx.lastIndex = 0;
+        m = rx.exec(t);
+        if (m) { var pm = aPy(m, info, T); out.ms = [pm]; out.valor = valorMatch(T, pm); }
+        else out.valor = null;
+      } else {
+        ms = iterar(info, T);
+        out.ms = ms;
+        out.muchas = ms.length >= LIMITE_COINC;
+        if (fn === "findall") {
+          out.valor = ms.map(function (pm) {
+            if (info.grupos === 0) return trozo(T, [pm.s, pm.e]);
+            var gs = pm.g.map(function (sp) { return sp ? trozo(T, sp) : ""; });
+            return info.grupos === 1 ? gs[0] : { tupla: gs };
+          });
+        } else if (fn === "finditer") {
+          out.valor = ms.map(function (pm) { return valorMatch(T, pm); });
+        } else if (fn === "sub") {
+          var res = "", ult = 0, piezas = [];
+          ms.forEach(function (pm) {
+            var antes = T.cps.slice(ult, pm.s).join(""), g0 = trozo(T, [pm.s, pm.e]);
+            var nuevo = plantilla.map(function (x) {
+              if (typeof x === "string") return x;
+              return x === 0 ? g0 : (trozo(T, pm.g[x - 1]) || "");
+            }).join("");
+            if (antes) piezas.push({ igual: antes });
+            piezas.push({ quita: g0, pone: nuevo });
+            res += antes + nuevo;
+            ult = pm.e;
+          });
+          var resto = T.cps.slice(ult).join("");
+          if (resto) piezas.push({ igual: resto });
+          out.valor = res + resto;
+          out.piezas = piezas;
+        } else if (fn === "split") {
+          var lista = [], deGrupo = [], u = 0;
+          ms.forEach(function (pm) {
+            lista.push(T.cps.slice(u, pm.s).join("")); deGrupo.push(false);
+            pm.g.forEach(function (sp) { lista.push(trozo(T, sp)); deGrupo.push(true); });
+            u = pm.e;
+          });
+          lista.push(T.cps.slice(u).join("")); deGrupo.push(false);
+          out.valor = lista;
+          out.deGrupo = deGrupo;
+        }
+      }
+      out.ms = out.ms.map(function (pm) { return { s: pm.s, e: pm.e, g: pm.g }; });
+      return out;
+    }
+
+    function excAObjeto(e) {
+      if (e instanceof ExcPy) return { tipo: e.tipo, mensaje: e.mensaje, pos: e.pos, enReemplazo: e.enReemplazo };
+      if (e instanceof NoSoportado) return { noSoportado: e.noSoportado };
+      throw e;
+    }
+    // tarea = { patron, ignorar, funcion, reemplazo, textos }
+    function ejecutar(tarea) {
+      var r = { error: null, noSoportado: null, resultados: [], grupos: 0, nombres: [], avisos: [] }, info, plantilla = null;
+      try { info = compilar(tarea.patron, tarea.ignorar ? B_I : 0); }
+      catch (e) { var o = excAObjeto(e); if (o.noSoportado) r.noSoportado = o.noSoportado; else r.error = o; return r; }
+      r.grupos = info.grupos; r.nombres = info.nombres; r.avisos = info.avisos;
+      if (tarea.funcion === "sub") {
+        if (tarea.reemplazo.indexOf("\\") >= 0) {
+          try { plantilla = analizarPlantilla(tarea.reemplazo, info); }
+          catch (e) {
+            var o2 = excAObjeto(e);
+            o2.enReemplazo = true;
+            r.error = o2;
+            return r;
+          }
+        } else plantilla = [tarea.reemplazo];
+      }
+      tarea.textos.forEach(function (t) { r.resultados.push(correrUno(info, tarea.funcion, t, plantilla)); });
+      return r;
+    }
+    // Solo analizar (para el panel "Cómo se lee" y los errores, sin buscar)
+    function revisarPatron(patron, ignorar) {
+      try { return { an: analizar(patron, ignorar ? B_I : 0) }; }
+      catch (e) { var o = excAObjeto(e); return o.noSoportado ? { noSoportado: o.noSoportado } : { error: o }; }
+    }
+
+    // ---------- Programas de Python equivalentes y lo que imprimen ----------
+    function traceback(lineas, num, llamada, err) {
+      var linea = lineas[num - 1].trim(), col = linea.indexOf(llamada);
+      return ["Traceback (most recent call last):",
+              '  File "tu_programa.py", line ' + num + ", in <module>",
+              "    " + linea,
+              "    " + " ".repeat(col) + "^".repeat(llamada.length),
+              err.tipo + ": " + err.mensaje];
+    }
+    // Cada print termina con un salto de línea (la salida exacta)
+    function conSaltos(lineas) { return lineas.map(function (l) { return l + "\n"; }).join(""); }
+    function bloqueLista(nombre, elementos, formato) {
+      var L = [nombre + " = ["];
+      elementos.forEach(function (x) { L.push("    " + formato(x) + ","); });
+      L.push("]");
+      return L;
+    }
+    // Laboratorio: tarea + resultado de ejecutar → { codigo, salida }
+    function programaLab(tarea, r) {
+      var L = ["import re", "", "patron = " + crudoPy(tarea.patron)], fl = tarea.ignorar ? ", flags=re.IGNORECASE" : "";
+      if (tarea.funcion === "sub") L.push("reemplazo = " + (tarea.reemplazo === "" ? '""' : crudoPy(tarea.reemplazo)));
+      L = L.concat(bloqueLista("textos", tarea.textos, literalPy));
+      L.push("", "for texto in textos:");
+      var llamada, num, f = tarea.funcion, grupos = r.error ? 0 : r.grupos;
+      if (f === "search" || f === "fullmatch") {
+        llamada = "re." + f + "(patron, texto" + fl + ")";
+        L.push("    m = " + llamada); num = L.length;
+        L.push("    print(m)");
+        if (grupos > 0) L.push("    if m:", "        print(m.groups())");
+      } else if (f === "finditer") {
+        L.push("    print(texto)");
+        llamada = "re.finditer(patron, texto" + fl + ")";
+        L.push("    for m in " + llamada + ":"); num = L.length;
+        L.push('        print("  ->", m.group(), m.start())');
+      } else {
+        llamada = f === "sub" ? "re.sub(patron, reemplazo, texto" + fl + ")" : "re." + f + "(patron, texto" + fl + ")";
+        L.push("    print(" + llamada + ")"); num = L.length;
+      }
+      var S = [];
+      if (r.error) {
+        if (tarea.textos.length) {
+          if (f === "finditer") S.push(tarea.textos[0]);
+          S = S.concat(traceback(L, num, llamada, r.error));
+        }
+      } else if (!r.noSoportado) {
+        r.resultados.forEach(function (x) {
+          if (f === "search" || f === "fullmatch") {
+            S.push(repr(x.valor));
+            if (grupos > 0 && x.valor) S.push(repr({ tupla: x.valor.match.grupos }));
+          } else if (f === "finditer") {
+            S.push(x.texto);
+            x.valor.forEach(function (v) { S.push("  -> " + v.match.g0 + " " + v.match.s); });
+          } else S.push(str(x.valor));
+        });
+      }
+      return { codigo: L.join("\n"), salida: conSaltos(S), linea: num };
+    }
+    // Reto: nivel + patrón del alumno + resultado → { codigo, salida }
+    function programaReto(nivel, patron, r) {
+      var f = nivel.funcion, conGrupos = nivel.debe.some(function (d) { return Array.isArray(d[1]); });
+      var L = ["import re", "", "patron = " + crudoPy(patron), ""], llamada, num, S = [];
+      if (f === "search") {
+        L = L.concat(bloqueLista("debe", nivel.debe, function (d) { return "(" + literalPy(d[0]) + ", " + literalPy(d[1]) + ")"; }));
+      } else if (conGrupos) {
+        L = L.concat(bloqueLista("debe", nivel.debe, function (d) {
+          return "(" + literalPy(d[0]) + ", (" + d[1].map(literalPy).join(", ") + (d[1].length === 1 ? "," : "") + "))";
+        }));
+      } else {
+        L = L.concat(bloqueLista("debe", nivel.debe, function (d) { return literalPy(d[0]); }));
+      }
+      L = L.concat(bloqueLista("no_debe", nivel.noDebe, literalPy));
+      L.push("");
+      llamada = "re." + f + "(patron, texto)";
+      if (f === "search") {
+        L.push("for texto, esperado in debe:", "    m = " + llamada); num = L.length;
+        L.push("    print(m is not None and m.group() == esperado, texto)");
+      } else if (conGrupos) {
+        L.push("for texto, partes in debe:", "    m = " + llamada); num = L.length;
+        L.push("    print(m is not None and m.groups() == partes, texto)");
+      } else {
+        L.push("for texto in debe:", "    print(" + llamada + " is not None, texto)"); num = L.length;
+      }
+      L.push("", "for texto in no_debe:", "    print(" + llamada + " is None, texto)");
+      var num2 = L.length;
+      if (r.error) {
+        if (nivel.debe.length) S = traceback(L, num, llamada, r.error);
+        else if (nivel.noDebe.length) S = traceback(L, num2, llamada, r.error);
+      } else if (!r.noSoportado) {
+        r.resultados.forEach(function (x, k) {
+          var ok;
+          if (k < nivel.debe.length) {
+            var d = nivel.debe[k], v = x.valor;
+            if (f === "search") ok = v !== null && v.match.g0 === d[1];
+            else if (conGrupos) ok = v !== null && JSON.stringify(v.match.grupos) === JSON.stringify(d[1]);
+            else ok = v !== null;
+          } else ok = x.valor === null;
+          S.push((ok ? "True" : "False") + " " + x.texto);
+        });
+      }
+      return { codigo: L.join("\n"), salida: conSaltos(S), linea: num };
+    }
+    // Limpieza: reto + patrón + reemplazo + resultado → { codigo, salida }
+    function programaLimpieza(reto, patron, reemplazo, r) {
+      var L = ["import re", "", "patron = " + crudoPy(patron)], llamada, num, S = [];
+      if (reto.funcion === "sub") L.push("reemplazo = " + (reemplazo === "" ? '""' : crudoPy(reemplazo)));
+      L = L.concat(bloqueLista("datos", reto.filas.map(function (f) { return f[0]; }), literalPy));
+      L.push("", "for dato in datos:");
+      llamada = reto.funcion === "sub" ? "re.sub(patron, reemplazo, dato)" : "re.split(patron, dato)";
+      L.push("    print(" + llamada + ")"); num = L.length;
+      if (r.error) { if (reto.filas.length) S = traceback(L, num, llamada, r.error); }
+      else if (!r.noSoportado) r.resultados.forEach(function (x) { S.push(str(x.valor)); });
+      return { codigo: L.join("\n"), salida: conSaltos(S), linea: num };
+    }
+
+    // ---------- "Cómo se lee": el patrón explicado símbolo por símbolo ----------
+    var NOMBRES_CAR = {
+      "-": "un guion", ":": "dos puntos", "/": "una diagonal /", "@": "una arroba @", "#": "un signo #",
+      ".": "un punto", ",": "una coma", ";": "un punto y coma", "_": "un guion bajo _", " ": "un espacio",
+      "$": "un signo $", "(": "un paréntesis (", ")": "un paréntesis )", "[": "un corchete [", "]": "un corchete ]",
+      "{": "una llave {", "}": "una llave }", "+": "un signo +", "*": "un asterisco *", "?": "un signo ?",
+      "^": "un signo ^", "|": "una barra vertical |", "\\": "una barra invertida \\", "<": "un signo <",
+      ">": "un signo >", "=": "un signo =", "!": "un signo !", "%": "un signo %", "&": "un signo &",
+      "'": "un apóstrofo '", "\"": "unas comillas \"", "\t": "un tabulador", "\n": "un salto de línea",
+      "°": "el símbolo °", "¿": "un signo ¿", "¡": "un signo ¡"
+    };
+    var SIN_BARRA = {
+      ".": "sin \\ sería cualquier carácter", "$": "sin \\ sería el fin del texto", "^": "sin \\ sería el inicio del texto",
+      "*": "sin \\ sería un cuantificador", "+": "sin \\ sería un cuantificador", "?": "sin \\ sería un cuantificador",
+      "(": "sin \\ abriría un grupo", ")": "sin \\ cerraría un grupo", "[": "sin \\ abriría una clase",
+      "{": "sin \\ podría ser un cuantificador", "|": "sin \\ significaría o"
+    };
+    var FRASE_CAT = {
+      DIGIT: "un dígito (0 a 9)", NOT_DIGIT: "un carácter que NO sea dígito",
+      SPACE: "un espacio, tabulador o salto de línea", NOT_SPACE: "un carácter que NO sea espacio, tabulador ni salto de línea",
+      WORD: "una letra, dígito o guion bajo _ (también con acento o ñ)", NOT_WORD: "un carácter que NO sea letra, dígito ni _"
+    };
+    var FRASE_CAT_CLASE = { DIGIT: "un dígito", NOT_DIGIT: "un no dígito", SPACE: "un espacio", NOT_SPACE: "un no espacio",
+                            WORD: "una letra, dígito o _", NOT_WORD: "un carácter que no es letra, dígito ni _" };
+    function citar(ch) { var r = pyStr(ch); return lenCP(r) === 3 && ch !== '"' && ch !== "'" ? '"' + ch + '"' : r; }
+    function nombreCar(ch) {
+      if (tiene(NOMBRES_CAR, ch)) return NOMBRES_CAR[ch];
+      if (/^\p{Nd}$/u.test(ch)) return "el dígito " + ch;
+      if (/^\p{Lu}$/u.test(ch)) return "la letra " + ch + " (mayúscula)";
+      if (/^\p{L}$/u.test(ch)) return "la letra " + ch;
+      return "el carácter " + citar(ch);
+    }
+    function unirO(partes) {
+      if (partes.length < 2) return partes.join("");
+      return partes.slice(0, -1).join(", ") + " o " + partes[partes.length - 1];
+    }
+    function fraseClase(n, fl) {
+      var partes = n.items.map(function (it) {
+        if (it.t === "RANGE") {
+          if (it.lo === 97 && it.hi === 122) return "una minúscula (a-z)";
+          if (it.lo === 65 && it.hi === 90) return "una mayúscula (A-Z)";
+          if (it.lo === 48 && it.hi === 57) return "un dígito (0-9)";
+          if (it.lo >= 48 && it.hi <= 57) return "un dígito del " + String.fromCodePoint(it.lo) + " al " + String.fromCodePoint(it.hi);
+          return "de " + citar(String.fromCodePoint(it.lo)) + " a " + citar(String.fromCodePoint(it.hi));
+        }
+        if (it.t === "CAT") return FRASE_CAT_CLASE[it.cat];
+        return citar(String.fromCodePoint(it.c));
+      });
+      if (n.negate) return "un carácter que NO sea " + unirO(partes);
+      if (partes.length === 1) return n.items[0].t === "LIT" ? nombreCar(String.fromCodePoint(n.items[0].c)) : partes[0];
+      return "uno de estos: " + unirO(partes);
+    }
+    function frase(n, fl) {
+      switch (n.op) {
+        case "LITERAL": return nombreCar(String.fromCodePoint(n.c));
+        case "NOT_LITERAL": return "un carácter que NO sea " + citar(String.fromCodePoint(n.c));
+        case "IN":
+          if (n.esc) {
+            var t = FRASE_CAT[n.items[0].cat];
+            return (fl & B_A) ? t.replace(" (también con acento o ñ)", "").replace(" (0 a 9)", "") + " (solo ASCII)" : t;
+          }
+          return fraseClase(n, fl);
+        case "ANY": return (fl & B_S) ? "cualquier carácter (también el salto de línea)" : "cualquier carácter (menos el salto de línea)";
+        case "GROUPREF": return "otra vez lo mismo que capturó el grupo " + n.g + (n.nombre ? " (" + n.nombre + ")" : "");
+      }
+      return null;
+    }
+    function frCuant(n) {
+      var inf = n.max === MAXREPEAT, f;
+      if (n.min === 0 && n.max === 1) f = "opcional (cero o una vez)";
+      else if (n.min === 0 && inf) f = "cero o más veces";
+      else if (n.min === 1 && inf) f = "una o más veces";
+      else if (inf) f = n.min + " o más veces";
+      else if (n.min === n.max) f = n.min === 1 ? "exactamente una vez" : "exactamente " + n.min + " veces";
+      else f = "de " + n.min + " a " + n.max + " veces";
+      if (n.op === "MIN_REPEAT") f += ", lo menos posible (no codicioso)";
+      else if (n.op === "POSSESSIVE_REPEAT") f += ", sin devolver nada (posesivo)";
+      else if (n.atomo.op === "ANY" && n.max > n.min) f += ": toma todo lo que puede (codicioso)";
+      return f;
+    }
+    var FRASE_AT = {
+      BEGINNING: "inicio del texto (ancla ^): ahí debe empezar", BEGINNING_STRING: "inicio del texto (\\A)",
+      END: "fin del texto (ancla $): ahí debe terminar", END_STRING: "fin del texto (\\Z)",
+      BOUNDARY: "frontera de palabra: entre una letra, dígito o _ y algo que no lo es",
+      NON_BOUNDARY: "NO es frontera de palabra"
+    };
+    function explicar(an) {
+      var cps = Array.from(an.patron), filas = [];
+      function agregar(nivel, ini, fin, texto, grupo) {
+        filas.push({ nivel: nivel, codigo: cps.slice(ini, fin).join(""), texto: texto, grupo: grupo || 0, ini: ini });
+      }
+      function fraseLiterales(run, codigo) {
+        var txt = run.map(function (n) { return String.fromCodePoint(n.c); }).join("");
+        if (run.length === 1) {
+          var f = nombreCar(txt);
+          if (codigo.length === 2 && codigo[0] === "\\" && tiene(SIN_BARRA, txt)) return f + " de verdad (" + SIN_BARRA[txt] + ")";
+          return f + ", tal cual";
+        }
+        var q = pyStr(txt).slice(1, -1) === txt && txt.indexOf('"') < 0 ? '"' + txt + '"' : pyStr(txt);
+        var f2 = "el texto " + q + ", tal cual";
+        var esc = codigo.match(/\\[^\w\s]/g) || [];
+        if (esc.length) f2 += esc.every(function (e) { return e === "\\."; }) ? " (cada \\. es un punto de verdad)" : " (los símbolos con \\ valen por sí mismos)";
+        return f2;
+      }
+      function recorrer(sub, nivel, grupo, fl) {
+        var k = 0;
+        while (k < sub.length) {
+          var n = sub[k];
+          if (n.op === "LITERAL") {
+            var j = k + 1;
+            while (j < sub.length && sub[j].op === "LITERAL") j++;
+            var run = sub.slice(k, j), ini = run[0].ini, fin = run[run.length - 1].fin;
+            agregar(nivel, ini, fin, fraseLiterales(run, cps.slice(ini, fin).join("")), grupo);
+            k = j; continue;
+          }
+          if (n.op === "IN" || n.op === "ANY") {
+            // \d\d\d se lee como "un dígito, 3 veces seguidas"
+            var cod = cps.slice(n.ini, n.fin).join(""), m = k + 1;
+            while (m < sub.length && sub[m].op === n.op && cps.slice(sub[m].ini, sub[m].fin).join("") === cod) m++;
+            if (m - k > 1) {
+              agregar(nivel, n.ini, sub[m - 1].fin, frase(n, fl) + ", " + (m - k) + " veces seguidas", grupo);
+              k = m; continue;
+            }
+          }
+          nodo(n, nivel, grupo, fl);
+          k++;
+        }
+      }
+      function contenidoGrupo(g, nivel, grupo, fl) {
+        if (g.op === "SUBPATTERN") recorrer(g.p, nivel, g.group !== null ? g.group : grupo, combinar(fl, g.add, g.del));
+        else if (g.op === "ATOMIC_GROUP" || g.op === "ASSERT" || g.op === "ASSERT_NOT") recorrer(g.p, nivel, grupo, fl);
+        else nodo(g, nivel, grupo, fl);
+      }
+      function fraseGrupo(g) {
+        if (g.op === "SUBPATTERN") {
+          var f;
+          if (g.group !== null) f = "grupo " + g.group + (g.nombre !== null ? " (" + g.nombre + ")" : "") + ": guarda lo que coincida aquí";
+          else f = "grupo sin captura: solo agrupa";
+          if (g.add & B_I) f += "; ignora mayúsculas y minúsculas";
+          if (g.del & B_I) f += "; distingue mayúsculas y minúsculas";
+          if (g.add & B_S) f += "; el punto también acepta el salto de línea";
+          if (g.add & B_M) f += "; ^ y $ funcionan por renglón";
+          if (g.add & B_A) f += "; \\w, \\d y \\s solo en ASCII";
+          return f;
+        }
+        if (g.op === "ATOMIC_GROUP") return "grupo atómico: lo que toma ya no lo devuelve";
+        if (g.op === "ASSERT") return g.dir > 0 ? "seguido de lo de abajo (lo revisa sin tomarlo)" : "precedido de lo de abajo (lo revisa sin tomarlo)";
+        if (g.op === "ASSERT_NOT") return g.dir > 0 ? "NO seguido de lo de abajo" : "NO precedido de lo de abajo";
+        return "";
+      }
+      function nodo(n, nivel, grupo, fl) {
+        switch (n.op) {
+          case "IN": case "ANY": case "NOT_LITERAL": case "GROUPREF": case "LITERAL":
+            agregar(nivel, n.ini, n.fin, frase(n, fl), grupo); break;
+          case "AT":
+            var fa = FRASE_AT[n.at];
+            if (n.at === "BEGINNING" && (fl & B_M)) fa = "inicio de un renglón (ancla ^ con MULTILINE)";
+            if (n.at === "END" && (fl & B_M)) fa = "fin de un renglón (ancla $ con MULTILINE)";
+            agregar(nivel, n.ini, n.fin, fa, grupo); break;
+          case "MAX_REPEAT": case "MIN_REPEAT": case "POSSESSIVE_REPEAT":
+            var at = n.atomo, f = frase(at, fl);
+            if (f) agregar(nivel, n.ini, n.fin, f + ", " + frCuant(n), grupo);
+            else {
+              var g = at.op === "SUBPATTERN" && at.group !== null ? at.group : grupo;
+              agregar(nivel, n.ini, n.fin, (fraseGrupo(at) || "lo de abajo") + "; todo eso " + frCuant(n), g);
+              contenidoGrupo(at, nivel + 1, g, fl);
+            }
+            break;
+          case "SUBPATTERN": case "ATOMIC_GROUP": case "ASSERT": case "ASSERT_NOT":
+            var g2 = n.op === "SUBPATTERN" && n.group !== null ? n.group : grupo;
+            agregar(nivel, n.ini, n.fin, fraseGrupo(n), g2);
+            contenidoGrupo(n, nivel + 1, g2, fl);
+            break;
+          case "BRANCH":
+            agregar(nivel, n.ini, n.fin, "una de " + n.alts.length + " opciones (| significa o)", grupo);
+            n.alts.forEach(function (a, k) {
+              var ini = k === 0 ? n.ini : n.barras[k - 1] + 1, fin = k === n.alts.length - 1 ? n.fin : n.barras[k];
+              var antes = filas.length;
+              if (!a.length) { agregar(nivel + 1, ini, fin, "opción " + (k + 1) + ": nada (coincide con el texto vacío)", grupo); return; }
+              recorrer(a, nivel + 2, grupo, fl);
+              if (filas.length - antes === 1) {
+                filas[antes].nivel = nivel + 1;
+                filas[antes].texto = "opción " + (k + 1) + ": " + filas[antes].texto;
+              } else {
+                filas.splice(antes, 0, { nivel: nivel + 1, codigo: cps.slice(ini, fin).join(""), texto: "opción " + (k + 1) + ":", grupo: grupo, ini: ini });
+              }
+            });
+            break;
+          case "GROUPREF_EXISTS":
+            agregar(nivel, n.ini, n.fin, "si el grupo " + n.g + " participó, sigue la primera opción; si no, la segunda", grupo);
+            recorrer(n.yes, nivel + 1, grupo, fl);
+            if (n.no) recorrer(n.no, nivel + 1, grupo, fl);
+            break;
+        }
+      }
+      recorrer(an.p, 0, 0, an.st.flags);
+      an.st.notas.forEach(function (nota) {
+        var cod = cps.slice(nota.ini, nota.fin).join(""), texto;
+        if (nota.tipo === "comentario") texto = "comentario: Python lo ignora";
+        else {
+          var partes = [];
+          if (/i/.test(cod)) partes.push("ignora mayúsculas y minúsculas");
+          if (/s/.test(cod)) partes.push("el punto también acepta el salto de línea");
+          if (/m/.test(cod)) partes.push("^ y $ funcionan por renglón");
+          if (/x/.test(cod)) partes.push("modo verboso: ignora espacios y comentarios #");
+          if (/a/.test(cod)) partes.push("\\w, \\d y \\s solo en ASCII");
+          texto = "en todo el patrón: " + (partes.join("; ") || "banderas");
+        }
+        var pos = 0;
+        while (pos < filas.length && !(filas[pos].nivel === 0 && filas[pos].ini > nota.ini)) pos++;
+        filas.splice(pos, 0, { nivel: 0, codigo: cod, texto: texto, grupo: 0, ini: nota.ini });
+      });
+      if (!filas.length) filas.push({ nivel: 0, codigo: "", texto: "patrón vacío: coincide con el texto vacío", grupo: 0, ini: 0 });
+      return filas;
+    }
+
+    return {
+      ejecutar: ejecutar, revisarPatron: revisarPatron, explicar: explicar, compilar: compilar,
+      pyStr: pyStr, repr: repr, str: str, literalPy: literalPy, crudoPy: crudoPy, comillasCrudo: comillasCrudo,
+      escaparCar: escaparCar,
+      programaLab: programaLab, programaReto: programaReto, programaLimpieza: programaLimpieza,
+      IGNORECASE: B_I
+    };
+  }
+
+  var M = crearMotor();
+  // repr() de un texto, exacto como en Python (también \xa0, \u200b y otros invisibles)
+  var pyStr = M.pyStr;
+
+  // ---------- Utilidades de la plantilla (lienzo y valores como los imprime Python) ----------
+  // Colores FCFM para el lienzo
+  var C = { azul:"#00408F", azulOscuro:"#0A2A57", guinda:"#8C1D35", oro:"#B8975A", oroTexto:"#8A6A2E",
+            verde:"#2F7D5B", gris:"#5B6472", grisClaro:"#E9ECF1", borde:"#D9DEE6", tinta:"#1B1F2A",
+            azulClaro:"#E8EEF7" };
+  // Lienzo nítido en pantallas de alta densidad; proporcion = alto/ancho
+  function preparar(cv, proporcion) {
+    var dpr = window.devicePixelRatio || 1, w = cv.clientWidth || 600;
+    cv.style.height = (w * proporcion) + "px";
+    cv.width = Math.round(w * dpr); cv.height = Math.round(w * proporcion * dpr);
+    var g = cv.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { g: g, w: w, h: w * proporcion };
+  }
+  // PyFloat marca un número que en Python es float aunque valga un entero (531.0, 35.0).
+  function PyFloat(valor) { this.valor = valor; }
+  // repr() de un float de Python: la representación más corta que vuelve al mismo número.
+  function pyFloat(x) {
+    if (Number.isNaN(x)) return "nan";
+    if (x === Infinity) return "inf";
+    if (x === -Infinity) return "-inf";
+    if (x === 0) return Object.is(x, -0) ? "-0.0" : "0.0";
+    var partes = Math.abs(x).toExponential().split("e");
+    var digitos = partes[0].replace(".", "");
+    var exp = parseInt(partes[1], 10);
+    var decpt = exp + 1, signo = x < 0 ? "-" : "";
+    if (decpt > 16 || decpt < -3) {
+      var mant = digitos.length > 1 ? digitos[0] + "." + digitos.slice(1) : digitos[0];
+      return signo + mant + "e" + (exp < 0 ? "-" : "+") + (Math.abs(exp) < 10 ? "0" : "") + Math.abs(exp);
+    }
+    if (decpt <= 0) return signo + "0." + "0".repeat(-decpt) + digitos;
+    if (decpt >= digitos.length) return signo + digitos + "0".repeat(decpt - digitos.length) + ".0";
+    return signo + digitos.slice(0, decpt) + "." + digitos.slice(decpt);
+  }
+  // repr() de un valor: None, True/False, int, float (PyFloat), str, list y dict.
+  function pyRepr(v) {
+    if (v === null || v === undefined) return "None";
+    if (v === true) return "True";
+    if (v === false) return "False";
+    if (v instanceof PyFloat) return pyFloat(v.valor);
+    if (typeof v === "number") return Number.isInteger(v) ? String(v) : pyFloat(v);
+    if (typeof v === "string") return pyStr(v);
+    if (Array.isArray(v)) return "[" + v.map(pyRepr).join(", ") + "]";
+    return "{" + Object.keys(v).map(function (k) { return pyStr(k) + ": " + pyRepr(v[k]); }).join(", ") + "}";
+  }
+  // El tipo de Python de un valor: 'int', 'float', 'str', 'bool', 'NoneType', 'list', 'dict'.
+  function pyTipo(v) {
+    if (v === null || v === undefined) return "NoneType";
+    if (v === true || v === false) return "bool";
+    if (v instanceof PyFloat) return "float";
+    if (typeof v === "number") return Number.isInteger(v) ? "int" : "float";
+    if (typeof v === "string") return "str";
+    if (Array.isArray(v)) return "list";
+    return "dict";
+  }
+  // json.loads: como JSON.parse, pero los números con punto o exponente quedan como PyFloat.
+  function pyParseJSON(texto) {
+    var i = 0;
+    function espacios() { while (i < texto.length && " \t\n\r".indexOf(texto[i]) >= 0) i++; }
+    function cadena() {
+      var m = /^"(?:\\.|[^"\\])*"/.exec(texto.slice(i));
+      if (!m) throw new SyntaxError("Expecting property name enclosed in double quotes");
+      i += m[0].length;
+      return JSON.parse(m[0]);
+    }
+    function valor() {
+      espacios();
+      var c = texto[i];
+      if (c === "{") {
+        i++; var obj = {}; espacios();
+        if (texto[i] === "}") { i++; return obj; }
+        while (true) {
+          espacios(); var k = cadena(); espacios();
+          if (texto[i] !== ":") throw new SyntaxError("Expecting ':' delimiter");
+          i++; obj[k] = valor(); espacios();
+          if (texto[i] === ",") { i++; continue; }
+          if (texto[i] === "}") { i++; return obj; }
+          throw new SyntaxError("Expecting ',' delimiter");
+        }
+      }
+      if (c === "[") {
+        i++; var arr = []; espacios();
+        if (texto[i] === "]") { i++; return arr; }
+        while (true) {
+          arr.push(valor()); espacios();
+          if (texto[i] === ",") { i++; continue; }
+          if (texto[i] === "]") { i++; return arr; }
+          throw new SyntaxError("Expecting ',' delimiter");
+        }
+      }
+      if (c === '"') return cadena();
+      if (texto.substr(i, 4) === "true") { i += 4; return true; }
+      if (texto.substr(i, 5) === "false") { i += 5; return false; }
+      if (texto.substr(i, 4) === "null") { i += 4; return null; }
+      var m = /^-?\d+(\.\d+)?([eE][+-]?\d+)?/.exec(texto.slice(i));
+      if (!m) throw new SyntaxError("Expecting value");
+      i += m[0].length;
+      return (m[1] || m[2]) ? new PyFloat(parseFloat(m[0])) : parseInt(m[0], 10);
+    }
+    var v = valor(); espacios();
+    if (i < texto.length) throw new SyntaxError("Extra data");
+    return v;
+  }
+
+  // ---------- Buscar en un Web Worker para poder cortar los patrones que tardan demasiado ----------
+  // Un patrón como (\w+\s*)*$ puede tardar minutos (retroceso catastrófico) y congelaría la
+  // página: el Worker se detiene a los 2 segundos. Si el navegador no permite Workers (por
+  // ejemplo al abrir el archivo desde otra página), se calcula aquí mismo.
+  var Trabajo = (function () {
+    var LIMITE_MS = 2000, w = null, url = null, pendiente = null, enCola = null, reloj = null, sinWorker = false, cuenta = 0;
+    function crear() {
+      try {
+        if (!url) {
+          url = URL.createObjectURL(new Blob([
+            "var M = (" + crearMotor.toString() + ")();\n" +
+            "onmessage = function (e) { var r; try { r = M.ejecutar(e.data.tarea); } catch (x) { r = { errorInterno: String(x) }; }" +
+            " postMessage({ id: e.data.id, r: r }); };"], { type: "text/javascript" }));
+        }
+        w = new Worker(url);
+        w.onmessage = recibir;
+        w.onerror = function (ev) { if (ev && ev.preventDefault) ev.preventDefault(); fallar(); };
+      } catch (e) { w = null; sinWorker = true; }
+    }
+    function aqui(p) { var r; try { r = M.ejecutar(p.tarea); } catch (x) { r = { errorInterno: String(x) }; } p.cb(r); }
+    function fallar() {
+      if (w) { try { w.terminate(); } catch (e) { /* ya estaba detenido */ } }
+      w = null; sinWorker = true; clearTimeout(reloj);
+      var p = enCola || pendiente;
+      pendiente = null; enCola = null;
+      if (p) aqui(p);
+    }
+    function recibir(e) {
+      if (!pendiente || e.data.id !== pendiente.id) return;
+      clearTimeout(reloj);
+      var p = pendiente;
+      pendiente = null;
+      if (!enCola) p.cb(e.data.r);
+      despachar();
+    }
+    function despachar() {
+      if (!enCola) return;
+      if (!sinWorker && !w) crear();
+      if (sinWorker) { var c = enCola; enCola = null; aqui(c); return; }
+      pendiente = enCola; enCola = null; pendiente.id = ++cuenta;
+      w.postMessage({ id: pendiente.id, tarea: pendiente.tarea });
+      reloj = setTimeout(function () {
+        try { w.terminate(); } catch (e) { /* ya estaba detenido */ }
+        w = null;
+        var p = pendiente;
+        pendiente = null;
+        if (!enCola && p) p.cb({ tiempoAgotado: true });
+        despachar();
+      }, LIMITE_MS);
+    }
+    return {
+      pedir: function (tarea, cb) { enCola = { tarea: tarea, cb: cb }; if (!pendiente) despachar(); },
+      usaWorker: function () { return !sinWorker; }
+    };
+  })();
+
+  // ===================== Ejemplos de la presentación (generar_tema11.py) =====================
+  var R = String.raw;
+  var PREAJUSTES = [
+    { grupo: "Día 1 · re.search", nombre: "Salón: dígito, guion y tres dígitos", funcion: "search", patron: R`\d-\d\d\d`,
+      textos: ["Nos vemos en el salón 4-201 a las 7:00", "Clase en línea", "Dudas en la oficina 2-215 o en la 6-104"] },
+    { grupo: "Día 1 · re.search", nombre: "Claves de producto", funcion: "search", patron: R`[A-Z][A-Z]-\d\d\d\d`,
+      textos: ["Pedido de TL-4521 y MX-0007", "clave tl-4521 en minúsculas", "Producto T-4521 incompleto", "Lote AB-12345 con cinco dígitos"] },
+    { grupo: "Día 2 · re.findall y re.finditer", nombre: "Horas", funcion: "findall", patron: R`\d{1,2}:\d{2}`,
+      textos: ["Clases a las 7:00, 10:30 y 13:45", "La clase dura 120 minutos", "Hora límite: 23:59 (no 24:00)"] },
+    { grupo: "Día 2 · re.findall y re.finditer", nombre: "Hashtags", funcion: "findall", patron: R`#\w+`,
+      textos: ["Hoy aprendí #regex en #Python con @profe_pb", "¿Alguien entendió el #Tema11? cc @ana_gz @luis", "#Programación básica", "Sin etiquetas en esta publicación"] },
+    { grupo: "Día 2 · re.findall y re.finditer", nombre: "Montos con signo de pesos", funcion: "findall", patron: R`\$\d+`,
+      textos: ["Pago 1: $250, pago 2: $1200 y pago 3: $75"] },
+    { grupo: "Día 2 · re.findall y re.finditer", nombre: "Python con IGNORECASE", funcion: "search", patron: "python", ignorar: true,
+      textos: ["Curso de PYTHON en la FCFM", "Documentación en python.org", "Hoy toca Java"] },
+    { grupo: "Día 3 · re.fullmatch y grupos", nombre: "Correo UANL", funcion: "fullmatch", patron: R`[a-z0-9._]+@uanl\.edu\.mx`,
+      textos: ["ana.garza@uanl.edu.mx", "Ana.Garza@uanl.edu.mx", "ana garza@uanl.edu.mx", "ana@uanl.edu.mx.falso.com"] },
+    { grupo: "Día 3 · re.fullmatch y grupos", nombre: "Fecha con grupos", funcion: "fullmatch", patron: R`(\d{2})/(\d{2})/(\d{4})`,
+      textos: ["12/10/2026", "2026-10-12", "31/13/2026"] },
+    { grupo: "Día 4 · re.sub y re.split", nombre: "Limpiar teléfono", funcion: "sub", patron: R`\D`, reemplazo: "",
+      textos: ["(81) 1234-5678", "81 1234 5678", "81.1234.5678", "811-234-5678"] },
+    { grupo: "Día 4 · re.sub y re.split", nombre: "Reformatear fecha", funcion: "sub", patron: R`(\d{4})-(\d{2})-(\d{2})`, reemplazo: R`\3/\2/\1`,
+      textos: ["2026-10-12", "Entrega: 2026-11-30", "Sin fecha"] },
+    { grupo: "Día 4 · re.sub y re.split", nombre: "Separadores", funcion: "split", patron: R`\s*[,;]\s*`,
+      textos: ["ana, luis;eva", "Ana Garza ; (81) 1234-5678 ; 2026-10-12"] },
+    { grupo: "Día 5 · errores comunes", nombre: "Codicioso: .*", funcion: "findall", patron: "<b>.*</b>",
+      textos: ["<b>uno</b> y <b>dos</b>"] },
+    { grupo: "Día 5 · errores comunes", nombre: "No codicioso: .*?", funcion: "findall", patron: "<b>.*?</b>",
+      textos: ["<b>uno</b> y <b>dos</b>"] },
+    { grupo: "Día 5 · errores comunes", nombre: "Punto sin escapar", funcion: "findall", patron: R`\d+.\d+`,
+      textos: ["Precios: 12.50, 1250 y 3.99"] },
+    { grupo: "Día 5 · errores comunes", nombre: "Punto escapado", funcion: "findall", patron: R`\d+\.\d+`,
+      textos: ["Precios: 12.50, 1250 y 3.99"] }
+  ];
+  var FUNCIONES = [
+    ["search", "re.search", "re.search busca la <b>primera</b> coincidencia en cualquier parte del texto. Regresa un objeto Match, o <code>None</code> si no hay."],
+    ["findall", "re.findall", "re.findall regresa una <b>lista</b> con todas las coincidencias (textos). Si no hay ninguna, <code>[]</code>. Con grupos, regresa lo que guardan los grupos."],
+    ["finditer", "re.finditer", "re.finditer entrega los objetos Match <b>uno por uno</b>: úsalo cuando también necesitas la posición (<code>m.start()</code>)."],
+    ["fullmatch", "re.fullmatch", "re.fullmatch <b>valida</b>: coincide solo si TODO el texto cumple el patrón. Regresa un Match o <code>None</code>."],
+    ["sub", "re.sub", "re.sub regresa un texto <b>nuevo</b> donde cada coincidencia se cambia por el reemplazo. Con <code>\\1</code>, <code>\\2</code>... reusas lo que guardó cada grupo."],
+    ["split", "re.split", "re.split <b>corta</b> el texto en cada coincidencia y regresa la lista de pedazos. Si el patrón tiene grupos, la lista también los incluye."]
+  ];
+  var MAX_TEXTOS = 15, MAX_LARGO = 300;
+
+  // ===================== Estado y controles =====================
+  var CLAVE = "pb-s11-laboratorio";
+  var estado = { funcion: "search", patron: "", ignorar: false, reemplazo: "", textos: "" };
+
+  (function armarControles() {
+    var h = "", grupoActual = null;
+    PREAJUSTES.forEach(function (p, k) {
+      if (p.grupo !== grupoActual) {
+        if (grupoActual !== null) h += "</optgroup>";
+        h += '<optgroup label="' + esc(p.grupo) + '">';
+        grupoActual = p.grupo;
+      }
+      h += '<option value="' + k + '">' + esc(p.nombre) + "</option>";
+    });
+    h += '</optgroup><option value="propio" hidden>(tu propio patrón)</option>';
+    $("preajuste").innerHTML = h;
+    $("funciones").innerHTML = FUNCIONES.map(function (f) {
+      return '<label class="pastilla"><input type="radio" name="funcion" value="' + f[0] + '"><span>' + f[1] + "</span></label>";
+    }).join("");
+  })();
+
+  function aplicarPreajuste(k) {
+    var p = PREAJUSTES[k];
+    estado = { funcion: p.funcion, patron: p.patron, ignorar: !!p.ignorar, reemplazo: p.reemplazo || "", textos: p.textos.join("\n") };
+    ponerControles();
+    actualizar(true);
+  }
+  function ponerControles() {
+    $("patron").value = estado.patron;
+    $("ignorar").checked = estado.ignorar;
+    $("reemplazo").value = estado.reemplazo;
+    $("textos").value = estado.textos;
+    document.querySelectorAll('input[name="funcion"]').forEach(function (r) { r.checked = r.value === estado.funcion; });
+  }
+  function leerControles() {
+    var marcada = document.querySelector('input[name="funcion"]:checked');
+    estado = { funcion: marcada ? marcada.value : "search", patron: $("patron").value, ignorar: $("ignorar").checked,
+               reemplazo: $("reemplazo").value, textos: $("textos").value };
+  }
+  function coincidePreajuste() {
+    for (var k = 0; k < PREAJUSTES.length; k++) {
+      var p = PREAJUSTES[k];
+      if (p.funcion === estado.funcion && p.patron === estado.patron && !!p.ignorar === estado.ignorar &&
+          (p.reemplazo || "") === (estado.funcion === "sub" ? estado.reemplazo : (p.reemplazo || "")) &&
+          p.textos.join("\n") === estado.textos.replace(/\s+$/, "")) return String(k);
+    }
+    return "propio";
+  }
+  function guardar() {
+    try { localStorage.setItem(CLAVE, JSON.stringify(estado)); } catch (e) { /* sin almacenamiento */ }
+  }
+  function leerGuardado() {
+    try {
+      var s = JSON.parse(localStorage.getItem(CLAVE) || "null");
+      if (s && typeof s.patron === "string" && typeof s.textos === "string") return s;
+    } catch (e) { /* sin almacenamiento */ }
+    return null;
+  }
+
+  // Textos de prueba: uno por renglón (se ignoran los renglones vacíos del final)
+  function listaTextos() {
+    var t = estado.textos.split(/\r?\n/), nota = [];
+    while (t.length && t[t.length - 1] === "") t.pop();
+    if (t.length > MAX_TEXTOS) { t = t.slice(0, MAX_TEXTOS); nota.push("Se usan los primeros " + MAX_TEXTOS + " renglones."); }
+    if (t.some(function (x) { return x.length > MAX_LARGO; })) {
+      t = t.map(function (x) { return x.slice(0, MAX_LARGO); });
+      nota.push("Cada texto se corta a " + MAX_LARGO + " caracteres.");
+    }
+    $("notaTextos").textContent = nota.join(" ") || (t.length === 1 ? "1 texto." : t.length + " textos.");
+    return t;
+  }
+  function tarea() {
+    return { patron: estado.patron, ignorar: estado.ignorar, funcion: estado.funcion,
+             reemplazo: estado.reemplazo, textos: listaTextos() };
+  }
+
+  // ===================== Pintar =====================
+  var COLORES_GRUPO = ["", "var(--g1)", "var(--g2)", "var(--g3)", "var(--g4)", "var(--g5)", "var(--g6)"];
+  function colorGrupo(g) { return g ? COLORES_GRUPO[((g - 1) % 6) + 1] : "transparent"; }
+  function llamada(t) {
+    var fl = t.ignorar ? ", flags=re.IGNORECASE" : "";
+    return t.funcion === "sub" ? "re.sub(patron, reemplazo, texto" + fl + ")" : "re." + t.funcion + "(patron, texto" + fl + ")";
+  }
+  function lit(s) { return M.crudoPy(s); }
+
+  function ponerComillas(idPre, idSuf, idCaja, valor, idEspacios) {
+    var q = M.comillasCrudo(valor), hay = /[ \t]/.test(valor);
+    $(idPre).textContent = q ? "r" + q : '"';
+    $(idSuf).textContent = q || '"';
+    $(idCaja).title = q ? "" : "Este texto no se puede escribir como cadena cruda: el programa usa un texto normal con \\\\.";
+    // Los espacios y tabuladores no se ven en el cuadro de texto: se muestran como ␣ y →
+    $(idEspacios).hidden = !hay;
+    $(idEspacios).innerHTML = hay ? "Con los espacios a la vista: <code>" + esc(valor.replace(/ /g, "␣").replace(/\t/g, "→")) + "</code>" : "";
+  }
+
+  // Texto con las coincidencias resaltadas: fondo dorado para cada coincidencia y una franja de
+  // color por cada grupo; las coincidencias vacías se ven como una rayita.
+  function marcar(texto, ms, tachar) {
+    var cps = Array.from(texto), n = cps.length, capa = [], vacias = {}, i, j, html = "";
+    for (i = 0; i < n; i++) capa.push({ m: -1, g: [] });
+    function marca(pos, g) { (vacias[pos] = vacias[pos] || []).push(g); }
+    ms.forEach(function (m, k) {
+      if (m.s === m.e) marca(m.s, 0);
+      for (i = m.s; i < m.e; i++) capa[i].m = k;
+      m.g.forEach(function (sp, gi) {
+        if (!sp) return;
+        if (sp[0] === sp[1]) { marca(sp[0], gi + 1); return; }
+        for (i = sp[0]; i < sp[1]; i++) if (capa[i].g.indexOf(gi + 1) < 0) capa[i].g.push(gi + 1);
+      });
+    });
+    function igual(a, b) { return a.m === b.m && a.g.join() === b.g.join(); }
+    if (!n && !vacias[0]) return '<span class="vacio-texto">(texto vacío)</span>';
+    i = 0;
+    while (i <= n) {
+      if (vacias[i]) {
+        html += vacias[i].map(function (g) {
+          return '<span class="vacia" style="background:' + (g ? colorGrupo(g) : "var(--oro-texto)") + '" title="' +
+                 (g ? "el grupo " + g + " guardó un texto vacío" : "coincidencia vacía") + " en la posición " + i + '"></span>';
+        }).join("");
+      }
+      if (i === n) break;
+      j = i + 1;
+      while (j < n && !vacias[j] && igual(capa[i], capa[j])) j++;
+      var trozo = esc(cps.slice(i, j).join("")), c = capa[i];
+      if (c.m < 0 && !c.g.length) html += trozo;
+      else {
+        var gs = c.g.slice().sort(function (a, b) { return a - b; });
+        var sombra = gs.map(function (g, k) { return "inset 0 -" + (3 * (k + 1)) + "px 0 " + colorGrupo(g); }).join(", ");
+        var clases = (c.m >= 0 ? "m" + (c.m % 2 ? " alt" : "") + (tachar ? " tachado" : "") : "") + (gs.length ? " g" : "");
+        var titulo = (c.m >= 0 ? "coincidencia " + (c.m + 1) : "") + (gs.length ? (c.m >= 0 ? ", " : "") + "grupo " + gs.join(" y ") : "");
+        html += '<span class="' + clases.trim() + '" title="' + titulo + '"' +
+                (gs.length ? ' style="box-shadow:' + sombra + ";padding-bottom:" + (3 * gs.length) + 'px"' : "") + ">" + trozo + "</span>";
+      }
+      i = j;
+    }
+    return html;
+  }
+  // El resultado de re.sub con lo que se puso en lugar de cada coincidencia
+  function marcarResultado(piezas) {
+    return piezas.map(function (p) {
+      if (p.igual !== undefined) return esc(p.igual);
+      return p.pone ? '<ins title="reemplazo">' + esc(p.pone) + "</ins>" : "";
+    }).join("") || '<span class="vacio-texto">(queda un texto vacío)</span>';
+  }
+
+  function estadoCaso(f, x) {
+    var n = x.ms.length;
+    if (f === "search") return x.valor ? ["ok", "encontró " + pyStr(x.valor.match.g0)] : ["mal", "None: no hay coincidencia"];
+    if (f === "fullmatch") return x.valor ? ["ok", "todo el texto cumple el patrón"] : ["mal", "None: el texto completo no cumple"];
+    if (f === "sub") return [n ? "ok" : "", n === 1 ? "1 reemplazo" : n + " reemplazos"];
+    if (f === "split") return ["", x.valor.length === 1 ? "1 pedazo (no se cortó)" : x.valor.length + " elementos"];
+    return [n ? "ok" : "mal", n === 1 ? "1 coincidencia" : n + " coincidencias"];
+  }
+
+  function filaGrupo(etq, valor, g, nombre) {
+    return "<tr><th scope=\"row\"><code>" + esc(etq) + "</code></th><td>" + (g ? '<span class="chip" style="background:' + colorGrupo(g) + '"></span>' : "") +
+           "<code>" + esc(valor) + "</code>" + (nombre ? ' <small>(grupo "' + esc(nombre) + '")</small>' : "") + "</td></tr>";
+  }
+  function htmlCaso(t, r, x, k) {
+    var f = t.funcion, e = estadoCaso(f, x), h = '<article class="caso" aria-label="Texto ' + (k + 1) + '">';
+    var nombres = {};
+    r.nombres.forEach(function (p) { nombres[p[1]] = p[0]; });
+    h += '<h3><span>Texto ' + (k + 1) + '</span><span class="estado ' + e[0] + '">' + esc(e[1]) + "</span></h3>";
+    if (f === "sub") {
+      var borra = x.piezas.every(function (p) { return p.igual !== undefined || p.pone === ""; });
+      h += '<div class="marcado">' + marcar(x.texto, x.ms, borra) + '</div><div class="marcado"><span class="flecha-sub">queda así: </span>' +
+           marcarResultado(x.piezas) + "</div>";
+    } else {
+      h += '<div class="marcado">' + marcar(x.texto, x.ms) + "</div>";
+    }
+    h += '<p class="etq"><code>' + esc(llamada(t)) + "</code> " + (f === "finditer" ? "entrega estos Match:" : "regresa:") + "</p>";
+    var valor = f === "finditer" ? (x.valor.length ? x.valor.map(M.repr).join("\n") : "(ninguno: el ciclo for no da ninguna vuelta)") : M.repr(x.valor);
+    h += '<div class="consola regresa">' + esc(valor) + "</div>";
+    if ((f === "search" || f === "fullmatch") && x.valor) {
+      var mt = x.valor.match, filas = filaGrupo("m.group(0)", pyStr(mt.g0), 0);
+      mt.grupos.forEach(function (v, gi) { filas += filaGrupo("m.group(" + (gi + 1) + ")", M.repr(v), gi + 1, nombres[gi + 1]); });
+      filas += filaGrupo("m.groups()", M.repr({ tupla: mt.grupos }), 0);
+      filas += filaGrupo("m.span()", "(" + mt.s + ", " + mt.e + ")", 0);
+      if (r.nombres.length) {
+        filas += filaGrupo("m.groupdict()", "{" + r.nombres.map(function (p) { return pyStr(p[0]) + ": " + M.repr(mt.grupos[p[1] - 1]); }).join(", ") + "}", 0);
+      }
+      h += '<div class="tabla-caja"><table class="tabla"><tbody>' + filas + "</tbody></table></div>";
+    } else if (f === "finditer" && x.valor.length) {
+      var th = "<tr><th>m.group()</th><th>m.start()</th><th>m.end()</th>" + (r.grupos ? "<th>m.groups()</th>" : "") + "</tr>";
+      var cuerpo = x.valor.map(function (v) {
+        return "<tr><td><code>" + esc(pyStr(v.match.g0)) + "</code></td><td><code>" + v.match.s + "</code></td><td><code>" + v.match.e +
+               "</code></td>" + (r.grupos ? "<td><code>" + esc(M.repr({ tupla: v.match.grupos })) + "</code></td>" : "") + "</tr>";
+      }).join("");
+      h += '<div class="tabla-caja"><table class="tabla"><thead>' + th + "</thead><tbody>" + cuerpo + "</tbody></table></div>";
+    } else if (f === "findall" && r.grupos && x.valor.length) {
+      h += '<p class="nota">' + (r.grupos === 1 ? "Con un grupo, findall regresa solo lo que guardó ese grupo, no la coincidencia completa."
+                                               : "Con " + r.grupos + " grupos, findall regresa una tupla con los grupos por cada coincidencia.") + "</p>";
+    } else if (f === "split") {
+      h += '<div class="piezas" aria-label="Elementos de la lista">' + x.valor.map(function (v, i) {
+        return '<span class="' + (x.deGrupo[i] ? "grupo" : "") + (v === null ? " ninguno" : "") + '" title="' +
+               (x.deGrupo[i] ? "lo que guardó un grupo del patrón" : "pedazo del texto") + '">' + esc(M.repr(v)) + "</span>";
+      }).join("") + "</div>";
+      if (r.grupos) h += '<p class="nota">Los pedazos con borde punteado son lo que guardaron los grupos del patrón (None si el grupo no participó).</p>';
+    }
+    if (x.muchas) h += '<p class="nota">Hay demasiadas coincidencias: se muestran las primeras 5000.</p>';
+    return h + "</article>";
+  }
+
+  var AYUDA_ERRORES = [
+    [/^missing \), unterminated subpattern/, "Abriste un paréntesis y no lo cerraste: cada ( necesita su ). La posición es la del ( que quedó abierto."],
+    [/^unbalanced parenthesis/, "Sobra un ) que no tiene su ( de apertura. Si buscas un paréntesis de verdad, escápalo: \\)."],
+    [/^nothing to repeat/, "El cuantificador (*, +, ? o {n}) no tiene nada antes que repetir. Si buscas ese símbolo de verdad, escápalo: \\*, \\+ o \\?."],
+    [/^multiple repeat/, "Hay dos cuantificadores seguidos, como ** o +*. Para el modo no codicioso se escribe *? o +?."],
+    [/^unterminated character set/, "Abriste un corchete [ y no lo cerraste con ]."],
+    [/^bad character range/, "En un rango como [a-z] el primer carácter debe ir antes que el segundo, y los extremos no pueden ser \\d, \\w ni \\s."],
+    [/^bad escape \(end of pattern\)/, "El patrón termina con una barra invertida \\ suelta."],
+    [/^bad escape/, "Esa combinación con \\ no existe en Python. Si querías el carácter tal cual, quita la barra (o escribe \\\\ para una barra invertida)."],
+    [/^min repeat greater than max repeat/, "En {n,m} el mínimo n no puede ser mayor que el máximo m."],
+    [/^invalid group reference/, "Usas un grupo que no existe: cuenta los paréntesis de captura de tu patrón (el primero es el grupo 1)."],
+    [/^unknown group name/, "Ese nombre de grupo no está definido con (?P<nombre>...)."],
+    [/^look-behind requires fixed-width pattern/, "En (?<=...) y (?<!...) Python necesita algo de largo fijo: sin +, * ni {n,m} con mínimo y máximo distintos."],
+    [/^(missing -, : or \)|unknown extension|unknown flag|missing flag|missing :|unexpected end of pattern)/, "Después de (? va un símbolo especial: (?: (?P<nombre> (?= (?! (?<= (?<! o una bandera como (?i). Si querías un ? de verdad, escápalo: \\?."],
+    [/^global flags not at the start/, "Las banderas como (?i) deben ir al inicio del patrón."],
+    [/^incomplete escape/, "\\x necesita 2 dígitos hexadecimales, \\u necesita 4 y \\U necesita 8."],
+    [/^octal escape value/, "Un escape octal no puede pasar de \\377."],
+    [/^bad character in group name/, "El nombre de un grupo debe ser un nombre válido de variable: letras, dígitos y _, sin empezar con dígito."],
+    [/^redefinition of group name/, "Dos grupos no pueden tener el mismo nombre."],
+    [/^cannot refer to/, "Un grupo no puede referirse a sí mismo (ni, dentro de (?<=...), a un grupo de ese mismo lookbehind)."],
+    [/^(missing <|missing >, unterminated name|missing group name)/, "En el reemplazo, \\g necesita el número o el nombre del grupo entre < >, por ejemplo \\g<1> o \\g<dia>."],
+    [/^the repetition number is too large/, "El número de repeticiones es demasiado grande."],
+    [/^bad inline flags/, "Esa combinación de banderas no se permite."]
+  ];
+  function ayudaError(err) {
+    for (var k = 0; k < AYUDA_ERRORES.length; k++) if (AYUDA_ERRORES[k][0].test(err.mensaje)) return AYUDA_ERRORES[k][1];
+    if (err.tipo === "IndexError") return "En el reemplazo usas \\g<nombre> con un nombre que el patrón no define con (?P<nombre>...).";
+    return "";
+  }
+  var NO_SOPORTADO = {
+    condicional: "Esta página no puede imitar los grupos condicionales (?(1)...|...) de Python. Pruébalos en Python o en regex101 (sabor Python).",
+    modificadores: "Tu navegador no puede imitar las banderas dentro de un grupo, como (?i:...). Actualiza el navegador o usa la casilla IGNORECASE.",
+    traduccion: "Esta página no pudo traducir este patrón. Pruébalo en Python o en regex101 (sabor Python)."
+  };
+  function textoNoSoportado(m) {
+    if (/^\\N\{/.test(m)) return "Esta página no trae la lista de nombres de Unicode para " + m + ". En Python sí funciona; aquí escribe el carácter directamente o con \\u (por ejemplo \\u2014 para la raya).";
+    return NO_SOPORTADO[m] || NO_SOPORTADO.traduccion;
+  }
+  var AVISOS = {
+    vacio: "tu patrón repite algo que puede coincidir vacío (como (a*)* o (\\s*?)+). En esos casos raros Python y esta página pueden dar resultados distintos: compruébalo en Python.",
+    captura: "un grupo de tu patrón está dentro de una repetición y no siempre participa. Python conserva lo último que guardó el grupo y esta página podría mostrar None: compruébalo en Python.",
+    referencia: "tu patrón usa \\1 (o (?P=nombre)) con un grupo que puede no participar. En Python esa parte no coincide; esta página podría aceptarla: compruébalo en Python."
+  };
+
+  function pintarErrorPatron(err) {
+    $("cajaPatron").classList.toggle("con-error", !!err && !err.enReemplazo);
+    $("cajaReemplazo").classList.toggle("con-error", !!err && !!err.enReemplazo);
+    if (!err) { $("errorPatron").innerHTML = ""; return; }
+    var h = '<div class="error-patron">';
+    if (err.pos !== null && err.pos !== undefined) {
+      var valor = err.enReemplazo ? estado.reemplazo : estado.patron, q = M.comillasCrudo(valor);
+      var pre = q ? "r" + q : '"';
+      if (q) {
+        h += "<pre>" + esc(pre + valor + q) + "\n" + '<span class="flecha">' + " ".repeat(pre.length + err.pos) + "^</span></pre>";
+      }
+    }
+    h += '<div class="msg">' + esc(err.tipo + ": " + err.mensaje) + "</div>";
+    var ayuda = ayudaError(err);
+    if (ayuda) h += "<div>" + esc(ayuda) + "</div>";
+    if (err.enReemplazo) h += '<div class="nota">El error está en el reemplazo.</div>';
+    $("errorPatron").innerHTML = h + "</div>";
+  }
+
+  function pintarLectura(rev) {
+    if (rev.error) {
+      $("lectura").innerHTML = '<p class="nota">Cuando el patrón compile, aquí se explica símbolo por símbolo. Python se detiene con <code>' +
+                               esc(rev.error.tipo + ": " + rev.error.mensaje) + "</code>.</p>";
+      return;
+    }
+    if (rev.noSoportado) { $("lectura").innerHTML = '<p class="nota">' + esc(textoNoSoportado(rev.noSoportado)) + "</p>"; return; }
+    var filas = M.explicar(rev.an);
+    $("lectura").innerHTML = '<ul class="lee">' + filas.map(function (f) {
+      return '<li style="--nivel:' + f.nivel + (f.grupo ? ";--cg:" + colorGrupo(f.grupo) : "") + '"><code>' + (esc(f.codigo) || "&nbsp;") +
+             "</code><span>" + esc(f.texto) + "</span></li>";
+    }).join("") + "</ul>" + (rev.an.grupos ? '<p class="nota">La franja de color de cada símbolo indica a qué grupo pertenece.</p>' : "");
+  }
+
+  function pintarLeyenda(r) {
+    if (!r || r.error || r.noSoportado || r.tiempoAgotado) { $("leyenda").innerHTML = ""; return; }
+    var h = '<span style="--fondo-ley:var(--oro-claro);--b:var(--oro)">coincidencia</span>';
+    var nombres = {};
+    r.nombres.forEach(function (p) { nombres[p[1]] = p[0]; });
+    for (var g = 1; g <= r.grupos && g <= 9; g++) {
+      h += '<span style="--c:' + colorGrupo(g) + '">grupo ' + g + (nombres[g] ? " (" + esc(nombres[g]) + ")" : "") + "</span>";
+    }
+    $("leyenda").innerHTML = h;
+  }
+
+  function pintarResultados(t, r) {
+    var prog;
+    if (r.tiempoAgotado) {
+      $("resumen").textContent = "";
+      $("avisos").innerHTML = '<div class="aviso"><b>Tu patrón tardó demasiado y lo detuve.</b> Suele pasar con cuantificadores anidados, como (\\w+\\s*)* o (.*)*: el motor prueba muchísimas combinaciones antes de rendirse (retroceso catastrófico). Python también se quedaría pensando. Quita la repetición de afuera o haz más específico lo de adentro.</div>';
+      $("casos").innerHTML = "";
+      pintarLeyenda(null);
+      prog = M.programaLab(t, { error: null, noSoportado: "tiempo", resultados: [], grupos: 0 });
+      mostrarCodigo($("codigo"), prog.codigo, prog.linea);
+      $("salida").textContent = "(sin salida: el patrón tarda demasiado)";
+      return;
+    }
+    if (r.errorInterno) {
+      $("casos").innerHTML = '<p class="mal">Error interno de la página: ' + esc(r.errorInterno) + "</p>";
+      return;
+    }
+    pintarErrorPatron(r.error);
+    pintarLeyenda(r);
+    var avisos = "";
+    if (r.noSoportado) avisos += '<div class="aviso">' + esc(textoNoSoportado(r.noSoportado)) + "</div>";
+    (r.avisos || []).forEach(function (a) { if (AVISOS[a]) avisos += '<div class="aviso"><b>Ojo:</b> ' + esc(AVISOS[a]) + "</div>"; });
+    $("avisos").innerHTML = avisos;
+    if (r.error) {
+      $("resumen").textContent = "Python se detiene con un error: corrige " + (r.error.enReemplazo ? "el reemplazo" : "el patrón") + " para ver los resultados.";
+      $("casos").innerHTML = "";
+    } else if (!r.noSoportado) {
+      var conM = r.resultados.filter(function (x) { return x.ms.length > 0; }).length, n = r.resultados.length;
+      $("resumen").textContent = n === 0 ? "Escribe al menos un texto de prueba." :
+        (n === 1 ? "1 texto" : n + " textos") + " · " + (conM === 1 ? "1 con coincidencia" : conM + " con coincidencias") +
+        (r.grupos ? " · el patrón tiene " + (r.grupos === 1 ? "1 grupo" : r.grupos + " grupos") : "");
+      $("casos").innerHTML = r.resultados.map(function (x, k) { return htmlCaso(t, r, x, k); }).join("");
+    } else {
+      $("resumen").textContent = "";
+      $("casos").innerHTML = "";
+    }
+    prog = M.programaLab(t, r);
+    mostrarCodigo($("codigo"), prog.codigo, prog.linea);
+    $("salida").textContent = r.noSoportado ? "(esta página no puede calcular la salida de este patrón)" :
+                              (prog.salida || "(el programa no imprime nada: no hay textos de prueba)");
+    ultimoPrograma = prog.codigo;
+  }
+
+  function urlRegex101(t) {
+    var q = "regex=" + encodeURIComponent(t.patron) + "&flags=" + encodeURIComponent("gm" + (t.ignorar ? "i" : "")) +
+            "&flavor=python&testString=" + encodeURIComponent(t.textos.join("\n"));
+    if (t.funcion === "sub") q += "&subst=" + encodeURIComponent(t.reemplazo);
+    return "https://regex101.com/?" + q;
+  }
+
+  // ===================== Actualizar =====================
+  var ultimoPrograma = "", relojEspera = null, numPedido = 0;
+  function actualizar(desdePreajuste) {
+    leerControles();
+    var t = tarea(), f = FUNCIONES.filter(function (x) { return x[0] === t.funcion; })[0];
+    $("bloqueReemplazo").hidden = t.funcion !== "sub";
+    $("queHace").innerHTML = f[2];
+    ponerComillas("prePatron", "sufPatron", "cajaPatron", t.patron, "espaciosPatron");
+    ponerComillas("preReemplazo", "sufReemplazo", "cajaReemplazo", t.reemplazo, "espaciosReemplazo");
+    if (!desdePreajuste) $("preajuste").value = coincidePreajuste();
+    var rev = M.revisarPatron(t.patron, t.ignorar);
+    pintarErrorPatron(rev.error || null);
+    pintarLectura(rev);
+    $("regex101").href = urlRegex101(t);
+    guardar();
+    var mio = ++numPedido;
+    clearTimeout(relojEspera);
+    relojEspera = setTimeout(function () { if (mio === numPedido) $("resumen").textContent = "Calculando…"; }, 300);
+    Trabajo.pedir(t, function (r) {
+      if (mio !== numPedido) return;
+      clearTimeout(relojEspera);
+      pintarResultados(t, r);
+    });
+  }
+  var relojTecleo = null;
+  function alTeclear() { clearTimeout(relojTecleo); relojTecleo = setTimeout(function () { actualizar(false); }, 120); }
+
+  $("preajuste").addEventListener("change", function () {
+    var v = $("preajuste").value;
+    if (v !== "propio") aplicarPreajuste(Number(v));
+  });
+  ["patron", "reemplazo", "textos"].forEach(function (id) { $(id).addEventListener("input", alTeclear); });
+  $("ignorar").addEventListener("change", function () { actualizar(false); });
+  $("funciones").addEventListener("change", function () { actualizar(false); });
+  $("copiar").addEventListener("click", function () {
+    function listo(ok) { $("estadoCopia").textContent = ok ? "Programa copiado." : "No se pudo copiar: selecciónalo y cópialo a mano."; }
+    try {
+      navigator.clipboard.writeText(ultimoPrograma + "\n").then(function () { listo(true); }, function () { listo(copiarViejo()); });
+    } catch (e) { listo(copiarViejo()); }
+  });
+  function copiarViejo() {
+    try {
+      var a = document.createElement("textarea");
+      a.value = ultimoPrograma + "\n"; a.className = "visual";
+      document.body.appendChild(a); a.select();
+      var ok = document.execCommand("copy");
+      document.body.removeChild(a);
+      return ok;
+    } catch (e) { return false; }
+  }
+
+  var guardado = leerGuardado();
+  if (guardado) {
+    estado = { funcion: guardado.funcion || "search", patron: guardado.patron, ignorar: !!guardado.ignorar,
+               reemplazo: guardado.reemplazo || "", textos: guardado.textos };
+    ponerControles();
+    actualizar(false);
+  } else {
+    $("preajuste").value = "0";
+    aplicarPreajuste(0);
+  }
+})();
+</script>
+<div id="qr-sitio" class="qr-capa" hidden>
+  <div class="qr-caja" role="dialog" aria-modal="true" aria-label="Código QR de esta página">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 45" role="img" aria-label="Código QR de https://memosanchezg.github.io/programacion-basica-interactivos/semana-11-laboratorio-regex.html" shape-rendering="crispEdges"><rect width="45" height="45" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM12 2h1v1h-1zM14 2h4v1h-4zM20 2h2v1h-2zM23 2h1v1h-1zM25 2h2v1h-2zM28 2h2v1h-2zM33 2h1v1h-1zM36 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM10 3h2v1h-2zM13 3h3v1h-3zM17 3h1v1h-1zM19 3h1v1h-1zM21 3h1v1h-1zM24 3h7v1h-7zM32 3h3v1h-3zM36 3h1v1h-1zM42 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM11 4h4v1h-4zM17 4h1v1h-1zM21 4h4v1h-4zM26 4h1v1h-1zM28 4h1v1h-1zM33 4h1v1h-1zM36 4h1v1h-1zM38 4h3v1h-3zM42 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM11 5h1v1h-1zM16 5h1v1h-1zM18 5h2v1h-2zM21 5h1v1h-1zM23 5h3v1h-3zM28 5h1v1h-1zM32 5h1v1h-1zM34 5h1v1h-1zM36 5h1v1h-1zM38 5h3v1h-3zM42 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h2v1h-2zM15 6h1v1h-1zM18 6h1v1h-1zM21 6h5v1h-5zM28 6h2v1h-2zM31 6h3v1h-3zM36 6h1v1h-1zM38 6h3v1h-3zM42 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM15 7h3v1h-3zM19 7h4v1h-4zM25 7h1v1h-1zM27 7h1v1h-1zM29 7h6v1h-6zM36 7h1v1h-1zM42 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM30 8h1v1h-1zM32 8h1v1h-1zM34 8h1v1h-1zM36 8h7v1h-7zM11 9h1v1h-1zM14 9h1v1h-1zM16 9h4v1h-4zM21 9h1v1h-1zM23 9h1v1h-1zM27 9h2v1h-2zM31 9h2v1h-2zM34 9h1v1h-1zM2 10h1v1h-1zM4 10h1v1h-1zM6 10h1v1h-1zM8 10h1v1h-1zM12 10h2v1h-2zM18 10h2v1h-2zM23 10h1v1h-1zM27 10h1v1h-1zM30 10h2v1h-2zM34 10h1v1h-1zM38 10h1v1h-1zM41 10h1v1h-1zM2 11h1v1h-1zM4 11h1v1h-1zM6 11h1v1h-1zM9 11h2v1h-2zM12 11h1v1h-1zM14 11h3v1h-3zM22 11h2v1h-2zM26 11h1v1h-1zM30 11h2v1h-2zM34 11h1v1h-1zM36 11h1v1h-1zM39 11h4v1h-4zM4 12h3v1h-3zM8 12h1v1h-1zM14 12h1v1h-1zM16 12h3v1h-3zM24 12h1v1h-1zM28 12h1v1h-1zM31 12h2v1h-2zM35 12h1v1h-1zM37 12h1v1h-1zM40 12h3v1h-3zM2 13h6v1h-6zM9 13h3v1h-3zM13 13h1v1h-1zM15 13h1v1h-1zM17 13h1v1h-1zM19 13h3v1h-3zM23 13h6v1h-6zM31 13h1v1h-1zM34 13h1v1h-1zM36 13h2v1h-2zM41 13h1v1h-1zM3 14h4v1h-4zM8 14h1v1h-1zM10 14h2v1h-2zM18 14h2v1h-2zM21 14h3v1h-3zM27 14h1v1h-1zM31 14h1v1h-1zM33 14h2v1h-2zM36 14h2v1h-2zM39 14h1v1h-1zM41 14h2v1h-2zM6 15h2v1h-2zM10 15h1v1h-1zM14 15h2v1h-2zM17 15h2v1h-2zM21 15h5v1h-5zM27 15h1v1h-1zM30 15h2v1h-2zM34 15h3v1h-3zM40 15h3v1h-3zM3 16h2v1h-2zM7 16h3v1h-3zM11 16h1v1h-1zM13 16h3v1h-3zM19 16h1v1h-1zM21 16h2v1h-2zM24 16h1v1h-1zM28 16h1v1h-1zM30 16h3v1h-3zM36 16h2v1h-2zM41 16h2v1h-2zM9 17h1v1h-1zM11 17h3v1h-3zM15 17h1v1h-1zM19 17h2v1h-2zM22 17h4v1h-4zM27 17h3v1h-3zM31 17h4v1h-4zM36 17h1v1h-1zM38 17h1v1h-1zM41 17h1v1h-1zM2 18h2v1h-2zM6 18h4v1h-4zM14 18h1v1h-1zM16 18h4v1h-4zM21 18h4v1h-4zM27 18h1v1h-1zM29 18h4v1h-4zM34 18h1v1h-1zM36 18h2v1h-2zM41 18h2v1h-2zM2 19h1v1h-1zM6 19h2v1h-2zM9 19h5v1h-5zM15 19h1v1h-1zM20 19h1v1h-1zM22 19h2v1h-2zM30 19h2v1h-2zM34 19h1v1h-1zM36 19h1v1h-1zM41 19h2v1h-2zM2 20h2v1h-2zM5 20h5v1h-5zM14 20h2v1h-2zM18 20h2v1h-2zM24 20h1v1h-1zM34 20h1v1h-1zM36 20h1v1h-1zM38 20h3v1h-3zM42 20h1v1h-1zM2 21h4v1h-4zM7 21h1v1h-1zM9 21h3v1h-3zM14 21h1v1h-1zM18 21h1v1h-1zM21 21h1v1h-1zM23 21h10v1h-10zM34 21h2v1h-2zM37 21h1v1h-1zM41 21h2v1h-2zM3 22h1v1h-1zM6 22h3v1h-3zM10 22h4v1h-4zM16 22h1v1h-1zM22 22h1v1h-1zM24 22h4v1h-4zM30 22h2v1h-2zM34 22h3v1h-3zM39 22h1v1h-1zM42 22h1v1h-1zM7 23h1v1h-1zM9 23h1v1h-1zM12 23h2v1h-2zM15 23h1v1h-1zM17 23h2v1h-2zM22 23h3v1h-3zM26 23h1v1h-1zM30 23h3v1h-3zM34 23h1v1h-1zM36 23h1v1h-1zM40 23h3v1h-3zM2 24h1v1h-1zM4 24h2v1h-2zM8 24h1v1h-1zM11 24h3v1h-3zM15 24h1v1h-1zM20 24h1v1h-1zM23 24h1v1h-1zM27 24h1v1h-1zM35 24h5v1h-5zM41 24h2v1h-2zM2 25h3v1h-3zM7 25h1v1h-1zM9 25h1v1h-1zM12 25h1v1h-1zM14 25h2v1h-2zM18 25h2v1h-2zM23 25h5v1h-5zM29 25h1v1h-1zM31 25h2v1h-2zM34 25h2v1h-2zM37 25h2v1h-2zM41 25h1v1h-1zM2 26h4v1h-4zM7 26h4v1h-4zM12 26h1v1h-1zM16 26h2v1h-2zM19 26h1v1h-1zM22 26h6v1h-6zM31 26h1v1h-1zM33 26h4v1h-4zM39 26h1v1h-1zM42 26h1v1h-1zM3 27h1v1h-1zM6 27h2v1h-2zM9 27h1v1h-1zM12 27h2v1h-2zM16 27h1v1h-1zM20 27h1v1h-1zM22 27h2v1h-2zM26 27h1v1h-1zM30 27h2v1h-2zM35 27h2v1h-2zM42 27h1v1h-1zM2 28h1v1h-1zM5 28h1v1h-1zM8 28h2v1h-2zM11 28h2v1h-2zM20 28h1v1h-1zM23 28h2v1h-2zM26 28h2v1h-2zM32 28h1v1h-1zM35 28h1v1h-1zM37 28h2v1h-2zM40 28h3v1h-3zM5 29h2v1h-2zM10 29h1v1h-1zM12 29h1v1h-1zM16 29h1v1h-1zM18 29h3v1h-3zM22 29h4v1h-4zM27 29h2v1h-2zM30 29h3v1h-3zM34 29h1v1h-1zM37 29h1v1h-1zM3 30h2v1h-2zM8 30h3v1h-3zM12 30h6v1h-6zM19 30h1v1h-1zM23 30h1v1h-1zM25 30h3v1h-3zM29 30h3v1h-3zM33 30h4v1h-4zM39 30h1v1h-1zM42 30h1v1h-1zM3 31h1v1h-1zM7 31h1v1h-1zM9 31h1v1h-1zM11 31h4v1h-4zM16 31h4v1h-4zM21 31h1v1h-1zM25 31h2v1h-2zM30 31h1v1h-1zM34 31h1v1h-1zM36 31h2v1h-2zM39 31h2v1h-2zM42 31h1v1h-1zM2 32h1v1h-1zM5 32h5v1h-5zM18 32h3v1h-3zM25 32h3v1h-3zM30 32h2v1h-2zM34 32h1v1h-1zM37 32h1v1h-1zM39 32h4v1h-4zM3 33h3v1h-3zM9 33h3v1h-3zM13 33h2v1h-2zM19 33h1v1h-1zM21 33h1v1h-1zM23 33h2v1h-2zM26 33h2v1h-2zM30 33h3v1h-3zM35 33h2v1h-2zM38 33h1v1h-1zM41 33h2v1h-2zM2 34h1v1h-1zM4 34h1v1h-1zM6 34h1v1h-1zM8 34h1v1h-1zM13 34h2v1h-2zM16 34h2v1h-2zM19 34h1v1h-1zM22 34h2v1h-2zM25 34h3v1h-3zM29 34h3v1h-3zM34 34h5v1h-5zM41 34h1v1h-1zM10 35h3v1h-3zM15 35h3v1h-3zM19 35h1v1h-1zM22 35h1v1h-1zM30 35h1v1h-1zM32 35h1v1h-1zM34 35h1v1h-1zM38 35h2v1h-2zM41 35h2v1h-2zM2 36h7v1h-7zM11 36h4v1h-4zM16 36h3v1h-3zM20 36h1v1h-1zM22 36h2v1h-2zM32 36h3v1h-3zM36 36h1v1h-1zM38 36h1v1h-1zM41 36h2v1h-2zM2 37h1v1h-1zM8 37h1v1h-1zM14 37h4v1h-4zM19 37h4v1h-4zM25 37h1v1h-1zM27 37h1v1h-1zM31 37h1v1h-1zM34 37h1v1h-1zM38 37h1v1h-1zM2 38h1v1h-1zM4 38h3v1h-3zM8 38h1v1h-1zM10 38h2v1h-2zM13 38h5v1h-5zM20 38h3v1h-3zM26 38h1v1h-1zM28 38h1v1h-1zM30 38h3v1h-3zM34 38h5v1h-5zM41 38h2v1h-2zM2 39h1v1h-1zM4 39h3v1h-3zM8 39h1v1h-1zM11 39h4v1h-4zM16 39h1v1h-1zM18 39h1v1h-1zM20 39h1v1h-1zM22 39h1v1h-1zM27 39h1v1h-1zM30 39h1v1h-1zM35 39h1v1h-1zM38 39h2v1h-2zM41 39h2v1h-2zM2 40h1v1h-1zM4 40h3v1h-3zM8 40h1v1h-1zM10 40h2v1h-2zM14 40h2v1h-2zM20 40h1v1h-1zM23 40h1v1h-1zM26 40h3v1h-3zM37 40h2v1h-2zM41 40h2v1h-2zM2 41h1v1h-1zM8 41h1v1h-1zM14 41h1v1h-1zM16 41h2v1h-2zM21 41h1v1h-1zM23 41h1v1h-1zM26 41h10v1h-10zM37 41h1v1h-1zM41 41h1v1h-1zM2 42h7v1h-7zM10 42h2v1h-2zM16 42h1v1h-1zM18 42h6v1h-6zM25 42h3v1h-3zM29 42h3v1h-3zM33 42h2v1h-2zM37 42h2v1h-2zM41 42h2v1h-2z"/></svg>
+    <p class="qr-texto">Escanea con la cámara del celular para abrir esta página</p>
+    <p class="qr-url">https://memosanchezg.github.io/programacion-basica-interactivos/semana-11-laboratorio-regex.html</p>
+    <button type="button" class="qr-cerrar">Cerrar</button>
+  </div>
+</div>
+<style>
+  .qr-capa { position:fixed; top:0; right:0; bottom:0; left:0; z-index:10000; display:flex; align-items:center;
+             justify-content:center; padding:16px; background:#fff; }
+  .qr-capa[hidden] { display:none; }
+  .qr-caja { max-width:100%; text-align:center; color:#0A2A57; font:16px/1.4 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .qr-caja svg { display:block; width:min(62vh, 84vw); height:auto; margin:0 auto; }
+  .qr-texto { margin:12px 0 2px; font-size:1.15rem; font-weight:bold; }
+  .qr-url { margin:0 0 12px; color:#5B6472; word-break:break-all; }
+  .qr-cerrar { font:inherit; padding:6px 20px; border:2px solid #00408F; border-radius:4px; background:#fff;
+               color:#00408F; cursor:pointer; }
+</style>
+<script>
+  (function () {
+    var capa = document.getElementById("qr-sitio");
+    document.querySelectorAll("a.qr-abrir").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        capa.hidden = false;
+        capa.querySelector(".qr-cerrar").focus();
+      });
+    });
+    capa.addEventListener("click", function (e) {
+      if (e.target === capa || e.target.classList.contains("qr-cerrar")) capa.hidden = true;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !capa.hidden) capa.hidden = true;
+    });
+  })();
+</script>
+</body>
+</html>

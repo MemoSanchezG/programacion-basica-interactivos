@@ -1,0 +1,1025 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tema 14 · Hoja del estudiante</title>
+<style>
+:root {
+  --azul: #00408F; --azul-osc: #0A2A57; --guinda: #8C1D35; --oro: #B8975A;
+  --azul-claro: #E8EEF7; --oro-claro: #F7F1E6; --tinta: #1B1F2A; --gris: #5B6472; --borde: #D9DEE6;
+  --cmd-fondo: #0C0C0C; --cmd-texto: #E6E6E6;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: #FFFFFF; color: var(--tinta);
+  font-family: Calibri, "Segoe UI", system-ui, -apple-system, sans-serif; font-size: 17px; line-height: 1.55; }
+a { color: var(--azul); font-weight: 600; }
+.wrap { max-width: 940px; margin: 0 auto; padding: 0 16px; }
+header { border-left: 14px solid var(--azul); box-shadow: inset 3px 0 0 var(--oro); padding: 34px 0 24px; }
+.eyebrow { color: var(--guinda); font-weight: 700; letter-spacing: .05em; font-size: 15px;
+  font-family: Cambria, Georgia, serif; }
+h1 { font-family: Cambria, Georgia, serif; color: var(--azul-osc); font-size: clamp(30px, 5vw, 44px);
+  margin: 4px 0 6px; line-height: 1.15; }
+.sub { color: var(--gris); margin: 0 0 8px; }
+.subtitulo { color: var(--azul); font-style: italic; font-size: 19px; margin: 0 0 6px; }
+nav.dias { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+nav.dias a { border: 1px solid var(--borde); color: var(--azul-osc); text-decoration: none; padding: 5px 14px;
+  border-radius: 999px; font-size: 15px; }
+nav.dias a:hover { border-color: var(--oro); background: var(--oro-claro); }
+.franja { height: 7px; background: var(--azul); border-bottom: 3px solid var(--oro); }
+main { padding: 4px 0 48px; }
+section { padding-top: 26px; }
+h2 { font-family: Cambria, Georgia, serif; color: var(--azul-osc); font-size: 28px; margin: 0 0 4px; line-height: 1.2; }
+h3 { color: var(--azul-osc); font-size: 19px; margin: 22px 0 8px; }
+.dia { border-top: 1px solid var(--borde); margin-top: 28px; }
+.dia .num { color: var(--guinda); font-family: Cambria, Georgia, serif; font-weight: 700; font-size: 20px; }
+.chip { display: inline-block; color: var(--guinda); font-family: Cambria, Georgia, serif; font-weight: 700;
+  font-size: 17px; margin-left: 8px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.card { border: 1.5px solid var(--oro); border-radius: 10px; padding: 14px 16px; }
+.card b { display: block; margin-bottom: 4px; color: var(--azul-osc); }
+.card small { color: var(--guinda); font-weight: 700; }
+ul.links { padding-left: 20px; margin: 6px 0; }
+ul.links li { margin: 4px 0; }
+ol.tareas li { margin: 6px 0; }
+.pista { background: var(--oro-claro); border: 1px solid var(--oro); border-radius: 10px; padding: 10px 14px; }
+.pista b { color: var(--guinda); }
+.bloque { margin: 10px 0; }
+code, .mono { font-family: Consolas, "Courier New", monospace; color: var(--azul); }
+.highlight table { border-collapse: collapse; }
+.highlight td { padding: 0; vertical-align: top; }
+.highlight td.linenos pre { margin: 0; padding: 10px 8px 10px 0; text-align: right; color: var(--gris);
+  font-family: Cambria, Georgia, serif; font-size: 11px; line-height: 21px; background: transparent; }
+.highlight td.code { width: 100%; }
+.highlight td.code pre { margin: 0; padding: 10px 14px; border: 1px solid var(--tinta); background: #FFFFFF;
+  font-family: Consolas, "Courier New", monospace; font-size: 15px; line-height: 21px !important; overflow-x: auto; }
+.highlight { overflow-x: auto; }
+.prompt { background: var(--azul-claro); border-radius: 10px; padding: 14px 16px; margin: 0; font-style: italic; }
+.acciones { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 8px 0 0; }
+button.copiar { font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; border: 0; border-radius: 999px;
+  padding: 6px 14px; background: var(--azul); color: #fff; }
+button.copiar:hover { background: var(--azul-osc); }
+.entrega { border: 1px dashed var(--oro); border-radius: 10px; padding: 10px 14px; }
+table.chuleta { border-collapse: collapse; width: 100%; font-size: 15px; }
+table.chuleta th { background: var(--azul-osc); color: #fff; text-align: left; padding: 7px 10px; }
+table.chuleta td { padding: 6px 10px; border-bottom: 1px solid var(--borde); }
+table.chuleta tr:nth-child(even) td { background: var(--azul-claro); }
+footer { color: var(--gris); font-size: 14px; border-top: 1px solid var(--borde); margin-top: 36px; padding-top: 14px; }
+textarea.crudo { display: none; }
+@media print {
+  nav.dias, button.copiar { display: none; }
+  .dia { page-break-before: always; }
+}
+</style></head><body><div class="franja"></div>
+<header><div class="wrap">
+<div class="eyebrow">TEMA 14 · SEMANA 14 · HOJA DEL ESTUDIANTE</div>
+<h1>Excel y reportes</h1>
+<p class="sub">Programación Básica 2026 · FCFM · UANL. Aquí está el código de los ejemplos (se corren en tu computadora: PythonTutor no puede importar openpyxl), el código de partida y los prompts sugeridos de cada ejercicio, listos para copiar.</p>
+<nav class="dias"><a href="#dia1">Día 1</a><a href="#dia2">Día 2</a><a href="#dia3">Día 3</a><a href="#dia4">Día 4</a><a href="#dia5">Día 5</a><a href="#chuleta">Chuleta</a><a href="#interactivos">Simuladores</a><a href="#recursos">Recursos</a></nav>
+</div></header><main class="wrap">
+<section><h2>Cómo usar la IA esta semana</h2>
+<p class="sub">Reportes en Excel con IA sin que piense por ti</p><ul>
+<li>Una IA puede escribir un reporte completo con openpyxl, pero no sabe qué necesita leer en ese archivo quien lo va a usar.</li>
+<li>Primero tú: dibuja en papel cómo debe verse la hoja (encabezados, columnas, formatos) y escribe el código por partes.</li>
+<li>Después la IA: pídele que te explique un parámetro (fill_type, number_format) o por qué Excel marca un error en tu archivo.</li>
+<li>Abre SIEMPRE el archivo en Excel: el código puede correr sin errores y el reporte estar mal. Temario (Fase 3): la IA no escribe tu proyecto final.</li>
+</ul><h3>Ejemplo de prompt</h3><div class="bloque">
+<p class="prompt">Mi reporte de openpyxl abre, pero Excel no suma la columna B y le pone triangulitos verdes. No me des el código: pregúntame qué tipo de dato estoy escribiendo en esas celdas.</p><textarea class="crudo" id="prompt-ia">Mi reporte de openpyxl abre, pero Excel no suma la columna B y le pone triangulitos verdes. No me des el código: pregúntame qué tipo de dato estoy escribiendo en esas celdas.</textarea>
+<div class="acciones"><button class="copiar" data-copiar="prompt-ia">Copiar prompt</button></div></div>
+</section>
+<section><h2>Tu ejercicio cuenta si pasa el checkpoint</h2><div class="cards">
+<div class="card"><b>Palabra clave</b>Al iniciar el checkpoint el profesor dice una palabra en voz alta. Escríbela como comentario en la línea 1 de tu archivo.<br><small>Demuestra que estuviste en clase</small></div>
+<div class="card"><b>Cambio sorpresa, sin IA</b>Al terminar el tiempo del ejercicio se proyecta un cambio. Tienes 5 minutos para aplicarlo tú solo.<br><small>Demuestra que entiendes tu código</small></div>
+<div class="card"><b>Entrega antes de salir</b>Subes tu archivo .py y el .xlsx que genera a la tarea de Teams del día. La tarea se cierra al terminar la clase.<br><small>Demuestra que lo hiciste en clase</small></div>
+<div class="card"><b>Defensa rápida</b>El profesor elige 2–3 personas al azar para explicar una línea de su código en 1 minuto.<br><small>Demuestra que el código es tuyo</small></div>
+</div>
+<p class="sub">La IA sí se permite durante el ejercicio (con el prompt sugerido). El cambio sorpresa y la defensa son sin IA.</p>
+</section>
+<section class="dia" id="dia1"><div class="num">DÍA 1</div>
+<h2>Openpyxl: tu primer libro de Excel</h2><p class="sub">Crear un libro de Excel desde Python con openpyxl: celdas, filas y guardar</p>
+<h3>Ejemplos para correr en tu computadora</h3>
+<p class="sub">PythonTutor no puede correr estos ejemplos: copia cada uno a un archivo .py y ejecútalo con Python.</p>
+<div class="bloque"><b>Tu primer archivo de Excel</b> <span class="sub">(PythonTutor no puede importar openpyxl.)</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 7</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 8</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 9</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">10</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">11</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">12</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">13</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">14</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">15</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">from</span><span style="color: #BBB"> </span>openpyxl<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">import</span> Workbook
+
+libro = Workbook()
+hoja = libro.active
+hoja.title = <span style="color: #00F">&quot;Calificaciones&quot;</span>
+
+hoja[<span style="color: #00F">&quot;A1&quot;</span>] = <span style="color: #00F">&quot;Nombre&quot;</span>
+hoja[<span style="color: #00F">&quot;B1&quot;</span>] = <span style="color: #00F">&quot;Promedio&quot;</span>
+hoja[<span style="color: #00F">&quot;A2&quot;</span>] = <span style="color: #00F">&quot;Ana&quot;</span>
+hoja[<span style="color: #00F">&quot;B2&quot;</span>] = <span style="color: #00F">92.5</span>
+hoja.append([<span style="color: #00F">&quot;Luis&quot;</span>, <span style="color: #00F">85</span>])
+hoja.append([<span style="color: #00F">&quot;Marta&quot;</span>, <span style="color: #00F">78.25</span>])
+
+libro.save(<span style="color: #00F">&quot;calificaciones.xlsx&quot;</span>)
+print(<span style="color: #00F">&quot;Listo: calificaciones.xlsx&quot;</span>)
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="ejemplo-1-1">from openpyxl import Workbook
+
+libro = Workbook()
+hoja = libro.active
+hoja.title = &quot;Calificaciones&quot;
+
+hoja[&quot;A1&quot;] = &quot;Nombre&quot;
+hoja[&quot;B1&quot;] = &quot;Promedio&quot;
+hoja[&quot;A2&quot;] = &quot;Ana&quot;
+hoja[&quot;B2&quot;] = 92.5
+hoja.append([&quot;Luis&quot;, 85])
+hoja.append([&quot;Marta&quot;, 78.25])
+
+libro.save(&quot;calificaciones.xlsx&quot;)
+print(&quot;Listo: calificaciones.xlsx&quot;)</textarea>
+<div class="acciones"><button class="copiar" data-copiar="ejemplo-1-1">Copiar código</button></div></div>
+<div class="bloque"><b>Una lista de registros a una hoja</b> <span class="sub">(PythonTutor no puede importar openpyxl.)</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 7</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 8</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 9</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">10</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">11</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">12</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">13</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">14</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">15</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">16</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">17</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">from</span><span style="color: #BBB"> </span>openpyxl<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">import</span> Workbook
+
+registros = [
+    {<span style="color: #00F">&quot;fecha&quot;</span>: <span style="color: #00F">&quot;2026-09-01&quot;</span>, <span style="color: #00F">&quot;tmax&quot;</span>: <span style="color: #00F">35.0</span>, <span style="color: #00F">&quot;tmin&quot;</span>: <span style="color: #00F">23.4</span>},
+    {<span style="color: #00F">&quot;fecha&quot;</span>: <span style="color: #00F">&quot;2026-09-02&quot;</span>, <span style="color: #00F">&quot;tmax&quot;</span>: <span style="color: #00F">36.5</span>, <span style="color: #00F">&quot;tmin&quot;</span>: <span style="color: #00F">23.7</span>},
+    {<span style="color: #00F">&quot;fecha&quot;</span>: <span style="color: #00F">&quot;2026-09-03&quot;</span>, <span style="color: #00F">&quot;tmax&quot;</span>: <span style="color: #00F">38.0</span>, <span style="color: #00F">&quot;tmin&quot;</span>: <span style="color: #00F">25.0</span>},
+]
+columnas = [<span style="color: #00F">&quot;fecha&quot;</span>, <span style="color: #00F">&quot;tmax&quot;</span>, <span style="color: #00F">&quot;tmin&quot;</span>]
+
+libro = Workbook()
+hoja = libro.active
+hoja.title = <span style="color: #00F">&quot;Clima&quot;</span>
+hoja.append(columnas)
+<span style="color: #000080; font-weight: bold">for</span> reg <span style="font-weight: bold">in</span> registros:
+    hoja.append([reg[c] <span style="color: #000080; font-weight: bold">for</span> c <span style="font-weight: bold">in</span> columnas])
+libro.save(<span style="color: #00F">&quot;clima.xlsx&quot;</span>)
+print(hoja.max_row, <span style="color: #00F">&quot;filas,&quot;</span>, hoja.max_column, <span style="color: #00F">&quot;columnas&quot;</span>)
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="ejemplo-1-2">from openpyxl import Workbook
+
+registros = [
+    {&quot;fecha&quot;: &quot;2026-09-01&quot;, &quot;tmax&quot;: 35.0, &quot;tmin&quot;: 23.4},
+    {&quot;fecha&quot;: &quot;2026-09-02&quot;, &quot;tmax&quot;: 36.5, &quot;tmin&quot;: 23.7},
+    {&quot;fecha&quot;: &quot;2026-09-03&quot;, &quot;tmax&quot;: 38.0, &quot;tmin&quot;: 25.0},
+]
+columnas = [&quot;fecha&quot;, &quot;tmax&quot;, &quot;tmin&quot;]
+
+libro = Workbook()
+hoja = libro.active
+hoja.title = &quot;Clima&quot;
+hoja.append(columnas)
+for reg in registros:
+    hoja.append([reg[c] for c in columnas])
+libro.save(&quot;clima.xlsx&quot;)
+print(hoja.max_row, &quot;filas,&quot;, hoja.max_column, &quot;columnas&quot;)</textarea>
+<div class="acciones"><button class="copiar" data-copiar="ejemplo-1-2">Copiar código</button></div></div>
+<h3>Reto: tu primer reporte en Excel<span class="chip">20 min</span></h3><ol class="tareas">
+<li>Crea un libro con una hoja llamada &quot;Semana&quot; y escribe el encabezado: Fecha, Máxima, Mínima, Prob. lluvia (%).</li>
+<li>Agrega una fila por día del pronóstico (las listas del código de partida, Tema 12) con un for, zip y hoja.append.</li>
+<li>Guarda el archivo como pronostico.xlsx, ábrelo en Excel y revisa que los números estén alineados a la derecha.</li>
+</ol>
+<p class="pista"><b>Pista:</b> for f, a, b, c in zip(fechas, tmax, tmin, lluvia): hoja.append([f, a, b, c]). El encabezado va ANTES del ciclo.</p>
+<h3>Código de partida</h3><div class="bloque">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">7</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">from</span><span style="color: #BBB"> </span>openpyxl<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">import</span> Workbook
+
+fechas = [<span style="color: #00F">&quot;2026-10-19&quot;</span>, <span style="color: #00F">&quot;2026-10-20&quot;</span>, <span style="color: #00F">&quot;2026-10-21&quot;</span>, <span style="color: #00F">&quot;2026-10-22&quot;</span>,
+          <span style="color: #00F">&quot;2026-10-23&quot;</span>, <span style="color: #00F">&quot;2026-10-24&quot;</span>, <span style="color: #00F">&quot;2026-10-25&quot;</span>]
+tmax = [<span style="color: #00F">24.7</span>, <span style="color: #00F">22.0</span>, <span style="color: #00F">27.0</span>, <span style="color: #00F">27.3</span>, <span style="color: #00F">23.2</span>, <span style="color: #00F">24.0</span>, <span style="color: #00F">20.1</span>]
+tmin = [<span style="color: #00F">13.0</span>, <span style="color: #00F">16.2</span>, <span style="color: #00F">19.5</span>, <span style="color: #00F">19.8</span>, <span style="color: #00F">20.0</span>, <span style="color: #00F">18.0</span>, <span style="color: #00F">18.5</span>]
+lluvia = [<span style="color: #00F">4</span>, <span style="color: #00F">11</span>, <span style="color: #00F">6</span>, <span style="color: #00F">22</span>, <span style="color: #00F">19</span>, <span style="color: #00F">13</span>, <span style="color: #00F">47</span>]   <span style="color: #080; font-style: italic"># probabilidad en %</span>
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="codigo-1">from openpyxl import Workbook
+
+fechas = [&quot;2026-10-19&quot;, &quot;2026-10-20&quot;, &quot;2026-10-21&quot;, &quot;2026-10-22&quot;,
+          &quot;2026-10-23&quot;, &quot;2026-10-24&quot;, &quot;2026-10-25&quot;]
+tmax = [24.7, 22.0, 27.0, 27.3, 23.2, 24.0, 20.1]
+tmin = [13.0, 16.2, 19.5, 19.8, 20.0, 18.0, 18.5]
+lluvia = [4, 11, 6, 22, 19, 13, 47]   # probabilidad en %</textarea>
+<div class="acciones"><button class="copiar" data-copiar="codigo-1">Copiar código</button><span class="sub">Solo en tu computadora: PythonTutor no puede importar openpyxl.</span></div></div>
+<h3>Prompt sugerido para la IA</h3><div class="bloque">
+<p class="prompt">Estoy aprendiendo openpyxl en Python. Quiero escribir en una hoja de Excel un encabezado y una fila por día a partir de cuatro listas. No me des el código: pregúntame qué hace append, en qué orden escribo las filas y cómo recorro cuatro listas a la vez.</p><textarea class="crudo" id="prompt-1">Estoy aprendiendo openpyxl en Python. Quiero escribir en una hoja de Excel un encabezado y una fila por día a partir de cuatro listas. No me des el código: pregúntame qué hace append, en qué orden escribo las filas y cómo recorro cuatro listas a la vez.</textarea>
+<div class="acciones"><button class="copiar" data-copiar="prompt-1">Copiar prompt</button><span class="sub">Si la IA te da el código completo, pídele que mejor te haga una pregunta.</span></div></div>
+<h3>Checkpoint y entrega</h3><div class="entrega"><ol>
+<li>Escribe la <b>palabra clave</b> que diga el profesor como comentario en la línea 1: <code># clave: ______</code></li>
+<li>Aplica el <b>cambio sorpresa</b> que se proyectará al terminar el ejercicio (sin IA, 5 min).</li>
+<li>Sube <b>S14D1_matricula.py y su .xlsx</b> a la tarea de Teams del día antes de salir: la tarea cierra al terminar la clase.</li>
+<li>Prepárate: el profesor puede pedirte que expliques una línea de tu código.</li>
+</ol></div>
+</section>
+<section class="dia" id="dia2"><div class="num">DÍA 2</div>
+<h2>Libros y hojas</h2><p class="sub">Trabajar con varias hojas, leer libros existentes y usar fórmulas de Excel</p>
+<h3>Ejemplos para correr en tu computadora</h3>
+<p class="sub">PythonTutor no puede correr estos ejemplos: copia cada uno a un archivo .py y ejecútalo con Python.</p>
+<div class="bloque"><b>Datos y Resumen en un mismo libro</b> <span class="sub">(PythonTutor no puede importar openpyxl.)</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 7</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 8</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 9</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">10</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">11</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">12</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">13</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">14</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">15</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">16</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">17</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">18</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">from</span><span style="color: #BBB"> </span>openpyxl<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">import</span> Workbook
+
+tmax = [<span style="color: #00F">35.0</span>, <span style="color: #00F">36.5</span>, <span style="color: #00F">38.0</span>, <span style="color: #00F">34.1</span>, <span style="color: #00F">32.2</span>, <span style="color: #00F">30.2</span>, <span style="color: #00F">34.0</span>]
+
+libro = Workbook()
+datos = libro.active
+datos.title = <span style="color: #00F">&quot;Datos&quot;</span>
+datos.append([<span style="color: #00F">&quot;Día&quot;</span>, <span style="color: #00F">&quot;Máxima °C&quot;</span>])
+<span style="color: #000080; font-weight: bold">for</span> dia, t <span style="font-weight: bold">in</span> enumerate(tmax, start=<span style="color: #00F">1</span>):
+    datos.append([dia, t])
+
+resumen = libro.create_sheet(<span style="color: #00F">&quot;Resumen&quot;</span>)
+prom = round(sum(tmax) / len(tmax), <span style="color: #00F">2</span>)
+resumen.append([<span style="color: #00F">&quot;Medida&quot;</span>, <span style="color: #00F">&quot;Valor&quot;</span>])
+resumen.append([<span style="color: #00F">&quot;Días&quot;</span>, len(tmax)])
+resumen.append([<span style="color: #00F">&quot;Promedio&quot;</span>, prom])
+resumen.append([<span style="color: #00F">&quot;Máxima&quot;</span>, max(tmax)])
+libro.save(<span style="color: #00F">&quot;semana.xlsx&quot;</span>)
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="ejemplo-2-1">from openpyxl import Workbook
+
+tmax = [35.0, 36.5, 38.0, 34.1, 32.2, 30.2, 34.0]
+
+libro = Workbook()
+datos = libro.active
+datos.title = &quot;Datos&quot;
+datos.append([&quot;Día&quot;, &quot;Máxima °C&quot;])
+for dia, t in enumerate(tmax, start=1):
+    datos.append([dia, t])
+
+resumen = libro.create_sheet(&quot;Resumen&quot;)
+prom = round(sum(tmax) / len(tmax), 2)
+resumen.append([&quot;Medida&quot;, &quot;Valor&quot;])
+resumen.append([&quot;Días&quot;, len(tmax)])
+resumen.append([&quot;Promedio&quot;, prom])
+resumen.append([&quot;Máxima&quot;, max(tmax)])
+libro.save(&quot;semana.xlsx&quot;)</textarea>
+<div class="acciones"><button class="copiar" data-copiar="ejemplo-2-1">Copiar código</button></div></div>
+<div class="bloque"><b>Fórmulas que Excel calcula al abrir</b> <span class="sub">(PythonTutor no puede importar openpyxl.)</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 7</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 8</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 9</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">10</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">11</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">12</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">13</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">14</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">15</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">16</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">17</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">from</span><span style="color: #BBB"> </span>openpyxl<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">import</span> Workbook
+
+tmax = [<span style="color: #00F">35.0</span>, <span style="color: #00F">36.5</span>, <span style="color: #00F">38.0</span>, <span style="color: #00F">34.1</span>, <span style="color: #00F">32.2</span>, <span style="color: #00F">30.2</span>, <span style="color: #00F">34.0</span>]
+libro = Workbook()
+hoja = libro.active
+hoja.append([<span style="color: #00F">&quot;Día&quot;</span>, <span style="color: #00F">&quot;Máxima °C&quot;</span>])
+<span style="color: #000080; font-weight: bold">for</span> dia, t <span style="font-weight: bold">in</span> enumerate(tmax, start=<span style="color: #00F">1</span>):
+    hoja.append([dia, t])
+
+ultima = hoja.max_row                 <span style="color: #080; font-style: italic"># 8</span>
+hoja[<span style="color: #00F">&quot;A10&quot;</span>] = <span style="color: #00F">&quot;Promedio&quot;</span>
+hoja[<span style="color: #00F">&quot;B10&quot;</span>] = <span style="color: #00F">f&quot;=AVERAGE(B2:B{</span>ultima<span style="color: #00F">})&quot;</span>
+hoja[<span style="color: #00F">&quot;B10&quot;</span>].number_format = <span style="color: #00F">&quot;0.00&quot;</span>
+hoja[<span style="color: #00F">&quot;A11&quot;</span>] = <span style="color: #00F">&quot;Máxima&quot;</span>
+hoja[<span style="color: #00F">&quot;B11&quot;</span>] = <span style="color: #00F">f&quot;=MAX(B2:B{</span>ultima<span style="color: #00F">})&quot;</span>
+libro.save(<span style="color: #00F">&quot;formulas.xlsx&quot;</span>)
+print(hoja[<span style="color: #00F">&quot;B10&quot;</span>].value)
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="ejemplo-2-2">from openpyxl import Workbook
+
+tmax = [35.0, 36.5, 38.0, 34.1, 32.2, 30.2, 34.0]
+libro = Workbook()
+hoja = libro.active
+hoja.append([&quot;Día&quot;, &quot;Máxima °C&quot;])
+for dia, t in enumerate(tmax, start=1):
+    hoja.append([dia, t])
+
+ultima = hoja.max_row                 # 8
+hoja[&quot;A10&quot;] = &quot;Promedio&quot;
+hoja[&quot;B10&quot;] = f&quot;=AVERAGE(B2:B{ultima})&quot;
+hoja[&quot;B10&quot;].number_format = &quot;0.00&quot;
+hoja[&quot;A11&quot;] = &quot;Máxima&quot;
+hoja[&quot;B11&quot;] = f&quot;=MAX(B2:B{ultima})&quot;
+libro.save(&quot;formulas.xlsx&quot;)
+print(hoja[&quot;B10&quot;].value)</textarea>
+<div class="acciones"><button class="copiar" data-copiar="ejemplo-2-2">Copiar código</button></div></div>
+<h3>Reto: una hoja por semana<span class="chip">20 min</span></h3><ol class="tareas">
+<li>Crea un libro con una hoja por semana de septiembre (&quot;Sem 1&quot; a &quot;Sem 5&quot;: días 1-7, 8-14, 15-21, 22-28 y 29-30), cada una con encabezado Día y Máxima.</li>
+<li>Borra la hoja &quot;Sheet&quot; que trae Workbook() y guarda el libro como septiembre.xlsx.</li>
+<li>Ábrelo con load_workbook y, recorriendo libro.sheetnames, imprime de cada hoja cuántos días tiene y su temperatura máxima.</li>
+</ol>
+<p class="pista"><b>Pista:</b> La semana s (0 a 4) empieza en el día s*7 + 1. El último día es min(s*7 + 7, 30). tmax[dia - 1] es la máxima del día.</p>
+<h3>Código de partida</h3><div class="bloque">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">5</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">from</span><span style="color: #BBB"> </span>openpyxl<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">import</span> Workbook, load_workbook
+
+tmax = [<span style="color: #00F">35.0</span>, <span style="color: #00F">36.5</span>, <span style="color: #00F">38.0</span>, <span style="color: #00F">34.1</span>, <span style="color: #00F">32.2</span>, <span style="color: #00F">30.2</span>, <span style="color: #00F">34.0</span>, <span style="color: #00F">33.3</span>, <span style="color: #00F">34.9</span>, <span style="color: #00F">35.1</span>,
+        <span style="color: #00F">37.2</span>, <span style="color: #00F">35.0</span>, <span style="color: #00F">35.2</span>, <span style="color: #00F">35.8</span>, <span style="color: #00F">35.9</span>, <span style="color: #00F">35.0</span>, <span style="color: #00F">34.7</span>, <span style="color: #00F">33.5</span>, <span style="color: #00F">34.5</span>, <span style="color: #00F">35.4</span>,
+        <span style="color: #00F">35.4</span>, <span style="color: #00F">32.8</span>, <span style="color: #00F">31.8</span>, <span style="color: #00F">31.5</span>, <span style="color: #00F">33.3</span>, <span style="color: #00F">33.9</span>, <span style="color: #00F">34.2</span>, <span style="color: #00F">33.7</span>, <span style="color: #00F">33.2</span>, <span style="color: #00F">30.9</span>]
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="codigo-2">from openpyxl import Workbook, load_workbook
+
+tmax = [35.0, 36.5, 38.0, 34.1, 32.2, 30.2, 34.0, 33.3, 34.9, 35.1,
+        37.2, 35.0, 35.2, 35.8, 35.9, 35.0, 34.7, 33.5, 34.5, 35.4,
+        35.4, 32.8, 31.8, 31.5, 33.3, 33.9, 34.2, 33.7, 33.2, 30.9]</textarea>
+<div class="acciones"><button class="copiar" data-copiar="codigo-2">Copiar código</button><span class="sub">Solo en tu computadora: PythonTutor no puede importar openpyxl.</span></div></div>
+<h3>Prompt sugerido para la IA</h3><div class="bloque">
+<p class="prompt">Estoy aprendiendo a crear varias hojas con openpyxl. Quiero repartir 30 días en hojas de 7 días y luego leer el libro con load_workbook. No me des el código: pregúntame cómo calcularía el primer y el último día de cada semana y cómo recorro las hojas al leer.</p><textarea class="crudo" id="prompt-2">Estoy aprendiendo a crear varias hojas con openpyxl. Quiero repartir 30 días en hojas de 7 días y luego leer el libro con load_workbook. No me des el código: pregúntame cómo calcularía el primer y el último día de cada semana y cómo recorro las hojas al leer.</textarea>
+<div class="acciones"><button class="copiar" data-copiar="prompt-2">Copiar prompt</button><span class="sub">Si la IA te da el código completo, pídele que mejor te haga una pregunta.</span></div></div>
+<h3>Checkpoint y entrega</h3><div class="entrega"><ol>
+<li>Escribe la <b>palabra clave</b> que diga el profesor como comentario en la línea 1: <code># clave: ______</code></li>
+<li>Aplica el <b>cambio sorpresa</b> que se proyectará al terminar el ejercicio (sin IA, 5 min).</li>
+<li>Sube <b>S14D2_matricula.py y su .xlsx</b> a la tarea de Teams del día antes de salir: la tarea cierra al terminar la clase.</li>
+<li>Prepárate: el profesor puede pedirte que expliques una línea de tu código.</li>
+</ol></div>
+</section>
+<section class="dia" id="dia3"><div class="num">DÍA 3</div>
+<h2>Estilos: un reporte que se lee solo</h2><p class="sub">Dar formato profesional a un reporte: fuentes, rellenos, alineación y formatos de número</p>
+<h3>Ejemplos para correr en tu computadora</h3>
+<p class="sub">PythonTutor no puede correr estos ejemplos: copia cada uno a un archivo .py y ejecútalo con Python.</p>
+<div class="bloque"><b>Un encabezado con estilo FCFM</b> <span class="sub">(PythonTutor no puede importar openpyxl.)</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 7</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 8</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 9</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">10</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">11</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">12</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">13</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">14</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">15</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">16</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">17</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">from</span><span style="color: #BBB"> </span>openpyxl<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">import</span> Workbook
+<span style="color: #000080; font-weight: bold">from</span><span style="color: #BBB"> </span>openpyxl.styles<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">import</span> Alignment, Font, PatternFill
+
+libro = Workbook()
+hoja = libro.active
+hoja.append([<span style="color: #00F">&quot;Fecha&quot;</span>, <span style="color: #00F">&quot;Máxima&quot;</span>, <span style="color: #00F">&quot;Mínima&quot;</span>])
+hoja.append([<span style="color: #00F">&quot;2026-09-01&quot;</span>, <span style="color: #00F">35.0</span>, <span style="color: #00F">23.4</span>])
+hoja.append([<span style="color: #00F">&quot;2026-09-02&quot;</span>, <span style="color: #00F">36.5</span>, <span style="color: #00F">23.7</span>])
+hoja.append([<span style="color: #00F">&quot;2026-09-03&quot;</span>, <span style="color: #00F">38.0</span>, <span style="color: #00F">25.0</span>])
+
+AZUL = PatternFill(fill_type=<span style="color: #00F">&quot;solid&quot;</span>, start_color=<span style="color: #00F">&quot;00408F&quot;</span>)
+<span style="color: #000080; font-weight: bold">for</span> celda <span style="font-weight: bold">in</span> hoja[<span style="color: #00F">1</span>]:
+    celda.font = Font(bold=<span style="color: #000080; font-weight: bold">True</span>, color=<span style="color: #00F">&quot;FFFFFF&quot;</span>)
+    celda.fill = AZUL
+    celda.alignment = Alignment(horizontal=<span style="color: #00F">&quot;center&quot;</span>)
+hoja.column_dimensions[<span style="color: #00F">&quot;A&quot;</span>].width = <span style="color: #00F">14</span>
+libro.save(<span style="color: #00F">&quot;estilos.xlsx&quot;</span>)
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="ejemplo-3-1">from openpyxl import Workbook
+from openpyxl.styles import Alignment, Font, PatternFill
+
+libro = Workbook()
+hoja = libro.active
+hoja.append([&quot;Fecha&quot;, &quot;Máxima&quot;, &quot;Mínima&quot;])
+hoja.append([&quot;2026-09-01&quot;, 35.0, 23.4])
+hoja.append([&quot;2026-09-02&quot;, 36.5, 23.7])
+hoja.append([&quot;2026-09-03&quot;, 38.0, 25.0])
+
+AZUL = PatternFill(fill_type=&quot;solid&quot;, start_color=&quot;00408F&quot;)
+for celda in hoja[1]:
+    celda.font = Font(bold=True, color=&quot;FFFFFF&quot;)
+    celda.fill = AZUL
+    celda.alignment = Alignment(horizontal=&quot;center&quot;)
+hoja.column_dimensions[&quot;A&quot;].width = 14
+libro.save(&quot;estilos.xlsx&quot;)</textarea>
+<div class="acciones"><button class="copiar" data-copiar="ejemplo-3-1">Copiar código</button></div></div>
+<div class="bloque"><b>Un reporte con formato profesional</b> <span class="sub">(PythonTutor no puede importar openpyxl.)</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 7</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 8</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 9</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">10</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">11</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">12</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">13</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">14</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">15</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">16</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">17</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">18</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">19</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">20</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">21</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">22</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">23</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">from</span><span style="color: #BBB"> </span>openpyxl<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">import</span> Workbook
+<span style="color: #000080; font-weight: bold">from</span><span style="color: #BBB"> </span>openpyxl.styles<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">import</span> Font, PatternFill
+
+dias = [(<span style="color: #00F">&quot;01/09&quot;</span>, <span style="color: #00F">35.0</span>, <span style="color: #00F">23.4</span>, <span style="color: #00F">1.7</span>), (<span style="color: #00F">&quot;02/09&quot;</span>, <span style="color: #00F">36.5</span>, <span style="color: #00F">23.7</span>, <span style="color: #00F">0.7</span>),
+        (<span style="color: #00F">&quot;03/09&quot;</span>, <span style="color: #00F">38.0</span>, <span style="color: #00F">25.0</span>, <span style="color: #00F">0.2</span>), (<span style="color: #00F">&quot;04/09&quot;</span>, <span style="color: #00F">34.1</span>, <span style="color: #00F">25.2</span>, <span style="color: #00F">0.7</span>),
+        (<span style="color: #00F">&quot;05/09&quot;</span>, <span style="color: #00F">32.2</span>, <span style="color: #00F">23.6</span>, <span style="color: #00F">6.9</span>), (<span style="color: #00F">&quot;06/09&quot;</span>, <span style="color: #00F">30.2</span>, <span style="color: #00F">22.3</span>, <span style="color: #00F">0.7</span>)]
+libro = Workbook()
+hoja = libro.active
+hoja.title = <span style="color: #00F">&quot;Clima&quot;</span>
+hoja.append([<span style="color: #00F">&quot;Día&quot;</span>, <span style="color: #00F">&quot;Máx °C&quot;</span>, <span style="color: #00F">&quot;Mín °C&quot;</span>, <span style="color: #00F">&quot;Lluvia mm&quot;</span>])
+<span style="color: #000080; font-weight: bold">for</span> fila <span style="font-weight: bold">in</span> dias:
+    hoja.append(fila)
+AZUL = PatternFill(fill_type=<span style="color: #00F">&quot;solid&quot;</span>, start_color=<span style="color: #00F">&quot;00408F&quot;</span>)
+<span style="color: #000080; font-weight: bold">for</span> celda <span style="font-weight: bold">in</span> hoja[<span style="color: #00F">1</span>]:
+    celda.font = Font(bold=<span style="color: #000080; font-weight: bold">True</span>, color=<span style="color: #00F">&quot;FFFFFF&quot;</span>)
+    celda.fill = AZUL
+<span style="color: #000080; font-weight: bold">for</span> fila <span style="font-weight: bold">in</span> hoja.iter_rows(min_row=<span style="color: #00F">2</span>, min_col=<span style="color: #00F">2</span>):
+    <span style="color: #000080; font-weight: bold">for</span> celda <span style="font-weight: bold">in</span> fila:
+        celda.number_format = <span style="color: #00F">&quot;0.0&quot;</span>
+hoja.column_dimensions[<span style="color: #00F">&quot;D&quot;</span>].width = <span style="color: #00F">12</span>
+hoja.freeze_panes = <span style="color: #00F">&quot;A2&quot;</span>
+hoja.auto_filter.ref = hoja.dimensions
+libro.save(<span style="color: #00F">&quot;clima_formato.xlsx&quot;</span>)
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="ejemplo-3-2">from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill
+
+dias = [(&quot;01/09&quot;, 35.0, 23.4, 1.7), (&quot;02/09&quot;, 36.5, 23.7, 0.7),
+        (&quot;03/09&quot;, 38.0, 25.0, 0.2), (&quot;04/09&quot;, 34.1, 25.2, 0.7),
+        (&quot;05/09&quot;, 32.2, 23.6, 6.9), (&quot;06/09&quot;, 30.2, 22.3, 0.7)]
+libro = Workbook()
+hoja = libro.active
+hoja.title = &quot;Clima&quot;
+hoja.append([&quot;Día&quot;, &quot;Máx °C&quot;, &quot;Mín °C&quot;, &quot;Lluvia mm&quot;])
+for fila in dias:
+    hoja.append(fila)
+AZUL = PatternFill(fill_type=&quot;solid&quot;, start_color=&quot;00408F&quot;)
+for celda in hoja[1]:
+    celda.font = Font(bold=True, color=&quot;FFFFFF&quot;)
+    celda.fill = AZUL
+for fila in hoja.iter_rows(min_row=2, min_col=2):
+    for celda in fila:
+        celda.number_format = &quot;0.0&quot;
+hoja.column_dimensions[&quot;D&quot;].width = 12
+hoja.freeze_panes = &quot;A2&quot;
+hoja.auto_filter.ref = hoja.dimensions
+libro.save(&quot;clima_formato.xlsx&quot;)</textarea>
+<div class="acciones"><button class="copiar" data-copiar="ejemplo-3-2">Copiar código</button></div></div>
+<h3>Reto: dale formato profesional a tu reporte<span class="chip">20 min</span></h3><ol class="tareas">
+<li>Parte del reporte del pronóstico (código de partida): encabezado en negritas, letra blanca, relleno azul FCFM (00408F) y centrado.</li>
+<li>Máximas y mínimas con 1 decimal (&quot;0.0&quot;); la probabilidad de lluvia como porcentaje (&quot;0%&quot;), guardada como fracción: 0.22, no 22.</li>
+<li>Ajusta el ancho de las columnas, inmoviliza el encabezado y agrega filtros. Guarda como pronostico_formato.xlsx.</li>
+</ol>
+<p class="pista"><b>Pista:</b> Para la probabilidad escribe p / 100 en la fila. Recorre hoja.iter_rows(min_row=2) y elige el formato según la columna (celda.column).</p>
+<h3>Código de partida</h3><div class="bloque">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 7</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 8</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 9</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">10</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">11</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">12</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">13</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">14</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">15</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">16</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">17</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">18</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">19</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">from</span><span style="color: #BBB"> </span>openpyxl<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">import</span> Workbook
+<span style="color: #000080; font-weight: bold">from</span><span style="color: #BBB"> </span>openpyxl.styles<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">import</span> Alignment, Font, PatternFill
+
+fechas = [<span style="color: #00F">&quot;2026-10-19&quot;</span>, <span style="color: #00F">&quot;2026-10-20&quot;</span>, <span style="color: #00F">&quot;2026-10-21&quot;</span>, <span style="color: #00F">&quot;2026-10-22&quot;</span>,
+          <span style="color: #00F">&quot;2026-10-23&quot;</span>, <span style="color: #00F">&quot;2026-10-24&quot;</span>, <span style="color: #00F">&quot;2026-10-25&quot;</span>]
+tmax = [<span style="color: #00F">24.7</span>, <span style="color: #00F">22.0</span>, <span style="color: #00F">27.0</span>, <span style="color: #00F">27.3</span>, <span style="color: #00F">23.2</span>, <span style="color: #00F">24.0</span>, <span style="color: #00F">20.1</span>]
+tmin = [<span style="color: #00F">13.0</span>, <span style="color: #00F">16.2</span>, <span style="color: #00F">19.5</span>, <span style="color: #00F">19.8</span>, <span style="color: #00F">20.0</span>, <span style="color: #00F">18.0</span>, <span style="color: #00F">18.5</span>]
+lluvia = [<span style="color: #00F">4</span>, <span style="color: #00F">11</span>, <span style="color: #00F">6</span>, <span style="color: #00F">22</span>, <span style="color: #00F">19</span>, <span style="color: #00F">13</span>, <span style="color: #00F">47</span>]   <span style="color: #080; font-style: italic"># probabilidad en %</span>
+
+libro = Workbook()
+hoja = libro.active
+hoja.title = <span style="color: #00F">&quot;Semana&quot;</span>
+hoja.append([<span style="color: #00F">&quot;Fecha&quot;</span>, <span style="color: #00F">&quot;Máxima&quot;</span>, <span style="color: #00F">&quot;Mínima&quot;</span>, <span style="color: #00F">&quot;Prob. lluvia&quot;</span>])
+<span style="color: #000080; font-weight: bold">for</span> f, a, b, c <span style="font-weight: bold">in</span> zip(fechas, tmax, tmin, lluvia):
+    hoja.append([f, a, b, c])
+
+<span style="color: #080; font-style: italic"># agrega aquí los estilos y formatos</span>
+
+libro.save(<span style="color: #00F">&quot;pronostico_formato.xlsx&quot;</span>)
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="codigo-3">from openpyxl import Workbook
+from openpyxl.styles import Alignment, Font, PatternFill
+
+fechas = [&quot;2026-10-19&quot;, &quot;2026-10-20&quot;, &quot;2026-10-21&quot;, &quot;2026-10-22&quot;,
+          &quot;2026-10-23&quot;, &quot;2026-10-24&quot;, &quot;2026-10-25&quot;]
+tmax = [24.7, 22.0, 27.0, 27.3, 23.2, 24.0, 20.1]
+tmin = [13.0, 16.2, 19.5, 19.8, 20.0, 18.0, 18.5]
+lluvia = [4, 11, 6, 22, 19, 13, 47]   # probabilidad en %
+
+libro = Workbook()
+hoja = libro.active
+hoja.title = &quot;Semana&quot;
+hoja.append([&quot;Fecha&quot;, &quot;Máxima&quot;, &quot;Mínima&quot;, &quot;Prob. lluvia&quot;])
+for f, a, b, c in zip(fechas, tmax, tmin, lluvia):
+    hoja.append([f, a, b, c])
+
+# agrega aquí los estilos y formatos
+
+libro.save(&quot;pronostico_formato.xlsx&quot;)</textarea>
+<div class="acciones"><button class="copiar" data-copiar="codigo-3">Copiar código</button><span class="sub">Solo en tu computadora: PythonTutor no puede importar openpyxl.</span></div></div>
+<h3>Prompt sugerido para la IA</h3><div class="bloque">
+<p class="prompt">Estoy dando formato a un reporte con openpyxl: encabezado con color, decimales y porcentajes. No me des el código: pregúntame qué diferencia hay entre el valor de una celda y su number_format, y cómo aplicaría un formato a una sola columna.</p><textarea class="crudo" id="prompt-3">Estoy dando formato a un reporte con openpyxl: encabezado con color, decimales y porcentajes. No me des el código: pregúntame qué diferencia hay entre el valor de una celda y su number_format, y cómo aplicaría un formato a una sola columna.</textarea>
+<div class="acciones"><button class="copiar" data-copiar="prompt-3">Copiar prompt</button><span class="sub">Si la IA te da el código completo, pídele que mejor te haga una pregunta.</span></div></div>
+<h3>Checkpoint y entrega</h3><div class="entrega"><ol>
+<li>Escribe la <b>palabra clave</b> que diga el profesor como comentario en la línea 1: <code># clave: ______</code></li>
+<li>Aplica el <b>cambio sorpresa</b> que se proyectará al terminar el ejercicio (sin IA, 5 min).</li>
+<li>Sube <b>S14D3_matricula.py y su .xlsx</b> a la tarea de Teams del día antes de salir: la tarea cierra al terminar la clase.</li>
+<li>Prepárate: el profesor puede pedirte que expliques una línea de tu código.</li>
+</ol></div>
+</section>
+<section class="dia" id="dia4"><div class="num">DÍA 4</div>
+<h2>Exportación de datos limpios</h2><p class="sub">Exportar solo datos limpios: tipos correctos, fechas de verdad y una hoja de errores</p>
+<h3>Ejemplos para correr en tu computadora</h3>
+<p class="sub">PythonTutor no puede correr estos ejemplos: copia cada uno a un archivo .py y ejecútalo con Python.</p>
+<div class="bloque"><b>Números como texto: la suma que no suma (así no: calificaciones como texto)</b> <span class="sub">(PythonTutor no puede importar openpyxl.)</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">7</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">8</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">from</span><span style="color: #BBB"> </span>openpyxl<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">import</span> Workbook
+
+libro = Workbook()
+hoja = libro.active
+<span style="color: #000080; font-weight: bold">for</span> fila <span style="font-weight: bold">in</span> [(<span style="color: #00F">&quot;Ana&quot;</span>, <span style="color: #00F">&quot;95&quot;</span>), (<span style="color: #00F">&quot;Luis&quot;</span>, <span style="color: #00F">&quot;80&quot;</span>)]:
+    hoja.append(fila)
+hoja[<span style="color: #00F">&quot;B3&quot;</span>] = <span style="color: #00F">&quot;=SUM(B1:B2)&quot;</span>
+libro.save(<span style="color: #00F">&quot;texto.xlsx&quot;</span>)
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="ejemplo-4-1">from openpyxl import Workbook
+
+libro = Workbook()
+hoja = libro.active
+for fila in [(&quot;Ana&quot;, &quot;95&quot;), (&quot;Luis&quot;, &quot;80&quot;)]:
+    hoja.append(fila)
+hoja[&quot;B3&quot;] = &quot;=SUM(B1:B2)&quot;
+libro.save(&quot;texto.xlsx&quot;)</textarea>
+<div class="acciones"><button class="copiar" data-copiar="ejemplo-4-1">Copiar código</button></div></div>
+<div class="bloque"><b>Números como texto: la suma que no suma (así sí: calificaciones como int)</b> <span class="sub">(PythonTutor no puede importar openpyxl.)</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">7</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">8</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">from</span><span style="color: #BBB"> </span>openpyxl<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">import</span> Workbook
+
+libro = Workbook()
+hoja = libro.active
+<span style="color: #000080; font-weight: bold">for</span> fila <span style="font-weight: bold">in</span> [(<span style="color: #00F">&quot;Ana&quot;</span>, <span style="color: #00F">95</span>), (<span style="color: #00F">&quot;Luis&quot;</span>, <span style="color: #00F">80</span>)]:
+    hoja.append(fila)
+hoja[<span style="color: #00F">&quot;B3&quot;</span>] = <span style="color: #00F">&quot;=SUM(B1:B2)&quot;</span>
+libro.save(<span style="color: #00F">&quot;numeros.xlsx&quot;</span>)
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="ejemplo-4-2">from openpyxl import Workbook
+
+libro = Workbook()
+hoja = libro.active
+for fila in [(&quot;Ana&quot;, 95), (&quot;Luis&quot;, 80)]:
+    hoja.append(fila)
+hoja[&quot;B3&quot;] = &quot;=SUM(B1:B2)&quot;
+libro.save(&quot;numeros.xlsx&quot;)</textarea>
+<div class="acciones"><button class="copiar" data-copiar="ejemplo-4-2">Copiar código</button></div></div>
+<div class="bloque"><b>Datos limpios y una hoja de errores</b> <span class="sub">(PythonTutor no puede importar openpyxl.)</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 7</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 8</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 9</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">10</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">11</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">12</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">13</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">14</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">15</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">16</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">17</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">18</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">19</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">20</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">21</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">22</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">23</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">from</span><span style="color: #BBB"> </span>datetime<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">import</span> date
+<span style="color: #000080; font-weight: bold">from</span><span style="color: #BBB"> </span>openpyxl<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">import</span> Workbook
+crudos = [(<span style="color: #00F">&quot;2026-09-01&quot;</span>, <span style="color: #00F">&quot;35.0&quot;</span>), (<span style="color: #00F">&quot;2026-09-31&quot;</span>, <span style="color: #00F">&quot;34.0&quot;</span>),
+          (<span style="color: #00F">&quot;2026-09-04&quot;</span>, <span style="color: #00F">&quot;N/D&quot;</span>), (<span style="color: #00F">&quot;2026-09-05&quot;</span>, <span style="color: #00F">&quot;32.2&quot;</span>)]
+libro = Workbook()
+datos = libro.active
+datos.title = <span style="color: #00F">&quot;Datos&quot;</span>
+errores = libro.create_sheet(<span style="color: #00F">&quot;Errores&quot;</span>)
+datos.append([<span style="color: #00F">&quot;Fecha&quot;</span>, <span style="color: #00F">&quot;Máxima °C&quot;</span>])
+errores.append([<span style="color: #00F">&quot;Fecha&quot;</span>, <span style="color: #00F">&quot;Máxima&quot;</span>, <span style="color: #00F">&quot;Motivo&quot;</span>])
+<span style="color: #000080; font-weight: bold">for</span> f, t <span style="font-weight: bold">in</span> crudos:
+    <span style="color: #000080; font-weight: bold">try</span>:
+        fila = [date.fromisoformat(f), float(t)]
+    <span style="color: #000080; font-weight: bold">except</span> ValueError <span style="color: #000080; font-weight: bold">as</span> e:
+        errores.append([f, t, str(e)])
+        <span style="color: #000080; font-weight: bold">continue</span>
+    datos.append(fila)
+datos.column_dimensions[<span style="color: #00F">&quot;A&quot;</span>].width = <span style="color: #00F">12</span>
+errores.column_dimensions[<span style="color: #00F">&quot;A&quot;</span>].width = <span style="color: #00F">12</span>
+errores.column_dimensions[<span style="color: #00F">&quot;C&quot;</span>].width = <span style="color: #00F">36</span>
+libro.save(<span style="color: #00F">&quot;limpio.xlsx&quot;</span>)
+print(<span style="color: #00F">&quot;Válidos:&quot;</span>, datos.max_row - <span style="color: #00F">1</span>)
+print(<span style="color: #00F">&quot;Con error:&quot;</span>, errores.max_row - <span style="color: #00F">1</span>)
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="ejemplo-4-3">from datetime import date
+from openpyxl import Workbook
+crudos = [(&quot;2026-09-01&quot;, &quot;35.0&quot;), (&quot;2026-09-31&quot;, &quot;34.0&quot;),
+          (&quot;2026-09-04&quot;, &quot;N/D&quot;), (&quot;2026-09-05&quot;, &quot;32.2&quot;)]
+libro = Workbook()
+datos = libro.active
+datos.title = &quot;Datos&quot;
+errores = libro.create_sheet(&quot;Errores&quot;)
+datos.append([&quot;Fecha&quot;, &quot;Máxima °C&quot;])
+errores.append([&quot;Fecha&quot;, &quot;Máxima&quot;, &quot;Motivo&quot;])
+for f, t in crudos:
+    try:
+        fila = [date.fromisoformat(f), float(t)]
+    except ValueError as e:
+        errores.append([f, t, str(e)])
+        continue
+    datos.append(fila)
+datos.column_dimensions[&quot;A&quot;].width = 12
+errores.column_dimensions[&quot;A&quot;].width = 12
+errores.column_dimensions[&quot;C&quot;].width = 36
+libro.save(&quot;limpio.xlsx&quot;)
+print(&quot;Válidos:&quot;, datos.max_row - 1)
+print(&quot;Con error:&quot;, errores.max_row - 1)</textarea>
+<div class="acciones"><button class="copiar" data-copiar="ejemplo-4-3">Copiar código</button></div></div>
+<h3>Reto: exporta solo lo limpio<span class="chip">20 min</span></h3><ol class="tareas">
+<li>Escribe validar(reg) que regrese [fecha, tmax, lluvia] ya convertidos: fecha con date.fromisoformat, números con float y lluvia no negativa (si no, raise ValueError).</li>
+<li>Exporta los válidos a la hoja &quot;Datos&quot; (fecha dd/mm/yyyy, números con 1 decimal) y los inválidos, con su motivo, a la hoja &quot;Errores&quot;.</li>
+<li>Agrega una hoja &quot;Resumen&quot; con los registros recibidos, exportados y con error. Guarda como octubre_limpio.xlsx.</li>
+</ol>
+<p class="pista"><b>Pista:</b> Pon todo lo que puede fallar dentro de validar y atrapa ValueError al llamarla. date.fromisoformat solo acepta aaaa-mm-dd.</p>
+<h3>Código de partida</h3><div class="bloque">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 7</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 8</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 9</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">10</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">11</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">from</span><span style="color: #BBB"> </span>datetime<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">import</span> date
+<span style="color: #000080; font-weight: bold">from</span><span style="color: #BBB"> </span>openpyxl<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">import</span> Workbook
+
+crudos = [
+    {<span style="color: #00F">&quot;fecha&quot;</span>: <span style="color: #00F">&quot;2026-10-01&quot;</span>, <span style="color: #00F">&quot;tmax&quot;</span>: <span style="color: #00F">&quot;32.8&quot;</span>, <span style="color: #00F">&quot;lluvia&quot;</span>: <span style="color: #00F">&quot;28.8&quot;</span>},
+    {<span style="color: #00F">&quot;fecha&quot;</span>: <span style="color: #00F">&quot;2026-10-02&quot;</span>, <span style="color: #00F">&quot;tmax&quot;</span>: <span style="color: #00F">&quot;25.5&quot;</span>, <span style="color: #00F">&quot;lluvia&quot;</span>: <span style="color: #00F">&quot;70.2&quot;</span>},
+    {<span style="color: #00F">&quot;fecha&quot;</span>: <span style="color: #00F">&quot;2026-10-03&quot;</span>, <span style="color: #00F">&quot;tmax&quot;</span>: <span style="color: #00F">&quot;26,9&quot;</span>, <span style="color: #00F">&quot;lluvia&quot;</span>: <span style="color: #00F">&quot;20.1&quot;</span>},
+    {<span style="color: #00F">&quot;fecha&quot;</span>: <span style="color: #00F">&quot;2026-10-04&quot;</span>, <span style="color: #00F">&quot;tmax&quot;</span>: <span style="color: #00F">&quot;24.9&quot;</span>, <span style="color: #00F">&quot;lluvia&quot;</span>: <span style="color: #00F">&quot;-1&quot;</span>},
+    {<span style="color: #00F">&quot;fecha&quot;</span>: <span style="color: #00F">&quot;05/10/2026&quot;</span>, <span style="color: #00F">&quot;tmax&quot;</span>: <span style="color: #00F">&quot;25.3&quot;</span>, <span style="color: #00F">&quot;lluvia&quot;</span>: <span style="color: #00F">&quot;10.8&quot;</span>},
+    {<span style="color: #00F">&quot;fecha&quot;</span>: <span style="color: #00F">&quot;2026-10-06&quot;</span>, <span style="color: #00F">&quot;tmax&quot;</span>: <span style="color: #00F">&quot;27.9&quot;</span>, <span style="color: #00F">&quot;lluvia&quot;</span>: <span style="color: #00F">&quot;0.6&quot;</span>},
+]
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="codigo-4">from datetime import date
+from openpyxl import Workbook
+
+crudos = [
+    {&quot;fecha&quot;: &quot;2026-10-01&quot;, &quot;tmax&quot;: &quot;32.8&quot;, &quot;lluvia&quot;: &quot;28.8&quot;},
+    {&quot;fecha&quot;: &quot;2026-10-02&quot;, &quot;tmax&quot;: &quot;25.5&quot;, &quot;lluvia&quot;: &quot;70.2&quot;},
+    {&quot;fecha&quot;: &quot;2026-10-03&quot;, &quot;tmax&quot;: &quot;26,9&quot;, &quot;lluvia&quot;: &quot;20.1&quot;},
+    {&quot;fecha&quot;: &quot;2026-10-04&quot;, &quot;tmax&quot;: &quot;24.9&quot;, &quot;lluvia&quot;: &quot;-1&quot;},
+    {&quot;fecha&quot;: &quot;05/10/2026&quot;, &quot;tmax&quot;: &quot;25.3&quot;, &quot;lluvia&quot;: &quot;10.8&quot;},
+    {&quot;fecha&quot;: &quot;2026-10-06&quot;, &quot;tmax&quot;: &quot;27.9&quot;, &quot;lluvia&quot;: &quot;0.6&quot;},
+]</textarea>
+<div class="acciones"><button class="copiar" data-copiar="codigo-4">Copiar código</button><span class="sub">Solo en tu computadora: PythonTutor no puede importar openpyxl.</span></div></div>
+<h3>Prompt sugerido para la IA</h3><div class="bloque">
+<p class="prompt">Estoy exportando a Excel con openpyxl solo los registros válidos y quiero mandar los inválidos a una hoja de errores. No me des el código: pregúntame qué puede fallar en cada campo y dónde conviene atrapar el error.</p><textarea class="crudo" id="prompt-4">Estoy exportando a Excel con openpyxl solo los registros válidos y quiero mandar los inválidos a una hoja de errores. No me des el código: pregúntame qué puede fallar en cada campo y dónde conviene atrapar el error.</textarea>
+<div class="acciones"><button class="copiar" data-copiar="prompt-4">Copiar prompt</button><span class="sub">Si la IA te da el código completo, pídele que mejor te haga una pregunta.</span></div></div>
+<h3>Checkpoint y entrega</h3><div class="entrega"><ol>
+<li>Escribe la <b>palabra clave</b> que diga el profesor como comentario en la línea 1: <code># clave: ______</code></li>
+<li>Aplica el <b>cambio sorpresa</b> que se proyectará al terminar el ejercicio (sin IA, 5 min).</li>
+<li>Sube <b>S14D4_matricula.py y su .xlsx</b> a la tarea de Teams del día antes de salir: la tarea cierra al terminar la clase.</li>
+<li>Prepárate: el profesor puede pedirte que expliques una línea de tu código.</li>
+</ol></div>
+</section>
+<section class="dia" id="dia5"><div class="num">DÍA 5</div>
+<h2>Errores comunes y un reporte completo</h2><p class="sub">Errores comunes con openpyxl y un generador de reportes completo: Datos, Resumen y Errores</p>
+<h3>Ejemplos para correr en tu computadora</h3>
+<p class="sub">PythonTutor no puede correr estos ejemplos: copia cada uno a un archivo .py y ejecútalo con Python.</p>
+<div class="bloque"><b>Listas desde 0, filas desde 1 (así no: índice de range como fila)</b> <span class="sub">(PythonTutor no puede importar openpyxl.)</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">6</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">from</span><span style="color: #BBB"> </span>openpyxl<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">import</span> Workbook
+
+hoja = Workbook().active
+nombres = [<span style="color: #00F">&quot;Ana&quot;</span>, <span style="color: #00F">&quot;Luis&quot;</span>, <span style="color: #00F">&quot;Eva&quot;</span>]
+<span style="color: #000080; font-weight: bold">for</span> i <span style="font-weight: bold">in</span> range(len(nombres)):
+    hoja.cell(row=i, column=<span style="color: #00F">1</span>, value=nombres[i])
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="ejemplo-5-1">from openpyxl import Workbook
+
+hoja = Workbook().active
+nombres = [&quot;Ana&quot;, &quot;Luis&quot;, &quot;Eva&quot;]
+for i in range(len(nombres)):
+    hoja.cell(row=i, column=1, value=nombres[i])</textarea>
+<div class="acciones"><button class="copiar" data-copiar="ejemplo-5-1">Copiar código</button></div></div>
+<div class="bloque"><b>Listas desde 0, filas desde 1 (así sí: enumerate con start=1)</b> <span class="sub">(PythonTutor no puede importar openpyxl.)</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">7</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">from</span><span style="color: #BBB"> </span>openpyxl<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">import</span> Workbook
+
+hoja = Workbook().active
+nombres = [<span style="color: #00F">&quot;Ana&quot;</span>, <span style="color: #00F">&quot;Luis&quot;</span>, <span style="color: #00F">&quot;Eva&quot;</span>]
+<span style="color: #000080; font-weight: bold">for</span> fila, nombre <span style="font-weight: bold">in</span> enumerate(nombres, start=<span style="color: #00F">1</span>):
+    hoja.cell(row=fila, column=<span style="color: #00F">1</span>, value=nombre)
+print(hoja[<span style="color: #00F">&quot;A1&quot;</span>].value, hoja[<span style="color: #00F">&quot;A3&quot;</span>].value)
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="ejemplo-5-2">from openpyxl import Workbook
+
+hoja = Workbook().active
+nombres = [&quot;Ana&quot;, &quot;Luis&quot;, &quot;Eva&quot;]
+for fila, nombre in enumerate(nombres, start=1):
+    hoja.cell(row=fila, column=1, value=nombre)
+print(hoja[&quot;A1&quot;].value, hoja[&quot;A3&quot;].value)</textarea>
+<div class="acciones"><button class="copiar" data-copiar="ejemplo-5-2">Copiar código</button></div></div>
+<div class="bloque"><b>Un reporte con funciones</b> <span class="sub">(PythonTutor no puede importar openpyxl.)</span>
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 7</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 8</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 9</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">10</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">11</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">12</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">13</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">14</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">15</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">16</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">17</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">18</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">19</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">20</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">21</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">22</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>statistics<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">as</span><span style="color: #BBB"> </span>st
+<span style="color: #000080; font-weight: bold">from</span><span style="color: #BBB"> </span>openpyxl<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">import</span> Workbook
+<span style="color: #000080; font-weight: bold">from</span><span style="color: #BBB"> </span>openpyxl.styles<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">import</span> Font
+
+tmax = [<span style="color: #00F">35.0</span>, <span style="color: #00F">36.5</span>, <span style="color: #00F">38.0</span>, <span style="color: #00F">34.1</span>, <span style="color: #00F">32.2</span>, <span style="color: #00F">30.2</span>, <span style="color: #00F">34.0</span>]
+
+<span style="color: #000080; font-weight: bold">def</span><span style="color: #BBB"> </span>tabla(hoja, encabezados, filas):
+    hoja.append(encabezados)
+    <span style="color: #000080; font-weight: bold">for</span> fila <span style="font-weight: bold">in</span> filas:
+        hoja.append(fila)
+    <span style="color: #000080; font-weight: bold">for</span> celda <span style="font-weight: bold">in</span> hoja[<span style="color: #00F">1</span>]:
+        celda.font = Font(bold=<span style="color: #000080; font-weight: bold">True</span>)
+
+libro = Workbook()
+datos = libro.active
+datos.title = <span style="color: #00F">&quot;Datos&quot;</span>
+tabla(datos, [<span style="color: #00F">&quot;Día&quot;</span>, <span style="color: #00F">&quot;Máxima °C&quot;</span>], enumerate(tmax, start=<span style="color: #00F">1</span>))
+resumen = [(<span style="color: #00F">&quot;Media&quot;</span>, round(st.mean(tmax), <span style="color: #00F">2</span>)),
+           (<span style="color: #00F">&quot;Mediana&quot;</span>, st.median(tmax)),
+           (<span style="color: #00F">&quot;Desviación&quot;</span>, round(st.stdev(tmax), <span style="color: #00F">2</span>))]
+tabla(libro.create_sheet(<span style="color: #00F">&quot;Resumen&quot;</span>), [<span style="color: #00F">&quot;Medida&quot;</span>, <span style="color: #00F">&quot;°C&quot;</span>], resumen)
+libro.save(<span style="color: #00F">&quot;reporte_semana.xlsx&quot;</span>)
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="ejemplo-5-3">import statistics as st
+from openpyxl import Workbook
+from openpyxl.styles import Font
+
+tmax = [35.0, 36.5, 38.0, 34.1, 32.2, 30.2, 34.0]
+
+def tabla(hoja, encabezados, filas):
+    hoja.append(encabezados)
+    for fila in filas:
+        hoja.append(fila)
+    for celda in hoja[1]:
+        celda.font = Font(bold=True)
+
+libro = Workbook()
+datos = libro.active
+datos.title = &quot;Datos&quot;
+tabla(datos, [&quot;Día&quot;, &quot;Máxima °C&quot;], enumerate(tmax, start=1))
+resumen = [(&quot;Media&quot;, round(st.mean(tmax), 2)),
+           (&quot;Mediana&quot;, st.median(tmax)),
+           (&quot;Desviación&quot;, round(st.stdev(tmax), 2))]
+tabla(libro.create_sheet(&quot;Resumen&quot;), [&quot;Medida&quot;, &quot;°C&quot;], resumen)
+libro.save(&quot;reporte_semana.xlsx&quot;)</textarea>
+<div class="acciones"><button class="copiar" data-copiar="ejemplo-5-3">Copiar código</button></div></div>
+<h3>Reto integrador: reporte del clima de septiembre<span class="chip">20 min</span></h3><ol class="tareas">
+<li>Escribe tabla(hoja, encabezados, filas) con encabezado en estilo FCFM, y resumen(datos) con media, mediana, desviación, mínimo y máximo (Tema 13).</li>
+<li>Arma la hoja Datos (Día, Máxima, Mínima, Lluvia; 1 decimal; encabezado inmovilizado) y la hoja Resumen (una fila por medida, una columna por variable).</li>
+<li>Guarda reporte_septiembre.xlsx con try/except PermissionError, ábrelo en Excel y revisa que se vea profesional.</li>
+</ol>
+<p class="pista"><b>Pista:</b> La hoja Resumen se arma con filas como [&quot;Media&quot;, r1[&quot;media&quot;], r2[&quot;media&quot;], r3[&quot;media&quot;]]. Primero haz que funcione; al final, el formato.</p>
+<h3>Código de partida</h3><div class="bloque">
+<div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 1</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 2</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 3</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 4</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 5</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 6</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 7</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 8</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;"> 9</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">10</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">11</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">12</span>
+<span style="color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px;">13</span></pre></div></td><td class="code"><div><pre style="line-height: 125%;"><span></span><span style="color: #000080; font-weight: bold">import</span><span style="color: #BBB"> </span>statistics<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">as</span><span style="color: #BBB"> </span>st
+<span style="color: #000080; font-weight: bold">from</span><span style="color: #BBB"> </span>openpyxl<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">import</span> Workbook
+<span style="color: #000080; font-weight: bold">from</span><span style="color: #BBB"> </span>openpyxl.styles<span style="color: #BBB"> </span><span style="color: #000080; font-weight: bold">import</span> Font, PatternFill
+
+tmax = [<span style="color: #00F">35.0</span>, <span style="color: #00F">36.5</span>, <span style="color: #00F">38.0</span>, <span style="color: #00F">34.1</span>, <span style="color: #00F">32.2</span>, <span style="color: #00F">30.2</span>, <span style="color: #00F">34.0</span>, <span style="color: #00F">33.3</span>, <span style="color: #00F">34.9</span>, <span style="color: #00F">35.1</span>,
+        <span style="color: #00F">37.2</span>, <span style="color: #00F">35.0</span>, <span style="color: #00F">35.2</span>, <span style="color: #00F">35.8</span>, <span style="color: #00F">35.9</span>, <span style="color: #00F">35.0</span>, <span style="color: #00F">34.7</span>, <span style="color: #00F">33.5</span>, <span style="color: #00F">34.5</span>, <span style="color: #00F">35.4</span>,
+        <span style="color: #00F">35.4</span>, <span style="color: #00F">32.8</span>, <span style="color: #00F">31.8</span>, <span style="color: #00F">31.5</span>, <span style="color: #00F">33.3</span>, <span style="color: #00F">33.9</span>, <span style="color: #00F">34.2</span>, <span style="color: #00F">33.7</span>, <span style="color: #00F">33.2</span>, <span style="color: #00F">30.9</span>]
+tmin = [<span style="color: #00F">23.4</span>, <span style="color: #00F">23.7</span>, <span style="color: #00F">25.0</span>, <span style="color: #00F">25.2</span>, <span style="color: #00F">23.6</span>, <span style="color: #00F">22.3</span>, <span style="color: #00F">22.3</span>, <span style="color: #00F">21.8</span>, <span style="color: #00F">21.9</span>, <span style="color: #00F">22.3</span>,
+        <span style="color: #00F">22.4</span>, <span style="color: #00F">23.6</span>, <span style="color: #00F">23.4</span>, <span style="color: #00F">23.6</span>, <span style="color: #00F">23.0</span>, <span style="color: #00F">22.6</span>, <span style="color: #00F">24.0</span>, <span style="color: #00F">23.0</span>, <span style="color: #00F">22.4</span>, <span style="color: #00F">22.0</span>,
+        <span style="color: #00F">23.1</span>, <span style="color: #00F">22.6</span>, <span style="color: #00F">21.8</span>, <span style="color: #00F">22.0</span>, <span style="color: #00F">22.8</span>, <span style="color: #00F">23.6</span>, <span style="color: #00F">24.1</span>, <span style="color: #00F">23.5</span>, <span style="color: #00F">23.4</span>, <span style="color: #00F">23.9</span>]
+lluvia = [<span style="color: #00F">1.7</span>, <span style="color: #00F">0.7</span>, <span style="color: #00F">0.2</span>, <span style="color: #00F">0.7</span>, <span style="color: #00F">6.9</span>, <span style="color: #00F">0.7</span>, <span style="color: #00F">0.0</span>, <span style="color: #00F">0.3</span>, <span style="color: #00F">0.6</span>, <span style="color: #00F">0.8</span>,
+          <span style="color: #00F">0.2</span>, <span style="color: #00F">0.8</span>, <span style="color: #00F">0.2</span>, <span style="color: #00F">0.2</span>, <span style="color: #00F">0.0</span>, <span style="color: #00F">0.0</span>, <span style="color: #00F">1.9</span>, <span style="color: #00F">2.7</span>, <span style="color: #00F">0.0</span>, <span style="color: #00F">0.0</span>,
+          <span style="color: #00F">0.0</span>, <span style="color: #00F">2.9</span>, <span style="color: #00F">3.2</span>, <span style="color: #00F">0.5</span>, <span style="color: #00F">0.9</span>, <span style="color: #00F">0.7</span>, <span style="color: #00F">2.7</span>, <span style="color: #00F">2.6</span>, <span style="color: #00F">0.3</span>, <span style="color: #00F">8.8</span>]
+</pre></div></td></tr></table></div>
+<textarea class="crudo" id="codigo-5">import statistics as st
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill
+
+tmax = [35.0, 36.5, 38.0, 34.1, 32.2, 30.2, 34.0, 33.3, 34.9, 35.1,
+        37.2, 35.0, 35.2, 35.8, 35.9, 35.0, 34.7, 33.5, 34.5, 35.4,
+        35.4, 32.8, 31.8, 31.5, 33.3, 33.9, 34.2, 33.7, 33.2, 30.9]
+tmin = [23.4, 23.7, 25.0, 25.2, 23.6, 22.3, 22.3, 21.8, 21.9, 22.3,
+        22.4, 23.6, 23.4, 23.6, 23.0, 22.6, 24.0, 23.0, 22.4, 22.0,
+        23.1, 22.6, 21.8, 22.0, 22.8, 23.6, 24.1, 23.5, 23.4, 23.9]
+lluvia = [1.7, 0.7, 0.2, 0.7, 6.9, 0.7, 0.0, 0.3, 0.6, 0.8,
+          0.2, 0.8, 0.2, 0.2, 0.0, 0.0, 1.9, 2.7, 0.0, 0.0,
+          0.0, 2.9, 3.2, 0.5, 0.9, 0.7, 2.7, 2.6, 0.3, 8.8]</textarea>
+<div class="acciones"><button class="copiar" data-copiar="codigo-5">Copiar código</button><span class="sub">Solo en tu computadora: PythonTutor no puede importar openpyxl.</span></div></div>
+<h3>Prompt sugerido para la IA</h3><div class="bloque">
+<p class="prompt">Estoy armando con openpyxl un reporte con una hoja de datos y una de resumen estadístico. No me des el código: ayúdame a decidir qué funciones escribir, qué recibe y qué regresa cada una, y cómo organizar la hoja de resumen.</p><textarea class="crudo" id="prompt-5">Estoy armando con openpyxl un reporte con una hoja de datos y una de resumen estadístico. No me des el código: ayúdame a decidir qué funciones escribir, qué recibe y qué regresa cada una, y cómo organizar la hoja de resumen.</textarea>
+<div class="acciones"><button class="copiar" data-copiar="prompt-5">Copiar prompt</button><span class="sub">Si la IA te da el código completo, pídele que mejor te haga una pregunta.</span></div></div>
+<h3>Checkpoint y entrega</h3><div class="entrega"><ol>
+<li>Escribe la <b>palabra clave</b> que diga el profesor como comentario en la línea 1: <code># clave: ______</code></li>
+<li>Aplica el <b>cambio sorpresa</b> que se proyectará al terminar el ejercicio (sin IA, 5 min).</li>
+<li>Sube <b>S14D5_matricula.py y su .xlsx</b> a la tarea de Teams del día antes de salir: la tarea cierra al terminar la clase.</li>
+<li>Prepárate: el profesor puede pedirte que expliques una línea de tu código.</li>
+</ol></div>
+</section>
+<section class="dia" id="chuleta"><h2>Chuleta: openpyxl</h2>
+<p class="sub">Se instala una vez con pip install openpyxl. Las filas y columnas empiezan en 1.</p>
+<table class="chuleta"><tr><th>Instrucción</th><th>Qué hace</th><th>Ejemplo</th></tr>
+<tr><td class="mono">Workbook() / libro.active</td><td>Libro nuevo / su hoja activa</td><td class="mono">hoja = Workbook().active</td></tr>
+<tr><td class="mono">hoja.title</td><td>Nombre de la hoja</td><td class="mono">hoja.title = &quot;Datos&quot;</td></tr>
+<tr><td class="mono">hoja[&quot;A1&quot;] = valor</td><td>Escribir en una celda</td><td class="mono">hoja[&quot;B2&quot;] = 35.0</td></tr>
+<tr><td class="mono">hoja.cell(row, column)</td><td>Celda por números (desde 1)</td><td class="mono">hoja.cell(row=2, column=2).value</td></tr>
+<tr><td class="mono">hoja.append(lista)</td><td>Agregar una fila completa</td><td class="mono">hoja.append([&quot;Ana&quot;, 95])</td></tr>
+<tr><td class="mono">libro.create_sheet(n)</td><td>Hoja nueva (al final o en index)</td><td class="mono">libro.create_sheet(&quot;Resumen&quot;, 0)</td></tr>
+<tr><td class="mono">load_workbook(ruta)</td><td>Abrir un .xlsx existente</td><td class="mono">libro = load_workbook(&quot;datos.xlsx&quot;)</td></tr>
+<tr><td class="mono">hoja.iter_rows(...)</td><td>Recorrer filas</td><td class="mono">iter_rows(min_row=2, values_only=True)</td></tr>
+<tr><td class="mono">Font / PatternFill</td><td>Letra / relleno</td><td class="mono">PatternFill(fill_type=&quot;solid&quot;, start_color=&quot;00408F&quot;)</td></tr>
+<tr><td class="mono">celda.number_format</td><td>Cómo se ve el número</td><td class="mono">&quot;0.0&quot;   &quot;0%&quot;   &quot;#,##0.00&quot;   &quot;dd/mm/yyyy&quot;</td></tr>
+<tr><td class="mono">freeze_panes / auto_filter</td><td>Encabezado fijo / filtros</td><td class="mono">hoja.freeze_panes = &quot;A2&quot;</td></tr>
+<tr><td class="mono">libro.save(ruta)</td><td>Guardar (reemplaza sin preguntar)</td><td class="mono">libro.save(&quot;reporte.xlsx&quot;)</td></tr>
+</table></section>
+<section class="dia" id="interactivos"><h2>Simuladores y ejercicios de la semana</h2>
+<p class="sub">Funcionan en el navegador del celular o de la computadora, sin instalar nada. Los de todas las semanas están en <a href="https://memosanchezg.github.io/programacion-basica-interactivos/" target="_blank" rel="noopener">memosanchezg.github.io/programacion-basica-interactivos/</a>.</p>
+<ul class="links">
+<li><a href="https://memosanchezg.github.io/programacion-basica-interactivos/semana-14-openpyxl-paso-a-paso.html" target="_blank" rel="noopener">openpyxl paso a paso</a> <span class="sub">· Simulador</span><br><span class="sub">Avanza línea por línea por un programa de openpyxl y mira cómo cambia el libro de Excel: celdas, hojas, formatos, variables y lo que imprime.</span></li>
+<li><a href="https://memosanchezg.github.io/programacion-basica-interactivos/semana-14-coordenadas.html" target="_blank" rel="noopener">¿Qué celdas toca?</a> <span class="sub">· Simulador</span><br><span class="sub">Un juego de coordenadas con openpyxl: marca las celdas que toca cada instrucción, o elige la instrucción que recorre las celdas marcadas.</span></li>
+<li><a href="https://memosanchezg.github.io/programacion-basica-interactivos/semana-14-formatos.html" target="_blank" rel="noopener">Valor, formato y tipo</a> <span class="sub">· Simulador</span><br><span class="sub">Lo que guardas en una celda, cómo lo muestra Excel según su number_format y por qué un número como texto o una fecha como texto no sirven para hacer cuentas.</span></li>
+<li><a href="https://memosanchezg.github.io/programacion-basica-interactivos/semana-14-reporte.html" target="_blank" rel="noopener">Tu reporte de Excel en el navegador</a> <span class="sub">· Ejercicio con Python</span><br><span class="sub">Con openpyxl, convierte el clima de septiembre (clima_septiembre.json) en un reporte con una hoja de datos y una de resumen, y descarga el .xlsx.</span></li>
+</ul></section>
+<section class="dia" id="recursos"><h2>Recursos</h2><ul class="links">
+<li><a href="https://openpyxl.readthedocs.io/en/stable/tutorial.html" target="_blank" rel="noopener">openpyxl: tutorial oficial (en inglés)</a><br><span class="sub">Crear y abrir libros, escribir y leer celdas, recorrer filas y guardar.</span></li>
+<li><a href="https://openpyxl.readthedocs.io/en/stable/styles.html" target="_blank" rel="noopener">openpyxl: estilos (en inglés)</a><br><span class="sub">Font, PatternFill, Alignment, Border y number_format, con ejemplos.</span></li>
+<li><a href="https://docs.python.org/es/3/library/datetime.html" target="_blank" rel="noopener">Documentación del módulo datetime</a><br><span class="sub">date.fromisoformat, date(año, mes, día) y cómo formatear fechas.</span></li>
+</ul></section>
+<footer>Hoja del estudiante del Tema 14 · Programación Básica · FCFM-UANL. <a href="index.html">Índice de simuladores</a> · <a href="#qr-sitio" class="qr-abrir">Abrir en el celular (QR)</a></footer>
+</main><script>
+document.querySelectorAll('button.copiar').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var el = document.getElementById(btn.getAttribute('data-copiar'));
+    var texto = el.value !== undefined ? el.value : el.textContent;
+    var listo = function () {
+      var antes = btn.textContent;
+      btn.textContent = 'Copiado \u2713';
+      setTimeout(function () { btn.textContent = antes; }, 1500);
+    };
+    var respaldo = function () {
+      var t = document.createElement('textarea');
+      t.value = texto; document.body.appendChild(t); t.select();
+      try { document.execCommand('copy'); listo(); } catch (e) {}
+      document.body.removeChild(t);
+    };
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(texto).then(listo, respaldo);
+    } else { respaldo(); }
+  });
+});
+</script><div id="qr-sitio" class="qr-capa" hidden>
+  <div class="qr-caja" role="dialog" aria-modal="true" aria-label="Código QR de esta página">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 41 41" role="img" aria-label="Código QR de https://memosanchezg.github.io/programacion-basica-interactivos/hoja-tema-14.html" shape-rendering="crispEdges"><rect width="41" height="41" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM11 2h1v1h-1zM14 2h1v1h-1zM17 2h2v1h-2zM20 2h1v1h-1zM22 2h1v1h-1zM24 2h1v1h-1zM27 2h1v1h-1zM32 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM10 3h1v1h-1zM12 3h3v1h-3zM16 3h1v1h-1zM18 3h2v1h-2zM26 3h2v1h-2zM30 3h1v1h-1zM32 3h1v1h-1zM38 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM10 4h1v1h-1zM13 4h2v1h-2zM16 4h1v1h-1zM22 4h2v1h-2zM25 4h2v1h-2zM28 4h1v1h-1zM32 4h1v1h-1zM34 4h3v1h-3zM38 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h1v1h-1zM12 5h1v1h-1zM14 5h1v1h-1zM17 5h3v1h-3zM22 5h2v1h-2zM25 5h3v1h-3zM30 5h1v1h-1zM32 5h1v1h-1zM34 5h3v1h-3zM38 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM15 6h2v1h-2zM19 6h7v1h-7zM30 6h1v1h-1zM32 6h1v1h-1zM34 6h3v1h-3zM38 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM11 7h5v1h-5zM18 7h2v1h-2zM26 7h1v1h-1zM28 7h1v1h-1zM32 7h1v1h-1zM38 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM30 8h1v1h-1zM32 8h7v1h-7zM10 9h2v1h-2zM15 9h1v1h-1zM18 9h1v1h-1zM20 9h2v1h-2zM24 9h1v1h-1zM29 9h2v1h-2zM2 10h1v1h-1zM8 10h1v1h-1zM10 10h1v1h-1zM13 10h1v1h-1zM16 10h2v1h-2zM19 10h1v1h-1zM22 10h1v1h-1zM26 10h3v1h-3zM31 10h2v1h-2zM35 10h3v1h-3zM2 11h1v1h-1zM4 11h3v1h-3zM9 11h1v1h-1zM11 11h1v1h-1zM20 11h3v1h-3zM24 11h2v1h-2zM27 11h3v1h-3zM33 11h2v1h-2zM36 11h2v1h-2zM7 12h10v1h-10zM19 12h1v1h-1zM22 12h3v1h-3zM29 12h3v1h-3zM33 12h1v1h-1zM35 12h4v1h-4zM3 13h1v1h-1zM6 13h2v1h-2zM9 13h1v1h-1zM11 13h1v1h-1zM17 13h2v1h-2zM24 13h2v1h-2zM31 13h5v1h-5zM38 13h1v1h-1zM3 14h2v1h-2zM8 14h4v1h-4zM13 14h1v1h-1zM15 14h2v1h-2zM18 14h1v1h-1zM21 14h1v1h-1zM29 14h2v1h-2zM32 14h2v1h-2zM35 14h1v1h-1zM38 14h1v1h-1zM4 15h1v1h-1zM11 15h9v1h-9zM21 15h3v1h-3zM25 15h1v1h-1zM27 15h1v1h-1zM29 15h2v1h-2zM33 15h1v1h-1zM35 15h1v1h-1zM5 16h1v1h-1zM7 16h3v1h-3zM12 16h1v1h-1zM14 16h2v1h-2zM17 16h2v1h-2zM20 16h1v1h-1zM23 16h2v1h-2zM29 16h2v1h-2zM33 16h3v1h-3zM37 16h2v1h-2zM2 17h1v1h-1zM5 17h3v1h-3zM10 17h5v1h-5zM16 17h1v1h-1zM18 17h1v1h-1zM20 17h1v1h-1zM22 17h1v1h-1zM26 17h1v1h-1zM30 17h4v1h-4zM35 17h4v1h-4zM3 18h1v1h-1zM6 18h3v1h-3zM12 18h2v1h-2zM15 18h2v1h-2zM18 18h2v1h-2zM22 18h1v1h-1zM24 18h6v1h-6zM31 18h2v1h-2zM34 18h1v1h-1zM36 18h2v1h-2zM3 19h1v1h-1zM5 19h1v1h-1zM10 19h4v1h-4zM15 19h2v1h-2zM21 19h1v1h-1zM24 19h2v1h-2zM28 19h3v1h-3zM37 19h1v1h-1zM4 20h3v1h-3zM8 20h1v1h-1zM11 20h1v1h-1zM13 20h1v1h-1zM15 20h1v1h-1zM17 20h1v1h-1zM20 20h2v1h-2zM24 20h4v1h-4zM29 20h2v1h-2zM32 20h1v1h-1zM34 20h1v1h-1zM36 20h1v1h-1zM38 20h1v1h-1zM2 21h4v1h-4zM11 21h1v1h-1zM13 21h1v1h-1zM20 21h1v1h-1zM22 21h1v1h-1zM26 21h1v1h-1zM28 21h2v1h-2zM31 21h2v1h-2zM35 21h1v1h-1zM38 21h1v1h-1zM3 22h1v1h-1zM5 22h9v1h-9zM15 22h1v1h-1zM17 22h1v1h-1zM19 22h1v1h-1zM21 22h2v1h-2zM25 22h5v1h-5zM31 22h2v1h-2zM34 22h1v1h-1zM36 22h1v1h-1zM3 23h1v1h-1zM5 23h3v1h-3zM9 23h1v1h-1zM11 23h4v1h-4zM16 23h2v1h-2zM20 23h2v1h-2zM24 23h2v1h-2zM29 23h1v1h-1zM34 23h1v1h-1zM36 23h1v1h-1zM2 24h1v1h-1zM4 24h1v1h-1zM8 24h1v1h-1zM11 24h1v1h-1zM13 24h1v1h-1zM17 24h2v1h-2zM22 24h3v1h-3zM27 24h5v1h-5zM33 24h3v1h-3zM38 24h1v1h-1zM2 25h2v1h-2zM5 25h1v1h-1zM10 25h1v1h-1zM15 25h1v1h-1zM17 25h1v1h-1zM20 25h3v1h-3zM25 25h1v1h-1zM29 25h1v1h-1zM33 25h3v1h-3zM2 26h1v1h-1zM7 26h4v1h-4zM13 26h3v1h-3zM17 26h2v1h-2zM22 26h1v1h-1zM25 26h2v1h-2zM29 26h1v1h-1zM32 26h2v1h-2zM2 27h4v1h-4zM10 27h1v1h-1zM12 27h1v1h-1zM15 27h2v1h-2zM18 27h1v1h-1zM20 27h2v1h-2zM23 27h1v1h-1zM25 27h1v1h-1zM27 27h1v1h-1zM29 27h3v1h-3zM33 27h1v1h-1zM2 28h1v1h-1zM6 28h3v1h-3zM10 28h3v1h-3zM20 28h1v1h-1zM22 28h1v1h-1zM24 28h1v1h-1zM27 28h1v1h-1zM29 28h3v1h-3zM33 28h2v1h-2zM36 28h3v1h-3zM2 29h1v1h-1zM4 29h3v1h-3zM12 29h1v1h-1zM16 29h2v1h-2zM22 29h1v1h-1zM24 29h2v1h-2zM28 29h1v1h-1zM31 29h2v1h-2zM34 29h5v1h-5zM2 30h1v1h-1zM4 30h1v1h-1zM7 30h3v1h-3zM11 30h1v1h-1zM13 30h1v1h-1zM16 30h1v1h-1zM19 30h1v1h-1zM24 30h13v1h-13zM38 30h1v1h-1zM10 31h3v1h-3zM15 31h1v1h-1zM17 31h5v1h-5zM25 31h1v1h-1zM27 31h1v1h-1zM29 31h2v1h-2zM34 31h1v1h-1zM2 32h7v1h-7zM11 32h1v1h-1zM13 32h1v1h-1zM17 32h1v1h-1zM19 32h1v1h-1zM21 32h1v1h-1zM23 32h1v1h-1zM25 32h2v1h-2zM30 32h1v1h-1zM32 32h1v1h-1zM34 32h1v1h-1zM38 32h1v1h-1zM2 33h1v1h-1zM8 33h1v1h-1zM11 33h2v1h-2zM14 33h3v1h-3zM21 33h2v1h-2zM24 33h2v1h-2zM28 33h3v1h-3zM34 33h1v1h-1zM37 33h1v1h-1zM2 34h1v1h-1zM4 34h3v1h-3zM8 34h1v1h-1zM11 34h1v1h-1zM13 34h1v1h-1zM15 34h3v1h-3zM19 34h1v1h-1zM21 34h1v1h-1zM24 34h11v1h-11zM36 34h2v1h-2zM2 35h1v1h-1zM4 35h3v1h-3zM8 35h1v1h-1zM11 35h3v1h-3zM15 35h2v1h-2zM18 35h4v1h-4zM23 35h4v1h-4zM29 35h1v1h-1zM31 35h2v1h-2zM37 35h2v1h-2zM2 36h1v1h-1zM4 36h3v1h-3zM8 36h1v1h-1zM14 36h1v1h-1zM16 36h2v1h-2zM22 36h2v1h-2zM27 36h2v1h-2zM30 36h1v1h-1zM37 36h2v1h-2zM2 37h1v1h-1zM8 37h1v1h-1zM11 37h2v1h-2zM16 37h1v1h-1zM18 37h1v1h-1zM22 37h1v1h-1zM24 37h3v1h-3zM28 37h1v1h-1zM30 37h3v1h-3zM34 37h2v1h-2zM38 37h1v1h-1zM2 38h7v1h-7zM10 38h1v1h-1zM15 38h2v1h-2zM18 38h1v1h-1zM22 38h1v1h-1zM25 38h2v1h-2zM28 38h1v1h-1zM30 38h4v1h-4zM35 38h1v1h-1zM38 38h1v1h-1z"/></svg>
+    <p class="qr-texto">Escanea con la cámara del celular para abrir esta página</p>
+    <p class="qr-url">https://memosanchezg.github.io/programacion-basica-interactivos/hoja-tema-14.html</p>
+    <button type="button" class="qr-cerrar">Cerrar</button>
+  </div>
+</div>
+<style>
+  .qr-capa { position:fixed; top:0; right:0; bottom:0; left:0; z-index:10000; display:flex; align-items:center;
+             justify-content:center; padding:16px; background:#fff; }
+  .qr-capa[hidden] { display:none; }
+  .qr-caja { max-width:100%; text-align:center; color:#0A2A57; font:16px/1.4 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .qr-caja svg { display:block; width:min(62vh, 84vw); height:auto; margin:0 auto; }
+  .qr-texto { margin:12px 0 2px; font-size:1.15rem; font-weight:bold; }
+  .qr-url { margin:0 0 12px; color:#5B6472; word-break:break-all; }
+  .qr-cerrar { font:inherit; padding:6px 20px; border:2px solid #00408F; border-radius:4px; background:#fff;
+               color:#00408F; cursor:pointer; }
+</style>
+<script>
+  (function () {
+    var capa = document.getElementById("qr-sitio");
+    document.querySelectorAll("a.qr-abrir").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        capa.hidden = false;
+        capa.querySelector(".qr-cerrar").focus();
+      });
+    });
+    capa.addEventListener("click", function (e) {
+      if (e.target === capa || e.target.classList.contains("qr-cerrar")) capa.hidden = true;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !capa.hidden) capa.hidden = true;
+    });
+  })();
+</script>
+</body></html>

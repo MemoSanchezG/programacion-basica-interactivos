@@ -1,0 +1,347 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tema 9 · Hoja del estudiante</title>
+<style>
+:root {
+  --navy: #1B2340; --navy2: #20264A; --blue: #3E5C9A; --gold: #F5B942;
+  --lav: #C7CDEA; --light: #F2F4FA; --gray: #5C6480; --code: #1E1E2E; --codetext: #E8E8F0;
+  --bg: #FFFFFF; --text: #20264A; --muted: #5C6480; --card: #F2F4FA; --line: #DCE3F7; --link: #3E5C9A;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #12172B; --text: #E4E7F7; --muted: #A9B0D6; --card: #1E2544; --line: #2C3561; --link: #9FB4E8; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text);
+  font-family: Calibri, "Segoe UI", system-ui, -apple-system, sans-serif; font-size: 17px; line-height: 1.55; }
+a { color: var(--link); font-weight: 600; }
+header { background: var(--navy); color: #fff; padding: 40px 16px 32px; }
+.wrap { max-width: 920px; margin: 0 auto; padding: 0 16px; }
+header .wrap { padding: 0; }
+.eyebrow { color: var(--gold); font-weight: 700; letter-spacing: .06em; font-size: 14px; text-transform: uppercase; }
+h1 { font-family: Cambria, Georgia, serif; font-size: clamp(28px, 5vw, 42px); margin: 6px 0 4px; line-height: 1.15; }
+header p { color: var(--lav); margin: 6px 0 0; }
+nav.dias { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+nav.dias a { background: rgba(255,255,255,.1); color: #fff; text-decoration: none; padding: 6px 14px; border-radius: 999px; font-size: 15px; }
+nav.dias a:hover { background: var(--gold); color: var(--navy2); }
+main { padding: 8px 0 48px; }
+section { padding-top: 28px; }
+h2 { font-family: Cambria, Georgia, serif; font-size: 28px; margin: 0 0 4px; line-height: 1.2; }
+h3 { font-size: 19px; margin: 22px 0 8px; }
+.sub { color: var(--muted); margin: 0 0 8px; }
+.dia { border-top: 1px solid var(--line); margin-top: 28px; }
+.chip { display: inline-block; background: var(--gold); color: #20264A; border-radius: 999px; padding: 1px 10px;
+  font-weight: 700; font-size: 14px; vertical-align: middle; margin-left: 6px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.card { background: var(--card); border-radius: 10px; padding: 14px 16px; }
+.card b { display: block; margin-bottom: 4px; }
+.card small { color: var(--link); font-weight: 700; }
+ul.links { padding-left: 20px; margin: 6px 0; }
+ul.links li { margin: 4px 0; }
+ol.tareas li { margin: 6px 0; }
+.pista { background: var(--card); border-radius: 10px; padding: 10px 14px; }
+.bloque { position: relative; margin: 10px 0; }
+pre { background: var(--code); color: var(--codetext); border-radius: 10px; padding: 14px 16px; margin: 0;
+  overflow-x: auto; font-family: "Courier New", Consolas, monospace; font-size: 15px; line-height: 1.45; }
+.prompt { background: var(--card); border-radius: 10px; padding: 14px 16px; margin: 0; font-style: italic; }
+.acciones { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 8px 0 0; }
+button.copiar { font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; border: 0; border-radius: 999px;
+  padding: 6px 14px; background: var(--blue); color: #fff; }
+button.copiar:hover { background: var(--navy2); }
+.entrega { border: 1px dashed var(--line); border-radius: 10px; padding: 10px 14px; }
+footer { color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); margin-top: 36px; padding-top: 14px; }
+@media print {
+  header { background: none; color: #000; padding: 0; }
+  .eyebrow, header p { color: #000; }
+  nav.dias, button.copiar { display: none; }
+  pre { background: #f4f4f4; color: #000; white-space: pre-wrap; }
+  .dia { page-break-before: always; }
+}
+</style></head><body>
+<header><div class="wrap">
+<div class="eyebrow">Tema 9 · Semana 9 · Hoja del estudiante</div>
+<h1>Manejo profesional de errores</h1>
+<p>Programación Básica 2026. Aquí están los enlaces a PythonTutor, el código de partida y los prompts sugeridos de cada ejercicio, listos para copiar.</p>
+<nav class="dias"><a href="#dia1">Día 1</a><a href="#dia2">Día 2</a><a href="#dia3">Día 3</a><a href="#dia4">Día 4</a><a href="#dia5">Día 5</a><a href="#recursos">Recursos</a></nav>
+</div></header><main class="wrap">
+<section><h2>Cómo usar la IA esta semana</h2>
+<p class="sub">Depurar con IA sin perder el aprendizaje</p><ul>
+<li>Esta semana verás muchos errores a propósito. La IA puede ayudarte a entenderlos, con una regla del temario (Fase 2): no le pidas que corrija un error que tú no has intentado depurar.</li>
+<li>Primero tú: lee el traceback (tipo, mensaje y línea) y escribe tu hipótesis: &quot;creo que falla porque...&quot;.</li>
+<li>Después la IA: pégale el traceback y tu hipótesis, y pídele preguntas guía o una pista, no el código corregido.</li>
+<li>Hábito profesional: antes de pegar un error en una IA, revisa que no incluya contraseñas, datos personales ni información privada.</li>
+</ul>
+<h3>Ejemplo de prompt</h3><div class="bloque">
+<p class="prompt" id="prompt-ia">Mi traceback dice: TypeError: ... en la línea 4. Creo que falla porque sumo un texto con un número. No me des el código: hazme 2 preguntas para confirmar mi hipótesis.</p>
+<div class="acciones"><button class="copiar" data-copiar="prompt-ia">Copiar prompt</button></div>
+</div></section>
+<section><h2>Tu ejercicio cuenta si pasa el checkpoint</h2><div class="cards">
+<div class="card"><b>Palabra clave</b>Al iniciar el checkpoint el profesor dice una palabra en voz alta. Escríbela como comentario en la línea 1 de tu archivo.<br><small>Demuestra que estuviste en clase</small></div>
+<div class="card"><b>Cambio sorpresa, sin IA</b>Al terminar el tiempo del ejercicio se proyecta un cambio. Tienes 5 minutos para aplicarlo tú solo.<br><small>Demuestra que entiendes tu código</small></div>
+<div class="card"><b>Entrega antes de salir</b>Subes tu archivo .py a la tarea de Teams del día. La tarea se cierra al terminar la clase.<br><small>Demuestra que lo hiciste en clase</small></div>
+<div class="card"><b>Defensa rápida</b>El profesor elige 2–3 personas al azar para explicar una línea de su código en 1 minuto.<br><small>Demuestra que el código es tuyo</small></div>
+</div>
+<p class="sub">La IA sí se permite durante el ejercicio (con el prompt sugerido). El cambio sorpresa y la defensa son sin IA.</p>
+</section>
+<section class="dia" id="dia1">
+<div class="eyebrow" style="color:var(--link)">Día 1</div>
+<h2>Excepciones: cuando el programa truena</h2><p class="sub">Qué es una excepción, los tipos más comunes y cómo leer un traceback</p>
+<h3>Ejemplos de la clase (ábrelos en PythonTutor)</h3><ul class="links">
+<li><a href="https://pythontutor.com/visualize.html#code=edad%20%3D%20int%28%27veinte%27%29%0Aprint%28edad%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">ValueError: int(&#x27;veinte&#x27;)</a></li>
+<li><a href="https://pythontutor.com/visualize.html#code=total%20%3D%20%275%27%20%2B%203%0Aprint%28total%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">TypeError: &#x27;5&#x27; + 3</a></li>
+<li><a href="https://pythontutor.com/visualize.html#code=alumnos%20%3D%200%0Apromedio%20%3D%2010%20/%20alumnos%0Aprint%28promedio%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">ZeroDivisionError: 10 / 0</a></li>
+<li><a href="https://pythontutor.com/visualize.html#code=lista%20%3D%20%5B10%2C%2020%2C%2030%5D%0Aprint%28lista%5B3%5D%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">IndexError: [10, 20, 30][3]</a></li>
+<li><a href="https://pythontutor.com/visualize.html#code=datos%20%3D%20%7B%27a%27%3A%201%7D%0Aprint%28datos%5B%27b%27%5D%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">KeyError: {&#x27;a&#x27;: 1}[&#x27;b&#x27;]</a></li>
+<li><a href="https://pythontutor.com/visualize.html#code=pritn%28%27hola%27%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">NameError: pritn(&#x27;hola&#x27;)</a></li>
+<li><a href="https://pythontutor.com/visualize.html#code=numeros%20%3D%20%5B1%2C%202%5D%0Anumeros.add%283%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">AttributeError: [1, 2].add(3)</a></li>
+<li><a href="https://pythontutor.com/visualize.html#code=def%20promedio%28calificaciones%29%3A%0A%20%20%20%20total%20%3D%200%0A%20%20%20%20for%20valor%20in%20calificaciones%3A%0A%20%20%20%20%20%20%20%20total%20%3D%20total%20%2B%20valor%0A%20%20%20%20return%20total%20/%20len%28calificaciones%29%0A%0Acalifs%20%3D%20%5B90%2C%2085%2C%20%2778%27%2C%20100%5D%0Aprint%28promedio%28califs%29%29%0A&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">Anatomía de un traceback</a></li>
+</ul>
+<h3>Reto: caza de errores con el traceback <span class="chip">20 min</span></h3><ol class="tareas">
+<li>Abre el código de partida (enlace en la pista): es un reporte de calificaciones con 3 errores que aparecen uno por uno.</li>
+<li>Córrelo. Antes de corregir cada excepción, anota en tu libreta: tipo, mensaje, línea y tu hipótesis de la causa.</li>
+<li>Corrige el código o los datos (hoy sin try/except) y vuelve a correr hasta que imprima las 3 líneas del reporte.</li>
+</ol>
+<p class="pista"><b>Pista:</b> Lee primero la ÚLTIMA línea del traceback. Pregúntate: ¿están mal los datos o está mal el código?</p>
+<h3>Código de partida</h3><div class="bloque">
+<pre id="codigo-1"># Reporte de calificaciones: tiene 3 errores
+califs = {&#x27;Ana&#x27;: 95, &#x27;Luis&#x27;: &#x27;80&#x27;, &#x27;Eva&#x27;: 72}
+
+def promedio(datos):
+    total = 0
+    for nombre in datos:
+        total = total + datos[nombre]
+    return total / len(datos)
+
+print(&#x27;Promedio:&#x27;, promedio(califs))
+print(&#x27;Beto:&#x27;, califs[&#x27;Beto&#x27;])
+valores = list(califs.values())
+print(&#x27;Última:&#x27;, valores[len(valores)])</pre>
+<div class="acciones"><button class="copiar" data-copiar="codigo-1">Copiar código</button><a href="https://pythontutor.com/visualize.html#code=%23%20Reporte%20de%20calificaciones%3A%20tiene%203%20errores%0Acalifs%20%3D%20%7B%27Ana%27%3A%2095%2C%20%27Luis%27%3A%20%2780%27%2C%20%27Eva%27%3A%2072%7D%0A%0Adef%20promedio%28datos%29%3A%0A%20%20%20%20total%20%3D%200%0A%20%20%20%20for%20nombre%20in%20datos%3A%0A%20%20%20%20%20%20%20%20total%20%3D%20total%20%2B%20datos%5Bnombre%5D%0A%20%20%20%20return%20total%20/%20len%28datos%29%0A%0Aprint%28%27Promedio%3A%27%2C%20promedio%28califs%29%29%0Aprint%28%27Beto%3A%27%2C%20califs%5B%27Beto%27%5D%29%0Avalores%20%3D%20list%28califs.values%28%29%29%0Aprint%28%27%C3%9Altima%3A%27%2C%20valores%5Blen%28valores%29%5D%29%0A&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">Abrir en PythonTutor »</a></div></div>
+<h3>Prompt sugerido para la IA</h3><div class="bloque">
+<p class="prompt" id="prompt-1">Estoy aprendiendo a leer tracebacks en Python. Te voy a pegar el traceback de mi programa y mi hipótesis de la causa. No me digas cómo corregirlo: hazme preguntas que me ayuden a ubicar el tipo de error, la línea donde ocurre y si el problema está en los datos o en el código.</p>
+<div class="acciones"><button class="copiar" data-copiar="prompt-1">Copiar prompt</button><span class="sub">Si la IA te da el código completo, pídele que mejor te haga una pregunta.</span></div></div>
+<h3>Checkpoint y entrega</h3><div class="entrega"><ol>
+<li>Escribe la <b>palabra clave</b> que diga el profesor como comentario en la línea 1: <code># clave: ______</code></li>
+<li>Aplica el <b>cambio sorpresa</b> que se proyectará al terminar el ejercicio (sin IA, 5 min).</li>
+<li>Sube <b>S09D1_matricula.py</b> a la tarea de Teams del día antes de salir: la tarea cierra al terminar la clase.</li>
+<li>Prepárate: el profesor puede pedirte que expliques una línea de tu código.</li>
+</ol></div>
+</section>
+<section class="dia" id="dia2">
+<div class="eyebrow" style="color:var(--link)">Día 2</div>
+<h2>try/except: atrapar y seguir adelante</h2><p class="sub">Atrapar la excepción correcta, leer su mensaje y seguir adelante</p>
+<h3>Ejemplos de la clase (ábrelos en PythonTutor)</h3><ul class="links">
+<li><a href="https://pythontutor.com/visualize.html#code=datos%20%3D%20%5B%2718%27%2C%20%2725%27%2C%20%27veinte%27%2C%20%2730%27%5D%0Aedades%20%3D%20%5B%5D%0A%0Afor%20texto%20in%20datos%3A%0A%20%20%20%20try%3A%0A%20%20%20%20%20%20%20%20edad%20%3D%20int%28texto%29%0A%20%20%20%20%20%20%20%20edades.append%28edad%29%0A%20%20%20%20%20%20%20%20print%28%27OK%3A%27%2C%20edad%29%0A%20%20%20%20except%20ValueError%20as%20e%3A%0A%20%20%20%20%20%20%20%20print%28%27Dato%20inv%C3%A1lido%3A%27%2C%20e%29%0A%0Aprint%28%27Edades%20v%C3%A1lidas%3A%27%2C%20edades%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">Un dato malo ya no detiene el ciclo</a></li>
+<li><a href="https://pythontutor.com/visualize.html#code=def%20dividir%28texto_a%2C%20texto_b%29%3A%0A%20%20%20%20try%3A%0A%20%20%20%20%20%20%20%20a%20%3D%20float%28texto_a%29%0A%20%20%20%20%20%20%20%20b%20%3D%20float%28texto_b%29%0A%20%20%20%20%20%20%20%20return%20a%20/%20b%0A%20%20%20%20except%20ValueError%3A%0A%20%20%20%20%20%20%20%20print%28%27Escribe%20solo%20n%C3%BAmeros%3A%27%2C%20texto_a%2C%20texto_b%29%0A%20%20%20%20except%20ZeroDivisionError%3A%0A%20%20%20%20%20%20%20%20print%28%27El%20divisor%20no%20puede%20ser%200%27%29%0A%20%20%20%20return%20None%0A%0Aprint%28dividir%28%2710%27%2C%20%274%27%29%29%0Aprint%28dividir%28%2710%27%2C%20%27cero%27%29%29%0Aprint%28dividir%28%2710%27%2C%20%270%27%29%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">Un mensaje distinto para cada error</a></li>
+</ul>
+<h3>Reto: una calculadora que no truena <span class="chip">20 min</span></h3><ol class="tareas">
+<li>Escribe pedir_numero(mensaje): repite input() dentro de un while True y regresa el número (float) solo cuando el texto sea válido.</li>
+<li>Si float() lanza ValueError, muestra qué escribió la persona y qué se esperaba, y vuelve a pedir el dato.</li>
+<li>Con pedir_numero lee a y b e imprime a / b; si b es 0, atrapa ZeroDivisionError con su propio mensaje. Prueba con: diez, 10, 0.</li>
+</ol>
+<p class="pista"><b>Pista:</b> Un return dentro del try sale de la función (y del while) solo si float() funcionó; si falla, el except avisa y el ciclo repite.</p>
+<h3>Código de partida</h3><div class="bloque">
+<pre id="codigo-2">def pedir_numero(mensaje):
+    texto = input(mensaje)
+    return float(texto)
+
+a = pedir_numero(&#x27;a = &#x27;)
+b = pedir_numero(&#x27;b = &#x27;)
+print(&#x27;a / b =&#x27;, a / b)</pre>
+<div class="acciones"><button class="copiar" data-copiar="codigo-2">Copiar código</button><a href="https://pythontutor.com/visualize.html#code=def%20pedir_numero%28mensaje%29%3A%0A%20%20%20%20texto%20%3D%20input%28mensaje%29%0A%20%20%20%20return%20float%28texto%29%0A%0Aa%20%3D%20pedir_numero%28%27a%20%3D%20%27%29%0Ab%20%3D%20pedir_numero%28%27b%20%3D%20%27%29%0Aprint%28%27a%20/%20b%20%3D%27%2C%20a%20/%20b%29%0A&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">Abrir en PythonTutor »</a></div></div>
+<h3>Prompt sugerido para la IA</h3><div class="bloque">
+<p class="prompt" id="prompt-2">Estoy aprendiendo try/except en Python. Quiero una función pedir_numero(mensaje) que repita input() hasta que el usuario escriba un número válido, y después dividir a / b sin que el programa truene si b es 0. No me des el código: hazme preguntas para decidir qué va dentro del try, qué excepción atrapar y cómo repetir la pregunta.</p>
+<div class="acciones"><button class="copiar" data-copiar="prompt-2">Copiar prompt</button><span class="sub">Si la IA te da el código completo, pídele que mejor te haga una pregunta.</span></div></div>
+<h3>Checkpoint y entrega</h3><div class="entrega"><ol>
+<li>Escribe la <b>palabra clave</b> que diga el profesor como comentario en la línea 1: <code># clave: ______</code></li>
+<li>Aplica el <b>cambio sorpresa</b> que se proyectará al terminar el ejercicio (sin IA, 5 min).</li>
+<li>Sube <b>S09D2_matricula.py</b> a la tarea de Teams del día antes de salir: la tarea cierra al terminar la clase.</li>
+<li>Prepárate: el profesor puede pedirte que expliques una línea de tu código.</li>
+</ol></div>
+</section>
+<section class="dia" id="dia3">
+<div class="eyebrow" style="color:var(--link)">Día 3</div>
+<h2>raise: validar y dejar que el error suba</h2><p class="sub">raise: validar datos y dejar que el error suba a quien lo maneje</p>
+<h3>Ejemplos de la clase (ábrelos en PythonTutor)</h3><ul class="links">
+<li><a href="https://pythontutor.com/visualize.html#code=def%20registrar%28calificacion%29%3A%0A%20%20%20%20if%20calificacion%20%3C%200%20or%20calificacion%20%3E%20100%3A%0A%20%20%20%20%20%20%20%20raise%20ValueError%28f%27%7Bcalificacion%7D%20est%C3%A1%20fuera%20de%200-100%27%29%0A%20%20%20%20print%28%27Registrada%3A%27%2C%20calificacion%29%0A%0Aregistrar%2895%29%0Atry%3A%0A%20%20%20%20registrar%28150%29%0Aexcept%20ValueError%20as%20e%3A%0A%20%20%20%20print%28%27No%20se%20registr%C3%B3%3A%27%2C%20e%29%0A%0Aregistrar%28-5%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">Validar antes de registrar</a></li>
+<li><a href="https://pythontutor.com/visualize.html#code=def%20convertir%28texto%29%3A%0A%20%20%20%20numero%20%3D%20int%28texto%29%20%20%20%20%20%20%23%20puede%20lanzar%20ValueError%0A%20%20%20%20if%20numero%20%3C%200%3A%0A%20%20%20%20%20%20%20%20raise%20ValueError%28f%27%7Bnumero%7D%20es%20negativo%27%29%0A%20%20%20%20return%20numero%0A%0Adef%20procesar%28lista%29%3A%0A%20%20%20%20numeros%20%3D%20%5B%5D%0A%20%20%20%20for%20t%20in%20lista%3A%0A%20%20%20%20%20%20%20%20numeros.append%28convertir%28t%29%29%0A%20%20%20%20return%20numeros%0A%0Atry%3A%0A%20%20%20%20print%28procesar%28%5B%274%27%2C%20%278%27%2C%20%27-2%27%2C%20%2715%27%5D%29%29%0Aexcept%20ValueError%20as%20e%3A%0A%20%20%20%20print%28%27No%20se%20pudo%20procesar%20la%20lista%3A%27%2C%20e%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">El error viaja hasta quien lo atrapa</a></li>
+</ul>
+<h3>Reto: un validador de calificaciones <span class="chip">20 min</span></h3><ol class="tareas">
+<li>Completa validar(nombre, texto): convierte texto a int y lanza ValueError con un mensaje claro si la calificación no está entre 0 y 100.</li>
+<li>En el programa principal recorre registros y llama a validar() dentro de un try. Guarda las válidas en el diccionario validas.</li>
+<li>Por cada registro rechazado imprime quién y por qué (usa e). Al final muestra cuántos fueron válidos y cuántos rechazados.</li>
+</ol>
+<p class="pista"><b>Pista:</b> El raise va dentro de validar(); el try/except va en el ciclo del programa principal, no dentro de validar().</p>
+<h3>Código de partida</h3><div class="bloque">
+<pre id="codigo-3">registros = [(&#x27;Ana&#x27;, &#x27;95&#x27;), (&#x27;Luis&#x27;, &#x27;ochenta&#x27;),
+             (&#x27;Eva&#x27;, &#x27;105&#x27;), (&#x27;Beto&#x27;, &#x27;72&#x27;)]
+validas = {}
+
+def validar(nombre, texto):
+    calificacion = int(texto)
+    # agrega aquí la regla 0-100 con raise
+    return calificacion</pre>
+<div class="acciones"><button class="copiar" data-copiar="codigo-3">Copiar código</button><a href="https://pythontutor.com/visualize.html#code=registros%20%3D%20%5B%28%27Ana%27%2C%20%2795%27%29%2C%20%28%27Luis%27%2C%20%27ochenta%27%29%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%28%27Eva%27%2C%20%27105%27%29%2C%20%28%27Beto%27%2C%20%2772%27%29%5D%0Avalidas%20%3D%20%7B%7D%0A%0Adef%20validar%28nombre%2C%20texto%29%3A%0A%20%20%20%20calificacion%20%3D%20int%28texto%29%0A%20%20%20%20%23%20agrega%20aqu%C3%AD%20la%20regla%200-100%20con%20raise%0A%20%20%20%20return%20calificacion%0A&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">Abrir en PythonTutor »</a></div></div>
+<h3>Prompt sugerido para la IA</h3><div class="bloque">
+<p class="prompt" id="prompt-3">Estoy practicando raise en Python. Tengo una lista de registros (nombre, calificación como texto) y quiero una función validar() que lance ValueError si la calificación no es número o no está entre 0 y 100, y un ciclo que reporte los rechazados sin detenerse. No me escribas el código: pregúntame dónde va el raise y dónde el try/except.</p>
+<div class="acciones"><button class="copiar" data-copiar="prompt-3">Copiar prompt</button><span class="sub">Si la IA te da el código completo, pídele que mejor te haga una pregunta.</span></div></div>
+<h3>Checkpoint y entrega</h3><div class="entrega"><ol>
+<li>Escribe la <b>palabra clave</b> que diga el profesor como comentario en la línea 1: <code># clave: ______</code></li>
+<li>Aplica el <b>cambio sorpresa</b> que se proyectará al terminar el ejercicio (sin IA, 5 min).</li>
+<li>Sube <b>S09D3_matricula.py</b> a la tarea de Teams del día antes de salir: la tarea cierra al terminar la clase.</li>
+<li>Prepárate: el profesor puede pedirte que expliques una línea de tu código.</li>
+</ol></div>
+</section>
+<section class="dia" id="dia4">
+<div class="eyebrow" style="color:var(--link)">Día 4</div>
+<h2>Limpieza y cierre de recursos</h2><p class="sub">Limpieza de recursos: else, finally y with</p>
+<h3>Ejemplos de la clase (ábrelos en PythonTutor)</h3><ul class="links">
+<li><a href="https://pythontutor.com/visualize.html#code=def%20convertir%28texto%29%3A%0A%20%20%20%20try%3A%0A%20%20%20%20%20%20%20%20numero%20%3D%20int%28texto%29%0A%20%20%20%20except%20ValueError%3A%0A%20%20%20%20%20%20%20%20print%28%27%20%20except%3A%20entrada%20inv%C3%A1lida%27%29%0A%20%20%20%20%20%20%20%20return%20None%0A%20%20%20%20else%3A%0A%20%20%20%20%20%20%20%20print%28%27%20%20else%3A%20conversi%C3%B3n%20exitosa%27%29%0A%20%20%20%20%20%20%20%20return%20numero%0A%20%20%20%20finally%3A%0A%20%20%20%20%20%20%20%20print%28%27%20%20finally%3A%20siempre%20me%20ejecuto%27%29%0A%0Aprint%28convertir%28%277%27%29%29%0Aprint%28convertir%28%27siete%27%29%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">finally se ejecuta incluso después de return</a></li>
+<li><a href="https://pythontutor.com/visualize.html#code=import%20io%0A%0Aarchivo%20%3D%20io.StringIO%28%29%20%20%20%23%20como%20open%28%29%0Atry%3A%0A%20%20%20%20for%20d%20in%20%5B120%2C%2080%2C%200%2C%2045%5D%3A%0A%20%20%20%20%20%20%20%20archivo.write%28f%27%7B100%20/%20d%7D%5Cn%27%29%0A%20%20%20%20archivo.close%28%29%20%20%20%20%20%20%20%23%20nunca%20llega%0Aexcept%20ZeroDivisionError%3A%0A%20%20%20%20print%28%27Error%3A%20divisi%C3%B3n%20entre%200%27%29%0A%0Aprint%28%27%C2%BFCerrado%3F%27%2C%20archivo.closed%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">Un close() que nunca llega vs. with (así no: close() dentro del try)</a></li>
+<li><a href="https://pythontutor.com/visualize.html#code=import%20io%0A%0Atry%3A%0A%20%20%20%20with%20io.StringIO%28%29%20as%20archivo%3A%20%20%23%20como%20open%28%29%0A%20%20%20%20%20%20%20%20for%20d%20in%20%5B120%2C%2080%2C%200%2C%2045%5D%3A%0A%20%20%20%20%20%20%20%20%20%20%20%20archivo.write%28f%27%7B100%20/%20d%7D%5Cn%27%29%0Aexcept%20ZeroDivisionError%3A%0A%20%20%20%20print%28%27Error%3A%20divisi%C3%B3n%20entre%200%27%29%0A%0Aprint%28%27%C2%BFCerrado%3F%27%2C%20archivo.closed%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">Un close() que nunca llega vs. with (así sí: with cierra al salir)</a></li>
+</ul>
+<h3>Reto: garantiza el cierre de una conexión <span class="chip">20 min</span></h3><ol class="tareas">
+<li>Abre el código de partida: con el dato -3 el programa truena y la conexión nunca se cierra (mira el atributo abierta en PythonTutor).</li>
+<li>Usa try/finally para que conexion.cerrar() se ejecute siempre, aunque un envío falle.</li>
+<li>Agrega un except ValueError que reporte el dato inválido y siga enviando los demás. Al final, conexion.abierta debe ser False.</li>
+</ol>
+<p class="pista"><b>Pista:</b> El try/except va DENTRO del for (para seguir con el siguiente dato); el try/finally va AFUERA (para cerrar una sola vez).</p>
+<h3>Código de partida</h3><div class="bloque">
+<pre id="codigo-4">class Conexion:
+    def __init__(self, servidor):
+        self.servidor = servidor
+        self.abierta = True
+        print(&#x27;Conectado a&#x27;, servidor)
+
+    def enviar(self, dato):
+        if dato &lt; 0:
+            raise ValueError(f&#x27;dato negativo: {dato}&#x27;)
+        print(&#x27;Enviado:&#x27;, dato)
+
+    def cerrar(self):
+        self.abierta = False
+        print(&#x27;Conexión cerrada&#x27;)
+
+conexion = Conexion(&#x27;servidor-fcfm&#x27;)
+for dato in [10, 25, -3, 40]:
+    conexion.enviar(dato)
+conexion.cerrar()
+print(&#x27;¿Abierta?&#x27;, conexion.abierta)</pre>
+<div class="acciones"><button class="copiar" data-copiar="codigo-4">Copiar código</button><a href="https://pythontutor.com/visualize.html#code=class%20Conexion%3A%0A%20%20%20%20def%20__init__%28self%2C%20servidor%29%3A%0A%20%20%20%20%20%20%20%20self.servidor%20%3D%20servidor%0A%20%20%20%20%20%20%20%20self.abierta%20%3D%20True%0A%20%20%20%20%20%20%20%20print%28%27Conectado%20a%27%2C%20servidor%29%0A%0A%20%20%20%20def%20enviar%28self%2C%20dato%29%3A%0A%20%20%20%20%20%20%20%20if%20dato%20%3C%200%3A%0A%20%20%20%20%20%20%20%20%20%20%20%20raise%20ValueError%28f%27dato%20negativo%3A%20%7Bdato%7D%27%29%0A%20%20%20%20%20%20%20%20print%28%27Enviado%3A%27%2C%20dato%29%0A%0A%20%20%20%20def%20cerrar%28self%29%3A%0A%20%20%20%20%20%20%20%20self.abierta%20%3D%20False%0A%20%20%20%20%20%20%20%20print%28%27Conexi%C3%B3n%20cerrada%27%29%0A%0Aconexion%20%3D%20Conexion%28%27servidor-fcfm%27%29%0Afor%20dato%20in%20%5B10%2C%2025%2C%20-3%2C%2040%5D%3A%0A%20%20%20%20conexion.enviar%28dato%29%0Aconexion.cerrar%28%29%0Aprint%28%27%C2%BFAbierta%3F%27%2C%20conexion.abierta%29%0A&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">Abrir en PythonTutor »</a></div></div>
+<h3>Prompt sugerido para la IA</h3><div class="bloque">
+<p class="prompt" id="prompt-4">Estoy aprendiendo a liberar recursos con try/finally en Python. Tengo una clase Conexion con enviar() y cerrar(), y un ciclo que envía datos; si un dato es negativo se lanza ValueError y la conexión queda abierta. No me des el código: hazme preguntas para decidir dónde va el try/except y dónde el finally.</p>
+<div class="acciones"><button class="copiar" data-copiar="prompt-4">Copiar prompt</button><span class="sub">Si la IA te da el código completo, pídele que mejor te haga una pregunta.</span></div></div>
+<h3>Checkpoint y entrega</h3><div class="entrega"><ol>
+<li>Escribe la <b>palabra clave</b> que diga el profesor como comentario en la línea 1: <code># clave: ______</code></li>
+<li>Aplica el <b>cambio sorpresa</b> que se proyectará al terminar el ejercicio (sin IA, 5 min).</li>
+<li>Sube <b>S09D4_matricula.py</b> a la tarea de Teams del día antes de salir: la tarea cierra al terminar la clase.</li>
+<li>Prepárate: el profesor puede pedirte que expliques una línea de tu código.</li>
+</ol></div>
+</section>
+<section class="dia" id="dia5">
+<div class="eyebrow" style="color:var(--link)">Día 5</div>
+<h2>Errores comunes en proyectos reales</h2><p class="sub">Errores comunes en proyectos reales y cómo evitarlos</p>
+<h3>Ejemplos de la clase (ábrelos en PythonTutor)</h3><ul class="links">
+<li><a href="https://pythontutor.com/visualize.html#code=def%20total_ventas%28ventas%29%3A%0A%20%20%20%20try%3A%0A%20%20%20%20%20%20%20%20total%20%3D%200%0A%20%20%20%20%20%20%20%20for%20v%20in%20ventas%3A%0A%20%20%20%20%20%20%20%20%20%20%20%20total%20%3D%20totl%20%2B%20float%28v%29%20%20%23%20typo%0A%20%20%20%20%20%20%20%20return%20total%0A%20%20%20%20except%3A%0A%20%20%20%20%20%20%20%20return%200%0A%0Aprint%28total_ventas%28%5B%27100%27%2C%20%27250%27%2C%20%2775%27%5D%29%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">Un except: que esconde un typo (así no: except: atrapa todo)</a></li>
+<li><a href="https://pythontutor.com/visualize.html#code=def%20total_ventas%28ventas%29%3A%0A%20%20%20%20total%20%3D%200%0A%20%20%20%20for%20v%20in%20ventas%3A%0A%20%20%20%20%20%20%20%20try%3A%0A%20%20%20%20%20%20%20%20%20%20%20%20total%20%3D%20totl%20%2B%20float%28v%29%20%20%23%20typo%0A%20%20%20%20%20%20%20%20except%20ValueError%3A%0A%20%20%20%20%20%20%20%20%20%20%20%20print%28%27Venta%20inv%C3%A1lida%3A%27%2C%20v%29%0A%20%20%20%20return%20total%0A%0Aprint%28total_ventas%28%5B%27100%27%2C%20%27250%27%2C%20%2775%27%5D%29%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">Un except: que esconde un typo (así sí: except específico)</a></li>
+<li><a href="https://pythontutor.com/visualize.html#code=ventas%20%3D%20%5B%28%27lunes%27%2C%20%271200%27%29%2C%20%28%27martes%27%2C%20%27mil%27%29%2C%0A%20%20%20%20%20%20%20%20%20%20%28%27mi%C3%A9rcoles%27%2C%20%27950%27%29%2C%20%28%27jueves%27%2C%20%27-40%27%29%5D%0Atotal%20%3D%200%0Aerrores%20%3D%20%5B%5D%0A%0Afor%20dia%2C%20texto%20in%20ventas%3A%0A%20%20%20%20try%3A%0A%20%20%20%20%20%20%20%20monto%20%3D%20float%28texto%29%0A%20%20%20%20%20%20%20%20if%20monto%20%3C%200%3A%0A%20%20%20%20%20%20%20%20%20%20%20%20raise%20ValueError%28f%27monto%20negativo%20%28%7Bmonto%7D%29%27%29%0A%20%20%20%20%20%20%20%20total%20%3D%20total%20%2B%20monto%0A%20%20%20%20except%20ValueError%20as%20e%3A%0A%20%20%20%20%20%20%20%20errores.append%28f%27%7Bdia%7D%3A%20%7Be%7D%27%29%0A%0Aprint%28%27Total%20v%C3%A1lido%3A%27%2C%20total%29%0Aprint%28%27Errores%3A%27%2C%20errores%29&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">Registrar y continuar: el patrón profesional</a></li>
+</ul>
+<h3>Reto integrador: code review de un script real <span class="chip">20 min</span></h3><ol class="tareas">
+<li>Corre el código de partida: falla con KeyError: &#x27;goma&#x27; aunque &#x27;goma,3&#x27; es un dato válido. Encuentra la causa real, no el síntoma.</li>
+<li>Reescribe cargar_precios() con el checklist: try solo dentro del for, except específico y un mensaje útil por línea inválida.</li>
+<li>Guarda los errores en una lista y reporta al final cuántos productos se cargaron y qué líneas se rechazaron y por qué.</li>
+<li>Regla extra: un precio negativo también es inválido (usa raise).</li>
+</ol>
+<p class="pista"><b>Pista:</b> El KeyError es el síntoma. Pregúntate qué pasó con las líneas que venían después de &#x27;cuaderno,treinta&#x27;.</p>
+<h3>Código de partida</h3><div class="bloque">
+<pre id="codigo-5">def cargar_precios(lineas):
+    precios = {}
+    try:
+        for linea in lineas:
+            nombre, precio = linea.split(&#x27;,&#x27;)
+            precios[nombre] = float(precio)
+    except:
+        pass
+    return precios
+
+datos = [&#x27;lapiz,5.5&#x27;, &#x27;cuaderno,treinta&#x27;, &#x27;goma,3&#x27;,
+         &#x27;regla&#x27;, &#x27;borrador,-2&#x27;]
+precios = cargar_precios(datos)
+print(&#x27;Productos cargados:&#x27;, precios)
+print(&#x27;Precio de la goma:&#x27;, precios[&#x27;goma&#x27;])</pre>
+<div class="acciones"><button class="copiar" data-copiar="codigo-5">Copiar código</button><a href="https://pythontutor.com/visualize.html#code=def%20cargar_precios%28lineas%29%3A%0A%20%20%20%20precios%20%3D%20%7B%7D%0A%20%20%20%20try%3A%0A%20%20%20%20%20%20%20%20for%20linea%20in%20lineas%3A%0A%20%20%20%20%20%20%20%20%20%20%20%20nombre%2C%20precio%20%3D%20linea.split%28%27%2C%27%29%0A%20%20%20%20%20%20%20%20%20%20%20%20precios%5Bnombre%5D%20%3D%20float%28precio%29%0A%20%20%20%20except%3A%0A%20%20%20%20%20%20%20%20pass%0A%20%20%20%20return%20precios%0A%0Adatos%20%3D%20%5B%27lapiz%2C5.5%27%2C%20%27cuaderno%2Ctreinta%27%2C%20%27goma%2C3%27%2C%0A%20%20%20%20%20%20%20%20%20%27regla%27%2C%20%27borrador%2C-2%27%5D%0Aprecios%20%3D%20cargar_precios%28datos%29%0Aprint%28%27Productos%20cargados%3A%27%2C%20precios%29%0Aprint%28%27Precio%20de%20la%20goma%3A%27%2C%20precios%5B%27goma%27%5D%29%0A&amp;cumulative=false&amp;curInstr=0&amp;heapPrimitives=nevernest&amp;mode=display&amp;origin=opt-frontend.js&amp;py=311&amp;rawInputLstJSON=%5B%5D&amp;textReferences=false" target="_blank" rel="noopener">Abrir en PythonTutor »</a></div></div>
+<h3>Prompt sugerido para la IA</h3><div class="bloque">
+<p class="prompt" id="prompt-5">Estoy haciendo un code review de una función de Python que usa except: pass y un try que envuelve todo el ciclo. Quiero reescribirla con buenas prácticas de manejo de errores. No me des la versión corregida: hazme preguntas para que yo encuentre cada mala práctica y decida cómo arreglarla, una por una.</p>
+<div class="acciones"><button class="copiar" data-copiar="prompt-5">Copiar prompt</button><span class="sub">Si la IA te da el código completo, pídele que mejor te haga una pregunta.</span></div></div>
+<h3>Checkpoint y entrega</h3><div class="entrega"><ol>
+<li>Escribe la <b>palabra clave</b> que diga el profesor como comentario en la línea 1: <code># clave: ______</code></li>
+<li>Aplica el <b>cambio sorpresa</b> que se proyectará al terminar el ejercicio (sin IA, 5 min).</li>
+<li>Sube <b>S09D5_matricula.py</b> a la tarea de Teams del día antes de salir: la tarea cierra al terminar la clase.</li>
+<li>Prepárate: el profesor puede pedirte que expliques una línea de tu código.</li>
+</ol></div>
+</section>
+<section class="dia" id="recursos"><h2>Recursos</h2><ul class="links">
+<li><a href="https://docs.python.org/es/3/tutorial/errors.html" target="_blank" rel="noopener">Tutorial oficial de Python: Errores y excepciones (en español)</a><br><span class="sub">Secciones 8.1 a 8.4 para los días 1 a 3; 8.7 y 8.8 (acciones de limpieza y with) para el día 4.</span></li>
+<li><a href="https://docs.python.org/es/3/library/exceptions.html#exception-hierarchy" target="_blank" rel="noopener">Jerarquía de excepciones incorporadas</a><br><span class="sub">El árbol de ValueError, KeyError, ZeroDivisionError y compañía: muestra qué atrapa except Exception (en inglés).</span></li>
+<li><a href="https://peps.python.org/pep-0008/#programming-recommendations" target="_blank" rel="noopener">PEP 8: recomendaciones sobre excepciones</a><br><span class="sub">La guía de estilo oficial pide nombrar la excepción específica y un try mínimo: base del Día 5 (en inglés).</span></li>
+<li><a href="https://pythontutor.com/python-compiler.html#mode=edit" target="_blank" rel="noopener">PythonTutor: visualiza tu propio código</a><br><span class="sub">Pega tu solución y avanza paso a paso. No permite open(), csv, pathlib ni logging: usa io.StringIO para simular archivos.</span></li>
+</ul></section>
+<footer>Hoja del estudiante del Tema 9 · Programación Básica · FCFM-UANL. <a href="index.html">Índice de simuladores</a> · <a href="#qr-sitio" class="qr-abrir">Abrir en el celular (QR)</a></footer>
+</main><script>
+document.querySelectorAll('button.copiar').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var el = document.getElementById(btn.getAttribute('data-copiar'));
+    var texto = el.textContent;
+    var listo = function () {
+      var antes = btn.textContent;
+      btn.textContent = 'Copiado \u2713';
+      setTimeout(function () { btn.textContent = antes; }, 1500);
+    };
+    var respaldo = function () {
+      var r = document.createRange(); r.selectNodeContents(el);
+      var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+      try { document.execCommand('copy'); listo(); } catch (e) {}
+      s.removeAllRanges();
+    };
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(texto).then(listo, respaldo);
+    } else { respaldo(); }
+  });
+});
+</script><div id="qr-sitio" class="qr-capa" hidden>
+  <div class="qr-caja" role="dialog" aria-modal="true" aria-label="Código QR de esta página">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 41 41" role="img" aria-label="Código QR de https://memosanchezg.github.io/programacion-basica-interactivos/hoja-tema-09.html" shape-rendering="crispEdges"><rect width="41" height="41" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM10 2h2v1h-2zM14 2h2v1h-2zM17 2h5v1h-5zM25 2h1v1h-1zM28 2h1v1h-1zM30 2h1v1h-1zM32 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM10 3h1v1h-1zM12 3h1v1h-1zM14 3h1v1h-1zM20 3h1v1h-1zM25 3h1v1h-1zM27 3h2v1h-2zM30 3h1v1h-1zM32 3h1v1h-1zM38 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM11 4h2v1h-2zM14 4h3v1h-3zM18 4h1v1h-1zM20 4h2v1h-2zM24 4h2v1h-2zM27 4h4v1h-4zM32 4h1v1h-1zM34 4h3v1h-3zM38 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h2v1h-2zM13 5h2v1h-2zM16 5h2v1h-2zM19 5h1v1h-1zM21 5h1v1h-1zM24 5h6v1h-6zM32 5h1v1h-1zM34 5h3v1h-3zM38 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM11 6h1v1h-1zM13 6h3v1h-3zM17 6h1v1h-1zM21 6h1v1h-1zM24 6h1v1h-1zM26 6h1v1h-1zM28 6h3v1h-3zM32 6h1v1h-1zM34 6h3v1h-3zM38 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM11 7h3v1h-3zM15 7h1v1h-1zM19 7h3v1h-3zM24 7h1v1h-1zM27 7h2v1h-2zM30 7h1v1h-1zM32 7h1v1h-1zM38 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM30 8h1v1h-1zM32 8h7v1h-7zM10 9h1v1h-1zM12 9h5v1h-5zM18 9h2v1h-2zM21 9h2v1h-2zM24 9h3v1h-3zM28 9h3v1h-3zM2 10h1v1h-1zM4 10h2v1h-2zM7 10h3v1h-3zM11 10h3v1h-3zM18 10h7v1h-7zM28 10h3v1h-3zM32 10h1v1h-1zM35 10h1v1h-1zM37 10h2v1h-2zM2 11h4v1h-4zM7 11h1v1h-1zM13 11h2v1h-2zM16 11h3v1h-3zM20 11h2v1h-2zM23 11h1v1h-1zM25 11h1v1h-1zM27 11h1v1h-1zM30 11h1v1h-1zM33 11h1v1h-1zM35 11h1v1h-1zM37 11h1v1h-1zM2 12h1v1h-1zM4 12h2v1h-2zM8 12h1v1h-1zM12 12h4v1h-4zM17 12h1v1h-1zM20 12h1v1h-1zM22 12h1v1h-1zM24 12h3v1h-3zM28 12h1v1h-1zM30 12h1v1h-1zM32 12h3v1h-3zM36 12h1v1h-1zM2 13h1v1h-1zM5 13h1v1h-1zM7 13h1v1h-1zM9 13h1v1h-1zM11 13h3v1h-3zM15 13h1v1h-1zM17 13h1v1h-1zM20 13h2v1h-2zM25 13h3v1h-3zM30 13h2v1h-2zM34 13h3v1h-3zM4 14h1v1h-1zM6 14h4v1h-4zM11 14h2v1h-2zM19 14h1v1h-1zM22 14h1v1h-1zM24 14h2v1h-2zM27 14h3v1h-3zM31 14h2v1h-2zM34 14h5v1h-5zM6 15h2v1h-2zM10 15h1v1h-1zM12 15h1v1h-1zM17 15h2v1h-2zM20 15h2v1h-2zM23 15h1v1h-1zM26 15h10v1h-10zM37 15h2v1h-2zM2 16h2v1h-2zM6 16h1v1h-1zM8 16h1v1h-1zM16 16h1v1h-1zM21 16h1v1h-1zM26 16h2v1h-2zM32 16h1v1h-1zM34 16h1v1h-1zM36 16h2v1h-2zM3 17h2v1h-2zM6 17h1v1h-1zM12 17h3v1h-3zM17 17h1v1h-1zM20 17h1v1h-1zM23 17h2v1h-2zM26 17h1v1h-1zM28 17h2v1h-2zM31 17h4v1h-4zM37 17h2v1h-2zM3 18h2v1h-2zM7 18h2v1h-2zM11 18h2v1h-2zM14 18h5v1h-5zM20 18h1v1h-1zM23 18h2v1h-2zM27 18h1v1h-1zM35 18h2v1h-2zM38 18h1v1h-1zM2 19h1v1h-1zM4 19h3v1h-3zM10 19h3v1h-3zM14 19h1v1h-1zM18 19h1v1h-1zM20 19h1v1h-1zM25 19h5v1h-5zM32 19h2v1h-2zM36 19h3v1h-3zM3 20h1v1h-1zM7 20h6v1h-6zM16 20h5v1h-5zM22 20h1v1h-1zM26 20h1v1h-1zM28 20h2v1h-2zM31 20h3v1h-3zM37 20h2v1h-2zM3 21h3v1h-3zM7 21h1v1h-1zM11 21h1v1h-1zM14 21h1v1h-1zM16 21h1v1h-1zM19 21h1v1h-1zM25 21h1v1h-1zM29 21h1v1h-1zM34 21h2v1h-2zM37 21h1v1h-1zM2 22h1v1h-1zM4 22h1v1h-1zM7 22h4v1h-4zM13 22h2v1h-2zM18 22h3v1h-3zM22 22h4v1h-4zM28 22h1v1h-1zM30 22h2v1h-2zM33 22h3v1h-3zM38 22h1v1h-1zM2 23h3v1h-3zM7 23h1v1h-1zM9 23h3v1h-3zM13 23h2v1h-2zM18 23h1v1h-1zM20 23h4v1h-4zM25 23h1v1h-1zM28 23h1v1h-1zM30 23h1v1h-1zM35 23h1v1h-1zM2 24h1v1h-1zM5 24h1v1h-1zM7 24h2v1h-2zM10 24h1v1h-1zM12 24h1v1h-1zM14 24h1v1h-1zM18 24h3v1h-3zM24 24h4v1h-4zM30 24h1v1h-1zM32 24h2v1h-2zM37 24h1v1h-1zM2 25h2v1h-2zM5 25h1v1h-1zM9 25h2v1h-2zM12 25h1v1h-1zM14 25h2v1h-2zM17 25h2v1h-2zM22 25h1v1h-1zM24 25h4v1h-4zM29 25h2v1h-2zM32 25h1v1h-1zM34 25h3v1h-3zM38 25h1v1h-1zM4 26h2v1h-2zM7 26h2v1h-2zM10 26h1v1h-1zM12 26h1v1h-1zM14 26h1v1h-1zM17 26h1v1h-1zM19 26h1v1h-1zM21 26h1v1h-1zM24 26h1v1h-1zM26 26h7v1h-7zM34 26h1v1h-1zM36 26h2v1h-2zM10 27h1v1h-1zM12 27h1v1h-1zM15 27h1v1h-1zM18 27h2v1h-2zM21 27h3v1h-3zM26 27h5v1h-5zM32 27h3v1h-3zM37 27h2v1h-2zM3 28h2v1h-2zM7 28h4v1h-4zM13 28h3v1h-3zM17 28h2v1h-2zM21 28h3v1h-3zM26 28h1v1h-1zM31 28h2v1h-2zM34 28h2v1h-2zM37 28h1v1h-1zM2 29h1v1h-1zM4 29h2v1h-2zM9 29h1v1h-1zM11 29h1v1h-1zM13 29h2v1h-2zM18 29h1v1h-1zM23 29h1v1h-1zM25 29h1v1h-1zM29 29h4v1h-4zM37 29h2v1h-2zM4 30h2v1h-2zM8 30h3v1h-3zM14 30h1v1h-1zM17 30h1v1h-1zM20 30h1v1h-1zM22 30h3v1h-3zM27 30h1v1h-1zM30 30h5v1h-5zM36 30h2v1h-2zM10 31h1v1h-1zM14 31h2v1h-2zM17 31h1v1h-1zM19 31h1v1h-1zM24 31h3v1h-3zM29 31h2v1h-2zM34 31h1v1h-1zM36 31h1v1h-1zM38 31h1v1h-1zM2 32h7v1h-7zM10 32h1v1h-1zM15 32h4v1h-4zM22 32h3v1h-3zM26 32h3v1h-3zM30 32h1v1h-1zM32 32h1v1h-1zM34 32h1v1h-1zM36 32h3v1h-3zM2 33h1v1h-1zM8 33h1v1h-1zM10 33h1v1h-1zM12 33h2v1h-2zM19 33h3v1h-3zM24 33h1v1h-1zM26 33h1v1h-1zM29 33h2v1h-2zM34 33h1v1h-1zM38 33h1v1h-1zM2 34h1v1h-1zM4 34h3v1h-3zM8 34h1v1h-1zM11 34h3v1h-3zM15 34h2v1h-2zM18 34h3v1h-3zM23 34h1v1h-1zM25 34h1v1h-1zM28 34h1v1h-1zM30 34h6v1h-6zM37 34h2v1h-2zM2 35h1v1h-1zM4 35h3v1h-3zM8 35h1v1h-1zM10 35h1v1h-1zM14 35h4v1h-4zM19 35h4v1h-4zM25 35h2v1h-2zM28 35h1v1h-1zM30 35h3v1h-3zM34 35h5v1h-5zM2 36h1v1h-1zM4 36h3v1h-3zM8 36h1v1h-1zM10 36h2v1h-2zM13 36h1v1h-1zM19 36h2v1h-2zM25 36h3v1h-3zM29 36h4v1h-4zM34 36h2v1h-2zM2 37h1v1h-1zM8 37h1v1h-1zM11 37h1v1h-1zM14 37h3v1h-3zM20 37h3v1h-3zM25 37h1v1h-1zM27 37h2v1h-2zM31 37h1v1h-1zM33 37h4v1h-4zM2 38h7v1h-7zM10 38h1v1h-1zM12 38h2v1h-2zM19 38h1v1h-1zM21 38h1v1h-1zM24 38h1v1h-1zM26 38h2v1h-2zM32 38h1v1h-1zM34 38h5v1h-5z"/></svg>
+    <p class="qr-texto">Escanea con la cámara del celular para abrir esta página</p>
+    <p class="qr-url">https://memosanchezg.github.io/programacion-basica-interactivos/hoja-tema-09.html</p>
+    <button type="button" class="qr-cerrar">Cerrar</button>
+  </div>
+</div>
+<style>
+  .qr-capa { position:fixed; top:0; right:0; bottom:0; left:0; z-index:10000; display:flex; align-items:center;
+             justify-content:center; padding:16px; background:#fff; }
+  .qr-capa[hidden] { display:none; }
+  .qr-caja { max-width:100%; text-align:center; color:#0A2A57; font:16px/1.4 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .qr-caja svg { display:block; width:min(62vh, 84vw); height:auto; margin:0 auto; }
+  .qr-texto { margin:12px 0 2px; font-size:1.15rem; font-weight:bold; }
+  .qr-url { margin:0 0 12px; color:#5B6472; word-break:break-all; }
+  .qr-cerrar { font:inherit; padding:6px 20px; border:2px solid #00408F; border-radius:4px; background:#fff;
+               color:#00408F; cursor:pointer; }
+</style>
+<script>
+  (function () {
+    var capa = document.getElementById("qr-sitio");
+    document.querySelectorAll("a.qr-abrir").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        capa.hidden = false;
+        capa.querySelector(".qr-cerrar").focus();
+      });
+    });
+    capa.addEventListener("click", function (e) {
+      if (e.target === capa || e.target.classList.contains("qr-cerrar")) capa.hidden = true;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !capa.hidden) capa.hidden = true;
+    });
+  })();
+</script>
+</body></html>

@@ -1,0 +1,1660 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="tipo" content="simulador">
+<title>openpyxl paso a paso</title>
+
+<style>
+  :root {
+    --azul:#00408F; --azul-oscuro:#0A2A57; --guinda:#8C1D35; --oro:#B8975A; --oro-texto:#8A6A2E;
+    --azul-claro:#E8EEF7; --oro-claro:#F7F1E6; --guinda-claro:#F5E6EA; --verde:#2F7D5B;
+    --tinta:#1B1F2A; --gris:#5B6472; --gris-claro:#E9ECF1; --borde:#D9DEE6; --fondo:#FFFFFF;
+    --cmd-fondo:#0C0C0C; --cmd-texto:#E6E6E6;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--fondo); color:var(--tinta);
+         font:16px/1.45 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .franja { height:8px; background:var(--azul); border-bottom:3px solid var(--oro); }
+  header { max-width:1280px; margin:0 auto; padding:12px 18px 4px; }
+  .semana { color:var(--guinda); font-weight:bold; letter-spacing:.04em; font-size:.85rem; text-transform:uppercase; }
+  h1 { font-family:Cambria,Georgia,serif; color:var(--azul-oscuro); font-size:1.7rem; margin:2px 0 2px; }
+  .sub { color:var(--gris); margin:0; }
+  main { max-width:1280px; margin:0 auto; padding:8px 18px 24px; }
+  .panel { background:#fff; border:1px solid var(--borde); border-radius:10px; padding:12px 14px; }
+  .panel h2 { font-size:1.02rem; color:var(--azul-oscuro); margin:0 0 8px; }
+  label { display:block; font-weight:bold; color:var(--azul-oscuro); margin-top:10px; }
+  label small { font-weight:normal; color:var(--gris); }
+  input[type=range] { width:100%; }
+  input[type=number], input[type=text], select, textarea { font:inherit; padding:4px 6px; border:1px solid var(--borde);
+                        border-radius:6px; }
+  button.accion { font:inherit; font-weight:bold; border-radius:8px; padding:7px 12px; margin:8px 6px 0 0;
+                  border:1px solid var(--azul); background:#fff; color:var(--azul); cursor:pointer; }
+  button.accion:hover, button.accion:focus-visible { background:var(--azul); color:#fff; outline:none; }
+  button.accion:disabled { opacity:.45; cursor:default; background:#fff; color:var(--azul); }
+  .lectura { background:var(--oro-claro); border-left:4px solid var(--oro); border-radius:8px; padding:10px 12px;
+             margin-top:12px; line-height:1.55; }
+  .lectura b { color:var(--azul-oscuro); }
+  .ok { color:var(--verde); font-weight:bold; }
+  .mal { color:var(--guinda); font-weight:bold; }
+  .preguntas { background:var(--azul-claro); border-radius:8px; padding:10px 14px; margin-top:12px; }
+  .preguntas h3 { margin:0 0 4px; font-size:.95rem; color:var(--azul-oscuro); }
+  .preguntas ol { margin:0; padding-left:20px; }
+  /* Código Python con los colores del curso (minted, estilo borland) y salida de consola (cmd). */
+  .codigo { border:1px solid var(--tinta); background:#fff; font:15px/1.5 Consolas,"Courier New",monospace;
+            overflow-x:auto; margin:8px 0; }
+  .codigo ol { margin:0; padding:8px 12px 8px 3.4em; }
+  .codigo li { white-space:pre; }
+  .codigo li::marker { color:var(--gris); font:11px Cambria,Georgia,serif; }
+  .codigo .kw { color:#000080; font-weight:bold; }
+  .codigo .str, .codigo .num { color:#0000FF; }
+  .codigo .com { color:#008800; font-style:italic; }
+  .codigo .marca { background:var(--oro-claro); outline:1px solid var(--oro); }
+  .consola { background:var(--cmd-fondo); color:var(--cmd-texto); font:15px/1.45 Consolas,"Courier New",monospace;
+             white-space:pre-wrap; word-break:break-word; padding:8px 12px; border-radius:4px; margin:8px 0; min-height:2.2em; }
+  footer { max-width:1280px; margin:0 auto; padding:6px 18px 18px; color:var(--gris); font-size:.85rem; }
+  footer a { color:var(--azul); }
+
+  /* Propios de este simulador */
+  [hidden] { display:none !important; }
+  /* Hoja de cálculo como en Excel: encabezados grises, rejilla, pestañas, filtros y paneles. */
+  .xl { border:1px solid #C6C6C6; background:#fff; max-width:100%; }
+  .xl-rejilla { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  table.xl-t { border-collapse:collapse; table-layout:fixed; font:14.667px/1.2 Calibri,Carlito,"Segoe UI",Arial,sans-serif;
+               color:#000; background:#fff; }
+  table.xl-t th { background:#F3F3F3; color:#5B6472; font:12px/1 Calibri,Carlito,"Segoe UI",Arial,sans-serif;
+                  border:1px solid #D4D4D4; height:20px; padding:0; text-align:center; }
+  table.xl-t th.xl-enc-sel { background:#E1E1E1; color:#217346; font-weight:bold; box-shadow:inset 0 -2px 0 #217346; }
+  table.xl-t tbody th.xl-enc-sel { box-shadow:inset -2px 0 0 #217346; }
+  table.xl-t td { border:1px solid #D4D4D4; height:20px; padding:0 3px; white-space:nowrap; overflow:hidden;
+                  vertical-align:bottom; position:static; }
+  table.xl-t td .xl-c { display:flex; align-items:flex-end; height:19px; overflow:hidden; pointer-events:none;
+                        white-space:pre; }
+  table.xl-t td.xl-left .xl-c { justify-content:flex-start; }
+  table.xl-t td.xl-right .xl-c { justify-content:flex-end; }
+  table.xl-t td.xl-center .xl-c { justify-content:center; }
+  table.xl-t td.xl-desborda { overflow:visible; }
+  table.xl-t td.xl-desborda .xl-c { width:var(--ancho); }
+  table.xl-t td.xl-b { font-weight:bold; }
+  table.xl-t td.xl-i { font-style:italic; }
+  table.xl-t td.xl-congela-f { border-bottom:2px solid #9A9A9A; }
+  table.xl-t td.xl-congela-c { border-right:2px solid #9A9A9A; }
+  table.xl-t td.xl-sel { outline:2px solid #217346; outline-offset:-2px; }
+  table.xl-t td:focus { outline:2px solid #217346; outline-offset:-2px; }
+  table.xl-t td:focus-visible { outline:3px solid var(--guinda); outline-offset:-3px; }
+  table.xl-t .xl-formula { color:#5B6472; font-style:italic; }
+  table.xl-t .xl-filtro { float:right; width:15px; height:15px; margin:2px -1px 0 2px; border:1px solid #A6A6A6;
+                          background:#fff; color:#5B6472; font-size:10px; line-height:13px; text-align:center;
+                          pointer-events:none; }
+  table.xl-t td.xl-triangulo { background-image:linear-gradient(135deg, #1E8E3E 0, #1E8E3E 5px, transparent 5px); }
+  table.xl-t .xl-orden { float:left; font:bold 11px/1 Calibri,"Segoe UI",sans-serif; color:var(--guinda);
+                         background:rgba(255,255,255,.85); border-radius:3px; padding:0 2px; margin:1px 2px 0 -2px;
+                         pointer-events:none; }
+  .xl-pestanas { display:flex; gap:2px; background:#F3F3F3; border-top:1px solid #D4D4D4; padding:0 8px; overflow-x:auto; }
+  .xl-pestanas button { font:13px Calibri,Carlito,"Segoe UI",Arial,sans-serif; border:none; background:none; color:#5B6472;
+                        padding:4px 14px 3px; cursor:pointer; border-bottom:3px solid transparent; white-space:nowrap; }
+  .xl-pestanas button.activa { background:#fff; color:#217346; font-weight:bold; border-bottom-color:#217346; }
+  .xl-pestanas button:focus-visible { outline:2px solid var(--guinda); outline-offset:-2px; }
+  .oculto { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+  code { font-family:Consolas,"Courier New",monospace; color:var(--azul-oscuro); }
+  .selector { display:flex; flex-wrap:wrap; gap:6px 12px; align-items:center; margin:4px 0 12px; }
+  .selector label { margin:0; }
+  .selector select { max-width:100%; }
+  .selector .desc { color:var(--gris); }
+  .fila2 { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.15fr); gap:16px; align-items:start; }
+  .fila2 > * { min-width:0; }
+  .codigo .siguiente { box-shadow:inset 3px 0 0 var(--guinda); }
+  .controles { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:4px; }
+  .controles button.accion { margin:0; min-width:46px; padding:6px 10px; }
+  .controles .barra { flex:1 1 180px; display:flex; flex-direction:column; min-width:150px; }
+  .controles .barra label { margin:0 0 2px; font-size:.95rem; }
+  .leyenda { display:flex; flex-wrap:wrap; gap:4px 14px; color:var(--gris); font-size:.9rem; margin:2px 0 0; }
+  .leyenda span::before { content:""; display:inline-block; width:14px; height:12px; vertical-align:middle; margin-right:5px;
+                          background:var(--c); border:1px solid var(--b, var(--c)); }
+  .leyenda span.raya::before { width:4px; background:var(--guinda); border:none; }
+  .info-celda { font-size:.95rem; margin:8px 0 0; color:var(--tinta); min-height:2.9em; overflow-wrap:anywhere; }
+  .info-celda code { color:var(--azul); }
+  .sin-libro { border:1px dashed var(--borde); border-radius:8px; padding:24px 12px; color:var(--gris); text-align:center; }
+  table.vars { width:100%; border-collapse:collapse; font-size:.95rem; margin-top:4px; }
+  table.vars th, table.vars td { border:1px solid var(--borde); padding:3px 8px; text-align:left; vertical-align:top; }
+  table.vars thead th { background:var(--gris-claro); color:var(--azul-oscuro); }
+  table.vars td:first-child { font-family:Consolas,"Courier New",monospace; color:var(--azul-oscuro); white-space:nowrap; }
+  table.vars td:last-child { font-family:Consolas,"Courier New",monospace; overflow-wrap:anywhere; word-break:break-word; }
+  table.vars tr.grupo th { background:#fff; color:var(--gris); font-weight:normal; font-size:.85rem; border-left:none; border-right:none; }
+  table.vars td.objeto { color:var(--gris); font-style:italic; font-family:Calibri,"Segoe UI",sans-serif; }
+  table.vars tr.cambio td { background:var(--oro-claro); }
+  table.xl-t td.xl-cambio { box-shadow:inset 0 0 0 2px var(--oro); }
+  .archivos { color:var(--gris); font-size:.95rem; margin:4px 0 0; }
+  .archivos b { color:var(--verde); }
+  h2.rotulo { margin-top:14px !important; }
+  @media (max-width: 900px) { .fila2 { grid-template-columns:1fr; } }
+  @media (max-width: 480px) {
+    header { padding:10px 12px 4px; }
+    main { padding:8px 10px 20px; }
+    footer { padding:6px 12px 16px; }
+    .panel { padding:10px; }
+    h1 { font-size:1.45rem; }
+    .codigo { font-size:13px; }
+    .codigo ol { padding-left:2.9em; }
+  }
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header>
+  <div class="semana">Semana 14 · Días 1 a 4 · Excel y reportes</div>
+  <h1>openpyxl paso a paso</h1>
+  <p class="sub">Avanza línea por línea por un programa de openpyxl y mira cómo cambia el libro de Excel: celdas, hojas, formatos, variables y lo que imprime.</p>
+</header>
+<main>
+  <div class="selector">
+    <label for="programa">Programa</label>
+    <select id="programa"></select>
+    <span class="desc" id="descProg"></span>
+  </div>
+  <div class="fila2">
+    <div class="panel">
+      <h2>El código</h2>
+      <div id="codigo"></div>
+      <div class="leyenda" aria-hidden="true">
+        <span style="--c:#F7F1E6;--b:#B8975A">línea que acaba de ejecutarse</span>
+        <span class="raya">la que sigue</span>
+      </div>
+      <div class="controles">
+        <button type="button" class="accion" id="inicio" aria-label="Ir al inicio" title="Ir al inicio">⏮</button>
+        <button type="button" class="accion" id="atras" aria-label="Paso anterior" title="Paso anterior">◀</button>
+        <button type="button" class="accion" id="adelante" aria-label="Paso siguiente" title="Paso siguiente">▶</button>
+        <button type="button" class="accion" id="fin" aria-label="Ir al final" title="Ir al final">⏭</button>
+        <div class="barra">
+          <label for="paso">Paso <span id="pasoTxt"></span></label>
+          <input type="range" id="paso" min="0" max="1" step="1" value="0">
+        </div>
+      </div>
+      <div class="lectura" id="explica" aria-live="polite"></div>
+      <h2 class="rotulo">Consola</h2>
+      <div class="consola" id="consola" aria-live="polite"></div>
+      <p class="archivos" id="archivos"></p>
+    </div>
+    <div class="panel">
+      <h2>El libro, como lo verías en Excel</h2>
+      <div id="hoja"></div>
+      <p class="info-celda" id="infoCelda" aria-live="polite"></p>
+      <h2 class="rotulo">Variables</h2>
+      <table class="vars" id="vars"></table>
+      <div class="preguntas">
+        <h3>Para explorar</h3>
+        <ol>
+          <li><b>Tu primer archivo.</b> Antes de ejecutar la línea 11: ¿en qué fila va a escribir <code>append</code>? ¿Y si no existieran las líneas 9 y 10?</li>
+          <li><b>Una lista de registros.</b> ¿Por qué <code>max_row</code> vale 4 si solo hay 3 registros? Toca A2: ¿de qué tipo son las fechas?</li>
+          <li><b>Datos y Resumen.</b> Justo después de <code>create_sheet</code>, ¿qué hoja es <code>libro.active</code>? ¿En qué fila de Resumen escribe el primer <code>append</code>?</li>
+          <li><b>Fórmulas.</b> ¿Por qué la consola dice <code>=AVERAGE(B2:B8)</code> y la hoja muestra otra cosa en B11? ¿Qué se vería en B11 sin el <code>number_format</code>?</li>
+          <li><b>Encabezado con estilo.</b> ¿Qué celdas recorre <code>iter_rows(min_row=2, min_col=2)</code>? ¿Por qué A2:A7 no cambian de formato?</li>
+          <li><b>Datos limpios.</b> En la vuelta de "2026-09-31", ¿qué valor tiene <code>fila</code> y por qué? ¿Qué le pasa a <code>e</code> después del <code>continue</code>?</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</main>
+<footer>
+  Programación Básica · FCFM-UANL · funciona sin internet. Los programas son los ejemplos del Tema 14; cada paso reproduce lo que hace openpyxl y la hoja muestra lo que verías al abrir el archivo en Excel.
+  <a href="index.html">Índice de simuladores</a> · <a href="#qr-sitio" class="qr-abrir">Abrir en el celular (QR)</a>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+  // ==== NÚCLEO EXCEL (puro: sin DOM) ====
+  // Valores como en Python: int (número entero de JS), float (número con decimales o PyFloat),
+  // str, bool, None (null), date (Fecha) y datetime (FechaHora).
+  function PyFloat(valor) { this.valor = valor; }
+  function Fecha(a, m, d) { this.a = a; this.m = m; this.d = d; }
+  function FechaHora(a, m, d, h, mi, s) { this.a = a; this.m = m; this.d = d; this.h = h || 0; this.mi = mi || 0; this.s = s || 0; }
+  function Tupla(items) { this.items = items; }
+  function ErrorExcel(codigo) { this.codigo = codigo; }
+
+  function esc(t) {
+    return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  function esNumero(v) { return (typeof v === "number") || (v instanceof PyFloat); }
+  function num(v) { return v instanceof PyFloat ? v.valor : v; }
+  function esFecha(v) { return v instanceof Fecha || v instanceof FechaHora; }
+
+  // repr() de un float de Python: la representación más corta que vuelve al mismo número.
+  function pyFloat(x) {
+    if (Number.isNaN(x)) return "nan";
+    if (x === Infinity) return "inf";
+    if (x === -Infinity) return "-inf";
+    if (x === 0) return Object.is(x, -0) ? "-0.0" : "0.0";
+    var partes = Math.abs(x).toExponential().split("e");
+    var digitos = partes[0].replace(".", "");
+    var exp = parseInt(partes[1], 10);
+    var decpt = exp + 1, signo = x < 0 ? "-" : "";
+    if (decpt > 16 || decpt < -3) {
+      var mant = digitos.length > 1 ? digitos[0] + "." + digitos.slice(1) : digitos[0];
+      return signo + mant + "e" + (exp < 0 ? "-" : "+") + (Math.abs(exp) < 10 ? "0" : "") + Math.abs(exp);
+    }
+    if (decpt <= 0) return signo + "0." + "0".repeat(-decpt) + digitos;
+    if (decpt >= digitos.length) return signo + digitos + "0".repeat(decpt - digitos.length) + ".0";
+    return signo + digitos.slice(0, decpt) + "." + digitos.slice(decpt);
+  }
+
+  // repr() de un texto: comillas simples, o dobles si el texto trae ' y no trae ".
+  function pyStr(s) {
+    var q = (s.indexOf("'") >= 0 && s.indexOf('"') < 0) ? '"' : "'";
+    var r = "";
+    for (var i = 0; i < s.length; i++) {
+      var c = s[i], code = s.charCodeAt(i);
+      if (c === "\\") r += "\\\\";
+      else if (c === q) r += "\\" + q;
+      else if (c === "\n") r += "\\n";
+      else if (c === "\r") r += "\\r";
+      else if (c === "\t") r += "\\t";
+      else if (code < 32 || code === 127) r += "\\x" + (code < 16 ? "0" : "") + code.toString(16);
+      else r += c;
+    }
+    return q + r + q;
+  }
+
+  // repr() de un valor: None, True/False, int, float, str, list, tuple, dict, date y datetime.
+  function pyRepr(v) {
+    if (v === null || v === undefined) return "None";
+    if (v === true) return "True";
+    if (v === false) return "False";
+    if (v instanceof PyFloat) return pyFloat(v.valor);
+    if (typeof v === "number") return Number.isInteger(v) ? String(v) : pyFloat(v);
+    if (typeof v === "string") return pyStr(v);
+    if (v instanceof Fecha) return "datetime.date(" + v.a + ", " + v.m + ", " + v.d + ")";
+    if (v instanceof FechaHora) {
+      return "datetime.datetime(" + [v.a, v.m, v.d, v.h, v.mi].concat(v.s ? [v.s] : []).join(", ") + ")";
+    }
+    if (v instanceof Tupla) return "(" + v.items.map(pyRepr).join(", ") + (v.items.length === 1 ? ",)" : ")");
+    if (typeof v.repr === "function") return v.repr();
+    if (Array.isArray(v)) return "[" + v.map(pyRepr).join(", ") + "]";
+    return "{" + Object.keys(v).map(function (k) { return pyStr(k) + ": " + pyRepr(v[k]); }).join(", ") + "}";
+  }
+
+  // ---------- Coordenadas ----------
+  function letraColumna(n) {
+    var s = "";
+    while (n > 0) { var r = (n - 1) % 26; s = String.fromCharCode(65 + r) + s; n = Math.floor((n - 1) / 26); }
+    return s;
+  }
+  function indiceColumna(letras) {
+    var n = 0;
+    for (var i = 0; i < letras.length; i++) n = n * 26 + (letras.charCodeAt(i) - 64);
+    return n;
+  }
+  function partirCoord(coord) {
+    var m = /^([A-Z]{1,3})(\d+)$/.exec(coord);
+    return { col: indiceColumna(m[1]), fila: parseInt(m[2], 10) };
+  }
+  function coord(fila, col) { return letraColumna(col) + fila; }
+
+  // ---------- Cómo muestra Excel un valor ----------
+  // El ancho de la columna se calcula en píxeles de Excel a 150 % (como el Excel con el que se
+  // calibró); lo que cabe se mide en píxeles a 100 % (px / 1.5) con los anchos de Calibri 11.
+  var XL_DIGITO = 11, XL_KG = 4.5;
+  var XL_ANCHOS = { ".": 4, ",": 4, "-": 5, "%": 11, "$": 7, "E": 7, "+": 7, ":": 3, "/": 5, " ": 3 };
+  function pxColumna(ancho) {
+    if (ancho === null || ancho === undefined) return 96;
+    return Math.trunc((256 * ancho + Math.trunc(128 / XL_DIGITO)) / 256 * XL_DIGITO);
+  }
+  function anchoTexto(t) {
+    var s = 0;
+    for (var i = 0; i < t.length; i++) {
+      var c = t[i];
+      s += (c >= "0" && c <= "9") ? 7 : (XL_ANCHOS[c] !== undefined ? XL_ANCHOS[c] : 7);
+    }
+    return s;
+  }
+  function gatos(px) { return "#".repeat(Math.max(1, Math.floor((px / 1.5 - 4.5) / 7))); }
+  function cabe(t, px) { return anchoTexto(t) <= px / 1.5 - 4.5; }
+
+  // El número con 15 cifras significativas (lo que guarda Excel), como dígitos y posición del punto.
+  function dec15(x) {
+    if (x === 0) return { neg: false, dig: "0", punto: 1 };
+    var m = /^(\d)\.(\d+)e([+-]\d+)$/.exec(Math.abs(x).toExponential(14));
+    return { neg: x < 0, dig: (m[1] + m[2]).replace(/0+$/, "") || "0", punto: parseInt(m[3], 10) + 1 };
+  }
+  // Suma 1 a un entero escrito en decimal.
+  function masUno(s) {
+    var a = s.split(""), i = a.length - 1;
+    while (i >= 0) {
+      if (a[i] === "9") { a[i] = "0"; i--; } else { a[i] = String(+a[i] + 1); break; }
+    }
+    return i < 0 ? "1" + a.join("") : a.join("");
+  }
+  // Redondea (mitad hacia arriba, sobre el decimal de 15 cifras) a nd decimales; escala = potencia de 10.
+  function redondear(x, nd, escala) {
+    var d = dec15(x);
+    var punto = d.punto + (escala || 0);
+    var entero, frac;
+    if (punto <= 0) { entero = "0"; frac = "0".repeat(-punto) + d.dig; }
+    else if (punto >= d.dig.length) { entero = d.dig + "0".repeat(punto - d.dig.length); frac = ""; }
+    else { entero = d.dig.slice(0, punto); frac = d.dig.slice(punto); }
+    if (d.dig === "0") { entero = "0"; frac = ""; }
+    frac = frac + "0".repeat(nd + 1);
+    var sube = frac[nd] >= "5";
+    var todo = (entero + frac.slice(0, nd)).replace(/^0+(?=\d)/, "");
+    if (sube) todo = masUno(todo);
+    while (todo.length < nd + 1) todo = "0" + todo;
+    var e = todo.slice(0, todo.length - nd), f = todo.slice(todo.length - nd);
+    return { neg: d.neg, entero: e, frac: f, cero: /^0*$/.test(e + f) };
+  }
+  function miles(entero) { return entero.replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
+
+  // Notación científica de Excel: 1.23457E+11 (mantisa con nd decimales, exponente de 2 cifras).
+  function cientifico(x, nd) {
+    var d = dec15(x);
+    var exp = d.punto - 1;
+    var dig = (d.dig + "0".repeat(nd + 2)).slice(0, nd + 2);
+    var todo = dig.slice(0, nd + 1);
+    if (dig[nd + 1] >= "5") todo = masUno(todo);
+    if (todo.length > nd + 1) { todo = todo.slice(0, nd + 1); exp += 1; }
+    var mant = todo[0] + (nd > 0 ? "." + todo.slice(1) : "");
+    if (mant.indexOf(".") >= 0) mant = mant.replace(/0+$/, "").replace(/\.$/, "");
+    return (x < 0 ? "-" : "") + mant + "E" + (exp >= 0 ? "+" : "-") + (Math.abs(exp) < 10 ? "0" : "") + Math.abs(exp);
+  }
+
+  // Formato General: caben tantas cifras como el ancho permita (máximo 11, sin contar el signo).
+  function formatoGeneral(x, px) {
+    if (x === 0) return "0";
+    var neg = x < 0, signo = neg ? "-" : "", a = Math.abs(x), nd, t, c;
+    var n = Math.min(11, Math.max(neg ? 0 : 1, Math.floor((px / 1.5 - XL_KG - (neg ? 5 : 0)) / 7)));
+    if (n < 1) return gatos(px);
+    if (a >= 1e11 || a < 1e-9) {
+      for (nd = 5; nd >= 0; nd--) { t = cientifico(a, nd); if (t.length <= n) return signo + t; }
+      return a < 1 ? signo + "0" : gatos(px);
+    }
+    for (nd = 10; nd >= 0; nd--) {
+      var r = redondear(a, nd);
+      t = r.entero + (nd > 0 ? "." + r.frac : "");
+      if (t.indexOf(".") >= 0) t = t.replace(/0+$/, "").replace(/\.$/, "");
+      if (t.length <= n) {
+        if (t === "0" && a < 1) {
+          for (var nd2 = 4; nd2 >= 0; nd2--) { c = cientifico(a, nd2); if (c.length <= n) return signo + c; }
+        }
+        return signo + t;
+      }
+    }
+    for (nd = 4; nd >= 0; nd--) { t = cientifico(a, nd); if (t.length <= n) return signo + t; }
+    return gatos(px);
+  }
+
+  // Serial de Excel (días desde el 30/12/1899, con el 29/02/1900 que Excel cree que existió).
+  function diasCivil(a, m, d) {   // días desde 1970-01-01
+    return Math.round(Date.UTC(a, m - 1, d) / 86400000);
+  }
+  var DIAS_EPOCA = diasCivil(1899, 12, 30);
+  function serialDe(v) {
+    if (v instanceof Fecha || v instanceof FechaHora) {
+      var s = diasCivil(v.a, v.m, v.d) - DIAS_EPOCA;
+      if (s < 61) s -= 1;    // antes del 1/03/1900 Excel cuenta un día menos
+      if (v instanceof FechaHora) s += (v.h * 3600 + v.mi * 60 + v.s) / 86400;
+      return s;
+    }
+    return num(v);
+  }
+  function fechaDeSerial(x) {
+    var dias = Math.floor(x), frac = x - dias;
+    var seg = Math.floor(frac * 86400 + 0.5), min = Math.floor(seg / 60);
+    var a, m, d;
+    if (dias === 0) { a = 1900; m = 1; d = 0; }
+    else if (dias === 60) { a = 1900; m = 2; d = 29; }
+    else {
+      var f = new Date(Date.UTC(1899, 11, dias < 60 ? 31 : 30) + dias * 86400000);
+      a = f.getUTCFullYear(); m = f.getUTCMonth() + 1; d = f.getUTCDate();
+    }
+    return { a: a, m: m, d: d, h: Math.floor(min / 60) % 24, mi: min % 60, s: seg % 60 };
+  }
+  function dos(n) { return (n < 10 ? "0" : "") + n; }
+  var MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+  var MESES_L = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre",
+                 "octubre", "noviembre", "diciembre"];
+
+  function esFormatoFecha(f) {
+    var sin = f.replace(/"[^"]*"/g, "").replace(/\[[^\]]*\]/g, "");
+    return /[dy]/i.test(sin) || /h/i.test(sin) && /m/i.test(sin) || /(^|[^0#?])s/i.test(sin) && /:/.test(sin);
+  }
+
+  function formatoFecha(x, f, px) {
+    if (x < 0 || x >= 2958466) return gatos(px);
+    var p = fechaDeSerial(x);
+    var codigo = f.replace(/\[[^\]]*\]/g, "");
+    var tokens = codigo.match(/"[^"]*"|\\.|yyyy|yy|mmmm|mmm|mm|m|dddd|ddd|dd|d|hh|h|ss|s|AM\/PM|am\/pm|./gi) || [];
+    var out = [];
+    tokens.forEach(function (t) {
+      var low = t.toLowerCase();
+      if (t[0] === '"') out.push({ t: t.slice(1, -1) });
+      else if (t[0] === "\\") out.push({ t: t.slice(1) });
+      else if (/^(yyyy|yy|mmmm|mmm|mm|m|dddd|ddd|dd|d|hh|h|ss|s|am\/pm)$/.test(low)) out.push({ tok: low });
+      else out.push({ t: t });
+    });
+    // "m" o "mm" junto a horas o segundos son minutos
+    for (var i = 0; i < out.length; i++) {
+      if (out[i].tok === "m" || out[i].tok === "mm") {
+        var antes = null, despues = null, j;
+        for (j = i - 1; j >= 0; j--) if (out[j].tok && /^[hdmys]/.test(out[j].tok)) { antes = out[j].tok; break; }
+        for (j = i + 1; j < out.length; j++) if (out[j].tok && /^[hdmys]/.test(out[j].tok)) { despues = out[j].tok; break; }
+        if ((antes && antes[0] === "h") || (despues && despues[0] === "s")) out[i].minutos = true;
+      }
+    }
+    var ampm = out.some(function (o) { return o.tok === "am/pm"; });
+    var s = out.map(function (o) {
+      if (o.t !== undefined) return o.t;
+      var k = o.tok;
+      if (k === "yyyy") return String(p.a);
+      if (k === "yy") return dos(p.a % 100);
+      if (k === "mmmm") return MESES_L[p.m - 1];
+      if (k === "mmm") return MESES[p.m - 1];
+      if (k === "mm") return o.minutos ? dos(p.mi) : dos(p.m);
+      if (k === "m") return o.minutos ? String(p.mi) : String(p.m);
+      if (k === "dd") return dos(p.d);
+      if (k === "d") return String(p.d);
+      if (k === "dddd" || k === "ddd") return String(p.d);
+      var h = ampm ? ((p.h + 11) % 12) + 1 : p.h;
+      if (k === "hh") return dos(h);
+      if (k === "h") return String(h);
+      if (k === "ss") return dos(p.s);
+      if (k === "s") return String(p.s);
+      if (k === "am/pm") return p.h < 12 ? "AM" : "PM";
+      return k;
+    }).join("");
+    return cabe(s, px) ? s : gatos(px);
+  }
+
+  // Formato de número con una sección: 0, 0.0, #,##0.00, 0%, "$"#,##0.00, 0.0 "°C"...
+  function formatoNumero(x, f, px) {
+    var secciones = f.split(";");
+    var sec = secciones[0], negSeccion = false;
+    if (x < 0 && secciones.length > 1 && secciones[1] !== "") { sec = secciones[1]; negSeccion = true; }
+    if (x === 0 && secciones.length > 2 && secciones[2] !== "") sec = secciones[2];
+    sec = sec.replace(/\[[^\]]*\]/g, "");
+    var limpio = sec.replace(/"[^"]*"/g, "").replace(/\\./g, "");
+    var pct = (limpio.match(/%/g) || []).length;
+    var mm = /[0#?]\.([0#?]+)/.exec(limpio);
+    var nd = mm ? mm[1].replace(/[^0]/g, "").length : 0;
+    var conMiles = /[0#?],[0#?]/.test(limpio);
+    var r = redondear(x, nd, 2 * pct);
+    var ent = r.entero.replace(/^0+(?=\d)/, "");
+    if (!/0/.test(limpio.split(".")[0]) && ent === "0") ent = "";
+    var numero = (conMiles ? miles(ent) : ent) + (nd > 0 ? "." + r.frac : "");
+    // Literales antes y después de los dígitos
+    var partes = sec.match(/"[^"]*"|\\.|[0#?,.]+|./g) || [];
+    var antes = "", despues = "", visto = false;
+    partes.forEach(function (t) {
+      if (/^[0#?,.]+$/.test(t)) { visto = true; return; }
+      var lit = t[0] === '"' ? t.slice(1, -1) : (t[0] === "\\" ? t.slice(1) : t);
+      if (lit === "_" || lit === "*") lit = "";
+      if (visto) despues += lit; else antes += lit;
+    });
+    var signo = (r.neg && !r.cero && !negSeccion) ? "-" : "";
+    var s = signo + antes + numero + despues;
+    return cabe(s, px) ? s : gatos(px);
+  }
+
+  // Lo que muestra Excel en una celda: {texto, derecha (números), centro (errores y booleanos)}.
+  function mostrarValor(v, fmt, px) {
+    var f = fmt || "General";
+    if (v === null || v === undefined || v === "") return { texto: "", tipo: "vacia" };
+    if (v instanceof ErrorExcel) return { texto: v.codigo, tipo: "error" };
+    if (v === true || v === false) return { texto: v ? "TRUE" : "FALSE", tipo: "bool" };
+    if (typeof v === "string") return { texto: v, tipo: "texto" };
+    var x = serialDe(v);
+    if (f === "General") return { texto: formatoGeneral(x, px), tipo: "numero" };
+    if (esFormatoFecha(f)) return { texto: formatoFecha(x, f, px), tipo: "numero" };
+    return { texto: formatoNumero(x, f, px), tipo: "numero" };
+  }
+  // ==== FIN NÚCLEO EXCEL ====
+  // ---------- Fórmulas sencillas, como las calcula Excel al abrir el archivo ----------
+  // buscarValor(hojaTitulo|null, fila, col) regresa el valor guardado de la celda (o null).
+  // Regresa un número, texto, booleano, ErrorExcel, null (celda vacía) o NO_EVALUABLE.
+  var NO_EVALUABLE = { noEvaluable: true };
+  function evaluarFormula(texto, buscarValor, profundidad) {
+    profundidad = profundidad || 0;
+    if (profundidad > 30) return new ErrorExcel("#REF!");
+    var s = texto.slice(1), i = 0;
+    function espacios() { while (i < s.length && s[i] === " ") i++; }
+    function falla() { throw NO_EVALUABLE; }
+    function valorCelda(hoja, fila, col) {
+      var v = buscarValor(hoja, fila, col);
+      if (typeof v === "string" && v.length > 1 && v[0] === "=") {
+        return evaluarFormula(v, function (h, f, c) { return buscarValor(h === null ? hoja : h, f, c); }, profundidad + 1);
+      }
+      return v;
+    }
+    function referencia() {
+      // [Hoja!]A1 o [Hoja!]A1:B5
+      var m = /^(?:'((?:[^']|'')+)'!|([A-Za-z_À-ɏ][\w.À-ɏ]*)!)?\$?([A-Z]{1,3})\$?(\d+)(?::\$?([A-Z]{1,3})\$?(\d+))?/.exec(s.slice(i));
+      if (!m) return null;
+      var despues = s.slice(i + m[0].length);
+      if (/^[A-Za-z_(]/.test(despues)) return null;
+      i += m[0].length;
+      var hoja = m[1] ? m[1].replace(/''/g, "'") : (m[2] || null);
+      var c1 = indiceColumna(m[3]), f1 = parseInt(m[4], 10);
+      if (!m[5]) return { celda: true, hoja: hoja, fila: f1, col: c1 };
+      var c2 = indiceColumna(m[5]), f2 = parseInt(m[6], 10), vals = [];
+      for (var f = Math.min(f1, f2); f <= Math.max(f1, f2); f++) {
+        for (var c = Math.min(c1, c2); c <= Math.max(c1, c2); c++) vals.push(valorCelda(hoja, f, c));
+      }
+      return { rango: vals };
+    }
+    function aNumero(v) {
+      if (v instanceof ErrorExcel) throw v;
+      if (v === null || v === undefined) return 0;
+      if (v === true) return 1;
+      if (v === false) return 0;
+      if (typeof v === "string") {
+        var t = v.trim();
+        if (t !== "" && !isNaN(Number(t))) return Number(t);
+        throw new ErrorExcel("#VALUE!");
+      }
+      return serialDe(v);
+    }
+    function primario() {
+      espacios();
+      if (s[i] === "(") { i++; var v = expresion(); espacios(); if (s[i] !== ")") falla(); i++; return v; }
+      if (s[i] === '"') {
+        var fin = s.indexOf('"', i + 1); if (fin < 0) falla();
+        var txt = s.slice(i + 1, fin); i = fin + 1; return txt;
+      }
+      var mn = /^\d+(\.\d+)?([eE][+-]?\d+)?|^\.\d+/.exec(s.slice(i));
+      if (mn) { i += mn[0].length; return Number(mn[0]); }
+      var mf = /^([A-Za-z][A-Za-z0-9.]*)\(/.exec(s.slice(i));
+      if (mf) { i += mf[0].length; return funcion(mf[1].toUpperCase()); }
+      var r = referencia();
+      if (r) return r.celda ? valorCelda(r.hoja, r.fila, r.col) : r;
+      var mb = /^(TRUE|FALSE)\b/i.exec(s.slice(i));
+      if (mb) { i += mb[0].length; return mb[0].toUpperCase() === "TRUE"; }
+      falla();
+    }
+    function argumentos() {
+      var args = [];
+      espacios();
+      if (s[i] === ")") { i++; return args; }
+      while (true) {
+        espacios();
+        var r = null, guardado = i;
+        r = referencia();
+        espacios();
+        if (r && (s[i] === "," || s[i] === ")")) args.push(r.celda ? { rango: [valorCelda(r.hoja, r.fila, r.col)], unaCelda: true } : r);
+        else { i = guardado; args.push(expresion()); }
+        espacios();
+        if (s[i] === ",") { i++; continue; }
+        if (s[i] === ")") { i++; return args; }
+        falla();
+      }
+    }
+    function numerosDe(args) {
+      var res = [];
+      args.forEach(function (a) {
+        if (a && a.rango) {
+          a.rango.forEach(function (v) {
+            if (v instanceof ErrorExcel) throw v;
+            if (esNumero(v) || esFecha(v)) res.push(serialDe(v));
+          });
+        } else res.push(aNumero(a));
+      });
+      return res;
+    }
+    function funcion(nombre) {
+      var args = argumentos(), xs, k, media;
+      switch (nombre) {
+        case "SUM": return numerosDe(args).reduce(function (a, b) { return a + b; }, 0);
+        case "AVERAGE":
+          xs = numerosDe(args);
+          if (!xs.length) return new ErrorExcel("#DIV/0!");
+          return xs.reduce(function (a, b) { return a + b; }, 0) / xs.length;
+        case "MAX": xs = numerosDe(args); return xs.length ? Math.max.apply(null, xs) : 0;
+        case "MIN": xs = numerosDe(args); return xs.length ? Math.min.apply(null, xs) : 0;
+        case "COUNT":
+          k = 0;
+          args.forEach(function (a) {
+            if (a && a.rango) a.rango.forEach(function (v) { if (esNumero(v) || esFecha(v)) k++; });
+            else if (esNumero(a)) k++;
+          });
+          return k;
+        case "COUNTA":
+          k = 0;
+          args.forEach(function (a) {
+            if (a && a.rango) a.rango.forEach(function (v) { if (v !== null && v !== undefined) k++; });
+            else k++;
+          });
+          return k;
+        case "MEDIAN":
+          xs = numerosDe(args).sort(function (a, b) { return a - b; });
+          if (!xs.length) return new ErrorExcel("#NUM!");
+          return xs.length % 2 ? xs[(xs.length - 1) / 2] : (xs[xs.length / 2 - 1] + xs[xs.length / 2]) / 2;
+        case "STDEV": case "STDEV.S": case "STDEVP": case "STDEV.P":
+          xs = numerosDe(args);
+          var pob = nombre === "STDEVP" || nombre === "STDEV.P";
+          if (xs.length < (pob ? 1 : 2)) return new ErrorExcel("#DIV/0!");
+          media = xs.reduce(function (a, b) { return a + b; }, 0) / xs.length;
+          return Math.sqrt(xs.reduce(function (a, b) { return a + (b - media) * (b - media); }, 0) / (xs.length - (pob ? 0 : 1)));
+        case "ROUND":
+          if (args.length < 1) falla();
+          var x = aNumero(args[0] && args[0].rango ? args[0].rango[0] : args[0]);
+          var nd = args.length > 1 ? Math.trunc(aNumero(args[1])) : 0;
+          if (nd < 0) { var p10 = Math.pow(10, -nd); return Math.sign(x) * Math.round(Math.abs(x) / p10) * p10; }
+          var rr = redondear(x, nd);
+          return Number((rr.neg && !rr.cero ? "-" : "") + rr.entero + (nd > 0 ? "." + rr.frac : ""));
+        case "ABS": return Math.abs(aNumero(args[0] && args[0].rango ? args[0].rango[0] : args[0]));
+        case "SQRT":
+          var y = aNumero(args[0] && args[0].rango ? args[0].rango[0] : args[0]);
+          return y < 0 ? new ErrorExcel("#NUM!") : Math.sqrt(y);
+        default: falla();
+      }
+    }
+    function unario() {
+      espacios();
+      if (s[i] === "-") { i++; return -aNumero(unario()); }
+      if (s[i] === "+") { i++; return unario(); }
+      var v = primario();
+      if (v && v.rango) { if (v.rango.length === 1) return v.rango[0]; falla(); }
+      return v;
+    }
+    function potencia() {
+      var a = unario(); espacios();
+      while (s[i] === "^") { i++; a = Math.pow(aNumero(a), aNumero(unario())); espacios(); }
+      return a;
+    }
+    function termino() {
+      var a = potencia(); espacios();
+      while (s[i] === "*" || s[i] === "/") {
+        var op = s[i]; i++;
+        var b = aNumero(potencia()), x = aNumero(a);
+        if (op === "/" && b === 0) throw new ErrorExcel("#DIV/0!");
+        a = op === "*" ? x * b : x / b; espacios();
+      }
+      return a;
+    }
+    function expresion() {
+      var a = termino(); espacios();
+      while (s[i] === "+" || s[i] === "-") {
+        var op = s[i]; i++;
+        var b = aNumero(termino()); a = op === "+" ? aNumero(a) + b : aNumero(a) - b; espacios();
+      }
+      return a;
+    }
+    try {
+      var v = expresion(); espacios();
+      if (i < s.length) return NO_EVALUABLE;
+      if (typeof v === "number" && !isFinite(v)) return new ErrorExcel("#NUM!");
+      return v;
+    } catch (e) {
+      if (e instanceof ErrorExcel) return e;
+      return NO_EVALUABLE;
+    }
+  }
+  // ---------- Un modelo pequeño de openpyxl (lo que hace cada instrucción con el libro) ----------
+  function Celda(hoja, fila, col) {
+    this.hoja = hoja; this.fila = fila; this.col = col;
+    this.v = null; this.fmt = "General"; this.font = null; this.relleno = null; this.alin = null;
+  }
+  Celda.prototype.coord = function () { return coord(this.fila, this.col); };
+  Celda.prototype.repr = function () { return "<Cell " + pyStr(this.hoja.titulo) + "." + this.coord() + ">"; };
+  // Como Cell._bind_value: a un date le pone formato de fecha si la celda no tenía uno.
+  Celda.prototype.poner = function (v) {
+    this.v = v;
+    if (v instanceof Fecha && !esFormatoFecha(this.fmt)) this.fmt = "yyyy-mm-dd";
+    if (v instanceof FechaHora && !esFormatoFecha(this.fmt)) this.fmt = "yyyy-mm-dd h:mm:ss";
+  };
+
+  function Hoja(libro, titulo) {
+    this.libro = libro; this.titulo = titulo; this.celdas = {}; this.actual = 0;
+    this.anchos = {}; this.freeze = null; this.filtro = null;
+  }
+  Hoja.prototype.repr = function () { return '<Worksheet "' + this.titulo + '">'; };
+  // hoja.cell(row, column, value): crea la celda si no existe (aunque solo se lea).
+  Hoja.prototype.cell = function (fila, col, valor) {
+    if (fila < 1 || col < 1) throw new Error("ValueError: Row or column values must be at least 1");
+    var k = fila + "," + col;
+    if (!this.celdas[k]) { this.celdas[k] = new Celda(this, fila, col); this.actual = Math.max(this.actual, fila); }
+    if (valor !== undefined && valor !== null) this.celdas[k].poner(valor);
+    return this.celdas[k];
+  };
+  Hoja.prototype.en = function (texto) { var p = partirCoord(texto); return this.cell(p.fila, p.col); };   // hoja["A1"]
+  Hoja.prototype.poner = function (texto, v) { this.en(texto).poner(v); };                                     // hoja["A1"] = v
+  // append escribe en la fila siguiente a la última que se usó (_current_row), desde la columna A.
+  Hoja.prototype.append = function (lista) {
+    var fila = this.actual + 1, self = this;
+    lista.forEach(function (v, i) {
+      var c = new Celda(self, fila, i + 1);
+      c.poner(v);
+      self.celdas[fila + "," + (i + 1)] = c;
+    });
+    this.actual = fila;
+  };
+  Hoja.prototype.lista = function () {
+    var self = this;
+    return Object.keys(this.celdas).map(function (k) { return self.celdas[k]; });
+  };
+  Hoja.prototype.maxRow = function () { return this.lista().reduce(function (m, c) { return Math.max(m, c.fila); }, 1); };
+  Hoja.prototype.maxCol = function () { return this.lista().reduce(function (m, c) { return Math.max(m, c.col); }, 1); };
+  Hoja.prototype.dimensions = function () {
+    var l = this.lista();
+    if (!l.length) return "A1:A1";
+    var f0 = Infinity, f1 = 0, c0 = Infinity, c1 = 0;
+    l.forEach(function (c) { f0 = Math.min(f0, c.fila); f1 = Math.max(f1, c.fila); c0 = Math.min(c0, c.col); c1 = Math.max(c1, c.col); });
+    return coord(f0, c0) + ":" + coord(f1, c1);
+  };
+  // hoja[n]: la fila n completa, de la columna A a max_column.
+  Hoja.prototype.renglon = function (n) {
+    var mc = this.maxCol(), res = [];
+    for (var c = 1; c <= mc; c++) res.push(this.cell(n, c));
+    return res;
+  };
+  // iter_rows: los límites que faltan se toman de max_row y max_column al momento de llamarlo.
+  Hoja.prototype.iterRows = function (o) {
+    o = o || {};
+    if (this.actual === 0 && !o.min_row && !o.max_row && !o.min_col && !o.max_col) return [];
+    var c0 = o.min_col || 1, f0 = o.min_row || 1, c1 = o.max_col || this.maxCol(), f1 = o.max_row || this.maxRow();
+    var filas = [];
+    for (var f = f0; f <= f1; f++) {
+      var fila = [];
+      for (var c = c0; c <= c1; c++) fila.push(this.cell(f, c));
+      filas.push(fila);
+    }
+    return filas;
+  };
+
+  function Libro() { this.hojas = [new Hoja(this, "Sheet")]; this.activa = 0; }
+  Libro.prototype.active = function () { return this.hojas[this.activa]; };
+  Libro.prototype.createSheet = function (titulo, indice) {
+    var h = new Hoja(this, titulo);
+    if (indice === undefined) this.hojas.push(h); else this.hojas.splice(indice, 0, h);
+    return h;
+  };
+  Libro.prototype.sheetnames = function () { return this.hojas.map(function (h) { return h.titulo; }); };
+  Libro.prototype.repr = function () { return "<Workbook>"; };
+
+  // Estilos (solo lo que usan los programas)
+  function Estilo(tipo, datos) { this.tipo = tipo; this.datos = datos; }
+  Estilo.prototype.repr = function () { return "<" + this.tipo + ">"; };
+  function Font(o) { return new Estilo("Font", { b: !!o.bold, i: !!o.italic, color: o.color || null }); }
+  function PatternFill(o) { return new Estilo("PatternFill", { solido: o.fill_type === "solid", color: o.start_color }); }
+  function Alignment(o) { return new Estilo("Alignment", { horizontal: o.horizontal || null }); }
+
+  // Una excepción de Python guardada en una variable (except ValueError as e)
+  function Excepcion(tipo, mensaje) { this.tipo = tipo; this.mensaje = mensaje; }
+  Excepcion.prototype.repr = function () { return this.tipo + "(" + pyStr(this.mensaje) + ")"; };
+
+  // ---------- Fotos del libro para cada paso ----------
+  function fotoLibro(libro) {
+    return {
+      sheetnames: libro.sheetnames(), activa: libro.active().titulo,
+      hojas: libro.hojas.map(function (h) {
+        var celdas = {};
+        h.lista().sort(function (a, b) { return a.fila - b.fila || a.col - b.col; }).forEach(function (c) {
+          celdas[c.coord()] = { v: c.v, fmt: c.fmt,
+            b: !!(c.font && c.font.datos.b), i: !!(c.font && c.font.datos.i),
+            color: c.font && c.font.datos.color ? c.font.datos.color.slice(-6).toUpperCase() : null,
+            relleno: c.relleno && c.relleno.datos.solido ? c.relleno.datos.color.slice(-6).toUpperCase() : null,
+            alin: c.alin ? c.alin.datos.horizontal : null };
+        });
+        var anchos = {};
+        Object.keys(h.anchos).forEach(function (k) { anchos[k] = h.anchos[k]; });
+        return { titulo: h.titulo, actual: h.actual, max_row: h.maxRow(), max_column: h.maxCol(),
+                 dimensions: h.dimensions(), freeze: h.freeze, filtro: h.filtro, anchos: anchos, celdas: celdas };
+      })
+    };
+  }
+  function tipoPython(v) {
+    if (v === null || v === undefined) return "None";
+    if (v === true || v === false) return "bool";
+    if (v instanceof PyFloat) return "float";
+    if (typeof v === "number") return Number.isInteger(v) ? "int" : "float";
+    if (v instanceof Fecha) return "date";
+    if (v instanceof FechaHora) return "datetime";
+    if (typeof v === "string") return (v.length > 1 && v[0] === "=") ? "formula" : "str";
+    return "?";
+  }
+  // Grabadora de pasos: cada programa llama paso(línea, explicación) después de hacer el efecto de la línea.
+  function Grabadora() { this.pasos = []; this.vars = {}; this.orden = []; this.salida = ""; this.archivos = []; this.libro = null; }
+  Grabadora.prototype.v = function (nombre, valor) {
+    if (!(nombre in this.vars)) this.orden.push(nombre);
+    this.vars[nombre] = valor;
+  };
+  Grabadora.prototype.borrar = function (nombre) {
+    delete this.vars[nombre];
+    this.orden = this.orden.filter(function (n) { return n !== nombre; });
+  };
+  Grabadora.prototype.print = function () {
+    this.salida += Array.prototype.slice.call(arguments).map(function (a) {
+      return typeof a === "string" ? a : pyRepr(a);
+    }).join(" ") + "\n";
+  };
+  Grabadora.prototype.paso = function (linea, explica, hasta) {
+    var self = this;
+    this.pasos.push({
+      linea: linea, hasta: hasta || linea, explica: explica,
+      libro: this.libro ? fotoLibro(this.libro) : null,
+      vars: this.orden.map(function (n) {
+        var x = self.vars[n];
+        return [n, pyRepr(x), x instanceof Libro ? "Workbook" : (x instanceof Estilo ? x.tipo : null),
+                x instanceof Hoja ? { titulo: x.titulo, max_row: x.maxRow(), max_column: x.maxCol() } : null];
+      }),
+      salida: this.salida, archivos: this.archivos.slice()
+    });
+  };
+  // ---------- Los programas y el efecto de cada línea ----------
+  function fl(x) { return Number.isInteger(x) ? new PyFloat(x) : x; }   // un float de Python
+  function filaTxt(lista) { return pyRepr(lista); }
+
+  var PROGRAMAS = [
+    {
+      id: "primer", titulo: "1 · Tu primer archivo", dia: "Día 1",
+      desc: "Celdas sueltas con hoja[\"A1\"] y filas completas con append.",
+      codigo: [
+        "from openpyxl import Workbook",
+        "",
+        "libro = Workbook()",
+        "hoja = libro.active",
+        "hoja.title = \"Calificaciones\"",
+        "",
+        "hoja[\"A1\"] = \"Nombre\"",
+        "hoja[\"B1\"] = \"Promedio\"",
+        "hoja[\"A2\"] = \"Ana\"",
+        "hoja[\"B2\"] = 92.5",
+        "hoja.append([\"Luis\", 85])",
+        "hoja.append([\"Marta\", 78.25])",
+        "",
+        "libro.save(\"calificaciones.xlsx\")",
+        "print(\"Listo: calificaciones.xlsx\")"
+      ],
+      correr: function (T) {
+        T.paso(1, "Importa la clase <code>Workbook</code> de openpyxl. Todavía no hay ningún libro en la memoria.");
+        var libro = new Libro(); T.libro = libro; T.v("libro", libro);
+        T.paso(3, "<code>Workbook()</code> crea un libro nuevo <b>en la memoria</b>, con una hoja llamada \"Sheet\". Todavía no existe ningún archivo.");
+        var hoja = libro.active(); T.v("hoja", hoja);
+        T.paso(4, "<code>libro.active</code> es la hoja activa (por ahora la única). La variable <code>hoja</code> apunta a esa hoja.");
+        hoja.titulo = "Calificaciones";
+        T.paso(5, "<code>hoja.title</code> cambia el nombre de la hoja: mira la pestaña de abajo.");
+        hoja.poner("A1", "Nombre");
+        T.paso(7, "Escribe el texto \"Nombre\" en A1: columna A, fila 1. Los textos se alinean a la izquierda.");
+        hoja.poner("B1", "Promedio");
+        T.paso(8, "Escribe \"Promedio\" en B1. Cada asignación escribe en una sola celda.");
+        hoja.poner("A2", "Ana");
+        T.paso(9, "Escribe \"Ana\" en A2. Ahora <code>hoja.max_row</code> vale 2.");
+        hoja.poner("B2", 92.5);
+        T.paso(10, "Escribe el número 92.5 en B2. Los números se alinean a la derecha.");
+        hoja.append(["Luis", 85]);
+        T.paso(11, "<code>append</code> agrega una fila completa debajo de la última ocupada: la fila 3. A3 = \"Luis\" y B3 = 85.");
+        hoja.append(["Marta", 78.25]);
+        T.paso(12, "Otra fila completa: <code>append</code> escribe ahora en la fila 4.");
+        T.archivos.push("calificaciones.xlsx");
+        T.paso(14, "<code>save</code> escribe el libro en el archivo calificaciones.xlsx, en la carpeta de trabajo. Sin <code>save</code> no hay archivo.");
+        T.print("Listo: calificaciones.xlsx");
+        T.paso(15, "Imprime en la consola. El archivo ya existe: ábrelo en Excel y se verá como la hoja de la derecha.");
+      }
+    },
+    {
+      id: "registros", titulo: "2 · Una lista de registros a una hoja", dia: "Día 1",
+      desc: "Los registros del Tema 12 se exportan con un append por registro.",
+      codigo: [
+        "from openpyxl import Workbook",
+        "",
+        "registros = [",
+        "    {\"fecha\": \"2026-09-01\", \"tmax\": 35.0, \"tmin\": 23.4},",
+        "    {\"fecha\": \"2026-09-02\", \"tmax\": 36.5, \"tmin\": 23.7},",
+        "    {\"fecha\": \"2026-09-03\", \"tmax\": 38.0, \"tmin\": 25.0},",
+        "]",
+        "columnas = [\"fecha\", \"tmax\", \"tmin\"]",
+        "",
+        "libro = Workbook()",
+        "hoja = libro.active",
+        "hoja.title = \"Clima\"",
+        "hoja.append(columnas)",
+        "for reg in registros:",
+        "    hoja.append([reg[c] for c in columnas])",
+        "libro.save(\"clima.xlsx\")",
+        "print(hoja.max_row, \"filas,\", hoja.max_column, \"columnas\")"
+      ],
+      correr: function (T) {
+        T.paso(1, "Importa <code>Workbook</code>.");
+        var registros = [
+          { fecha: "2026-09-01", tmax: fl(35.0), tmin: 23.4 },
+          { fecha: "2026-09-02", tmax: 36.5, tmin: 23.7 },
+          { fecha: "2026-09-03", tmax: fl(38.0), tmin: fl(25.0) }
+        ];
+        T.v("registros", registros);
+        T.paso(3, "Una lista con 3 registros (diccionarios), como los que normalizaste en el Tema 12.", 7);
+        var columnas = ["fecha", "tmax", "tmin"]; T.v("columnas", columnas);
+        T.paso(8, "Los nombres de las columnas, en el orden en que irán en la hoja.");
+        var libro = new Libro(); T.libro = libro; T.v("libro", libro);
+        T.paso(10, "Un libro nuevo en la memoria, con la hoja \"Sheet\".");
+        var hoja = libro.active(); T.v("hoja", hoja);
+        T.paso(11, "<code>hoja</code> apunta a la hoja activa.");
+        hoja.titulo = "Clima";
+        T.paso(12, "La hoja se llama ahora \"Clima\".");
+        hoja.append(columnas);
+        T.paso(13, "<code>append(columnas)</code> escribe el encabezado en la fila 1: la hoja estaba vacía.");
+        registros.forEach(function (reg, k) {
+          T.v("reg", reg);
+          T.paso(14, "<code>reg</code> toma el registro " + (k + 1) + " de la lista.");
+          var lista = columnas.map(function (c) { return reg[c]; });
+          hoja.append(lista);
+          T.paso(15, "<code>[reg[c] for c in columnas]</code> es <code>" + esc(filaTxt(lista)) + "</code>; <code>append</code> la escribe en la fila " + (k + 2) + ".");
+        });
+        T.paso(14, "Ya no quedan registros: el ciclo termina.");
+        T.archivos.push("clima.xlsx");
+        T.paso(16, "Guarda el libro en clima.xlsx.");
+        T.print(hoja.maxRow(), "filas,", hoja.maxCol(), "columnas");
+        T.paso(17, "<code>max_row</code> es 4 aunque hay 3 registros: el encabezado también es una fila. Las fechas siguen siendo texto (a la izquierda) y 35.0 se ve como 35.");
+      }
+    },
+    {
+      id: "hojas", titulo: "3 · Datos y Resumen en un mismo libro", dia: "Día 2",
+      desc: "El detalle en una hoja y lo importante en otra (create_sheet).",
+      codigo: [
+        "import statistics as st",
+        "from openpyxl import Workbook",
+        "",
+        "tmax = [35.0, 36.5, 38.0, 34.1, 32.2, 30.2, 34.0]",
+        "",
+        "libro = Workbook()",
+        "datos = libro.active",
+        "datos.title = \"Datos\"",
+        "datos.append([\"Día\", \"Máxima °C\"])",
+        "for dia, t in enumerate(tmax, start=1):",
+        "    datos.append([dia, t])",
+        "",
+        "resumen = libro.create_sheet(\"Resumen\")",
+        "resumen.append([\"Medida\", \"°C\"])",
+        "resumen.append([\"Mediana\", st.median(tmax)])",
+        "resumen.append([\"Más baja\", min(tmax)])",
+        "libro.save(\"semana.xlsx\")",
+        "print(libro.sheetnames)"
+      ],
+      correr: function (T) {
+        T.paso(1, "Importa el módulo <code>statistics</code> con el nombre <code>st</code> (Tema 13).");
+        T.paso(2, "Importa <code>Workbook</code>.");
+        var tmax = [35.0, 36.5, 38.0, 34.1, 32.2, 30.2, 34.0].map(fl); T.v("tmax", tmax);
+        T.paso(4, "Las máximas de la primera semana de septiembre (°C).");
+        var libro = new Libro(); T.libro = libro; T.v("libro", libro);
+        T.paso(6, "Un libro nuevo con la hoja \"Sheet\".");
+        var datos = libro.active(); T.v("datos", datos);
+        T.paso(7, "<code>datos</code> apunta a la hoja activa.");
+        datos.titulo = "Datos";
+        T.paso(8, "La hoja se llama \"Datos\".");
+        datos.append(["Día", "Máxima °C"]);
+        T.paso(9, "Encabezado en la fila 1.");
+        tmax.forEach(function (t, k) {
+          T.v("dia", k + 1); T.v("t", t);
+          T.paso(10, "<code>enumerate(tmax, start=1)</code> da la pareja (" + (k + 1) + ", " + pyRepr(t) + "): el día empieza en 1, no en 0.");
+          datos.append([k + 1, t]);
+          T.paso(11, "<code>append</code> escribe [" + (k + 1) + ", " + pyRepr(t) + "] en la fila " + (k + 2) + ".");
+        });
+        T.paso(10, "Ya no quedan días: el ciclo termina.");
+        var resumen = libro.createSheet("Resumen"); T.v("resumen", resumen);
+        T.paso(13, "<code>create_sheet</code> agrega la hoja \"Resumen\" al final del libro y la regresa. <code>libro.active</code> sigue siendo Datos.");
+        resumen.append(["Medida", "°C"]);
+        T.paso(14, "Encabezado de Resumen en SU fila 1: cada hoja lleva su propia cuenta de filas.");
+        resumen.append(["Mediana", 34.1]);
+        T.paso(15, "<code>st.median(tmax)</code> = 34.1: la mediana de las 7 máximas (Tema 13). Se calcula en Python y se escribe el número.");
+        resumen.append(["Más baja", 30.2]);
+        T.paso(16, "<code>min(tmax)</code> = 30.2: la máxima más baja de la semana (el 6 de septiembre).");
+        T.archivos.push("semana.xlsx");
+        T.paso(17, "Guarda el libro con sus dos hojas en semana.xlsx.");
+        T.print(libro.sheetnames());
+        T.paso(18, "<code>libro.sheetnames</code> es la lista de nombres, en el orden de las pestañas.");
+      }
+    },
+    {
+      id: "formulas", titulo: "4 · Fórmulas que Excel calcula al abrir", dia: "Día 2",
+      desc: "El archivo guarda el texto de la fórmula; Excel muestra el resultado.",
+      codigo: [
+        "from openpyxl import Workbook",
+        "",
+        "lluvia = [1.7, 0.7, 0.2, 0.7, 6.9, 0.7, 0.0]",
+        "libro = Workbook()",
+        "hoja = libro.active",
+        "hoja.append([\"Día\", \"Lluvia mm\"])",
+        "for dia, mm in enumerate(lluvia, start=1):",
+        "    hoja.append([dia, mm])",
+        "",
+        "ultima = hoja.max_row                 # 8",
+        "hoja[\"A10\"] = \"Total\"",
+        "hoja[\"B10\"] = f\"=SUM(B2:B{ultima})\"",
+        "hoja[\"A11\"] = \"Media\"",
+        "hoja[\"B11\"] = f\"=AVERAGE(B2:B{ultima})\"",
+        "hoja[\"B11\"].number_format = \"0.00\"",
+        "libro.save(\"formulas.xlsx\")",
+        "print(hoja[\"B11\"].value)"
+      ],
+      correr: function (T) {
+        T.paso(1, "Importa <code>Workbook</code>.");
+        var lluvia = [1.7, 0.7, 0.2, 0.7, 6.9, 0.7, 0.0].map(fl); T.v("lluvia", lluvia);
+        T.paso(3, "La lluvia de la primera semana de septiembre, en milímetros.");
+        var libro = new Libro(); T.libro = libro; T.v("libro", libro);
+        T.paso(4, "Un libro nuevo con la hoja \"Sheet\".");
+        var hoja = libro.active(); T.v("hoja", hoja);
+        T.paso(5, "Esta vez no se cambia el nombre: la pestaña sigue diciendo \"Sheet\".");
+        hoja.append(["Día", "Lluvia mm"]);
+        T.paso(6, "Encabezado en la fila 1.");
+        lluvia.forEach(function (mm, k) {
+          T.v("dia", k + 1); T.v("mm", mm);
+          T.paso(7, "<code>dia</code> = " + (k + 1) + ", <code>mm</code> = " + pyRepr(mm) + ".");
+          hoja.append([k + 1, mm]);
+          T.paso(8, "Fila " + (k + 2) + ".");
+        });
+        T.paso(7, "Ya no quedan días: el ciclo termina.");
+        var ultima = hoja.maxRow(); T.v("ultima", ultima);
+        T.paso(10, "<code>ultima = hoja.max_row</code> = 8: la última fila con datos.");
+        hoja.poner("A10", "Total");
+        T.paso(11, "A10 = \"Total\". La fila 9 se queda vacía.");
+        hoja.poner("B10", "=SUM(B2:B" + ultima + ")");
+        T.paso(12, "B10 guarda el TEXTO \"=SUM(B2:B8)\": openpyxl no calcula nada. La hoja de la derecha muestra lo que calcula Excel al abrir el archivo: 10.9 mm.");
+        hoja.poner("A11", "Media");
+        T.paso(13, "A11 = \"Media\".");
+        hoja.poner("B11", "=AVERAGE(B2:B" + ultima + ")");
+        T.paso(14, "Otra fórmula: la media de la lluvia de B2 a B8.");
+        hoja.en("B11").fmt = "0.00";
+        T.paso(15, "<code>number_format = \"0.00\"</code>: Excel mostrará la media con 2 decimales.");
+        T.archivos.push("formulas.xlsx");
+        T.paso(16, "Guarda formulas.xlsx. El archivo lleva las fórmulas, no los resultados.");
+        T.print(hoja.en("B11").v);
+        T.paso(17, "<code>print(hoja[\"B11\"].value)</code> muestra lo que guardó openpyxl: el texto de la fórmula, no el número que ves en la hoja.");
+      }
+    },
+    {
+      id: "estilos", titulo: "5 · Encabezado con estilo y formatos", dia: "Día 3",
+      desc: "Font, PatternFill, Alignment, number_format, ancho, freeze_panes y auto_filter.",
+      codigo: [
+        "from openpyxl import Workbook",
+        "from openpyxl.styles import Alignment, Font, PatternFill",
+        "",
+        "dias = [(\"01/09\", 35.0, 23.4, 1.7), (\"02/09\", 36.5, 23.7, 0.7),",
+        "        (\"03/09\", 38.0, 25.0, 0.2), (\"04/09\", 34.1, 25.2, 0.7),",
+        "        (\"05/09\", 32.2, 23.6, 6.9), (\"06/09\", 30.2, 22.3, 0.7)]",
+        "libro = Workbook()",
+        "hoja = libro.active",
+        "hoja.title = \"Clima\"",
+        "hoja.append([\"Día\", \"Máx °C\", \"Mín °C\", \"Lluvia mm\"])",
+        "for fila in dias:",
+        "    hoja.append(fila)",
+        "AZUL = PatternFill(fill_type=\"solid\", start_color=\"00408F\")",
+        "for celda in hoja[1]:",
+        "    celda.font = Font(bold=True, color=\"FFFFFF\")",
+        "    celda.fill = AZUL",
+        "    celda.alignment = Alignment(horizontal=\"center\")",
+        "for fila in hoja.iter_rows(min_row=2, min_col=2):",
+        "    for celda in fila:",
+        "        celda.number_format = \"0.0\"",
+        "hoja.column_dimensions[\"D\"].width = 12",
+        "hoja.freeze_panes = \"A2\"",
+        "hoja.auto_filter.ref = hoja.dimensions",
+        "libro.save(\"clima_formato.xlsx\")",
+        "print(hoja.dimensions)"
+      ],
+      correr: function (T) {
+        T.paso(1, "Importa <code>Workbook</code>.");
+        T.paso(2, "Importa los estilos: <code>Alignment</code> (alineación), <code>Font</code> (letra) y <code>PatternFill</code> (relleno).");
+        var dias = [["01/09", 35.0, 23.4, 1.7], ["02/09", 36.5, 23.7, 0.7], ["03/09", 38.0, 25.0, 0.2],
+                    ["04/09", 34.1, 25.2, 0.7], ["05/09", 32.2, 23.6, 6.9], ["06/09", 30.2, 22.3, 0.7]]
+          .map(function (d) { return new Tupla([d[0]].concat(d.slice(1).map(fl))); });
+        T.v("dias", dias);
+        T.paso(4, "Seis días de septiembre: (día, máxima, mínima, lluvia).", 6);
+        var libro = new Libro(); T.libro = libro; T.v("libro", libro);
+        T.paso(7, "Un libro nuevo con la hoja \"Sheet\".");
+        var hoja = libro.active(); T.v("hoja", hoja);
+        T.paso(8, "<code>hoja</code> apunta a la hoja activa.");
+        hoja.titulo = "Clima";
+        T.paso(9, "La hoja se llama \"Clima\".");
+        hoja.append(["Día", "Máx °C", "Mín °C", "Lluvia mm"]);
+        T.paso(10, "Encabezado en la fila 1. \"Lluvia mm\" no cabe en la columna D y se corta.");
+        dias.forEach(function (d, k) {
+          T.v("fila", d);
+          T.paso(11, "<code>fila</code> toma la tupla <code>" + esc(pyRepr(d)) + "</code>.");
+          hoja.append(d.items);
+          T.paso(12, "<code>append</code> también acepta tuplas: fila " + (k + 2) + ". Sin formato, 35.0 se ve como 35.");
+        });
+        T.paso(11, "Ya no quedan días: el ciclo termina.");
+        var AZUL = PatternFill({ fill_type: "solid", start_color: "00408F" }); T.v("AZUL", AZUL);
+        T.paso(13, "<code>AZUL</code> es un relleno sólido color 00408F (azul FCFM). Todavía no se aplica a ninguna celda.");
+        hoja.renglon(1).forEach(function (celda) {
+          T.v("celda", celda);
+          T.paso(14, "<code>hoja[1]</code> es la fila 1 completa (A1 a D1); <code>celda</code> toma " + esc(celda.repr()) + ".");
+          celda.font = Font({ bold: true, color: "FFFFFF" });
+          T.paso(15, "Letra en negritas y blanca (FFFFFF) en " + celda.coord() + ".");
+          celda.relleno = AZUL;
+          T.paso(16, "Relleno azul en " + celda.coord() + ".");
+          celda.alin = Alignment({ horizontal: "center" });
+          T.paso(17, "Texto centrado en " + celda.coord() + ".");
+        });
+        T.paso(14, "Ya se recorrió toda la fila 1: el ciclo termina.");
+        hoja.iterRows({ min_row: 2, min_col: 2 }).forEach(function (fila) {
+          T.v("fila", new Tupla(fila));
+          T.paso(18, "<code>iter_rows(min_row=2, min_col=2)</code> da la fila " + fila[0].fila + " desde la columna B: " +
+                 esc(fila.map(function (c) { return c.coord(); }).join(", ")) + ". La columna A (el día) no se toca.");
+          fila.forEach(function (celda) {
+            T.v("celda", celda);
+            T.paso(19, "<code>celda</code> toma " + esc(celda.repr()) + ".");
+            celda.fmt = "0.0";
+            T.paso(20, "<code>number_format = \"0.0\"</code> en " + celda.coord() + ": un decimal. El valor guardado no cambia.");
+          });
+          T.paso(19, "Se acabaron las celdas de esta fila.");
+        });
+        T.paso(18, "Ya no quedan filas: el ciclo termina.");
+        hoja.anchos.D = 12;
+        T.paso(21, "La columna D se ensancha a 12: ahora sí cabe \"Lluvia mm\".");
+        hoja.freeze = "A2";
+        T.paso(22, "<code>freeze_panes = \"A2\"</code> inmoviliza lo que está arriba de A2 (la fila 1): mira la línea gris bajo el encabezado.");
+        hoja.filtro = hoja.dimensions();
+        T.paso(23, "<code>hoja.dimensions</code> es el rango ocupado, \"" + hoja.dimensions() + "\": ahí van los botones de filtro (▾).");
+        T.archivos.push("clima_formato.xlsx");
+        T.paso(24, "Guarda clima_formato.xlsx.");
+        T.print(hoja.dimensions());
+        T.paso(25, "Imprime el rango ocupado.");
+      }
+    },
+    {
+      id: "limpios", titulo: "6 · Datos limpios y una hoja de Errores", dia: "Día 4",
+      desc: "Lo que se puede convertir va a Datos; lo demás, a Errores con su motivo.",
+      codigo: [
+        "from datetime import date",
+        "from openpyxl import Workbook",
+        "crudos = [(\"2026-09-01\", \"35.0\"), (\"2026-09-31\", \"34.0\"),",
+        "          (\"2026-09-04\", \"N/D\"), (\"2026-09-05\", \"32.2\")]",
+        "libro = Workbook()",
+        "datos = libro.active",
+        "datos.title = \"Datos\"",
+        "errores = libro.create_sheet(\"Errores\")",
+        "datos.append([\"Fecha\", \"Máxima °C\"])",
+        "errores.append([\"Fecha\", \"Máxima\", \"Motivo\"])",
+        "for f, t in crudos:",
+        "    try:",
+        "        fila = [date.fromisoformat(f), float(t)]",
+        "    except ValueError as e:",
+        "        errores.append([f, t, str(e)])",
+        "        continue",
+        "    datos.append(fila)",
+        "datos.column_dimensions[\"A\"].width = 12",
+        "errores.column_dimensions[\"A\"].width = 12",
+        "errores.column_dimensions[\"C\"].width = 36",
+        "libro.save(\"limpio.xlsx\")",
+        "print(\"Válidos:\", datos.max_row - 1)",
+        "print(\"Con error:\", errores.max_row - 1)"
+      ],
+      correr: function (T) {
+        T.paso(1, "Importa <code>date</code> del módulo datetime.");
+        T.paso(2, "Importa <code>Workbook</code>.");
+        var crudos = [["2026-09-01", "35.0"], ["2026-09-31", "34.0"], ["2026-09-04", "N/D"], ["2026-09-05", "32.2"]]
+          .map(function (p) { return new Tupla(p); });
+        T.v("crudos", crudos);
+        T.paso(3, "Cuatro registros en texto, como llegan de un archivo o de una API: todavía no se sabe si son válidos.", 4);
+        var libro = new Libro(); T.libro = libro; T.v("libro", libro);
+        T.paso(5, "Un libro nuevo con la hoja \"Sheet\".");
+        var datos = libro.active(); T.v("datos", datos);
+        T.paso(6, "<code>datos</code> apunta a la hoja activa.");
+        datos.titulo = "Datos";
+        T.paso(7, "La hoja se llama \"Datos\".");
+        var errores = libro.createSheet("Errores"); T.v("errores", errores);
+        T.paso(8, "Una segunda hoja, \"Errores\", al final del libro.");
+        datos.append(["Fecha", "Máxima °C"]);
+        T.paso(9, "Encabezado de Datos.");
+        errores.append(["Fecha", "Máxima", "Motivo"]);
+        T.paso(10, "Encabezado de Errores (en su propia fila 1).");
+        var casos = [
+          { f: "2026-09-01", t: "35.0", fila: [new Fecha(2026, 9, 1), fl(35.0)] },
+          { f: "2026-09-31", t: "34.0", error: "day is out of range for month",
+            porque: "<code>date.fromisoformat(\"2026-09-31\")</code> lanza ValueError: septiembre no tiene día 31" },
+          { f: "2026-09-04", t: "N/D", error: "could not convert string to float: 'N/D'",
+            porque: "la fecha sí se convierte, pero <code>float(\"N/D\")</code> lanza ValueError" },
+          { f: "2026-09-05", t: "32.2", fila: [new Fecha(2026, 9, 5), 32.2] }
+        ];
+        casos.forEach(function (c) {
+          T.v("f", c.f); T.v("t", c.t);
+          T.paso(11, "<code>f</code> = " + esc(pyStr(c.f)) + " y <code>t</code> = " + esc(pyStr(c.t)) + ": dos textos.");
+          T.paso(12, "<code>try</code>: intenta convertir; si algo falla, Python salta al <code>except</code>.");
+          if (c.fila) {
+            T.v("fila", c.fila);
+            T.paso(13, "<code>fila</code> = <code>" + esc(pyRepr(c.fila)) + "</code>: una fecha de verdad y un float.");
+            datos.append(c.fila);
+            T.paso(17, "No hubo error: la fila va a Datos (fila " + datos.actual + "). La fecha queda a la derecha porque es un número para Excel.");
+          } else {
+            T.paso(13, c.porque + ". La variable <code>fila</code> no cambia: conserva el valor anterior.");
+            T.v("e", new Excepcion("ValueError", c.error));
+            T.paso(14, "<code>except ValueError as e</code> atrapa el error; <code>e</code> guarda el mensaje.");
+            errores.append([c.f, c.t, c.error]);
+            T.paso(15, "El registro y el motivo, <code>str(e)</code>, van a la hoja Errores (fila " + errores.actual + "): nada se pierde en silencio.");
+            T.borrar("e");
+            T.paso(16, "<code>continue</code> salta a la siguiente vuelta: este registro NO llega a Datos. Al salir del <code>except</code>, Python borra <code>e</code>.");
+          }
+        });
+        T.paso(11, "Ya no quedan registros: el ciclo termina.");
+        datos.anchos.A = 12;
+        T.paso(18, "Columna A de Datos más ancha: una fecha no cabe en el ancho normal (se vería ########).");
+        errores.anchos.A = 12;
+        T.paso(19, "Columna A de Errores más ancha.");
+        errores.anchos.C = 36;
+        T.paso(20, "La columna del motivo, más ancha todavía.");
+        T.archivos.push("limpio.xlsx");
+        T.paso(21, "Guarda limpio.xlsx con las dos hojas.");
+        T.print("Válidos:", datos.maxRow() - 1);
+        T.paso(22, "<code>datos.max_row - 1</code>: las filas sin contar el encabezado.");
+        T.print("Con error:", errores.maxRow() - 1);
+        T.paso(23, "Dos registros válidos y dos con error: 2 + 2 = 4, los mismos que llegaron.");
+      }
+    }
+  ];
+  // ==== FIN PROGRAMAS ====
+  // ---------- Dibujo de una hoja como en Excel (HTML) ----------
+  // datos: {titulo, celdas: {"A1": {v, fmt, b, i, color, relleno, alin}}, anchos: {"D": 12}, freeze, filtro}
+  // o: {filas, cols, buscar(hoja, fila, col) para las fórmulas, marcas: {"B2": "clase"}, numeros: {"B2": 1},
+  //     sel: "B2" (celda activa), pestanas: [títulos], vista: título de la hoja que se ve, foco: true si la
+  //     rejilla recibe el foco del teclado, etiqueta: texto para lectores de pantalla, elegidas: {"B2": true}
+  //     (celdas seleccionadas, para aria-selected), anchoCss: ancho en pantalla de todas las columnas}
+  var XL_ANCHO_ENC = 34;
+  function pxCss(ancho) { return pxColumna(ancho) / 1.5; }
+  function rangoA(ref) {
+    var p = ref.split(":"), a = partirCoord(p[0]), b = partirCoord(p[1] || p[0]);
+    return { f0: Math.min(a.fila, b.fila), f1: Math.max(a.fila, b.fila), c0: Math.min(a.col, b.col), c1: Math.max(a.col, b.col) };
+  }
+  // El valor que se ve en la celda (las fórmulas, calculadas como Excel).
+  function valorVisible(celda, buscar) {
+    if (!celda) return null;
+    var v = celda.v;
+    if (typeof v === "string" && v.length > 1 && v[0] === "=") {
+      var r = buscar ? evaluarFormula(v, buscar) : NO_EVALUABLE;
+      return r === NO_EVALUABLE ? { formula: v } : (r === null ? 0 : r);
+    }
+    return v;
+  }
+  function vacia(celda) { return !celda || celda.v === null || celda.v === undefined || celda.v === ""; }
+
+  function htmlHoja(datos, o) {
+    o = o || {};
+    var filas = o.filas || 10, cols = o.cols || 5, celdas = datos ? datos.celdas : {};
+    var anchos = [], total = XL_ANCHO_ENC, c, f;
+    for (c = 1; c <= cols; c++) {
+      var w = datos && datos.anchos && datos.anchos[letraColumna(c)];
+      anchos[c] = { px: pxColumna(w === undefined ? null : w), css: o.anchoCss || pxCss(w === undefined ? null : w) };
+      total += anchos[c].css;
+    }
+    var fz = datos && datos.freeze ? partirCoord(datos.freeze) : null;
+    var filtro = datos && datos.filtro ? rangoA(datos.filtro) : null;
+    var selP = o.sel ? partirCoord(o.sel) : null;
+    var h = '<div class="xl">';
+    h += '<div class="xl-rejilla"><table class="xl-t" role="grid" aria-label="' + esc(o.etiqueta || ("Hoja " + (datos ? datos.titulo : ""))) +
+         '" style="width:' + total + 'px"><colgroup><col style="width:' + XL_ANCHO_ENC + 'px">';
+    for (c = 1; c <= cols; c++) h += '<col style="width:' + anchos[c].css + 'px">';
+    h += '</colgroup><thead><tr><th class="xl-esq" scope="col"><span class="oculto">Fila</span></th>';
+    for (c = 1; c <= cols; c++) {
+      h += '<th scope="col"' + (selP && selP.col === c ? ' class="xl-enc-sel"' : "") + ">" + letraColumna(c) + "</th>";
+    }
+    h += "</tr></thead><tbody>";
+    for (f = 1; f <= filas; f++) {
+      h += '<tr><th scope="row"' + (selP && selP.fila === f ? ' class="xl-enc-sel"' : "") + ">" + f + "</th>";
+      for (c = 1; c <= cols; c++) {
+        var k = coord(f, c), celda = celdas[k], clases = [], estilo = "", contenido = "", titulo = "";
+        var vis = valorVisible(celda, o.buscar), al = celda && celda.alin, d;
+        if (vis && vis.formula) {
+          contenido = '<span class="xl-formula">' + esc(vis.formula) + "</span>";
+          titulo = "Excel calcula esta fórmula al abrir el archivo";
+          al = al || "left";
+        } else {
+          d = mostrarValor(vis, celda ? celda.fmt : "General", anchos[c].px);
+          contenido = esc(d.texto);
+          if (!al || al === "general") al = d.tipo === "numero" ? "right" : (d.tipo === "error" || d.tipo === "bool" ? "center" : "left");
+          if (d.tipo === "texto" && al === "left" && d.texto !== "") {
+            // El texto que no cabe se ve sobre las celdas vacías de la derecha
+            var extra = 0;
+            for (var c2 = c + 1; c2 <= cols && vacia(celdas[coord(f, c2)]); c2++) extra += anchos[c2].css;
+            if (extra > 0) { clases.push("xl-desborda"); estilo += "--ancho:" + (anchos[c].css + extra - 6) + "px;"; }
+          }
+          if (o.numeroComoTexto && d.tipo === "texto" && /^\s*-?\d+(\.\d+)?\s*$/.test(d.texto)) {
+            clases.push("xl-triangulo");
+            titulo = "Número almacenado como texto";
+          }
+        }
+        clases.push("xl-" + al);
+        if (celda && celda.b) clases.push("xl-b");
+        if (celda && celda.i) clases.push("xl-i");
+        if (celda && celda.relleno) estilo += "background:#" + celda.relleno + ";";
+        if (celda && celda.color) estilo += "color:#" + celda.color + ";";
+        if (fz && f === fz.fila - 1) clases.push("xl-congela-f");
+        if (fz && c === fz.col - 1) clases.push("xl-congela-c");
+        if (o.marcas && o.marcas[k]) clases.push(o.marcas[k]);
+        if (o.sel === k) clases.push("xl-sel");
+        if (o.elegidas && o.elegidas[k]) clases.push("xl-elegida");
+        var flecha = filtro && f === filtro.f0 && c >= filtro.c0 && c <= filtro.c1;
+        var num = o.numeros && o.numeros[k] ? '<span class="xl-orden">' + o.numeros[k] + "</span>" : "";
+        h += '<td data-c="' + k + '"' + (o.foco ? ' tabindex="' + (o.sel === k || (!o.sel && k === "A1") ? 0 : -1) + '"' : "") +
+             ' class="' + clases.join(" ") + '"' + (estilo ? ' style="' + estilo + '"' : "") +
+             (titulo ? ' title="' + esc(titulo) + '"' : "") +
+             (o.elegidas ? ' aria-selected="' + !!o.elegidas[k] + '"' : "") +
+             ' aria-label="' + k + (contenido ? ": " + esc(vis && vis.formula ? vis.formula : d.texto) : ", vacía") + '">' +
+             num + (flecha ? '<span class="xl-filtro" aria-hidden="true">▾</span>' : "") +
+             '<div class="xl-c">' + contenido + "</div></td>";
+      }
+      h += "</tr>";
+    }
+    h += "</tbody></table></div>";
+    if (o.pestanas) {
+      h += '<div class="xl-pestanas" role="tablist" aria-label="Hojas del libro">';
+      o.pestanas.forEach(function (t) {
+        var activa = t === o.vista;
+        h += '<button type="button" role="tab" aria-selected="' + activa + '" data-hoja="' + esc(t) + '"' +
+             (activa ? ' class="activa"' : "") + ">" + esc(t) + "</button>";
+      });
+      h += "</div>";
+    }
+    return h + "</div>";
+  }
+
+  // Mueve el foco con las flechas dentro de una rejilla (tabindex móvil).
+  function moverEnRejilla(e, alElegir) {
+    var td = e.target.closest && e.target.closest("td[data-c]");
+    if (!td) return;
+    var p = partirCoord(td.dataset.c), f = p.fila, c = p.col;
+    if (e.key === "ArrowUp") f--; else if (e.key === "ArrowDown") f++;
+    else if (e.key === "ArrowLeft") c--; else if (e.key === "ArrowRight") c++;
+    else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); alElegir(td.dataset.c, e); return; }
+    else return;
+    e.preventDefault();
+    var otro = td.closest("table").querySelector('td[data-c="' + coord(Math.max(1, f), Math.max(1, c)) + '"]');
+    if (otro) {
+      td.setAttribute("tabindex", "-1");
+      otro.setAttribute("tabindex", "0");
+      otro.focus();
+      if (e.shiftKey) alElegir(otro.dataset.c, e);
+    }
+  }
+
+  // ---------- Código Python con los colores del curso ----------
+  var PY_KW = /^(False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)$/;
+  function pyResaltar(linea) {
+    var html = "", i = 0, m, resto;
+    while (i < linea.length) {
+      resto = linea.slice(i);
+      if ((m = /^#.*/.exec(resto))) { html += '<span class="com">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[rRbBfFuU]{0,2}("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/.exec(resto))) { html += '<span class="str">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[A-Za-z_\u00C0-\u024F][\w\u00C0-\u024F]*/.exec(resto))) { html += PY_KW.test(m[0]) ? '<span class="kw">' + m[0] + "</span>" : esc(m[0]); }
+      else if ((m = /^(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?j?/.exec(resto))) { html += '<span class="num">' + m[0] + "</span>"; }
+      else { m = [resto[0]]; html += esc(m[0]); }
+      i += m[0].length;
+    }
+    return html;
+  }
+  // Código con números de línea; [desde, hasta] = líneas recién ejecutadas; siguiente = la que sigue.
+  function mostrarCodigo(el, lineas, desde, hasta, siguiente) {
+    el.innerHTML = '<div class="codigo"><ol>' + lineas.map(function (l, k) {
+      var n = k + 1, cl = [];
+      if (desde && n >= desde && n <= hasta) cl.push("marca");
+      if (siguiente === n) cl.push("siguiente");
+      return "<li" + (cl.length ? ' class="' + cl.join(" ") + '"' : "") + ">" + (pyResaltar(l) || " ") + "</li>";
+    }).join("") + "</ol></div>";
+  }
+
+  // ---------- Estado de la página ----------
+  var $ = function (id) { return document.getElementById(id); };
+  var prog = null, pasos = [], k = 0, vista = 0, sel = null, dims = { filas: 6, cols: 4 };
+
+  PROGRAMAS.forEach(function (p, i) {
+    var op = document.createElement("option");
+    op.value = i; op.textContent = p.titulo + " (" + p.dia + ")";
+    $("programa").appendChild(op);
+  });
+
+  function cargar(i) {
+    prog = PROGRAMAS[i];
+    var T = new Grabadora();
+    prog.correr(T);
+    pasos = T.pasos;
+    // Tamaño fijo de la rejilla para todo el programa (una fila y una columna de más, como Excel)
+    var mf = 1, mc = 1;
+    pasos.forEach(function (p) {
+      if (p.libro) p.libro.hojas.forEach(function (h) { mf = Math.max(mf, h.max_row); mc = Math.max(mc, h.max_column); });
+    });
+    dims = { filas: Math.max(6, mf + 1), cols: Math.max(4, mc + 1) };
+    $("descProg").textContent = prog.desc;
+    $("paso").max = pasos.length;
+    k = 0; vista = 0; sel = null;
+    pintar();
+  }
+
+  // Qué hoja cambió entre dos fotos (para mostrarla) y qué celdas cambiaron.
+  function hojaQueCambia(antes, ahora, previa) {
+    if (!ahora) return 0;
+    if (!antes) return ahora.hojas.length - 1 >= previa ? previa : 0;
+    if (ahora.hojas.length > antes.hojas.length) {
+      for (var i = 0; i < ahora.hojas.length; i++) {
+        if (!antes.hojas[i] || antes.hojas[i].titulo !== ahora.hojas[i].titulo) return i;
+      }
+      return ahora.hojas.length - 1;
+    }
+    for (var j = 0; j < ahora.hojas.length; j++) {
+      if (JSON.stringify(sinVista(ahora.hojas[j])) !== JSON.stringify(sinVista(antes.hojas[j]))) return j;
+    }
+    return previa;
+  }
+  function sinVista(h) {
+    return { t: h.titulo, c: h.celdas, a: h.anchos, f: h.freeze, r: h.filtro, n: h.actual };
+  }
+  function celdasQueCambian(antes, ahora) {
+    var res = [];
+    Object.keys(ahora.celdas).forEach(function (c) {
+      var a = antes && antes.celdas[c];
+      if (!a || JSON.stringify(a) !== JSON.stringify(ahora.celdas[c])) res.push(c);
+    });
+    return res;
+  }
+
+  function describirCelda(h, c, libro) {
+    var celda = h.celdas[c];
+    if (!celda) return "<b>" + c + "</b>: vacía; la celda todavía no existe en la hoja (<code>hoja[\"" + c + "\"].value</code> sería <code>None</code>).";
+    var tipo = tipoPython(celda.v);
+    var nombreTipo = { "str": "str", "int": "int", "float": "float", "date": "date", "datetime": "datetime",
+                       "formula": "str: una fórmula", "None": "None" }[tipo] || tipo;
+    var vis = valorVisible(celda, buscarEn(libro, h)), muestra;
+    if (vis && vis.formula) muestra = "la fórmula calculada";
+    else muestra = mostrarValor(vis, celda.fmt, pxColumna(h.anchos[c.replace(/\d+/, "")] === undefined ? null : h.anchos[c.replace(/\d+/, "")])).texto;
+    var est = [];
+    if (celda.b) est.push("negritas");
+    if (celda.color) est.push("letra " + celda.color);
+    if (celda.relleno) est.push("relleno " + celda.relleno);
+    if (celda.alin) est.push("alineación " + celda.alin);
+    return "<b>" + c + "</b>: valor guardado <code>" + esc(pyRepr(celda.v)) + "</code> (" + nombreTipo + ") · number_format <code>" +
+           esc(pyStr(celda.fmt)) + "</code>" + (est.length ? " · " + est.join(", ") : "") +
+           " · Excel muestra <b>" + (muestra === "" ? "(nada)" : esc(muestra)) + "</b>";
+  }
+  function buscarEn(libro, hojaActual) {
+    return function (titulo, fila, col) {
+      var h = hojaActual;
+      if (titulo) h = libro.hojas.filter(function (x) { return x.titulo === titulo; })[0];
+      if (!h) return null;
+      var celda = h.celdas[coord(fila, col)];
+      return celda ? celda.v : null;
+    };
+  }
+
+  function pintar() {
+    var n = pasos.length, p = k > 0 ? pasos[k - 1] : null, previo = k > 1 ? pasos[k - 2] : null;
+    $("paso").value = k;
+    $("pasoTxt").textContent = k + " de " + n;
+    $("inicio").disabled = $("atras").disabled = k === 0;
+    $("adelante").disabled = $("fin").disabled = k === n;
+    var siguiente = k < n ? pasos[k].linea : null;
+    mostrarCodigo($("codigo"), prog.codigo, p ? p.linea : null, p ? p.hasta : null, siguiente);
+    if (!p) {
+      $("explica").innerHTML = "<b>Antes de empezar.</b> Ninguna línea se ha ejecutado. Presiona ▶ (o la flecha derecha) para ejecutar la primera.";
+    } else {
+      $("explica").innerHTML = "<b>Paso " + k + " · línea " + (p.hasta > p.linea ? p.linea + " a " + p.hasta : p.linea) + ".</b> " + p.explica +
+        (k === n ? " <b>Fin del programa.</b>" : "");
+    }
+    $("consola").textContent = p ? p.salida : "";
+    $("archivos").innerHTML = "Archivos en la carpeta de trabajo: " +
+      (p && p.archivos.length ? p.archivos.map(function (a) { return "<b>" + esc(a) + "</b>"; }).join(", ") : "ninguno todavía");
+    // Hoja
+    var libro = p ? p.libro : null;
+    if (!libro) {
+      $("hoja").innerHTML = '<div class="sin-libro">Todavía no hay ningún libro: <code>Workbook()</code> lo crea en la memoria.</div>';
+      $("infoCelda").innerHTML = "";
+    } else {
+      var hAntes = previo && previo.libro;
+      if (!hAntes || cambioDePaso) vista = hojaQueCambia(hAntes, libro, vista);
+      cambioDePaso = false;
+      if (vista >= libro.hojas.length) vista = 0;
+      var h = libro.hojas[vista];
+      var antesH = hAntes ? hAntes.hojas.filter(function (x, i) { return i === vista; })[0] : null;
+      var cambian = celdasQueCambian(antesH, h);
+      if (seguirCambio && cambian.length) sel = cambian[cambian.length - 1];
+      seguirCambio = false;
+      var marcas = {};
+      cambian.forEach(function (c) { marcas[c] = "xl-cambio"; });
+      $("hoja").innerHTML = htmlHoja(h, { filas: dims.filas, cols: dims.cols, buscar: buscarEn(libro, h), marcas: marcas,
+        sel: sel, foco: true, pestanas: libro.sheetnames, vista: h.titulo,
+        etiqueta: "Hoja " + h.titulo + " del libro, como en Excel" });
+      $("infoCelda").innerHTML = sel ? describirCelda(h, sel, libro) : "Toca una celda para ver su valor guardado y su formato.";
+    }
+    pintarVariables(p, previo);
+  }
+
+  function pintarVariables(p, previo) {
+    var filas = [], ant = {};
+    if (previo) {
+      valoresDe(previo).forEach(function (x) { ant[x[0]] = x[1]; });
+    }
+    var actuales = p ? valoresDe(p) : [];
+    var html = '<thead><tr><th scope="col">Expresión</th><th scope="col">Valor</th></tr></thead><tbody>';
+    if (!actuales.length) html += '<tr><td colspan="2" class="objeto">Todavía no hay variables.</td></tr>';
+    var grupo = null;
+    actuales.forEach(function (x) {
+      if (x[3] !== grupo) {
+        grupo = x[3];
+        html += '<tr class="grupo"><th colspan="2" scope="rowgroup">' + (grupo === "xl" ? "Lo que sabe openpyxl" : "Variables de Python") + "</th></tr>";
+      }
+      var cambio = p && previo && ant[x[0]] !== x[1];
+      html += "<tr" + (cambio ? ' class="cambio"' : "") + "><td>" + esc(x[0]) + "</td><td" + (x[2] ? ' class="objeto"' : "") + ">" + esc(x[1]) + "</td></tr>";
+    });
+    $("vars").innerHTML = html + "</tbody>";
+  }
+  // [expresión, valor, es objeto, grupo]
+  function valoresDe(p) {
+    var res = [];
+    if (p.libro) {
+      var nombreLibro = null;
+      p.vars.forEach(function (v) { if (v[2] === "Workbook") nombreLibro = v[0]; });
+      if (nombreLibro) {
+        res.push([nombreLibro + ".sheetnames", pyRepr(p.libro.sheetnames), false, "xl"]);
+        res.push([nombreLibro + ".active.title", pyStr(p.libro.activa), false, "xl"]);
+      }
+      p.vars.forEach(function (v) {
+        if (v[3]) {
+          res.push([v[0] + ".title", pyStr(v[3].titulo), false, "xl"]);
+          res.push([v[0] + ".max_row", String(v[3].max_row), false, "xl"]);
+          res.push([v[0] + ".max_column", String(v[3].max_column), false, "xl"]);
+        }
+      });
+    }
+    p.vars.forEach(function (v) {
+      var texto = v[2] ? "objeto " + v[2] : v[1];
+      res.push([v[0], texto, !!v[2], "py"]);
+    });
+    return res;
+  }
+
+  var cambioDePaso = true, seguirCambio = true;
+  function ir(nuevo) {
+    nuevo = Math.max(0, Math.min(pasos.length, nuevo));
+    if (nuevo === k) return;
+    k = nuevo; cambioDePaso = true; seguirCambio = true;
+    pintar();
+  }
+  $("inicio").addEventListener("click", function () { ir(0); });
+  $("atras").addEventListener("click", function () { ir(k - 1); });
+  $("adelante").addEventListener("click", function () { ir(k + 1); });
+  $("fin").addEventListener("click", function () { ir(pasos.length); });
+  $("paso").addEventListener("input", function () { ir(Number($("paso").value)); });
+  $("programa").addEventListener("change", function () { cargar(Number($("programa").value)); guardarElegido(); });
+  document.addEventListener("keydown", function (e) {
+    var t = e.target;
+    if (/^(INPUT|SELECT|TEXTAREA|BUTTON)$/.test(t.tagName) || (t.closest && t.closest("td[data-c]"))) return;
+    if (e.key === "ArrowRight") { e.preventDefault(); ir(k + 1); }
+    else if (e.key === "ArrowLeft") { e.preventDefault(); ir(k - 1); }
+    else if (e.key === "Home") { e.preventDefault(); ir(0); }
+    else if (e.key === "End") { e.preventDefault(); ir(pasos.length); }
+  });
+  // Tocar una celda o una pestaña
+  $("hoja").addEventListener("click", function (e) {
+    var td = e.target.closest("td[data-c]"), tab = e.target.closest("button[data-hoja]");
+    var libro = k > 0 && pasos[k - 1].libro;
+    if (!libro) return;
+    if (td) { sel = td.dataset.c; pintarYEnfocar(); }
+    else if (tab) {
+      vista = libro.sheetnames.indexOf(tab.dataset.hoja);
+      pintar();
+      var b = $("hoja").querySelector('button[data-hoja="' + CSS.escape(tab.dataset.hoja) + '"]');
+      if (b) b.focus();
+    }
+  });
+  // Flechas: mover la celda activa dentro de la hoja
+  $("hoja").addEventListener("keydown", function (e) {
+    var td = e.target.closest && e.target.closest("td[data-c]");
+    if (!td) return;
+    var p = partirCoord(td.dataset.c), f = p.fila, c = p.col;
+    if (e.key === "ArrowUp") f--; else if (e.key === "ArrowDown") f++;
+    else if (e.key === "ArrowLeft") c--; else if (e.key === "ArrowRight") c++;
+    else if (e.key !== "Enter" && e.key !== " ") return;
+    e.preventDefault();
+    sel = coord(Math.min(dims.filas, Math.max(1, f)), Math.min(dims.cols, Math.max(1, c)));
+    pintarYEnfocar();
+  });
+  function pintarYEnfocar() {
+    pintar();
+    var td = $("hoja").querySelector('td[data-c="' + sel + '"]');
+    if (td) td.focus();
+  }
+  function guardarElegido() {
+    try { localStorage.setItem("pb-s14-paso-a-paso", $("programa").value); } catch (e) { /* sin almacenamiento */ }
+  }
+  var inicial = 0;
+  try {
+    var g = Number(localStorage.getItem("pb-s14-paso-a-paso"));
+    if (g >= 0 && g < PROGRAMAS.length) inicial = g;
+  } catch (e) { /* sin almacenamiento */ }
+  $("programa").value = inicial;
+  cargar(inicial);
+})();
+</script>
+<div id="qr-sitio" class="qr-capa" hidden>
+  <div class="qr-caja" role="dialog" aria-modal="true" aria-label="Código QR de esta página">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 45" role="img" aria-label="Código QR de https://memosanchezg.github.io/programacion-basica-interactivos/semana-14-openpyxl-paso-a-paso.html" shape-rendering="crispEdges"><rect width="45" height="45" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM10 2h1v1h-1zM14 2h7v1h-7zM23 2h4v1h-4zM28 2h3v1h-3zM36 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM11 3h3v1h-3zM15 3h2v1h-2zM18 3h2v1h-2zM21 3h1v1h-1zM24 3h1v1h-1zM30 3h1v1h-1zM32 3h2v1h-2zM36 3h1v1h-1zM42 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM15 4h1v1h-1zM17 4h1v1h-1zM22 4h4v1h-4zM28 4h2v1h-2zM31 4h4v1h-4zM36 4h1v1h-1zM38 4h3v1h-3zM42 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h1v1h-1zM12 5h2v1h-2zM15 5h3v1h-3zM19 5h2v1h-2zM23 5h3v1h-3zM27 5h1v1h-1zM30 5h1v1h-1zM33 5h2v1h-2zM36 5h1v1h-1zM38 5h3v1h-3zM42 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM20 6h1v1h-1zM22 6h2v1h-2zM25 6h1v1h-1zM27 6h6v1h-6zM36 6h1v1h-1zM38 6h3v1h-3zM42 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h6v1h-6zM21 7h1v1h-1zM23 7h1v1h-1zM26 7h3v1h-3zM30 7h1v1h-1zM33 7h1v1h-1zM36 7h1v1h-1zM42 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM30 8h1v1h-1zM32 8h1v1h-1zM34 8h1v1h-1zM36 8h7v1h-7zM10 9h1v1h-1zM12 9h1v1h-1zM14 9h1v1h-1zM16 9h2v1h-2zM19 9h1v1h-1zM23 9h2v1h-2zM28 9h1v1h-1zM30 9h5v1h-5zM2 10h1v1h-1zM6 10h1v1h-1zM8 10h7v1h-7zM16 10h1v1h-1zM19 10h1v1h-1zM21 10h1v1h-1zM23 10h2v1h-2zM31 10h1v1h-1zM33 10h7v1h-7zM42 10h1v1h-1zM4 11h2v1h-2zM9 11h3v1h-3zM13 11h3v1h-3zM17 11h1v1h-1zM19 11h2v1h-2zM25 11h1v1h-1zM28 11h3v1h-3zM32 11h1v1h-1zM35 11h5v1h-5zM42 11h1v1h-1zM3 12h1v1h-1zM5 12h2v1h-2zM8 12h1v1h-1zM11 12h1v1h-1zM17 12h4v1h-4zM22 12h5v1h-5zM29 12h1v1h-1zM34 12h3v1h-3zM38 12h1v1h-1zM42 12h1v1h-1zM4 13h4v1h-4zM11 13h3v1h-3zM18 13h3v1h-3zM23 13h1v1h-1zM25 13h2v1h-2zM28 13h1v1h-1zM30 13h2v1h-2zM33 13h2v1h-2zM36 13h2v1h-2zM39 13h1v1h-1zM41 13h2v1h-2zM2 14h1v1h-1zM4 14h3v1h-3zM8 14h5v1h-5zM15 14h1v1h-1zM19 14h1v1h-1zM23 14h2v1h-2zM26 14h1v1h-1zM31 14h1v1h-1zM34 14h2v1h-2zM37 14h1v1h-1zM42 14h1v1h-1zM3 15h3v1h-3zM7 15h1v1h-1zM13 15h1v1h-1zM15 15h8v1h-8zM24 15h2v1h-2zM27 15h4v1h-4zM32 15h1v1h-1zM35 15h4v1h-4zM42 15h1v1h-1zM2 16h2v1h-2zM5 16h1v1h-1zM8 16h3v1h-3zM13 16h2v1h-2zM16 16h1v1h-1zM20 16h1v1h-1zM22 16h2v1h-2zM25 16h2v1h-2zM29 16h1v1h-1zM34 16h3v1h-3zM38 16h1v1h-1zM40 16h1v1h-1zM42 16h1v1h-1zM2 17h2v1h-2zM6 17h1v1h-1zM11 17h3v1h-3zM15 17h1v1h-1zM17 17h3v1h-3zM23 17h4v1h-4zM28 17h1v1h-1zM30 17h3v1h-3zM34 17h1v1h-1zM38 17h2v1h-2zM41 17h2v1h-2zM3 18h1v1h-1zM5 18h2v1h-2zM8 18h1v1h-1zM10 18h1v1h-1zM15 18h3v1h-3zM19 18h1v1h-1zM21 18h3v1h-3zM25 18h1v1h-1zM31 18h2v1h-2zM34 18h1v1h-1zM37 18h1v1h-1zM39 18h1v1h-1zM41 18h1v1h-1zM3 19h1v1h-1zM6 19h2v1h-2zM10 19h4v1h-4zM15 19h3v1h-3zM23 19h1v1h-1zM25 19h2v1h-2zM28 19h5v1h-5zM35 19h4v1h-4zM40 19h1v1h-1zM42 19h1v1h-1zM3 20h1v1h-1zM5 20h2v1h-2zM8 20h3v1h-3zM12 20h2v1h-2zM15 20h1v1h-1zM19 20h1v1h-1zM25 20h5v1h-5zM31 20h2v1h-2zM35 20h3v1h-3zM39 20h1v1h-1zM41 20h2v1h-2zM2 21h1v1h-1zM4 21h1v1h-1zM6 21h2v1h-2zM9 21h7v1h-7zM17 21h4v1h-4zM24 21h3v1h-3zM29 21h1v1h-1zM31 21h7v1h-7zM39 21h1v1h-1zM41 21h1v1h-1zM4 22h2v1h-2zM7 22h3v1h-3zM11 22h1v1h-1zM13 22h1v1h-1zM15 22h1v1h-1zM17 22h2v1h-2zM20 22h3v1h-3zM24 22h3v1h-3zM31 22h1v1h-1zM33 22h3v1h-3zM2 23h1v1h-1zM5 23h2v1h-2zM9 23h2v1h-2zM12 23h1v1h-1zM14 23h1v1h-1zM18 23h2v1h-2zM25 23h1v1h-1zM28 23h3v1h-3zM35 23h4v1h-4zM42 23h1v1h-1zM2 24h1v1h-1zM4 24h2v1h-2zM8 24h2v1h-2zM14 24h2v1h-2zM17 24h1v1h-1zM19 24h1v1h-1zM22 24h1v1h-1zM25 24h5v1h-5zM31 24h2v1h-2zM34 24h1v1h-1zM36 24h2v1h-2zM42 24h1v1h-1zM5 25h2v1h-2zM9 25h4v1h-4zM14 25h3v1h-3zM19 25h1v1h-1zM21 25h1v1h-1zM23 25h1v1h-1zM25 25h2v1h-2zM29 25h9v1h-9zM2 26h3v1h-3zM6 26h3v1h-3zM14 26h1v1h-1zM17 26h1v1h-1zM19 26h1v1h-1zM21 26h3v1h-3zM25 26h2v1h-2zM30 26h2v1h-2zM34 26h2v1h-2zM39 26h1v1h-1zM2 27h1v1h-1zM5 27h3v1h-3zM9 27h3v1h-3zM13 27h1v1h-1zM16 27h4v1h-4zM25 27h1v1h-1zM28 27h3v1h-3zM32 27h1v1h-1zM34 27h1v1h-1zM36 27h3v1h-3zM40 27h3v1h-3zM2 28h1v1h-1zM4 28h1v1h-1zM6 28h1v1h-1zM8 28h1v1h-1zM12 28h1v1h-1zM14 28h1v1h-1zM16 28h2v1h-2zM19 28h1v1h-1zM22 28h1v1h-1zM24 28h2v1h-2zM27 28h3v1h-3zM31 28h1v1h-1zM34 28h3v1h-3zM42 28h1v1h-1zM4 29h4v1h-4zM9 29h2v1h-2zM13 29h1v1h-1zM15 29h2v1h-2zM18 29h6v1h-6zM25 29h1v1h-1zM28 29h1v1h-1zM31 29h4v1h-4zM37 29h1v1h-1zM39 29h1v1h-1zM42 29h1v1h-1zM2 30h3v1h-3zM6 30h1v1h-1zM8 30h3v1h-3zM13 30h1v1h-1zM16 30h4v1h-4zM21 30h6v1h-6zM29 30h3v1h-3zM34 30h2v1h-2zM42 30h1v1h-1zM2 31h4v1h-4zM7 31h1v1h-1zM9 31h4v1h-4zM14 31h2v1h-2zM17 31h2v1h-2zM20 31h2v1h-2zM23 31h1v1h-1zM25 31h1v1h-1zM28 31h5v1h-5zM34 31h1v1h-1zM36 31h1v1h-1zM38 31h2v1h-2zM41 31h2v1h-2zM4 32h1v1h-1zM8 32h3v1h-3zM13 32h1v1h-1zM15 32h3v1h-3zM19 32h1v1h-1zM21 32h1v1h-1zM23 32h1v1h-1zM25 32h1v1h-1zM27 32h3v1h-3zM32 32h1v1h-1zM34 32h2v1h-2zM38 32h2v1h-2zM42 32h1v1h-1zM4 33h2v1h-2zM7 33h1v1h-1zM10 33h1v1h-1zM12 33h4v1h-4zM18 33h2v1h-2zM21 33h3v1h-3zM25 33h2v1h-2zM29 33h7v1h-7zM38 33h2v1h-2zM41 33h1v1h-1zM2 34h4v1h-4zM7 34h4v1h-4zM16 34h1v1h-1zM18 34h2v1h-2zM23 34h2v1h-2zM26 34h1v1h-1zM31 34h1v1h-1zM34 34h6v1h-6zM41 34h2v1h-2zM10 35h1v1h-1zM13 35h1v1h-1zM19 35h1v1h-1zM25 35h2v1h-2zM28 35h3v1h-3zM34 35h1v1h-1zM38 35h3v1h-3zM42 35h1v1h-1zM2 36h7v1h-7zM10 36h6v1h-6zM17 36h1v1h-1zM20 36h1v1h-1zM22 36h5v1h-5zM29 36h1v1h-1zM31 36h1v1h-1zM33 36h2v1h-2zM36 36h1v1h-1zM38 36h1v1h-1zM40 36h1v1h-1zM42 36h1v1h-1zM2 37h1v1h-1zM8 37h1v1h-1zM11 37h1v1h-1zM13 37h1v1h-1zM17 37h2v1h-2zM21 37h3v1h-3zM25 37h1v1h-1zM30 37h2v1h-2zM33 37h2v1h-2zM38 37h2v1h-2zM42 37h1v1h-1zM2 38h1v1h-1zM4 38h3v1h-3zM8 38h1v1h-1zM10 38h1v1h-1zM12 38h4v1h-4zM17 38h2v1h-2zM22 38h1v1h-1zM26 38h1v1h-1zM31 38h1v1h-1zM33 38h7v1h-7zM41 38h1v1h-1zM2 39h1v1h-1zM4 39h3v1h-3zM8 39h1v1h-1zM11 39h2v1h-2zM17 39h2v1h-2zM20 39h1v1h-1zM23 39h5v1h-5zM29 39h4v1h-4zM34 39h1v1h-1zM37 39h1v1h-1zM42 39h1v1h-1zM2 40h1v1h-1zM4 40h3v1h-3zM8 40h1v1h-1zM11 40h1v1h-1zM13 40h1v1h-1zM15 40h3v1h-3zM19 40h2v1h-2zM22 40h1v1h-1zM25 40h1v1h-1zM27 40h1v1h-1zM29 40h1v1h-1zM31 40h2v1h-2zM34 40h2v1h-2zM39 40h1v1h-1zM42 40h1v1h-1zM2 41h1v1h-1zM8 41h1v1h-1zM11 41h1v1h-1zM14 41h1v1h-1zM16 41h3v1h-3zM23 41h2v1h-2zM26 41h1v1h-1zM28 41h2v1h-2zM31 41h2v1h-2zM34 41h4v1h-4zM39 41h1v1h-1zM41 41h2v1h-2zM2 42h7v1h-7zM10 42h1v1h-1zM12 42h1v1h-1zM14 42h3v1h-3zM18 42h1v1h-1zM22 42h5v1h-5zM29 42h1v1h-1zM31 42h1v1h-1zM34 42h1v1h-1zM36 42h3v1h-3zM41 42h1v1h-1z"/></svg>
+    <p class="qr-texto">Escanea con la cámara del celular para abrir esta página</p>
+    <p class="qr-url">https://memosanchezg.github.io/programacion-basica-interactivos/semana-14-openpyxl-paso-a-paso.html</p>
+    <button type="button" class="qr-cerrar">Cerrar</button>
+  </div>
+</div>
+<style>
+  .qr-capa { position:fixed; top:0; right:0; bottom:0; left:0; z-index:10000; display:flex; align-items:center;
+             justify-content:center; padding:16px; background:#fff; }
+  .qr-capa[hidden] { display:none; }
+  .qr-caja { max-width:100%; text-align:center; color:#0A2A57; font:16px/1.4 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .qr-caja svg { display:block; width:min(62vh, 84vw); height:auto; margin:0 auto; }
+  .qr-texto { margin:12px 0 2px; font-size:1.15rem; font-weight:bold; }
+  .qr-url { margin:0 0 12px; color:#5B6472; word-break:break-all; }
+  .qr-cerrar { font:inherit; padding:6px 20px; border:2px solid #00408F; border-radius:4px; background:#fff;
+               color:#00408F; cursor:pointer; }
+</style>
+<script>
+  (function () {
+    var capa = document.getElementById("qr-sitio");
+    document.querySelectorAll("a.qr-abrir").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        capa.hidden = false;
+        capa.querySelector(".qr-cerrar").focus();
+      });
+    });
+    capa.addEventListener("click", function (e) {
+      if (e.target === capa || e.target.classList.contains("qr-cerrar")) capa.hidden = true;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !capa.hidden) capa.hidden = true;
+    });
+  })();
+</script>
+</body>
+</html>
