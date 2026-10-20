@@ -1,0 +1,582 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="tipo" content="simulador">
+<title>El camino de try/except</title>
+
+<style>
+  :root {
+    --azul:#00408F; --azul-oscuro:#0A2A57; --guinda:#8C1D35; --oro:#B8975A; --oro-texto:#8A6A2E;
+    --azul-claro:#E8EEF7; --oro-claro:#F7F1E6; --guinda-claro:#F5E6EA; --verde:#2F7D5B;
+    --tinta:#1B1F2A; --gris:#5B6472; --gris-claro:#E9ECF1; --borde:#D9DEE6; --fondo:#FFFFFF;
+    --cmd-fondo:#0C0C0C; --cmd-texto:#E6E6E6;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--fondo); color:var(--tinta);
+         font:16px/1.45 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .franja { height:8px; background:var(--azul); border-bottom:3px solid var(--oro); }
+  header { max-width:1280px; margin:0 auto; padding:12px 18px 4px; }
+  .semana { color:var(--guinda); font-weight:bold; letter-spacing:.04em; font-size:.85rem; text-transform:uppercase; }
+  h1 { font-family:Cambria,Georgia,serif; color:var(--azul-oscuro); font-size:1.7rem; margin:2px 0 2px; }
+  .sub { color:var(--gris); margin:0; }
+  main { max-width:1280px; margin:0 auto; padding:8px 18px 24px; }
+  nav.pestanas { display:flex; gap:4px; flex-wrap:wrap; border-bottom:2px solid var(--gris-claro); margin:6px 0 12px; }
+  nav.pestanas button { font:inherit; font-weight:bold; border:none; background:none; color:var(--gris);
+                        padding:8px 14px; cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; }
+  nav.pestanas button.activo { color:var(--azul-oscuro); border-bottom-color:var(--azul); }
+  nav.pestanas button:focus-visible { outline:2px solid var(--azul); }
+  section.vista { display:none; }
+  section.vista.activo { display:block; }
+  .fila { display:grid; grid-template-columns:minmax(260px,360px) minmax(0,1fr); gap:16px; align-items:start; }
+  .panel { background:#fff; border:1px solid var(--borde); border-radius:10px; padding:12px 14px; }
+  .panel h2 { font-size:1.02rem; color:var(--azul-oscuro); margin:0 0 8px; }
+  label { display:block; font-weight:bold; color:var(--azul-oscuro); margin-top:10px; }
+  label small { font-weight:normal; color:var(--gris); }
+  input[type=range] { width:100%; }
+  input[type=number], input[type=text], select, textarea { font:inherit; padding:4px 6px; border:1px solid var(--borde);
+                        border-radius:6px; }
+  button.accion { font:inherit; font-weight:bold; border-radius:8px; padding:7px 12px; margin:8px 6px 0 0;
+                  border:1px solid var(--azul); background:#fff; color:var(--azul); cursor:pointer; }
+  button.accion:hover, button.accion:focus-visible { background:var(--azul); color:#fff; outline:none; }
+  .lectura { background:var(--oro-claro); border-left:4px solid var(--oro); border-radius:8px; padding:10px 12px;
+             margin-top:12px; line-height:1.55; }
+  .lectura b { color:var(--azul-oscuro); }
+  .ok { color:var(--verde); font-weight:bold; }
+  .mal { color:var(--guinda); font-weight:bold; }
+  .preguntas { background:var(--azul-claro); border-radius:8px; padding:10px 14px; margin-top:12px; }
+  .preguntas h3 { margin:0 0 4px; font-size:.95rem; color:var(--azul-oscuro); }
+  .preguntas ol { margin:0; padding-left:20px; }
+  /* Código Python con los colores del curso (minted, estilo borland) y salida de consola (cmd). */
+  .codigo { border:1px solid var(--tinta); background:#fff; font:15px/1.5 Consolas,"Courier New",monospace;
+            overflow-x:auto; margin:8px 0; }
+  .codigo ol { margin:0; padding:8px 12px 8px 3.4em; }
+  .codigo li { white-space:pre; }
+  .codigo li::marker { color:var(--gris); font:11px Cambria,Georgia,serif; }
+  .codigo .kw { color:#000080; font-weight:bold; }
+  .codigo .str, .codigo .num { color:#0000FF; }
+  .codigo .com { color:#008800; font-style:italic; }
+  .codigo .marca { background:var(--oro-claro); outline:1px solid var(--oro); }
+  .consola { background:var(--cmd-fondo); color:var(--cmd-texto); font:15px/1.45 Consolas,"Courier New",monospace;
+             white-space:pre-wrap; word-break:break-word; padding:8px 12px; border-radius:4px; margin:8px 0; min-height:2.2em; }
+  footer { max-width:1280px; margin:0 auto; padding:6px 18px 18px; color:var(--gris); font-size:.85rem; }
+  footer a { color:var(--azul); }
+  @media (max-width: 820px) { .fila { grid-template-columns:1fr; } }
+
+  /* Propios de este simulador */
+  [hidden] { display:none !important; }
+  code { font-family:Consolas,"Courier New",monospace; color:var(--azul-oscuro); }
+  .fila > * { min-width:0; }
+  .fila2 { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); gap:16px; align-items:start; }
+  .fila2 > * { min-width:0; }
+  @media (max-width: 900px) { .fila2 { grid-template-columns:1fr; } }
+  .selector { display:flex; flex-wrap:wrap; gap:6px 16px; align-items:flex-end; margin:4px 0 10px; }
+  .selector > div { min-width:0; max-width:100%; }
+  .selector label { margin:0 0 2px; }
+  .selector select { max-width:100%; }
+  .escenario { color:var(--tinta); margin:0 0 10px; overflow-wrap:anywhere; }
+  .escenario b { color:var(--azul-oscuro); }
+  .escenario .teclea { font-family:Consolas,"Courier New",monospace; background:var(--gris-claro); border-radius:4px;
+                       padding:0 5px; white-space:pre; }
+  .carpeta { color:var(--gris); font-size:.92rem; margin:0 0 10px; overflow-wrap:anywhere; }
+  .carpeta code { color:var(--tinta); }
+  /* Cláusulas: una franja de color a la izquierda de cada bloque */
+  .codigo li.c-try { box-shadow:inset 5px 0 0 var(--azul); }
+  .codigo li.c-except { box-shadow:inset 5px 0 0 var(--guinda); }
+  .codigo li.c-else { box-shadow:inset 5px 0 0 var(--verde); }
+  .codigo li.c-finally { box-shadow:inset 5px 0 0 var(--oro); }
+  .codigo ol { padding-left:3.6em; }
+  .codigo li { padding-left:10px; }
+  .codigo li.ejecutada { background:#EEF6F1; }
+  .codigo li.saltada { color:#9AA1AC; }
+  .codigo li.saltada span { color:inherit !important; font-weight:normal; font-style:normal; }
+  .codigo li.marca { background:var(--oro-claro); outline:1px solid var(--oro); }
+  .codigo li.siguiente { outline:1px dashed var(--guinda); outline-offset:-1px; }
+  .insignia { font:bold 11px/1 Calibri,"Segoe UI",sans-serif; border-radius:8px; padding:1px 6px; margin-left:10px;
+              vertical-align:2px; border:1px solid; white-space:nowrap; }
+  .i-e, .i-a { color:var(--verde); border-color:var(--verde); background:#fff; }
+  .i-s, .i-n { color:var(--gris); border-color:#AEB4BE; background:#fff; }
+  .i-r { color:var(--oro-texto); border-color:var(--oro); background:#fff; }
+  .leyenda { display:flex; flex-wrap:wrap; gap:4px 14px; color:var(--gris); font-size:.88rem; margin:2px 0 0; }
+  .leyenda span::before { content:""; display:inline-block; width:12px; height:12px; vertical-align:-1px; margin-right:5px;
+                          background:var(--c); border:1px solid var(--b, var(--c)); }
+  .controles { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:6px; }
+  .controles button.accion { margin:0; min-width:46px; padding:6px 10px; }
+  .controles .barra { flex:1 1 170px; display:flex; flex-direction:column; min-width:140px; }
+  .controles .barra label { margin:0 0 2px; font-size:.95rem; }
+  .consola .error { color:#FF8A80; }
+  /* Sin cortar renglones: así las marcas ^^^ quedan debajo de lo que señalan */
+  .consola.sin-corte { white-space:pre; overflow-x:auto; word-break:normal; }
+  .consola .prompt { color:#9AA0A6; }
+  ul.bloques { list-style:none; margin:4px 0 0; padding:0; }
+  ul.bloques li { display:flex; justify-content:space-between; gap:8px; padding:4px 8px; border-left:5px solid var(--c);
+                  margin:3px 0; background:#fff; border-radius:0 6px 6px 0; font-size:.95rem; }
+  ul.bloques li code { color:var(--tinta); }
+  ul.bloques li .estado { color:var(--gris); white-space:nowrap; }
+  ul.bloques li.e .estado, ul.bloques li.a .estado { color:var(--verde); font-weight:bold; }
+  ul.bloques li.r .estado { color:var(--oro-texto); font-weight:bold; }
+  table.vars { width:100%; border-collapse:collapse; font-size:.95rem; margin-top:4px; }
+  table.vars th, table.vars td { border:1px solid var(--borde); padding:3px 8px; text-align:left; vertical-align:top; }
+  table.vars thead th { background:var(--gris-claro); color:var(--azul-oscuro); }
+  table.vars td:first-child { font-family:Consolas,"Courier New",monospace; color:var(--azul-oscuro); white-space:nowrap; }
+  table.vars td:last-child { font-family:Consolas,"Courier New",monospace; overflow-wrap:anywhere; word-break:break-word; }
+  table.vars tr.grupo th { background:#fff; color:var(--gris); font-weight:normal; font-size:.85rem; }
+  table.vars tr.cambio td { background:var(--oro-claro); }
+  table.vars td.vacio { color:var(--gris); font-style:italic; font-family:Calibri,"Segoe UI",sans-serif; }
+  h2.rotulo { margin-top:14px !important; }
+  /* Predicción */
+  .tarjetas { display:flex; flex-direction:column; gap:6px; margin:8px 0; }
+  .tarjetas button { font:15px/1.35 Consolas,"Courier New",monospace; text-align:left; border:1px solid var(--borde);
+                     border-radius:8px; background:#fff; color:var(--tinta); padding:7px 10px 7px 44px; cursor:pointer;
+                     position:relative; overflow-wrap:anywhere; }
+  .tarjetas button .n { position:absolute; left:8px; top:50%; transform:translateY(-50%); width:26px; height:26px;
+                        border-radius:50%; border:2px solid var(--borde); color:var(--gris);
+                        font:bold 13px/22px Calibri,"Segoe UI",sans-serif; text-align:center; }
+  .tarjetas button.elegida { border-color:var(--azul); background:var(--azul-claro); }
+  .tarjetas button.elegida .n { border-color:var(--azul); background:var(--azul); color:#fff; }
+  .tarjetas button.tb { font-family:Calibri,"Segoe UI",sans-serif; font-weight:bold; color:var(--guinda); }
+  .tarjetas button:focus-visible { outline:2px solid var(--guinda); outline-offset:2px; }
+  .tarjetas button.bien { border-color:var(--verde); }
+  .tarjetas button.bien .n { background:var(--verde); border-color:var(--verde); color:#fff; }
+  .tarjetas button.malpos { border-color:var(--guinda); }
+  .tarjetas button.malpos .n { background:var(--guinda); border-color:var(--guinda); color:#fff; }
+  .resultado { margin-top:8px; }
+  .resultado.bien { background:#EAF4EF; border-left-color:var(--verde); }
+  .resultado.mal { background:var(--guinda-claro); border-left-color:var(--guinda); }
+  .marcador { color:var(--azul-oscuro); font-weight:bold; margin:0 0 6px; }
+  @media (max-width: 480px) {
+    header { padding:10px 12px 4px; } main { padding:8px 10px 20px; } footer { padding:6px 12px 16px; }
+    .panel { padding:10px; } h1 { font-size:1.45rem; }
+    .codigo { font-size:13px; } .codigo ol { padding-left:3em; }
+    .tarjetas button { font-size:14px; }
+  }
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header>
+  <div class="semana">Semana 09 · Manejo profesional de errores</div>
+  <h1>El camino de try/except/else/finally</h1>
+  <p class="sub">Elige un programa y lo que pasa al correrlo; avanza línea por línea y mira qué bloques se ejecutan, cuáles se saltan y qué imprime Python.</p>
+</header>
+<main>
+  <div class="selector">
+    <div>
+      <label for="programa">Programa</label>
+      <select id="programa"></select>
+    </div>
+    <div>
+      <label for="escenario">¿Qué pasa al correrlo?</label>
+      <select id="escenario"></select>
+    </div>
+  </div>
+  <p class="escenario" id="descEscenario"></p>
+  <p class="carpeta" id="carpeta"></p>
+
+  <nav class="pestanas" role="tablist" aria-label="Modo">
+    <button type="button" class="activo" data-vista="vPasos" role="tab" aria-selected="true" id="tabPasos">Paso a paso</button>
+    <button type="button" data-vista="vPredice" role="tab" aria-selected="false" id="tabPredice">Predice el orden de los print</button>
+  </nav>
+
+  <section class="vista activo" id="vPasos" role="tabpanel" aria-labelledby="tabPasos">
+    <div class="fila2">
+      <div class="panel">
+        <h2>El código</h2>
+        <div id="codigo"></div>
+        <div class="leyenda" aria-hidden="true">
+          <span style="--c:#00408F">try</span>
+          <span style="--c:#8C1D35">except</span>
+          <span style="--c:#2F7D5B">else</span>
+          <span style="--c:#B8975A">finally</span>
+          <span style="--c:#F7F1E6;--b:#B8975A">línea que se acaba de ejecutar</span>
+          <span style="--c:#EEF6F1;--b:#2F7D5B">ya se ejecutó</span>
+          <span style="--c:#fff;--b:#AEB4BE">gris: se saltó</span>
+        </div>
+        <div class="controles">
+          <button type="button" class="accion" id="inicio" aria-label="Ir al inicio" title="Ir al inicio">⏮</button>
+          <button type="button" class="accion" id="atras" aria-label="Paso anterior" title="Paso anterior">◀</button>
+          <button type="button" class="accion" id="adelante" aria-label="Paso siguiente" title="Paso siguiente">▶</button>
+          <button type="button" class="accion" id="fin" aria-label="Ir al final" title="Ir al final">⏭</button>
+          <div class="barra">
+            <label for="paso">Paso <span id="pasoTxt"></span></label>
+            <input type="range" id="paso" min="0" max="1" step="1" value="0">
+          </div>
+        </div>
+        <div class="lectura" id="explica" aria-live="polite"></div>
+      </div>
+      <div class="panel">
+        <h2>Consola</h2>
+        <div class="consola sin-corte" id="consola" aria-live="polite" aria-label="Lo que imprime Python"></div>
+        <h2 class="rotulo">Bloques del try</h2>
+        <ul class="bloques" id="bloques" aria-label="Estado de cada bloque"></ul>
+        <h2 class="rotulo">Variables</h2>
+        <table class="vars" id="vars"></table>
+      </div>
+    </div>
+    <div class="preguntas">
+      <h3>Para explorar</h3>
+      <ol>
+        <li><b>El bloque completo, "Archivo que no existe".</b> ¿Por qué nunca aparece el mensaje <code>Personas:</code>?</li>
+        <li><b>"Archivo con texto".</b> ¿El archivo se cierra antes o después de que Python revise los except? Fíjate en <code>f.closed</code>.</li>
+        <li><b>"Una carpeta".</b> ¿Qué except atrapa el error? ¿Qué pasaría con los demás escenarios si <code>except Exception</code> estuviera antes que los otros except?</li>
+        <li><b>raise, "No alcanzan".</b> ¿Por qué el <code>except ValueError</code> no atrapa el ValueError que lanza <code>apartar</code>? ¿Qué cambiarías para que sí lo atrape?</li>
+        <li><b>"No alcanzan".</b> ¿Qué sale primero, "Gracias por tu visita" o el traceback? ¿Por qué nunca se imprime "Siguiente cliente"?</li>
+        <li><b>return con finally.</b> Si <code>return</code> se ejecuta antes que el finally, ¿por qué "Revisé ..." sale antes que "Precio guardado: ..."?</li>
+        <li><b>raise, "Un número raro".</b> El programa no se detiene, pero ¿está bien el resultado? ¿Qué regla le falta a <code>apartar</code>?</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="vista" id="vPredice" role="tabpanel" aria-labelledby="tabPredice">
+    <div class="fila2">
+      <div class="panel">
+        <h2>El código</h2>
+        <div id="codigoP"></div>
+      </div>
+      <div class="panel">
+        <p class="marcador" id="marcador"></p>
+        <h2>¿En qué orden aparecen?</h2>
+        <p class="sub">Toca los <code>print</code> en el orden en que aparecerán en la consola. Deja sin tocar los que no se ejecutan. Si crees que el programa se detiene con un traceback, toca esa tarjeta al final. Para quitar una, vuelve a tocarla.</p>
+        <div class="tarjetas" id="tarjetas" role="group" aria-label="Los print del programa"></div>
+        <button type="button" class="accion" id="revisar">Revisar</button>
+        <button type="button" class="accion" id="borrar">Borrar</button>
+        <button type="button" class="accion" id="verPasos" hidden>Verlo paso a paso</button>
+        <div class="lectura resultado" id="resultado" aria-live="polite" hidden></div>
+        <div class="consola sin-corte" id="consolaP" hidden aria-label="Lo que imprime Python"></div>
+      </div>
+    </div>
+  </section>
+</main>
+<footer>
+  Programación Básica · FCFM-UANL · funciona sin internet. Cada paso, cada salida y cada traceback son los de Python 3.12.
+  <a href="index.html">Índice de simuladores</a> · <a href="#qr-sitio" class="qr-abrir">Abrir en el celular (QR)</a>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(t) {
+    return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  // Programas, escenarios y pasos (generados corriendo cada caso en Python 3.12)
+  var DATOS = /*DATOS*/[{"id":"cuota","titulo":"1 · El bloque completo","dia":"Días 2 y 4","desc":"Varios except, except Exception as e, else, finally y with para leer un archivo.","archivo":"cuota.py","codigo":["nombre = input(\"Archivo: \")","try:","    with open(nombre, encoding=\"utf-8\") as f:","        total = int(f.readline())","    personas = int(input(\"Personas: \"))","    cuota = total / personas","except FileNotFoundError:","    print(\"No encontré\", nombre)","except ValueError as e:","    print(\"Dato inválido:\", e)","except ZeroDivisionError:","    print(\"No puede haber 0 personas\")","except Exception as e:","    print(\"Error inesperado:\", type(e).__name__, e)","else:","    print(\"A cada quien le toca\", cuota)","finally:","    print(\"Cuenta revisada\")","print(\"Fin del programa\")"],"clausulas":[["try","",2,3,6],["except","FileNotFoundError",7,8,8],["except","ValueError",9,10,10],["except","ZeroDivisionError",11,12,12],["except","Exception",13,14,14],["else","",15,16,16],["finally","",17,18,18]],"prints":[8,10,12,14,16,18,19],"escenarios":[{"id":"bien","nombre":"Todo bien","desc":"El archivo existe y tecleas un número válido.","entradas":["cuenta.txt","4"],"pasos":[{"l":1,"x":"<code>input<\/code> escribe el mensaje <code>Archivo: <\/code> y espera. Tecleaste <code>cuenta.txt<\/code>: ahora <code>nombre<\/code> vale <code>&#x27;cuenta.txt&#x27;<\/code>.","o":"Archivo: cuenta.txt\n","ls":"a..................","cs":"ppppppp","g":[["nombre","'cuenta.txt'"]]},{"l":2,"x":"Entra al bloque <b>try<\/b>: Python intenta estas líneas. Si una lanza una excepción, abandona el resto del try y busca un except que coincida.","o":"Archivo: cuenta.txt\n","ls":"ea.................","cs":"apppppp","g":[["nombre","'cuenta.txt'"]]},{"l":3,"x":"<code>open<\/code> abre <code>cuenta.txt<\/code> y <code>with<\/code> lo guarda en <code>f<\/code>. Al salir del bloque with, el archivo se cierra solo.","o":"Archivo: cuenta.txt\n","ls":"eea................","cs":"apppppp","g":[["nombre","'cuenta.txt'"],["f","<_io.TextIOWrapper name='cuenta.txt' mode='r' encoding='utf-8'>"],["f.closed","False"]]},{"l":4,"x":"<code>f.readline()<\/code> lee la primera línea, <code>&#x27;840\\n&#x27;<\/code>, e <code>int<\/code> la convierte en 840: ignora el salto de línea.","o":"Archivo: cuenta.txt\n","ls":"eeea...............","cs":"apppppp","g":[["nombre","'cuenta.txt'"],["f","<_io.TextIOWrapper name='cuenta.txt' mode='r' encoding='utf-8'>"],["f.closed","False"],["total","840"]]},{"l":3,"x":"Termina el bloque with: Python regresa a esta línea para <b>cerrar el archivo<\/b> (<code>f.closed<\/code> ahora es True).","o":"Archivo: cuenta.txt\n","ls":"eeae...............","cs":"apppppp","g":[["nombre","'cuenta.txt'"],["f","<_io.TextIOWrapper name='cuenta.txt' mode='r' encoding='utf-8'>"],["f.closed","True"],["total","840"]]},{"l":5,"x":"Pide las personas: tecleaste <code>4<\/code> e <code>int<\/code> lo convierte. <code>personas<\/code> vale 4.","o":"Archivo: cuenta.txt\nPersonas: 4\n","ls":"eeeea..............","cs":"apppppp","g":[["nombre","'cuenta.txt'"],["f","<_io.TextIOWrapper name='cuenta.txt' mode='r' encoding='utf-8'>"],["f.closed","True"],["total","840"],["personas","4"]]},{"l":6,"x":"<code>840 / 4<\/code> da <code>210.0<\/code>. Con <code>/<\/code> el resultado siempre es float.","o":"Archivo: cuenta.txt\nPersonas: 4\n","ls":"eeeeea.............","cs":"apppppp","g":[["nombre","'cuenta.txt'"],["f","<_io.TextIOWrapper name='cuenta.txt' mode='r' encoding='utf-8'>"],["f.closed","True"],["total","840"],["personas","4"],["cuota","210.0"]]},{"l":16,"x":"No hubo ninguna excepción en el try: por eso se ejecuta el <b>else<\/b>, con la cuota ya calculada.","o":"Archivo: cuenta.txt\nPersonas: 4\nA cada quien le toca 210.0\n","ls":"eeeeeessssssssea...","cs":"essssap","g":[["nombre","'cuenta.txt'"],["f","<_io.TextIOWrapper name='cuenta.txt' mode='r' encoding='utf-8'>"],["f.closed","True"],["total","840"],["personas","4"],["cuota","210.0"]]},{"l":18,"x":"<b>finally<\/b> se ejecuta siempre: también cuando todo salió bien.","o":"Archivo: cuenta.txt\nPersonas: 4\nA cada quien le toca 210.0\nCuenta revisada\n","ls":"eeeeeesssssssseeea.","cs":"essssea","g":[["nombre","'cuenta.txt'"],["f","<_io.TextIOWrapper name='cuenta.txt' mode='r' encoding='utf-8'>"],["f.closed","True"],["total","840"],["personas","4"],["cuota","210.0"]]},{"l":19,"x":"Ya fuera del try, el programa sigue normalmente. <b>Fin del programa.<\/b>","o":"Archivo: cuenta.txt\nPersonas: 4\nA cada quien le toca 210.0\nCuenta revisada\nFin del programa\n","ls":"eeeeeesssssssseeeea","cs":"essssee","g":[["nombre","'cuenta.txt'"],["f","<_io.TextIOWrapper name='cuenta.txt' mode='r' encoding='utf-8'>"],["f.closed","True"],["total","840"],["personas","4"],["cuota","210.0"]]}],"tb":"","orden":[16,18,19]},{"id":"noexiste","nombre":"Archivo que no existe","desc":"Tecleas cuentas.txt (con s): ese archivo no está en la carpeta.","entradas":["cuentas.txt"],"pasos":[{"l":1,"x":"<code>input<\/code> escribe el mensaje <code>Archivo: <\/code> y espera. Tecleaste <code>cuentas.txt<\/code>: ahora <code>nombre<\/code> vale <code>&#x27;cuentas.txt&#x27;<\/code>.","o":"Archivo: cuentas.txt\n","ls":"a..................","cs":"ppppppp","g":[["nombre","'cuentas.txt'"]]},{"l":2,"x":"Entra al bloque <b>try<\/b>: Python intenta estas líneas. Si una lanza una excepción, abandona el resto del try y busca un except que coincida.","o":"Archivo: cuentas.txt\n","ls":"ea.................","cs":"apppppp","g":[["nombre","'cuentas.txt'"]]},{"l":3,"x":"<code>open<\/code> no encuentra <code>cuentas.txt<\/code> en la carpeta: lanza <b>FileNotFoundError<\/b>. Python abandona el resto del try: las líneas 4 a 6 no se ejecutan.","o":"Archivo: cuentas.txt\n","ls":"eea................","cs":"apppppp","g":[["nombre","'cuentas.txt'"]],"err":"FileNotFoundError"},{"l":7,"x":"¿Es un FileNotFoundError? <b>Sí<\/b>: este except coincide y se ejecuta su bloque.","o":"Archivo: cuentas.txt\n","ls":"eeesssa.......ss...","cs":"erpppsp","g":[["nombre","'cuentas.txt'"]]},{"l":8,"x":"Imprime el aviso con el nombre que tecleaste. Los demás except y el else se saltan.","o":"Archivo: cuentas.txt\nNo encontré cuentas.txt\n","ls":"eeessseassssssss...","cs":"eassssp","g":[["nombre","'cuentas.txt'"]]},{"l":18,"x":"<b>finally<\/b> se ejecuta siempre: también cuando hubo un error y un except lo atrapó.","o":"Archivo: cuentas.txt\nNo encontré cuentas.txt\nCuenta revisada\n","ls":"eeessseessssssssea.","cs":"eessssa","g":[["nombre","'cuentas.txt'"]]},{"l":19,"x":"Ya fuera del try, el programa sigue normalmente. <b>Fin del programa.<\/b>","o":"Archivo: cuentas.txt\nNo encontré cuentas.txt\nCuenta revisada\nFin del programa\n","ls":"eeessseesssssssseea","cs":"eesssse","g":[["nombre","'cuentas.txt'"]]}],"tb":"","orden":[8,18,19]},{"id":"invalida","nombre":"Entrada inválida","desc":"Tecleas cuatro, con letras.","entradas":["cuenta.txt","cuatro"],"pasos":[{"l":1,"x":"<code>input<\/code> escribe el mensaje <code>Archivo: <\/code> y espera. Tecleaste <code>cuenta.txt<\/code>: ahora <code>nombre<\/code> vale <code>&#x27;cuenta.txt&#x27;<\/code>.","o":"Archivo: cuenta.txt\n","ls":"a..................","cs":"ppppppp","g":[["nombre","'cuenta.txt'"]]},{"l":2,"x":"Entra al bloque <b>try<\/b>: Python intenta estas líneas. Si una lanza una excepción, abandona el resto del try y busca un except que coincida.","o":"Archivo: cuenta.txt\n","ls":"ea.................","cs":"apppppp","g":[["nombre","'cuenta.txt'"]]},{"l":3,"x":"<code>open<\/code> abre <code>cuenta.txt<\/code> y <code>with<\/code> lo guarda en <code>f<\/code>. Al salir del bloque with, el archivo se cierra solo.","o":"Archivo: cuenta.txt\n","ls":"eea................","cs":"apppppp","g":[["nombre","'cuenta.txt'"],["f","<_io.TextIOWrapper name='cuenta.txt' mode='r' encoding='utf-8'>"],["f.closed","False"]]},{"l":4,"x":"<code>f.readline()<\/code> lee la primera línea, <code>&#x27;840\\n&#x27;<\/code>, e <code>int<\/code> la convierte en 840: ignora el salto de línea.","o":"Archivo: cuenta.txt\n","ls":"eeea...............","cs":"apppppp","g":[["nombre","'cuenta.txt'"],["f","<_io.TextIOWrapper name='cuenta.txt' mode='r' encoding='utf-8'>"],["f.closed","False"],["total","840"]]},{"l":3,"x":"Termina el bloque with: Python regresa a esta línea para <b>cerrar el archivo<\/b> (<code>f.closed<\/code> ahora es True).","o":"Archivo: cuenta.txt\n","ls":"eeae...............","cs":"apppppp","g":[["nombre","'cuenta.txt'"],["f","<_io.TextIOWrapper name='cuenta.txt' mode='r' encoding='utf-8'>"],["f.closed","True"],["total","840"]]},{"l":5,"x":"Pide las personas y tecleaste <code>cuatro<\/code>: <code>int(&#x27;cuatro&#x27;)<\/code> lanza <b>ValueError<\/b>. La línea 6 ya no se ejecuta.","o":"Archivo: cuenta.txt\nPersonas: cuatro\n","ls":"eeeea..............","cs":"apppppp","g":[["nombre","'cuenta.txt'"],["f","<_io.TextIOWrapper name='cuenta.txt' mode='r' encoding='utf-8'>"],["f.closed","True"],["total","840"]],"err":"ValueError"},{"l":7,"x":"¿Es un FileNotFoundError? <b>No<\/b>, es un ValueError: Python revisa el siguiente except.","o":"Archivo: cuenta.txt\nPersonas: cuatro\n","ls":"eeeeesa.......ss...","cs":"erpppsp","g":[["nombre","'cuenta.txt'"],["f","<_io.TextIOWrapper name='cuenta.txt' mode='r' encoding='utf-8'>"],["f.closed","True"],["total","840"]]},{"l":9,"x":"¿Es un ValueError? <b>Sí<\/b>: este except coincide y se ejecuta su bloque. <code>as e<\/code> guarda la excepción en la variable <code>e<\/code> (mírala en Variables).","o":"Archivo: cuenta.txt\nPersonas: cuatro\n","ls":"eeeeesesa.....ss...","cs":"enrppsp","g":[["nombre","'cuenta.txt'"],["f","<_io.TextIOWrapper name='cuenta.txt' mode='r' encoding='utf-8'>"],["f.closed","True"],["total","840"],["e","ValueError(\"invalid literal for int() with base 10: 'cuatro'\")"]]},{"l":10,"x":"<code>print<\/code> muestra el mensaje original de Python, que trae <code>e<\/code>. Al terminar este except, Python borra la variable <code>e<\/code>.","o":"Archivo: cuenta.txt\nPersonas: cuatro\nDato inválido: invalid literal for int() with base 10: 'cuatro'\n","ls":"eeeeeseseassssss...","cs":"enasssp","g":[["nombre","'cuenta.txt'"],["f","<_io.TextIOWrapper name='cuenta.txt' mode='r' encoding='utf-8'>"],["f.closed","True"],["total","840"]]},{"l":18,"x":"<b>finally<\/b> se ejecuta siempre: también cuando hubo un error y un except lo atrapó.","o":"Archivo: cuenta.txt\nPersonas: cuatro\nDato inválido: invalid literal for int() with base 10: 'cuatro'\nCuenta revisada\n","ls":"eeeeeseseessssssea.","cs":"enesssa","g":[["nombre","'cuenta.txt'"],["f","<_io.TextIOWrapper name='cuenta.txt' mode='r' encoding='utf-8'>"],["f.closed","True"],["total","840"]]},{"l":19,"x":"Ya fuera del try, el programa sigue normalmente. <b>Fin del programa.<\/b>","o":"Archivo: cuenta.txt\nPersonas: cuatro\nDato inválido: invalid literal for int() with base 10: 'cuatro'\nCuenta revisada\nFin del programa\n","ls":"eeeeeseseesssssseea","cs":"enessse","g":[["nombre","'cuenta.txt'"],["f","<_io.TextIOWrapper name='cuenta.txt' mode='r' encoding='utf-8'>"],["f.closed","True"],["total","840"]]}],"tb":"","orden":[10,18,19]},{"id":"cero","nombre":"División entre cero","desc":"Tecleas 0 personas.","entradas":["cuenta.txt","0"],"pasos":[{"l":1,"x":"<code>input<\/code> escribe el mensaje <code>Archivo: <\/code> y espera. Tecleaste <code>cuenta.txt<\/code>: ahora <code>nombre<\/code> vale <code>&#x27;cuenta.txt&#x27;<\/code>.","o":"Archivo: cuenta.txt\n","ls":"a..................","cs":"ppppppp","g":[["nombre","'cuenta.txt'"]]},{"l":2,"x":"Entra al bloque <b>try<\/b>: Python intenta estas líneas. Si una lanza una excepción, abandona el resto del try y busca un except que coincida.","o":"Archivo: cuenta.txt\n","ls":"ea.................","cs":"apppppp","g":[["nombre","'cuenta.txt'"]]},{"l":3,"x":"<code>open<\/code> abre <code>cuenta.txt<\/code> y <code>with<\/code> lo guarda en <code>f<\/code>. Al salir del bloque with, el archivo se cierra solo.","o":"Archivo: cuenta.txt\n","ls":"eea................","cs":"apppppp","g":[["nombre","'cuenta.txt'"],["f","<_io.TextIOWrapper name='cuenta.txt' mode='r' encoding='utf-8'>"],["f.closed","False"]]},{"l":4,"x":"<code>f.readline()<\/code> lee la primera línea, <code>&#x27;840\\n&#x27;<\/code>, e <code>int<\/code> la convierte en 840: ignora el salto de línea.","o":"Archivo: cuenta.txt\n","ls":"eeea...............","cs":"apppppp","g":[["nombre","'cuenta.txt'"],["f","<_io.TextIOWrapper name='cuenta.txt' mode='r' encoding='utf-8'>"],["f.closed","False"],["total","840"]]},{"l":3,"x":"Termina el bloque with: Python regresa a esta línea para <b>cerrar el archivo<\/b> (<code>f.closed<\/code> ahora es True).","o":"Archivo: cuenta.txt\n","ls":"eeae...............","cs":"apppppp","g":[["nombre","'cuenta.txt'"],["f","<_io.TextIOWrapper name='cuenta.txt' mode='r' encoding='utf-8'>"],["f.closed","True"],["total","840"]]},{"l":5,"x":"Pide las personas: tecleaste <code>0<\/code> e <code>int<\/code> lo convierte. <code>personas<\/code> vale 0.","o":"Archivo: cuenta.txt\nPersonas: 0\n","ls":"eeeea..............","cs":"apppppp","g":[["nombre","'cuenta.txt'"],["f","<_io.TextIOWrapper name='cuenta.txt' mode='r' encoding='utf-8'>"],["f.closed","True"],["total","840"],["personas","0"]]},{"l":6,"x":"<code>840 / 0<\/code>: dividir entre cero lanza <b>ZeroDivisionError<\/b>.","o":"Archivo: cuenta.txt\nPersonas: 0\n","ls":"eeeeea.............","cs":"apppppp","g":[["nombre","'cuenta.txt'"],["f","<_io.TextIOWrapper name='cuenta.txt' mode='r' encoding='utf-8'>"],["f.closed","True"],["total","840"],["personas","0"]],"err":"ZeroDivisionError"},{"l":7,"x":"¿Es un FileNotFoundError? <b>No<\/b>, es un ZeroDivisionError: Python revisa el siguiente except.","o":"Archivo: cuenta.txt\nPersonas: 0\n","ls":"eeeeeea.......ss...","cs":"erpppsp","g":[["nombre","'cuenta.txt'"],["f","<_io.TextIOWrapper name='cuenta.txt' mode='r' encoding='utf-8'>"],["f.closed","True"],["total","840"],["personas","0"]]},{"l":9,"x":"¿Es un ValueError? <b>No<\/b>, es un ZeroDivisionError: Python revisa el siguiente except.","o":"Archivo: cuenta.txt\nPersonas: 0\n","ls":"eeeeeeesa.....ss...","cs":"enrppsp","g":[["nombre","'cuenta.txt'"],["f","<_io.TextIOWrapper name='cuenta.txt' mode='r' encoding='utf-8'>"],["f.closed","True"],["total","840"],["personas","0"]]},{"l":11,"x":"¿Es un ZeroDivisionError? <b>Sí<\/b>: este except coincide y se ejecuta su bloque.","o":"Archivo: cuenta.txt\nPersonas: 0\n","ls":"eeeeeeesesa...ss...","cs":"ennrpsp","g":[["nombre","'cuenta.txt'"],["f","<_io.TextIOWrapper name='cuenta.txt' mode='r' encoding='utf-8'>"],["f.closed","True"],["total","840"],["personas","0"]]},{"l":12,"x":"Imprime el aviso de la división entre cero.","o":"Archivo: cuenta.txt\nPersonas: 0\nNo puede haber 0 personas\n","ls":"eeeeeeeseseassss...","cs":"ennassp","g":[["nombre","'cuenta.txt'"],["f","<_io.TextIOWrapper name='cuenta.txt' mode='r' encoding='utf-8'>"],["f.closed","True"],["total","840"],["personas","0"]]},{"l":18,"x":"<b>finally<\/b> se ejecuta siempre: también cuando hubo un error y un except lo atrapó.","o":"Archivo: cuenta.txt\nPersonas: 0\nNo puede haber 0 personas\nCuenta revisada\n","ls":"eeeeeeeseseessssea.","cs":"ennessa","g":[["nombre","'cuenta.txt'"],["f","<_io.TextIOWrapper name='cuenta.txt' mode='r' encoding='utf-8'>"],["f.closed","True"],["total","840"],["personas","0"]]},{"l":19,"x":"Ya fuera del try, el programa sigue normalmente. <b>Fin del programa.<\/b>","o":"Archivo: cuenta.txt\nPersonas: 0\nNo puede haber 0 personas\nCuenta revisada\nFin del programa\n","ls":"eeeeeeeseseesssseea","cs":"ennesse","g":[["nombre","'cuenta.txt'"],["f","<_io.TextIOWrapper name='cuenta.txt' mode='r' encoding='utf-8'>"],["f.closed","True"],["total","840"],["personas","0"]]}],"tb":"","orden":[12,18,19]},{"id":"texto","nombre":"Archivo con texto","desc":"El archivo existe, pero dice ochocientos cuarenta, con letras.","entradas":["cuenta_mal.txt"],"pasos":[{"l":1,"x":"<code>input<\/code> escribe el mensaje <code>Archivo: <\/code> y espera. Tecleaste <code>cuenta_mal.txt<\/code>: ahora <code>nombre<\/code> vale <code>&#x27;cuenta_mal.txt&#x27;<\/code>.","o":"Archivo: cuenta_mal.txt\n","ls":"a..................","cs":"ppppppp","g":[["nombre","'cuenta_mal.txt'"]]},{"l":2,"x":"Entra al bloque <b>try<\/b>: Python intenta estas líneas. Si una lanza una excepción, abandona el resto del try y busca un except que coincida.","o":"Archivo: cuenta_mal.txt\n","ls":"ea.................","cs":"apppppp","g":[["nombre","'cuenta_mal.txt'"]]},{"l":3,"x":"<code>open<\/code> abre <code>cuenta_mal.txt<\/code> y <code>with<\/code> lo guarda en <code>f<\/code>. Al salir del bloque with, el archivo se cierra solo.","o":"Archivo: cuenta_mal.txt\n","ls":"eea................","cs":"apppppp","g":[["nombre","'cuenta_mal.txt'"],["f","<_io.TextIOWrapper name='cuenta_mal.txt' mode='r' encoding='utf-8'>"],["f.closed","False"]]},{"l":4,"x":"<code>f.readline()<\/code> lee <code>&#x27;ochocientos cuarenta\\n&#x27;<\/code> e <code>int<\/code> no puede convertirlo: lanza <b>ValueError<\/b>. Ojo: readline incluye el salto de línea; por eso el mensaje dice <code>\\n<\/code>.","o":"Archivo: cuenta_mal.txt\n","ls":"eeea...............","cs":"apppppp","g":[["nombre","'cuenta_mal.txt'"],["f","<_io.TextIOWrapper name='cuenta_mal.txt' mode='r' encoding='utf-8'>"],["f.closed","False"]],"err":"ValueError"},{"l":3,"x":"La excepción sale del bloque with: antes de seguir buscando un except, <b>with cierra el archivo<\/b> (<code>f.closed<\/code> ahora es True).","o":"Archivo: cuenta_mal.txt\n","ls":"eeaess........ss...","cs":"appppsp","g":[["nombre","'cuenta_mal.txt'"],["f","<_io.TextIOWrapper name='cuenta_mal.txt' mode='r' encoding='utf-8'>"],["f.closed","True"]]},{"l":7,"x":"¿Es un FileNotFoundError? <b>No<\/b>, es un ValueError: Python revisa el siguiente except.","o":"Archivo: cuenta_mal.txt\n","ls":"eeeessa.......ss...","cs":"erpppsp","g":[["nombre","'cuenta_mal.txt'"],["f","<_io.TextIOWrapper name='cuenta_mal.txt' mode='r' encoding='utf-8'>"],["f.closed","True"]]},{"l":9,"x":"¿Es un ValueError? <b>Sí<\/b>: este except coincide y se ejecuta su bloque. <code>as e<\/code> guarda la excepción en la variable <code>e<\/code> (mírala en Variables).","o":"Archivo: cuenta_mal.txt\n","ls":"eeeessesa.....ss...","cs":"enrppsp","g":[["nombre","'cuenta_mal.txt'"],["f","<_io.TextIOWrapper name='cuenta_mal.txt' mode='r' encoding='utf-8'>"],["f.closed","True"],["e","ValueError(\"invalid literal for int() with base 10: 'ochocientos cuarenta\\\\n'\")"]]},{"l":10,"x":"<code>print<\/code> muestra el mensaje original de Python, que trae <code>e<\/code>. Al terminar este except, Python borra la variable <code>e<\/code>.","o":"Archivo: cuenta_mal.txt\nDato inválido: invalid literal for int() with base 10: 'ochocientos cuarenta\\n'\n","ls":"eeeesseseassssss...","cs":"enasssp","g":[["nombre","'cuenta_mal.txt'"],["f","<_io.TextIOWrapper name='cuenta_mal.txt' mode='r' encoding='utf-8'>"],["f.closed","True"]]},{"l":18,"x":"<b>finally<\/b> se ejecuta siempre: también cuando hubo un error y un except lo atrapó.","o":"Archivo: cuenta_mal.txt\nDato inválido: invalid literal for int() with base 10: 'ochocientos cuarenta\\n'\nCuenta revisada\n","ls":"eeeesseseessssssea.","cs":"enesssa","g":[["nombre","'cuenta_mal.txt'"],["f","<_io.TextIOWrapper name='cuenta_mal.txt' mode='r' encoding='utf-8'>"],["f.closed","True"]]},{"l":19,"x":"Ya fuera del try, el programa sigue normalmente. <b>Fin del programa.<\/b>","o":"Archivo: cuenta_mal.txt\nDato inválido: invalid literal for int() with base 10: 'ochocientos cuarenta\\n'\nCuenta revisada\nFin del programa\n","ls":"eeeesseseesssssseea","cs":"enessse","g":[["nombre","'cuenta_mal.txt'"],["f","<_io.TextIOWrapper name='cuenta_mal.txt' mode='r' encoding='utf-8'>"],["f.closed","True"]]}],"tb":"","orden":[10,18,19]},{"id":"carpeta","nombre":"Una carpeta","desc":"Tecleas recibos, que es una carpeta y no un archivo.","entradas":["recibos"],"pasos":[{"l":1,"x":"<code>input<\/code> escribe el mensaje <code>Archivo: <\/code> y espera. Tecleaste <code>recibos<\/code>: ahora <code>nombre<\/code> vale <code>&#x27;recibos&#x27;<\/code>.","o":"Archivo: recibos\n","ls":"a..................","cs":"ppppppp","g":[["nombre","'recibos'"]]},{"l":2,"x":"Entra al bloque <b>try<\/b>: Python intenta estas líneas. Si una lanza una excepción, abandona el resto del try y busca un except que coincida.","o":"Archivo: recibos\n","ls":"ea.................","cs":"apppppp","g":[["nombre","'recibos'"]]},{"l":3,"x":"<code>recibos<\/code> es una carpeta, no un archivo. En Windows, <code>open<\/code> lanza <b>PermissionError<\/b> ([Errno 13] Permission denied: &#x27;recibos&#x27;). El resto del try se abandona.","o":"Archivo: recibos\n","ls":"eea................","cs":"apppppp","g":[["nombre","'recibos'"]],"err":"PermissionError"},{"l":7,"x":"¿Es un FileNotFoundError? <b>No<\/b>, es un PermissionError: Python revisa el siguiente except.","o":"Archivo: recibos\n","ls":"eeesssa.......ss...","cs":"erpppsp","g":[["nombre","'recibos'"]]},{"l":9,"x":"¿Es un ValueError? <b>No<\/b>, es un PermissionError: Python revisa el siguiente except.","o":"Archivo: recibos\n","ls":"eeesssesa.....ss...","cs":"enrppsp","g":[["nombre","'recibos'"]]},{"l":11,"x":"¿Es un ZeroDivisionError? <b>No<\/b>, es un PermissionError: Python revisa el siguiente except.","o":"Archivo: recibos\n","ls":"eeesssesesa...ss...","cs":"ennrpsp","g":[["nombre","'recibos'"]]},{"l":13,"x":"<code>except Exception as e<\/code> atrapa cualquier error que no atraparon los de arriba: aquí, un <b>PermissionError<\/b>. Por eso va al final: si estuviera primero, taparía a los demás.","o":"Archivo: recibos\n","ls":"eeesssesesesa.ss...","cs":"ennnrsp","g":[["nombre","'recibos'"],["e","PermissionError(13, 'Permission denied')"]]},{"l":14,"x":"Imprime el tipo (<code>type(e).__name__<\/code>) y el mensaje. Así un error inesperado no pasa en silencio.","o":"Archivo: recibos\nError inesperado: PermissionError [Errno 13] Permission denied: 'recibos'\n","ls":"eeessseseseseass...","cs":"ennnasp","g":[["nombre","'recibos'"]]},{"l":18,"x":"<b>finally<\/b> se ejecuta siempre: también cuando hubo un error y un except lo atrapó.","o":"Archivo: recibos\nError inesperado: PermissionError [Errno 13] Permission denied: 'recibos'\nCuenta revisada\n","ls":"eeessseseseseessea.","cs":"ennnesa","g":[["nombre","'recibos'"]]},{"l":19,"x":"Ya fuera del try, el programa sigue normalmente. <b>Fin del programa.<\/b>","o":"Archivo: recibos\nError inesperado: PermissionError [Errno 13] Permission denied: 'recibos'\nCuenta revisada\nFin del programa\n","ls":"eeessseseseseesseea","cs":"ennnese","g":[["nombre","'recibos'"]]}],"tb":"","orden":[14,18,19]}]},{"id":"boletos","titulo":"2 · raise y un error que nadie atrapa","dia":"Días 3 y 4","desc":"Tu función lanza su propio ValueError; el else no está protegido por los except.","archivo":"boletos.py","codigo":["def apartar(boletos, disponibles):","    if boletos > disponibles:","        raise ValueError(f\"solo quedan {disponibles} boletos\")","    return disponibles - boletos","","try:","    pedidos = int(input(\"¿Cuántos boletos? \"))","except ValueError:","    print(\"Escribe un número entero\")","else:","    quedan = apartar(pedidos, 5)","    print(\"Apartados. Quedan\", quedan)","finally:","    print(\"Gracias por tu visita\")","print(\"Siguiente cliente\")"],"clausulas":[["try","",6,7,7],["except","ValueError",8,9,9],["else","",10,11,12],["finally","",13,14,14]],"prints":[9,12,14,15],"escenarios":[{"id":"bien","nombre":"Hay boletos","desc":"Pides 3 de los 5 boletos que quedan.","entradas":["3"],"pasos":[{"l":1,"x":"<code>def<\/code> solo define la función <code>apartar<\/code>: su código corre cuando alguien la llama.","o":"","ls":"a..............","cs":"pppp","g":[["apartar","función apartar"]]},{"l":6,"x":"Entra al <b>try<\/b>. Fíjate: este try solo protege la línea 7.","o":"","ls":"e....a.........","cs":"appp","g":[["apartar","función apartar"]]},{"l":7,"x":"Tecleaste <code>3<\/code>: <code>int<\/code> lo convierte y <code>pedidos<\/code> vale 3.","o":"¿Cuántos boletos? 3\n","ls":"e....ea........","cs":"appp","g":[["apartar","función apartar"],["pedidos","3"]]},{"l":11,"x":"No hubo error en el try, así que se ejecuta el <b>else<\/b>. Llama a <code>apartar(3, 5)<\/code>: la ejecución salta a la función.","o":"¿Cuántos boletos? 3\n","ls":"e....eessea....","cs":"esap","g":[["apartar","función apartar"],["pedidos","3"]]},{"l":2,"x":"¿3 &gt; 5? <b>No<\/b>: hay suficientes, sigue en la línea 4.","o":"¿Cuántos boletos? 3\n","ls":"ea...eessee....","cs":"esep","g":[["apartar","función apartar"],["pedidos","3"]],"f":"apartar","lo":[["boletos","3"],["disponibles","5"]]},{"l":4,"x":"Regresa <code>5 - 3<\/code>, que es 2.","o":"¿Cuántos boletos? 3\n","ls":"eesa.eessee....","cs":"esep","g":[["apartar","función apartar"],["pedidos","3"]],"f":"apartar","lo":[["boletos","3"],["disponibles","5"]]},{"l":11,"x":"<code>apartar<\/code> terminó y regresó <code>2<\/code>: ahora sí, <code>quedan = 2<\/code>.","o":"¿Cuántos boletos? 3\n","ls":"eese.eessea....","cs":"esep","g":[["apartar","función apartar"],["pedidos","3"]],"ret":"2"},{"l":12,"x":"Imprime cuántos boletos quedan.","o":"¿Cuántos boletos? 3\nApartados. Quedan 2\n","ls":"eese.eesseea...","cs":"esap","g":[["apartar","función apartar"],["pedidos","3"],["quedan","2"]]},{"l":14,"x":"<b>finally<\/b> se ejecuta siempre, haya habido error o no.","o":"¿Cuántos boletos? 3\nApartados. Quedan 2\nGracias por tu visita\n","ls":"eese.eesseeeea.","cs":"esea","g":[["apartar","función apartar"],["pedidos","3"],["quedan","2"]]},{"l":15,"x":"Fuera del try: el programa sigue con el siguiente cliente. <b>Fin del programa.<\/b>","o":"¿Cuántos boletos? 3\nApartados. Quedan 2\nGracias por tu visita\nSiguiente cliente\n","ls":"eese.eesseeeeea","cs":"esee","g":[["apartar","función apartar"],["pedidos","3"],["quedan","2"]]}],"tb":"","orden":[12,14,15]},{"id":"letras","nombre":"Entrada inválida","desc":"Tecleas tres, con letras.","entradas":["tres"],"pasos":[{"l":1,"x":"<code>def<\/code> solo define la función <code>apartar<\/code>: su código corre cuando alguien la llama.","o":"","ls":"a..............","cs":"pppp","g":[["apartar","función apartar"]]},{"l":6,"x":"Entra al <b>try<\/b>. Fíjate: este try solo protege la línea 7.","o":"","ls":"e....a.........","cs":"appp","g":[["apartar","función apartar"]]},{"l":7,"x":"Tecleaste <code>tres<\/code>: <code>int(&#x27;tres&#x27;)<\/code> lanza <b>ValueError<\/b>.","o":"¿Cuántos boletos? tres\n","ls":"e....ea........","cs":"appp","g":[["apartar","función apartar"]],"err":"ValueError"},{"l":8,"x":"¿Es un ValueError? <b>Sí<\/b>: se ejecuta este except.","o":"¿Cuántos boletos? tres\n","ls":"e....eea.sss...","cs":"ersp","g":[["apartar","función apartar"]]},{"l":9,"x":"Imprime el aviso. El else se salta porque hubo un error en el try.","o":"¿Cuántos boletos? tres\nEscribe un número entero\n","ls":"e....eeeasss...","cs":"easp","g":[["apartar","función apartar"]]},{"l":14,"x":"<b>finally<\/b> se ejecuta siempre, haya habido error o no.","o":"¿Cuántos boletos? tres\nEscribe un número entero\nGracias por tu visita\n","ls":"e....eeeesssea.","cs":"eesa","g":[["apartar","función apartar"]]},{"l":15,"x":"Fuera del try: el programa sigue con el siguiente cliente. <b>Fin del programa.<\/b>","o":"¿Cuántos boletos? tres\nEscribe un número entero\nGracias por tu visita\nSiguiente cliente\n","ls":"e....eeeessseea","cs":"eese","g":[["apartar","función apartar"]]}],"tb":"","orden":[9,14,15]},{"id":"muchos","nombre":"No alcanzan","desc":"Pides 8 y solo quedan 5.","entradas":["8"],"pasos":[{"l":1,"x":"<code>def<\/code> solo define la función <code>apartar<\/code>: su código corre cuando alguien la llama.","o":"","ls":"a..............","cs":"pppp","g":[["apartar","función apartar"]]},{"l":6,"x":"Entra al <b>try<\/b>. Fíjate: este try solo protege la línea 7.","o":"","ls":"e....a.........","cs":"appp","g":[["apartar","función apartar"]]},{"l":7,"x":"Tecleaste <code>8<\/code>: <code>int<\/code> lo convierte y <code>pedidos<\/code> vale 8.","o":"¿Cuántos boletos? 8\n","ls":"e....ea........","cs":"appp","g":[["apartar","función apartar"],["pedidos","8"]]},{"l":11,"x":"No hubo error en el try, así que se ejecuta el <b>else<\/b>. Llama a <code>apartar(8, 5)<\/code>: la ejecución salta a la función.","o":"¿Cuántos boletos? 8\n","ls":"e....eessea....","cs":"esap","g":[["apartar","función apartar"],["pedidos","8"]]},{"l":2,"x":"¿8 &gt; 5? <b>Sí<\/b>: no alcanzan los boletos.","o":"¿Cuántos boletos? 8\n","ls":"ea...eessee....","cs":"esep","g":[["apartar","función apartar"],["pedidos","8"]],"f":"apartar","lo":[["boletos","8"],["disponibles","5"]]},{"l":3,"x":"<b>raise<\/b> lanza tu propio ValueError, con un mensaje claro. La función se detiene aquí: la línea 4 no se ejecuta.","o":"¿Cuántos boletos? 8\n","ls":"eea..eessee....","cs":"esep","g":[["apartar","función apartar"],["pedidos","8"]],"f":"apartar","lo":[["boletos","8"],["disponibles","5"]],"err":"ValueError"},{"l":11,"x":"El error sube a la línea 11, la que llamó a apartar. Esta línea está en el <b>else<\/b>, y los except solo protegen lo que está dentro del try (la línea 7): <b>nadie atrapa este ValueError<\/b>. La línea 12 ya no se ejecuta.","o":"¿Cuántos boletos? 8\n","ls":"eees.eesseas...","cs":"esap","g":[["apartar","función apartar"],["pedidos","8"]],"sube":"ValueError"},{"l":14,"x":"<b>Antes<\/b> de detener el programa, Python ejecuta el <b>finally<\/b>: por eso este mensaje sale antes del traceback.","o":"¿Cuántos boletos? 8\nGracias por tu visita\n","ls":"eees.eesseesea.","cs":"esea","g":[["apartar","función apartar"],["pedidos","8"]]},{"l":null,"x":"El ValueError llegó hasta el programa principal y nadie lo atrapó: Python <b>detiene el programa<\/b> e imprime el traceback (la línea 15 nunca se ejecuta). Léelo de abajo hacia arriba: qué pasó (ValueError y tu mensaje), dónde (línea 3, en apartar) y quién la llamó (línea 11).","o":"¿Cuántos boletos? 8\nGracias por tu visita\n","ls":"eees.eesseesees","cs":"esee","g":[["apartar","función apartar"],["pedidos","8"]],"fin":1}],"tb":"Traceback (most recent call last):\n  File \"C:\\semana09\\boletos.py\", line 11, in <module>\n    quedan = apartar(pedidos, 5)\n             ^^^^^^^^^^^^^^^^^^^\n  File \"C:\\semana09\\boletos.py\", line 3, in apartar\n    raise ValueError(f\"solo quedan {disponibles} boletos\")\nValueError: solo quedan 5 boletos\n","orden":[14]},{"id":"negativo","nombre":"Un número raro","desc":"Pides -2 boletos.","entradas":["-2"],"pasos":[{"l":1,"x":"<code>def<\/code> solo define la función <code>apartar<\/code>: su código corre cuando alguien la llama.","o":"","ls":"a..............","cs":"pppp","g":[["apartar","función apartar"]]},{"l":6,"x":"Entra al <b>try<\/b>. Fíjate: este try solo protege la línea 7.","o":"","ls":"e....a.........","cs":"appp","g":[["apartar","función apartar"]]},{"l":7,"x":"Tecleaste <code>-2<\/code>: <code>int<\/code> lo convierte y <code>pedidos<\/code> vale -2.","o":"¿Cuántos boletos? -2\n","ls":"e....ea........","cs":"appp","g":[["apartar","función apartar"],["pedidos","-2"]]},{"l":11,"x":"No hubo error en el try, así que se ejecuta el <b>else<\/b>. Llama a <code>apartar(-2, 5)<\/code>: la ejecución salta a la función.","o":"¿Cuántos boletos? -2\n","ls":"e....eessea....","cs":"esap","g":[["apartar","función apartar"],["pedidos","-2"]]},{"l":2,"x":"¿-2 &gt; 5? <b>No<\/b>: hay suficientes, sigue en la línea 4.","o":"¿Cuántos boletos? -2\n","ls":"ea...eessee....","cs":"esep","g":[["apartar","función apartar"],["pedidos","-2"]],"f":"apartar","lo":[["boletos","-2"],["disponibles","5"]]},{"l":4,"x":"Regresa <code>5 - (-2)<\/code>, que es 7.","o":"¿Cuántos boletos? -2\n","ls":"eesa.eessee....","cs":"esep","g":[["apartar","función apartar"],["pedidos","-2"]],"f":"apartar","lo":[["boletos","-2"],["disponibles","5"]]},{"l":11,"x":"<code>apartar<\/code> terminó y regresó <code>7<\/code>: ahora sí, <code>quedan = 7<\/code>.","o":"¿Cuántos boletos? -2\n","ls":"eese.eessea....","cs":"esep","g":[["apartar","función apartar"],["pedidos","-2"]],"ret":"7"},{"l":12,"x":"Imprime: quedan 7. ¡Hay más boletos que antes! Nadie revisó que el número fuera positivo. No es una excepción: es un error de lógica, y Python no puede avisarte.","o":"¿Cuántos boletos? -2\nApartados. Quedan 7\n","ls":"eese.eesseea...","cs":"esap","g":[["apartar","función apartar"],["pedidos","-2"],["quedan","7"]]},{"l":14,"x":"<b>finally<\/b> se ejecuta siempre, haya habido error o no.","o":"¿Cuántos boletos? -2\nApartados. Quedan 7\nGracias por tu visita\n","ls":"eese.eesseeeea.","cs":"esea","g":[["apartar","función apartar"],["pedidos","-2"],["quedan","7"]]},{"l":15,"x":"Fuera del try: el programa sigue con el siguiente cliente. <b>Fin del programa.<\/b>","o":"¿Cuántos boletos? -2\nApartados. Quedan 7\nGracias por tu visita\nSiguiente cliente\n","ls":"eese.eesseeeeea","cs":"esee","g":[["apartar","función apartar"],["pedidos","-2"],["quedan","7"]]}],"tb":"","orden":[12,14,15]}]},{"id":"precio","titulo":"3 · return dentro de try con finally","dia":"Día 4","desc":"Un return no sale de inmediato: antes pasa por el finally.","archivo":"precio.py","codigo":["def leer_precio(texto):","    try:","        precio = float(texto)","        return precio","    except ValueError:","        print(\"No es un precio:\", texto)","        return 0.0","    finally:","        print(\"Revisé\", repr(texto))","","p = leer_precio(input(\"Precio: \"))","print(\"Precio guardado:\", p)"],"clausulas":[["try","",2,3,4],["except","ValueError",5,6,7],["finally","",8,9,9]],"prints":[6,9,12],"escenarios":[{"id":"bien","nombre":"Precio válido","desc":"Tecleas 45.5.","entradas":["45.5"],"pasos":[{"l":1,"x":"<code>def<\/code> solo define la función <code>leer_precio<\/code>.","o":"","ls":"a...........","cs":"ppp","g":[["leer_precio","función leer_precio"]]},{"l":11,"x":"<code>input<\/code> lee <code>&#x27;45.5&#x27;<\/code> y se lo pasa a <code>leer_precio<\/code>: la ejecución salta a la función.","o":"Precio: 45.5\n","ls":"e.........a.","cs":"ppp","g":[["leer_precio","función leer_precio"]]},{"l":2,"x":"Entra al <b>try<\/b> de la función.","o":"Precio: 45.5\n","ls":"ea........e.","cs":"app","g":[["leer_precio","función leer_precio"]],"f":"leer_precio","lo":[["texto","'45.5'"]]},{"l":3,"x":"<code>float(&#x27;45.5&#x27;)<\/code> da <code>45.5<\/code>.","o":"Precio: 45.5\n","ls":"eea.......e.","cs":"app","g":[["leer_precio","función leer_precio"]],"f":"leer_precio","lo":[["texto","'45.5'"],["precio","45.5"]]},{"l":4,"x":"<code>return precio<\/code>: la función <b>todavía no<\/b> regresa. Como hay un finally, Python lo ejecuta primero.","o":"Precio: 45.5\n","ls":"eeea......e.","cs":"app","g":[["leer_precio","función leer_precio"]],"f":"leer_precio","lo":[["texto","'45.5'"],["precio","45.5"]]},{"l":9,"x":"El <b>finally<\/b> imprime aunque ya se ejecutó un return. Por eso este mensaje sale <b>antes<\/b> que el de la línea 12.","o":"Precio: 45.5\nRevisé '45.5'\n","ls":"eeeesssea.e.","cs":"esa","g":[["leer_precio","función leer_precio"]],"f":"leer_precio","lo":[["texto","'45.5'"],["precio","45.5"]]},{"l":11,"x":"Ahora sí: <code>leer_precio<\/code> regresa <code>45.5<\/code> a la línea 11 y se guarda en <code>p<\/code>.","o":"Precio: 45.5\nRevisé '45.5'\n","ls":"eeeesssee.a.","cs":"ese","g":[["leer_precio","función leer_precio"]],"ret":"45.5"},{"l":12,"x":"Imprime el precio guardado. <b>Fin del programa.<\/b>","o":"Precio: 45.5\nRevisé '45.5'\nPrecio guardado: 45.5\n","ls":"eeeesssee.ea","cs":"ese","g":[["leer_precio","función leer_precio"],["p","45.5"]]}],"tb":"","orden":[9,12]},{"id":"letras","nombre":"Con letras","desc":"Tecleas cuarenta.","entradas":["cuarenta"],"pasos":[{"l":1,"x":"<code>def<\/code> solo define la función <code>leer_precio<\/code>.","o":"","ls":"a...........","cs":"ppp","g":[["leer_precio","función leer_precio"]]},{"l":11,"x":"<code>input<\/code> lee <code>&#x27;cuarenta&#x27;<\/code> y se lo pasa a <code>leer_precio<\/code>: la ejecución salta a la función.","o":"Precio: cuarenta\n","ls":"e.........a.","cs":"ppp","g":[["leer_precio","función leer_precio"]]},{"l":2,"x":"Entra al <b>try<\/b> de la función.","o":"Precio: cuarenta\n","ls":"ea........e.","cs":"app","g":[["leer_precio","función leer_precio"]],"f":"leer_precio","lo":[["texto","'cuarenta'"]]},{"l":3,"x":"<code>float(&#x27;cuarenta&#x27;)<\/code> lanza <b>ValueError<\/b>: ese texto no es un número.","o":"Precio: cuarenta\n","ls":"eea.......e.","cs":"app","g":[["leer_precio","función leer_precio"]],"f":"leer_precio","lo":[["texto","'cuarenta'"]],"err":"ValueError"},{"l":5,"x":"¿Es un ValueError? <b>Sí<\/b>: se ejecuta este except.","o":"Precio: cuarenta\n","ls":"eeesa.....e.","cs":"erp","g":[["leer_precio","función leer_precio"]],"f":"leer_precio","lo":[["texto","'cuarenta'"]]},{"l":6,"x":"Imprime el aviso con el texto que llegó.","o":"Precio: cuarenta\nNo es un precio: cuarenta\n","ls":"eeesea....e.","cs":"eap","g":[["leer_precio","función leer_precio"]],"f":"leer_precio","lo":[["texto","'cuarenta'"]]},{"l":7,"x":"<code>return 0.0<\/code>: igual que antes, primero se ejecuta el finally.","o":"Precio: cuarenta\nNo es un precio: cuarenta\n","ls":"eeeseea...e.","cs":"eap","g":[["leer_precio","función leer_precio"]],"f":"leer_precio","lo":[["texto","'cuarenta'"]]},{"l":9,"x":"El <b>finally<\/b> imprime aunque ya se ejecutó un return. Por eso este mensaje sale <b>antes<\/b> que el de la línea 12.","o":"Precio: cuarenta\nNo es un precio: cuarenta\nRevisé 'cuarenta'\n","ls":"eeeseeeea.e.","cs":"eea","g":[["leer_precio","función leer_precio"]],"f":"leer_precio","lo":[["texto","'cuarenta'"]]},{"l":11,"x":"Ahora sí: <code>leer_precio<\/code> regresa <code>0.0<\/code> a la línea 11 y se guarda en <code>p<\/code>.","o":"Precio: cuarenta\nNo es un precio: cuarenta\nRevisé 'cuarenta'\n","ls":"eeeseeeee.a.","cs":"eee","g":[["leer_precio","función leer_precio"]],"ret":"0.0"},{"l":12,"x":"Imprime el precio guardado. <b>Fin del programa.<\/b>","o":"Precio: cuarenta\nNo es un precio: cuarenta\nRevisé 'cuarenta'\nPrecio guardado: 0.0\n","ls":"eeeseeeee.ea","cs":"eee","g":[["leer_precio","función leer_precio"],["p","0.0"]]}],"tb":"","orden":[6,9,12]},{"id":"pesos","nombre":"Con signo de pesos","desc":"Tecleas $45.","entradas":["$45"],"pasos":[{"l":1,"x":"<code>def<\/code> solo define la función <code>leer_precio<\/code>.","o":"","ls":"a...........","cs":"ppp","g":[["leer_precio","función leer_precio"]]},{"l":11,"x":"<code>input<\/code> lee <code>&#x27;$45&#x27;<\/code> y se lo pasa a <code>leer_precio<\/code>: la ejecución salta a la función.","o":"Precio: $45\n","ls":"e.........a.","cs":"ppp","g":[["leer_precio","función leer_precio"]]},{"l":2,"x":"Entra al <b>try<\/b> de la función.","o":"Precio: $45\n","ls":"ea........e.","cs":"app","g":[["leer_precio","función leer_precio"]],"f":"leer_precio","lo":[["texto","'$45'"]]},{"l":3,"x":"<code>float(&#x27;$45&#x27;)<\/code> lanza <b>ValueError<\/b>: ese texto no es un número.","o":"Precio: $45\n","ls":"eea.......e.","cs":"app","g":[["leer_precio","función leer_precio"]],"f":"leer_precio","lo":[["texto","'$45'"]],"err":"ValueError"},{"l":5,"x":"¿Es un ValueError? <b>Sí<\/b>: se ejecuta este except.","o":"Precio: $45\n","ls":"eeesa.....e.","cs":"erp","g":[["leer_precio","función leer_precio"]],"f":"leer_precio","lo":[["texto","'$45'"]]},{"l":6,"x":"Imprime el aviso con el texto que llegó.","o":"Precio: $45\nNo es un precio: $45\n","ls":"eeesea....e.","cs":"eap","g":[["leer_precio","función leer_precio"]],"f":"leer_precio","lo":[["texto","'$45'"]]},{"l":7,"x":"<code>return 0.0<\/code>: igual que antes, primero se ejecuta el finally.","o":"Precio: $45\nNo es un precio: $45\n","ls":"eeeseea...e.","cs":"eap","g":[["leer_precio","función leer_precio"]],"f":"leer_precio","lo":[["texto","'$45'"]]},{"l":9,"x":"El <b>finally<\/b> imprime aunque ya se ejecutó un return. Por eso este mensaje sale <b>antes<\/b> que el de la línea 12.","o":"Precio: $45\nNo es un precio: $45\nRevisé '$45'\n","ls":"eeeseeeea.e.","cs":"eea","g":[["leer_precio","función leer_precio"]],"f":"leer_precio","lo":[["texto","'$45'"]]},{"l":11,"x":"Ahora sí: <code>leer_precio<\/code> regresa <code>0.0<\/code> a la línea 11 y se guarda en <code>p<\/code>.","o":"Precio: $45\nNo es un precio: $45\nRevisé '$45'\n","ls":"eeeseeeee.a.","cs":"eee","g":[["leer_precio","función leer_precio"]],"ret":"0.0"},{"l":12,"x":"Imprime el precio guardado. <b>Fin del programa.<\/b>","o":"Precio: $45\nNo es un precio: $45\nRevisé '$45'\nPrecio guardado: 0.0\n","ls":"eeeseeeee.ea","cs":"eee","g":[["leer_precio","función leer_precio"],["p","0.0"]]}],"tb":"","orden":[6,9,12]},{"id":"espacios","nombre":"Con espacios","desc":"Tecleas 45 con un espacio antes y otro después.","entradas":[" 45 "],"pasos":[{"l":1,"x":"<code>def<\/code> solo define la función <code>leer_precio<\/code>.","o":"","ls":"a...........","cs":"ppp","g":[["leer_precio","función leer_precio"]]},{"l":11,"x":"<code>input<\/code> lee <code>&#x27; 45 &#x27;<\/code> y se lo pasa a <code>leer_precio<\/code>: la ejecución salta a la función.","o":"Precio:  45 \n","ls":"e.........a.","cs":"ppp","g":[["leer_precio","función leer_precio"]]},{"l":2,"x":"Entra al <b>try<\/b> de la función.","o":"Precio:  45 \n","ls":"ea........e.","cs":"app","g":[["leer_precio","función leer_precio"]],"f":"leer_precio","lo":[["texto","' 45 '"]]},{"l":3,"x":"<code>float(&#x27; 45 &#x27;)<\/code> da <code>45.0<\/code>. float acepta espacios al principio y al final.","o":"Precio:  45 \n","ls":"eea.......e.","cs":"app","g":[["leer_precio","función leer_precio"]],"f":"leer_precio","lo":[["texto","' 45 '"],["precio","45.0"]]},{"l":4,"x":"<code>return precio<\/code>: la función <b>todavía no<\/b> regresa. Como hay un finally, Python lo ejecuta primero.","o":"Precio:  45 \n","ls":"eeea......e.","cs":"app","g":[["leer_precio","función leer_precio"]],"f":"leer_precio","lo":[["texto","' 45 '"],["precio","45.0"]]},{"l":9,"x":"El <b>finally<\/b> imprime aunque ya se ejecutó un return. Por eso este mensaje sale <b>antes<\/b> que el de la línea 12.","o":"Precio:  45 \nRevisé ' 45 '\n","ls":"eeeesssea.e.","cs":"esa","g":[["leer_precio","función leer_precio"]],"f":"leer_precio","lo":[["texto","' 45 '"],["precio","45.0"]]},{"l":11,"x":"Ahora sí: <code>leer_precio<\/code> regresa <code>45.0<\/code> a la línea 11 y se guarda en <code>p<\/code>.","o":"Precio:  45 \nRevisé ' 45 '\n","ls":"eeeesssee.a.","cs":"ese","g":[["leer_precio","función leer_precio"]],"ret":"45.0"},{"l":12,"x":"Imprime el precio guardado. <b>Fin del programa.<\/b>","o":"Precio:  45 \nRevisé ' 45 '\nPrecio guardado: 45.0\n","ls":"eeeesssee.ea","cs":"ese","g":[["leer_precio","función leer_precio"],["p","45.0"]]}],"tb":"","orden":[9,12]}]}]/*fin DATOS*/;
+  var CARPETA = "C:" + String.fromCharCode(92) + "semana09";
+
+  // ---------- Código Python con los colores del curso ----------
+  var PY_KW = /^(False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)$/;
+  function pyResaltar(linea) {
+    var html = "", i = 0, m, resto;
+    while (i < linea.length) {
+      resto = linea.slice(i);
+      if ((m = /^#.*/.exec(resto))) { html += '<span class="com">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[rRbBfFuU]{0,2}("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/.exec(resto))) { html += '<span class="str">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[A-Za-z_\u00C0-\u024F][\w\u00C0-\u024F]*/.exec(resto))) { html += PY_KW.test(m[0]) ? '<span class="kw">' + m[0] + "</span>" : esc(m[0]); }
+      else if ((m = /^(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?j?/.exec(resto))) { html += '<span class="num">' + m[0] + "</span>"; }
+      else { m = [resto[0]]; html += esc(m[0]); }
+      i += m[0].length;
+    }
+    return html;
+  }
+
+  var NOMBRES_ESTADO = { p: "", a: "se está ejecutando", e: "se ejecutó", r: "¿coincide?", n: "no coincide", s: "se saltó" };
+  var COLOR = { "try": "#00408F", "except": "#8C1D35", "else": "#2F7D5B", "finally": "#B8975A" };
+  function nombreClausula(c) {
+    return c[0] === "except" ? "except " + c[1] : c[0];
+  }
+  // A qué cláusula pertenece cada línea (para la franja de color)
+  function clausulaDeLinea(prog, n) {
+    for (var i = 0; i < prog.clausulas.length; i++) {
+      var c = prog.clausulas[i];
+      if (n === c[2] || (n >= c[3] && n <= c[4])) return i;
+    }
+    return -1;
+  }
+
+  // Pinta el código; paso = null para el código sin estados
+  function pintarCodigo(el, prog, paso, siguiente) {
+    el.innerHTML = '<div class="codigo"><ol>' + prog.codigo.map(function (l, k) {
+      var n = k + 1, cl = [], ci = clausulaDeLinea(prog, n), extra = "";
+      if (ci >= 0) cl.push("c-" + prog.clausulas[ci][0]);
+      if (paso) {
+        var s = paso.ls[k];
+        if (s === "a") cl.push("marca");
+        else if (s === "e") cl.push("ejecutada");
+        else if (s === "s") cl.push("saltada");
+        if (siguiente === n) cl.push("siguiente");
+        if (ci >= 0 && prog.clausulas[ci][2] === n) {
+          var est = paso.cs[ci];
+          if (est !== "p") extra = '<span class="insignia i-' + est + '">' + NOMBRES_ESTADO[est] + "</span>";
+        }
+      }
+      return "<li" + (cl.length ? ' class="' + cl.join(" ") + '"' : "") + ">" + (pyResaltar(l) || " ") + extra + "</li>";
+    }).join("") + "</ol></div>";
+  }
+
+  // ---------- Estado de la página ----------
+  var prog = null, escen = null, k = 0;
+
+  DATOS.forEach(function (p, i) {
+    var op = document.createElement("option");
+    op.value = i; op.textContent = p.titulo + " (" + p.dia + ")";
+    $("programa").appendChild(op);
+  });
+
+  function elegirPrograma(i, j) {
+    prog = DATOS[i];
+    $("escenario").innerHTML = prog.escenarios.map(function (e, n) {
+      return '<option value="' + n + '">' + esc(e.nombre) + "</option>";
+    }).join("");
+    elegirEscenario(j || 0);
+  }
+  function elegirEscenario(j) {
+    escen = prog.escenarios[j];
+    $("escenario").value = j;
+    var entradas = escen.entradas.map(function (t) { return '<span class="teclea">' + esc(t) + "</span>"; }).join(" y luego ");
+    $("descEscenario").innerHTML = "<b>" + esc(escen.nombre) + ".</b> " + esc(escen.desc) + " Lo que tecleas: " + entradas + ".";
+    if (prog.id === "cuota") {
+      var D = String.fromCharCode(92);
+      $("carpeta").innerHTML = "En la carpeta <code>" + esc(CARPETA) + "</code> están <code>cuota.py</code>, <code>cuenta.txt</code> " +
+        "(dice <code>840</code>), <code>cuenta_mal.txt</code> (dice <code>ochocientos cuarenta</code>) y la carpeta <code>recibos" + esc(D) + "</code>.";
+      $("carpeta").hidden = false;
+    } else {
+      $("carpeta").hidden = true;
+    }
+    k = 0;
+    pintarPasos();
+    prepararPrediccion();
+    guardarElegido();
+  }
+
+  function lineaComando() {
+    return '<span class="prompt">' + esc(CARPETA) + "&gt; </span>python " + esc(prog.archivo) + "\n";
+  }
+
+  function pintarPasos() {
+    var pasos = escen.pasos, n = pasos.length, p = k > 0 ? pasos[k - 1] : null;
+    $("paso").max = n;
+    $("paso").value = k;
+    $("pasoTxt").textContent = k + " de " + n;
+    $("inicio").disabled = $("atras").disabled = k === 0;
+    $("adelante").disabled = $("fin").disabled = k === n;
+    var siguiente = k < n ? pasos[k].l : null;
+    var vacio = { ls: prog.codigo.map(function () { return "."; }).join(""), cs: prog.clausulas.map(function () { return "p"; }).join("") };
+    pintarCodigo($("codigo"), prog, p || vacio, siguiente);
+    if (!p) {
+      $("explica").innerHTML = "<b>Antes de empezar.</b> Ninguna línea se ha ejecutado. Presiona ▶ (o la flecha derecha) para ejecutar la primera.";
+    } else {
+      var donde = p.fin ? "" : " · línea " + p.l + (p.ret !== undefined ? " (regreso)" : p.sube ? " (el error sube)" : "");
+      $("explica").innerHTML = "<b>Paso " + k + donde + ".</b> " + p.x;
+    }
+    var html = lineaComando();
+    if (p) {
+      html += esc(p.o);
+      if (p.fin && escen.tb) html += '<span class="error">' + esc(escen.tb) + "</span>";
+    }
+    $("consola").innerHTML = html;
+    var estados = p ? p.cs : vacio.cs;
+    $("bloques").innerHTML = prog.clausulas.map(function (c, i) {
+      var e = estados[i];
+      return '<li class="' + e + '" style="--c:' + COLOR[c[0]] + '"><span><code>' + esc(nombreClausula(c)) + "</code> (línea " +
+        (c[0] === "try" ? c[2] + (c[4] > c[2] ? " a " + c[4] : "") : c[2] + (c[4] > c[2] ? " a " + c[4] : "")) + ')</span><span class="estado">' +
+        (NOMBRES_ESTADO[e] || "todavía no") + "</span></li>";
+    }).join("");
+    pintarVariables(p, k > 1 ? pasos[k - 2] : null);
+  }
+
+  function pintarVariables(p, previo) {
+    var html = '<thead><tr><th scope="col">Nombre</th><th scope="col">Valor (repr)</th></tr></thead><tbody>';
+    if (!p || !p.g.length) {
+      html += '<tr><td colspan="2" class="vacio">Todavía no hay variables.</td></tr>';
+    } else {
+      var antes = {};
+      if (previo) {
+        previo.g.forEach(function (x) { antes["g:" + x[0]] = x[1]; });
+        (previo.lo || []).forEach(function (x) { antes[(previo.f || "") + ":" + x[0]] = x[1]; });
+      }
+      var fila = function (clave, x) {
+        var cambio = previo && antes[clave] !== x[1];
+        var valor = x[1].indexOf("función ") === 0 ? '<td class="vacio">' + esc(x[1]) + "</td>" : "<td>" + esc(x[1]) + "</td>";
+        return "<tr" + (cambio ? ' class="cambio"' : "") + "><td>" + esc(x[0]) + "</td>" + valor + "</tr>";
+      };
+      html += '<tr class="grupo"><th colspan="2" scope="rowgroup">Programa principal</th></tr>';
+      p.g.forEach(function (x) { html += fila("g:" + x[0], x); });
+      if (p.lo) {
+        html += '<tr class="grupo"><th colspan="2" scope="rowgroup">Dentro de ' + esc(p.f) + "()</th></tr>";
+        if (!p.lo.length) html += '<tr><td colspan="2" class="vacio">(sin variables)</td></tr>';
+        p.lo.forEach(function (x) { html += fila(p.f + ":" + x[0], x); });
+      }
+    }
+    $("vars").innerHTML = html + "</tbody>";
+  }
+
+  function ir(nuevo) {
+    nuevo = Math.max(0, Math.min(escen.pasos.length, nuevo));
+    if (nuevo === k) return;
+    k = nuevo;
+    pintarPasos();
+  }
+  $("inicio").addEventListener("click", function () { ir(0); });
+  $("atras").addEventListener("click", function () { ir(k - 1); });
+  $("adelante").addEventListener("click", function () { ir(k + 1); });
+  $("fin").addEventListener("click", function () { ir(escen.pasos.length); });
+  $("paso").addEventListener("input", function () { ir(Number($("paso").value)); });
+  $("programa").addEventListener("change", function () { elegirPrograma(Number($("programa").value), 0); });
+  $("escenario").addEventListener("change", function () { elegirEscenario(Number($("escenario").value)); });
+  document.addEventListener("keydown", function (e) {
+    var t = e.target;
+    if (!$("vPasos").classList.contains("activo")) return;
+    if (/^(INPUT|SELECT|TEXTAREA|BUTTON)$/.test(t.tagName)) return;
+    if (e.key === "ArrowRight") { e.preventDefault(); ir(k + 1); }
+    else if (e.key === "ArrowLeft") { e.preventDefault(); ir(k - 1); }
+    else if (e.key === "Home") { e.preventDefault(); ir(0); }
+    else if (e.key === "End") { e.preventDefault(); ir(escen.pasos.length); }
+  });
+
+  // ---------- Pestañas ----------
+  function mostrarVista(id) {
+    document.querySelectorAll("nav.pestanas button").forEach(function (b) {
+      var activa = b.dataset.vista === id;
+      b.classList.toggle("activo", activa);
+      b.setAttribute("aria-selected", activa ? "true" : "false");
+    });
+    document.querySelectorAll("section.vista").forEach(function (s) { s.classList.toggle("activo", s.id === id); });
+  }
+  document.querySelectorAll("nav.pestanas button").forEach(function (b) {
+    b.addEventListener("click", function () { mostrarVista(b.dataset.vista); });
+  });
+
+  // ---------- Predice el orden ----------
+  var elegidas = [], revisada = false;
+  var CLAVE = "pb-s09-try-except";
+  var aciertos = {};
+  try { aciertos = JSON.parse(localStorage.getItem(CLAVE + "-aciertos") || "{}") || {}; } catch (e) { aciertos = {}; }
+  function guardarAciertos() { try { localStorage.setItem(CLAVE + "-aciertos", JSON.stringify(aciertos)); } catch (e) { /* sin almacenamiento */ } }
+  function guardarElegido() {
+    try { localStorage.setItem(CLAVE, JSON.stringify([DATOS.indexOf(prog), prog.escenarios.indexOf(escen)])); } catch (e) { /* sin almacenamiento */ }
+  }
+  var TOTAL = DATOS.reduce(function (a, p) { return a + p.escenarios.length; }, 0);
+  function pintarMarcador() {
+    var n = Object.keys(aciertos).filter(function (x) { return aciertos[x]; }).length;
+    var este = aciertos[prog.id + "|" + escen.id];
+    $("marcador").textContent = "Predicciones correctas: " + n + " de " + TOTAL + (este ? " · esta ya la acertaste" : "");
+  }
+  function tarjetas() {
+    return prog.prints.map(function (l) { return { id: String(l), texto: prog.codigo[l - 1].trim(), linea: l }; })
+      .concat([{ id: "tb", texto: "El programa se detiene con un traceback" }]);
+  }
+  function prepararPrediccion() {
+    elegidas = []; revisada = false;
+    pintarCodigo($("codigoP"), prog, null, null);
+    $("resultado").hidden = true;
+    $("consolaP").hidden = true;
+    $("verPasos").hidden = true;
+    pintarTarjetas();
+    pintarMarcador();
+  }
+  function pintarTarjetas(correcto) {
+    $("tarjetas").innerHTML = tarjetas().map(function (t) {
+      var pos = elegidas.indexOf(t.id), cl = [];
+      if (pos >= 0) cl.push("elegida");
+      if (correcto && pos >= 0) cl.push(correcto[pos] === t.id ? "bien" : "malpos");
+      if (t.id === "tb") cl.push("tb");
+      var dice = (t.linea ? "Línea " + t.linea + ": " : "") + t.texto + (pos >= 0 ? ", posición " + (pos + 1) : ", sin elegir");
+      return '<button type="button" data-id="' + t.id + '" class="' + cl.join(" ") + '" aria-pressed="' + (pos >= 0) +
+        '" aria-label="' + esc(dice).replace(/"/g, "&quot;") + '"><span class="n" aria-hidden="true">' + (pos >= 0 ? pos + 1 : "") +
+        "</span>" + (t.linea ? '<span class="sub">' + t.linea + ":</span> " : "") + esc(t.texto) + "</button>";
+    }).join("");
+  }
+  $("tarjetas").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-id]");
+    if (!b || revisada) return;
+    var id = b.dataset.id, pos = elegidas.indexOf(id);
+    if (pos >= 0) elegidas.splice(pos, 1);
+    else elegidas.push(id);
+    pintarTarjetas();
+    var nuevo = $("tarjetas").querySelector('button[data-id="' + id + '"]');
+    if (nuevo) nuevo.focus();
+  });
+  $("borrar").addEventListener("click", function () { prepararPrediccion(); });
+  $("verPasos").addEventListener("click", function () { mostrarVista("vPasos"); k = 0; pintarPasos(); $("adelante").focus(); });
+  $("revisar").addEventListener("click", function () {
+    var correcto = escen.orden.map(String).concat(escen.tb ? ["tb"] : []);
+    var bien = correcto.length === elegidas.length && correcto.every(function (x, i) { return elegidas[i] === x; });
+    revisada = true;
+    pintarTarjetas(correcto);
+    var nombre = function (id) {
+      return id === "tb" ? "el traceback" : "el print de la línea " + id;
+    };
+    var html;
+    if (bien) {
+      html = "<b>¡Correcto!</b> Ese es el orden: " + correcto.map(nombre).join(", ") + ".";
+      aciertos[prog.id + "|" + escen.id] = true;
+      guardarAciertos();
+    } else {
+      var faltan = correcto.filter(function (x) { return elegidas.indexOf(x) < 0; });
+      var sobran = elegidas.filter(function (x) { return correcto.indexOf(x) < 0; });
+      html = "<b>No es ese orden.</b> En la consola aparecen, en este orden: " + correcto.map(nombre).join(", ") + ".";
+      if (sobran.length) html += " No se ejecuta" + (sobran.length > 1 ? "n " : " ") + sobran.map(nombre).join(", ") + ".";
+      if (faltan.length) html += " Te faltó " + faltan.map(nombre).join(", ") + ".";
+      html += " Míralo paso a paso para ver por qué.";
+    }
+    $("resultado").className = "lectura resultado " + (bien ? "bien" : "mal");
+    $("resultado").innerHTML = html;
+    $("resultado").hidden = false;
+    var ultimo = escen.pasos[escen.pasos.length - 1];
+    $("consolaP").innerHTML = lineaComando() + esc(ultimo.o) + (escen.tb ? '<span class="error">' + esc(escen.tb) + "</span>" : "");
+    $("consolaP").hidden = false;
+    $("verPasos").hidden = false;
+    pintarMarcador();
+  });
+
+  // ---------- Inicio ----------
+  var inicial = [0, 0];
+  try {
+    var g = JSON.parse(localStorage.getItem(CLAVE) || "null");
+    if (g && DATOS[g[0]] && DATOS[g[0]].escenarios[g[1]]) inicial = g;
+  } catch (e) { /* sin almacenamiento */ }
+  $("programa").value = inicial[0];
+  elegirPrograma(inicial[0], inicial[1]);
+})();
+</script>
+<div id="qr-sitio" class="qr-capa" hidden>
+  <div class="qr-caja" role="dialog" aria-modal="true" aria-label="Código QR de esta página">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 45" role="img" aria-label="Código QR de https://memosanchezg.github.io/programacion-basica-interactivos/semana-09-try-except.html" shape-rendering="crispEdges"><rect width="45" height="45" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM12 2h6v1h-6zM19 2h3v1h-3zM23 2h5v1h-5zM30 2h2v1h-2zM33 2h2v1h-2zM36 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM11 3h3v1h-3zM15 3h2v1h-2zM18 3h2v1h-2zM22 3h2v1h-2zM26 3h5v1h-5zM34 3h1v1h-1zM36 3h1v1h-1zM42 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM10 4h1v1h-1zM13 4h2v1h-2zM18 4h3v1h-3zM23 4h2v1h-2zM26 4h2v1h-2zM29 4h2v1h-2zM32 4h3v1h-3zM36 4h1v1h-1zM38 4h3v1h-3zM42 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h5v1h-5zM16 5h3v1h-3zM21 5h1v1h-1zM23 5h1v1h-1zM26 5h1v1h-1zM28 5h1v1h-1zM32 5h3v1h-3zM36 5h1v1h-1zM38 5h3v1h-3zM42 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h2v1h-2zM17 6h1v1h-1zM20 6h2v1h-2zM24 6h2v1h-2zM30 6h5v1h-5zM36 6h1v1h-1zM38 6h3v1h-3zM42 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h2v1h-2zM13 7h2v1h-2zM16 7h2v1h-2zM22 7h1v1h-1zM26 7h1v1h-1zM29 7h2v1h-2zM34 7h1v1h-1zM36 7h1v1h-1zM42 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM30 8h1v1h-1zM32 8h1v1h-1zM34 8h1v1h-1zM36 8h7v1h-7zM10 9h1v1h-1zM13 9h1v1h-1zM15 9h1v1h-1zM17 9h2v1h-2zM20 9h1v1h-1zM23 9h1v1h-1zM25 9h2v1h-2zM28 9h1v1h-1zM33 9h2v1h-2zM2 10h1v1h-1zM4 10h5v1h-5zM13 10h1v1h-1zM15 10h5v1h-5zM22 10h1v1h-1zM24 10h1v1h-1zM27 10h3v1h-3zM31 10h1v1h-1zM36 10h5v1h-5zM4 11h1v1h-1zM6 11h1v1h-1zM9 11h2v1h-2zM14 11h1v1h-1zM16 11h1v1h-1zM19 11h5v1h-5zM25 11h1v1h-1zM27 11h1v1h-1zM30 11h1v1h-1zM32 11h3v1h-3zM36 11h3v1h-3zM40 11h3v1h-3zM2 12h4v1h-4zM7 12h3v1h-3zM11 12h3v1h-3zM17 12h2v1h-2zM22 12h2v1h-2zM29 12h4v1h-4zM34 12h1v1h-1zM36 12h2v1h-2zM2 13h1v1h-1zM6 13h2v1h-2zM9 13h1v1h-1zM11 13h1v1h-1zM13 13h1v1h-1zM18 13h1v1h-1zM23 13h2v1h-2zM28 13h1v1h-1zM32 13h5v1h-5zM38 13h2v1h-2zM42 13h1v1h-1zM6 14h3v1h-3zM12 14h1v1h-1zM14 14h1v1h-1zM16 14h1v1h-1zM19 14h1v1h-1zM21 14h2v1h-2zM24 14h1v1h-1zM26 14h6v1h-6zM33 14h1v1h-1zM37 14h1v1h-1zM39 14h3v1h-3zM2 15h1v1h-1zM6 15h1v1h-1zM9 15h2v1h-2zM13 15h1v1h-1zM17 15h4v1h-4zM24 15h1v1h-1zM29 15h1v1h-1zM32 15h11v1h-11zM2 16h1v1h-1zM5 16h1v1h-1zM8 16h3v1h-3zM13 16h1v1h-1zM16 16h1v1h-1zM22 16h2v1h-2zM25 16h2v1h-2zM29 16h4v1h-4zM34 16h2v1h-2zM37 16h1v1h-1zM40 16h1v1h-1zM2 17h1v1h-1zM14 17h3v1h-3zM23 17h3v1h-3zM28 17h2v1h-2zM34 17h1v1h-1zM36 17h2v1h-2zM39 17h1v1h-1zM41 17h1v1h-1zM2 18h4v1h-4zM8 18h2v1h-2zM12 18h3v1h-3zM16 18h1v1h-1zM18 18h2v1h-2zM22 18h1v1h-1zM25 18h1v1h-1zM27 18h3v1h-3zM31 18h3v1h-3zM35 18h1v1h-1zM37 18h1v1h-1zM40 18h1v1h-1zM6 19h1v1h-1zM9 19h1v1h-1zM13 19h1v1h-1zM18 19h1v1h-1zM20 19h3v1h-3zM25 19h2v1h-2zM30 19h5v1h-5zM36 19h4v1h-4zM41 19h2v1h-2zM2 20h2v1h-2zM5 20h1v1h-1zM7 20h3v1h-3zM11 20h2v1h-2zM15 20h1v1h-1zM20 20h1v1h-1zM24 20h1v1h-1zM29 20h3v1h-3zM35 20h1v1h-1zM38 20h2v1h-2zM41 20h1v1h-1zM12 21h7v1h-7zM21 21h1v1h-1zM28 21h8v1h-8zM38 21h2v1h-2zM41 21h2v1h-2zM3 22h1v1h-1zM7 22h4v1h-4zM12 22h1v1h-1zM15 22h1v1h-1zM17 22h2v1h-2zM20 22h1v1h-1zM23 22h4v1h-4zM29 22h1v1h-1zM39 22h3v1h-3zM3 23h3v1h-3zM10 23h2v1h-2zM14 23h2v1h-2zM17 23h3v1h-3zM21 23h3v1h-3zM25 23h1v1h-1zM27 23h2v1h-2zM30 23h1v1h-1zM32 23h3v1h-3zM36 23h1v1h-1zM38 23h2v1h-2zM41 23h2v1h-2zM4 24h5v1h-5zM12 24h2v1h-2zM16 24h3v1h-3zM20 24h1v1h-1zM22 24h1v1h-1zM24 24h1v1h-1zM27 24h4v1h-4zM34 24h1v1h-1zM38 24h2v1h-2zM2 25h1v1h-1zM4 25h1v1h-1zM6 25h1v1h-1zM9 25h1v1h-1zM12 25h2v1h-2zM16 25h1v1h-1zM18 25h1v1h-1zM20 25h2v1h-2zM23 25h2v1h-2zM29 25h1v1h-1zM33 25h3v1h-3zM37 25h3v1h-3zM2 26h7v1h-7zM11 26h1v1h-1zM15 26h1v1h-1zM19 26h1v1h-1zM25 26h7v1h-7zM33 26h1v1h-1zM39 26h4v1h-4zM2 27h2v1h-2zM5 27h3v1h-3zM9 27h2v1h-2zM12 27h5v1h-5zM19 27h1v1h-1zM21 27h3v1h-3zM25 27h1v1h-1zM27 27h1v1h-1zM30 27h1v1h-1zM32 27h2v1h-2zM35 27h5v1h-5zM41 27h2v1h-2zM2 28h4v1h-4zM8 28h1v1h-1zM10 28h1v1h-1zM14 28h1v1h-1zM16 28h3v1h-3zM20 28h1v1h-1zM22 28h1v1h-1zM26 28h5v1h-5zM32 28h1v1h-1zM34 28h5v1h-5zM2 29h3v1h-3zM9 29h2v1h-2zM12 29h1v1h-1zM15 29h3v1h-3zM21 29h4v1h-4zM26 29h1v1h-1zM28 29h1v1h-1zM30 29h1v1h-1zM33 29h3v1h-3zM38 29h2v1h-2zM41 29h1v1h-1zM2 30h1v1h-1zM5 30h4v1h-4zM11 30h1v1h-1zM13 30h3v1h-3zM19 30h1v1h-1zM24 30h2v1h-2zM27 30h2v1h-2zM31 30h1v1h-1zM33 30h1v1h-1zM39 30h4v1h-4zM2 31h2v1h-2zM7 31h1v1h-1zM11 31h3v1h-3zM15 31h2v1h-2zM18 31h1v1h-1zM20 31h1v1h-1zM22 31h1v1h-1zM26 31h2v1h-2zM29 31h6v1h-6zM36 31h1v1h-1zM38 31h1v1h-1zM40 31h1v1h-1zM42 31h1v1h-1zM2 32h1v1h-1zM4 32h1v1h-1zM6 32h7v1h-7zM14 32h1v1h-1zM17 32h2v1h-2zM21 32h1v1h-1zM23 32h2v1h-2zM27 32h2v1h-2zM31 32h1v1h-1zM35 32h3v1h-3zM39 32h1v1h-1zM2 33h1v1h-1zM4 33h4v1h-4zM10 33h1v1h-1zM12 33h5v1h-5zM18 33h1v1h-1zM21 33h4v1h-4zM26 33h1v1h-1zM30 33h1v1h-1zM34 33h4v1h-4zM39 33h1v1h-1zM41 33h2v1h-2zM2 34h1v1h-1zM5 34h2v1h-2zM8 34h1v1h-1zM10 34h1v1h-1zM12 34h3v1h-3zM16 34h2v1h-2zM19 34h1v1h-1zM21 34h2v1h-2zM24 34h1v1h-1zM26 34h3v1h-3zM31 34h1v1h-1zM34 34h5v1h-5zM40 34h1v1h-1zM42 34h1v1h-1zM10 35h1v1h-1zM12 35h4v1h-4zM19 35h1v1h-1zM21 35h7v1h-7zM30 35h1v1h-1zM33 35h2v1h-2zM38 35h1v1h-1zM41 35h2v1h-2zM2 36h7v1h-7zM11 36h1v1h-1zM14 36h1v1h-1zM16 36h1v1h-1zM18 36h2v1h-2zM23 36h1v1h-1zM27 36h4v1h-4zM32 36h3v1h-3zM36 36h1v1h-1zM38 36h1v1h-1zM40 36h1v1h-1zM2 37h1v1h-1zM8 37h1v1h-1zM10 37h1v1h-1zM12 37h1v1h-1zM14 37h2v1h-2zM18 37h3v1h-3zM22 37h3v1h-3zM26 37h2v1h-2zM33 37h2v1h-2zM38 37h2v1h-2zM2 38h1v1h-1zM4 38h3v1h-3zM8 38h1v1h-1zM10 38h1v1h-1zM12 38h4v1h-4zM17 38h2v1h-2zM23 38h1v1h-1zM26 38h1v1h-1zM28 38h2v1h-2zM32 38h1v1h-1zM34 38h5v1h-5zM40 38h1v1h-1zM2 39h1v1h-1zM4 39h3v1h-3zM8 39h1v1h-1zM10 39h3v1h-3zM15 39h1v1h-1zM18 39h5v1h-5zM24 39h3v1h-3zM30 39h2v1h-2zM33 39h1v1h-1zM35 39h1v1h-1zM37 39h1v1h-1zM2 40h1v1h-1zM4 40h3v1h-3zM8 40h1v1h-1zM10 40h2v1h-2zM14 40h1v1h-1zM16 40h3v1h-3zM20 40h1v1h-1zM22 40h1v1h-1zM24 40h1v1h-1zM26 40h2v1h-2zM29 40h2v1h-2zM34 40h5v1h-5zM2 41h1v1h-1zM8 41h1v1h-1zM12 41h2v1h-2zM15 41h1v1h-1zM17 41h1v1h-1zM20 41h1v1h-1zM23 41h1v1h-1zM25 41h1v1h-1zM28 41h3v1h-3zM34 41h2v1h-2zM38 41h2v1h-2zM41 41h1v1h-1zM2 42h7v1h-7zM10 42h2v1h-2zM14 42h1v1h-1zM16 42h3v1h-3zM21 42h1v1h-1zM24 42h5v1h-5zM31 42h1v1h-1zM33 42h1v1h-1zM35 42h6v1h-6z"/></svg>
+    <p class="qr-texto">Escanea con la cámara del celular para abrir esta página</p>
+    <p class="qr-url">https://memosanchezg.github.io/programacion-basica-interactivos/semana-09-try-except.html</p>
+    <button type="button" class="qr-cerrar">Cerrar</button>
+  </div>
+</div>
+<style>
+  .qr-capa { position:fixed; top:0; right:0; bottom:0; left:0; z-index:10000; display:flex; align-items:center;
+             justify-content:center; padding:16px; background:#fff; }
+  .qr-capa[hidden] { display:none; }
+  .qr-caja { max-width:100%; text-align:center; color:#0A2A57; font:16px/1.4 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .qr-caja svg { display:block; width:min(62vh, 84vw); height:auto; margin:0 auto; }
+  .qr-texto { margin:12px 0 2px; font-size:1.15rem; font-weight:bold; }
+  .qr-url { margin:0 0 12px; color:#5B6472; word-break:break-all; }
+  .qr-cerrar { font:inherit; padding:6px 20px; border:2px solid #00408F; border-radius:4px; background:#fff;
+               color:#00408F; cursor:pointer; }
+</style>
+<script>
+  (function () {
+    var capa = document.getElementById("qr-sitio");
+    document.querySelectorAll("a.qr-abrir").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        capa.hidden = false;
+        capa.querySelector(".qr-cerrar").focus();
+      });
+    });
+    capa.addEventListener("click", function (e) {
+      if (e.target === capa || e.target.classList.contains("qr-cerrar")) capa.hidden = true;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !capa.hidden) capa.hidden = true;
+    });
+  })();
+</script>
+</body>
+</html>

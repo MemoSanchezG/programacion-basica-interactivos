@@ -1,0 +1,723 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="tipo" content="simulador">
+<title>CSV y JSON lado a lado</title>
+
+<style>
+  :root {
+    --azul:#00408F; --azul-oscuro:#0A2A57; --guinda:#8C1D35; --oro:#B8975A; --oro-texto:#8A6A2E;
+    --azul-claro:#E8EEF7; --oro-claro:#F7F1E6; --guinda-claro:#F5E6EA; --verde:#2F7D5B;
+    --tinta:#1B1F2A; --gris:#5B6472; --gris-claro:#E9ECF1; --borde:#D9DEE6; --fondo:#FFFFFF;
+    --cmd-fondo:#0C0C0C; --cmd-texto:#E6E6E6;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--fondo); color:var(--tinta);
+         font:16px/1.45 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .franja { height:8px; background:var(--azul); border-bottom:3px solid var(--oro); }
+  header { max-width:1280px; margin:0 auto; padding:12px 18px 4px; }
+  .semana { color:var(--guinda); font-weight:bold; letter-spacing:.04em; font-size:.85rem; text-transform:uppercase; }
+  h1 { font-family:Cambria,Georgia,serif; color:var(--azul-oscuro); font-size:1.7rem; margin:2px 0 2px; }
+  .sub { color:var(--gris); margin:0; }
+  main { max-width:1280px; margin:0 auto; padding:8px 18px 24px; }
+  .fila { display:grid; grid-template-columns:minmax(260px,360px) minmax(0,1fr); gap:16px; align-items:start; }
+  .panel { background:#fff; border:1px solid var(--borde); border-radius:10px; padding:12px 14px; }
+  .panel h2 { font-size:1.02rem; color:var(--azul-oscuro); margin:0 0 8px; }
+  label { display:block; font-weight:bold; color:var(--azul-oscuro); margin-top:10px; }
+  label small { font-weight:normal; color:var(--gris); }
+  input[type=number], input[type=text], select, textarea { font:inherit; padding:4px 6px; border:1px solid var(--borde);
+                        border-radius:6px; }
+  input.mono, textarea.mono { font-family:Consolas,"Courier New",monospace; }
+  button.accion { font:inherit; font-weight:bold; border-radius:8px; padding:7px 12px; margin:8px 6px 0 0;
+                  border:1px solid var(--azul); background:#fff; color:var(--azul); cursor:pointer; }
+  button.accion:hover, button.accion:focus-visible { background:var(--azul); color:#fff; outline:none; }
+  .lectura { background:var(--oro-claro); border-left:4px solid var(--oro); border-radius:8px; padding:10px 12px;
+             margin-top:12px; line-height:1.55; }
+  .lectura b { color:var(--azul-oscuro); }
+  .ok { color:var(--verde); font-weight:bold; }
+  .mal { color:var(--guinda); font-weight:bold; }
+  .preguntas { background:var(--azul-claro); border-radius:8px; padding:10px 14px; margin-top:12px; }
+  .preguntas h3 { margin:0 0 4px; font-size:.95rem; color:var(--azul-oscuro); }
+  .preguntas ol { margin:0; padding-left:20px; }
+  /* Código Python con los colores del curso (minted, estilo borland) y salida de consola (cmd). */
+  .codigo { border:1px solid var(--tinta); background:#fff; font:15px/1.5 Consolas,"Courier New",monospace;
+            overflow-x:auto; margin:8px 0; }
+  .codigo ol { margin:0; padding:8px 12px 8px 3.4em; }
+  .codigo li { white-space:pre; }
+  .codigo li::marker { color:var(--gris); font:11px Cambria,Georgia,serif; }
+  .codigo .kw { color:#000080; font-weight:bold; }
+  .codigo .str, .codigo .num { color:#0000FF; }
+  .codigo .com { color:#008800; font-style:italic; }
+  .codigo .marca { background:var(--oro-claro); outline:1px solid var(--oro); }
+  .consola { background:var(--cmd-fondo); color:var(--cmd-texto); font:15px/1.45 Consolas,"Courier New",monospace;
+             white-space:pre-wrap; word-break:break-word; padding:8px 12px; border-radius:4px; margin:8px 0; min-height:2.2em; }
+  footer { max-width:1280px; margin:0 auto; padding:6px 18px 18px; color:var(--gris); font-size:.85rem; }
+  footer a { color:var(--azul); }
+  @media (max-width: 820px) { .fila { grid-template-columns:1fr; } }
+
+  /* Propios de este simulador */
+  [hidden] { display:none !important; }
+  code { font-family:Consolas,"Courier New",monospace; color:var(--azul-oscuro); overflow-wrap:anywhere; }
+  .fila > *, .dos > * { min-width:0; }
+  .dos { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px; align-items:start; margin-top:16px; }
+  @media (max-width: 900px) { .dos { grid-template-columns:1fr; } }
+  .consola.sin-corte { white-space:pre; overflow-x:auto; word-break:normal; }
+  .consola .error { color:#FF8A80; }
+  .consola .prompt { color:#9AA0A6; }
+  .tabla-scroll { overflow-x:auto; }
+  table.editor { border-collapse:collapse; min-width:100%; }
+  table.editor th { text-align:left; color:var(--azul-oscuro); font-size:.92rem; padding:4px 4px; white-space:nowrap;
+                    border-bottom:2px solid var(--gris-claro); }
+  table.editor th small { display:block; font-weight:normal; color:var(--gris); font-size:.78rem; }
+  table.editor td { padding:3px 4px; border-bottom:1px solid var(--gris-claro); vertical-align:top; }
+  table.editor td.n { color:var(--gris); font-size:.85rem; text-align:right; padding-top:8px; }
+  table.editor input { width:100%; font:14px Consolas,"Courier New",monospace; padding:5px 6px; }
+  table.editor input:focus-visible { outline:2px solid var(--azul); }
+  table.editor input.invalido { border-color:var(--guinda); background:var(--guinda-claro); }
+  table.editor .c-fecha { min-width:112px; } table.editor .c-num { min-width:72px; width:84px; }
+  table.editor .c-nota { min-width:230px; } table.editor .c-etq { min-width:150px; }
+  .avisos { color:var(--guinda); margin:6px 0 0; padding-left:20px; }
+  .opciones { display:flex; flex-wrap:wrap; gap:6px 22px; align-items:flex-end; }
+  .opciones fieldset { border:1px solid var(--borde); border-radius:8px; padding:4px 10px 8px; margin:0; min-width:0; }
+  .opciones legend { font-weight:bold; color:var(--azul-oscuro); padding:0 4px; font-size:.95rem; }
+  .opciones label { display:inline-flex; align-items:center; gap:4px; font-weight:normal; color:var(--tinta); margin:6px 12px 0 0; }
+  .opciones label code { color:var(--tinta); }
+  pre.archivo { margin:6px 0 0; border:1px solid var(--tinta); background:#fff; padding:8px 0; overflow-x:auto;
+                font:14px/1.55 Consolas,"Courier New",monospace; max-height:440px; counter-reset:renglon; }
+  pre.archivo .r { display:block; white-space:pre; padding-right:10px; }
+  pre.archivo .r::before { counter-increment:renglon; content:counter(renglon); display:inline-block; width:2.6em; padding-right:.7em;
+                           text-align:right; color:var(--gris); font:11px Cambria,Georgia,serif; }
+  .fin { font:bold 11px/1 Calibri,"Segoe UI",sans-serif; color:#fff; background:var(--gris); border-radius:6px; padding:1px 5px;
+         margin-left:3px; vertical-align:1px; }
+  .fin.doble { background:var(--guinda); }
+  .q { color:var(--guinda); }
+  .escape { color:var(--guinda); font-weight:bold; }
+  .tam { color:var(--gris); font-size:.92rem; margin:6px 0 0; }
+  details.codigo-guardar { margin-top:4px; }
+  details.codigo-guardar summary { cursor:pointer; font-weight:bold; color:var(--azul-oscuro); }
+  .selector-fila { display:flex; flex-wrap:wrap; gap:6px 10px; align-items:center; }
+  .selector-fila label { margin:0; }
+  @media (max-width: 480px) {
+    header { padding:10px 12px 4px; } main { padding:8px 10px 20px; } footer { padding:6px 12px 16px; }
+    .panel { padding:10px; } h1 { font-size:1.45rem; }
+    .codigo, .consola, pre.archivo { font-size:13px; } .codigo ol { padding-left:2.9em; }
+  }
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header>
+  <div class="semana">Semana 10 · Archivos y persistencia</div>
+  <h1>CSV y JSON lado a lado</h1>
+  <p class="sub">Edita los registros y mira, byte por byte, el CSV y el JSON que escribiría Python; después léelos de regreso y compara los tipos.</p>
+</header>
+<main>
+  <div class="panel">
+    <h2>Los registros <small style="font-weight:normal;color:var(--gris)">(clima de Monterrey, septiembre de 2026)</small></h2>
+    <div class="tabla-scroll"><table class="editor" id="editor"></table></div>
+    <ul class="avisos" id="avisos" aria-live="polite"></ul>
+    <button type="button" class="accion" id="agregar">Agregar una fila</button>
+    <button type="button" class="accion" id="quitarFila">Quitar la última fila</button>
+    <button type="button" class="accion" id="ejemplo">Volver a la tabla de ejemplo</button>
+    <p class="sub" style="margin-top:8px">tmax, tmin y lluvia_mm son números (con punto decimal; si dejas la celda vacía, el valor es <code>None</code>). Las etiquetas, separadas por comas, forman una lista.</p>
+  </div>
+
+  <div class="panel" style="margin-top:16px">
+    <h2>El programa <code>guardar.py</code></h2>
+    <div class="opciones">
+      <fieldset>
+        <legend>CSV</legend>
+        <label><input type="radio" name="escritor" value="dict" checked> <code>csv.DictWriter</code></label>
+        <label><input type="radio" name="escritor" value="lista"> <code>csv.writer</code></label>
+        <label><input type="checkbox" id="newline" checked> abrir con <code>newline=""</code></label>
+      </fieldset>
+      <fieldset>
+        <legend>JSON</legend>
+        <label>indent <select id="indent" aria-label="indent"><option value="none">None</option><option value="2" selected>2</option><option value="4">4</option></select></label>
+        <label>ensure_ascii <select id="ascii" aria-label="ensure_ascii"><option value="false" selected>False</option><option value="true">True</option></select></label>
+      </fieldset>
+      <fieldset>
+        <legend>Dónde corre</legend>
+        <label><input type="radio" name="sistema" value="windows" checked> Windows</label>
+        <label><input type="radio" name="sistema" value="otro"> Linux o macOS</label>
+      </fieldset>
+    </div>
+    <details class="codigo-guardar" open>
+      <summary>Ver el código</summary>
+      <div id="codigoGuardar"></div>
+    </details>
+  </div>
+
+  <div class="dos">
+    <div class="panel">
+      <h2><code>clima.csv</code></h2>
+      <pre class="archivo" id="verCSV" tabindex="0" aria-label="Contenido de clima.csv"></pre>
+      <p class="tam" id="tamCSV"></p>
+    </div>
+    <div class="panel">
+      <h2><code>clima.json</code></h2>
+      <pre class="archivo" id="verJSON" tabindex="0" aria-label="Contenido de clima.json"></pre>
+      <p class="tam" id="tamJSON"></p>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:16px">
+    <h2>Al leerlos de regreso: <code>leer.py</code></h2>
+    <div class="selector-fila">
+      <label for="filaLeer">Fila a revisar</label>
+      <select id="filaLeer"></select>
+    </div>
+    <div class="dos" style="margin-top:4px">
+      <div id="codigoLeer"></div>
+      <div class="consola sin-corte" id="consolaLeer" aria-label="Lo que imprime leer.py"></div>
+    </div>
+    <div class="lectura" id="explicaLeer"></div>
+  </div>
+
+  <div class="dos">
+    <div class="panel">
+      <h2>¿Por qué <code>newline=""</code>?</h2>
+      <p style="margin:0">El módulo <code>csv</code> termina cada fila con <code>\r\n</code> él solo. Si en Windows abres el archivo sin <code>newline=""</code>, Python además convierte cada <code>\n</code> en <code>\r\n</code> al escribir, y cada fila termina en <code>\r\r\n</code>. Con tu tabla escrita así, este programa ve una fila vacía después de cada fila (y Excel muestra renglones en blanco):</p>
+      <div id="codigoCrudo"></div>
+      <div class="consola sin-corte" id="consolaCrudo" aria-label="Lo que imprime csv.reader"></div>
+      <p class="sub">En Linux y macOS no se nota, porque ahí Python no convierte los <code>\n</code>; con <code>newline=""</code> el archivo sale igual en los tres sistemas.</p>
+    </div>
+    <div class="panel">
+      <h2>¿Por qué <code>encoding="utf-8"</code>?</h2>
+      <p style="margin:0">Sin <code>encoding</code>, Python usa la codificación de tu sistema, que cambia de una computadora a otra: en muchas con Windows en español es <code>cp1252</code>. Con la primera fila de la tabla de ejemplo, "Día" queda así:</p>
+      <ul>
+        <li>en UTF-8: <code>44 C3 AD 61</code> (la í ocupa 2 bytes);</li>
+        <li>en cp1252: <code>44 ED 61</code> (1 byte).</li>
+      </ul>
+      <p>Si ese archivo en cp1252 se abre con <code>encoding="utf-8"</code>, Python se detiene con:</p>
+      <div class="consola sin-corte">UnicodeDecodeError: 'utf-8' codec can't decode byte 0xed in position 69: invalid continuation byte</div>
+      <p class="sub">Y al revés (un archivo en UTF-8 leído como cp1252) no hay error, pero el texto sale mal; su repr es <code id="mojibake"></code>. Algo así se ve a veces en Excel con un CSV en UTF-8 abierto con doble clic (con <code>encoding="utf-8-sig"</code> Excel lo reconoce). Con <code>ensure_ascii=True</code>, el JSON queda en puro ASCII y se lee igual con cualquier codificación.</p>
+    </div>
+  </div>
+
+  <div class="preguntas">
+    <h3>Para explorar</h3>
+    <ol>
+      <li>Escribe una coma en una nota (por ejemplo, Soleado, sin nubes). ¿Qué le pasa a ese campo en <code>clima.csv</code>? ¿Y si escribes comillas?</li>
+      <li>¿Por qué <code>['lluvia', 'fresco']</code> sale entre comillas en el CSV y <code>['calor']</code> no?</li>
+      <li>Cambia <code>ensure_ascii</code> a True. ¿Qué le pasa a "pequeña"? ¿Cuántos bytes tiene ahora <code>clima.json</code>?</li>
+      <li>Deja vacía una tmax. ¿Qué escribe el CSV y qué escribe el JSON? ¿Qué pasa al leerlos de regreso?</li>
+      <li>Escribe 35 (sin .0) en una tmax. Al leerla de regreso, ¿qué tipo tiene en el JSON? ¿Y en el CSV?</li>
+      <li>Quita <code>newline=""</code> con Windows. ¿Qué cambia en los finales de línea del CSV? ¿Por qué el JSON tiene <code>\r\n</code> si <code>json.dump</code> escribe <code>\n</code>?</li>
+    </ol>
+  </div>
+</main>
+<footer>
+  Programación Básica · FCFM-UANL · funciona sin internet. Los archivos y las salidas son los que da Python 3.12. Datos: Open-Meteo.
+  <a href="index.html">Índice de simuladores</a> · <a href="#qr-sitio" class="qr-abrir">Abrir en el celular (QR)</a>
+</footer>
+
+<script id="nucleo">
+var NUCLEO = (function () {
+  "use strict";
+  // ---------- Valores como en Python ----------
+  // PyFloat marca un número que en Python es float aunque valga un entero (35.0).
+  function PyFloat(valor) { this.valor = valor; }
+
+  // repr() de un float de Python: la representación más corta que vuelve al mismo número.
+  function pyFloat(x) {
+    if (Number.isNaN(x)) return "nan";
+    if (x === Infinity) return "inf";
+    if (x === -Infinity) return "-inf";
+    if (x === 0) return Object.is(x, -0) ? "-0.0" : "0.0";
+    var partes = Math.abs(x).toExponential().split("e");
+    var digitos = partes[0].replace(".", "");
+    var exp = parseInt(partes[1], 10);
+    var decpt = exp + 1, signo = x < 0 ? "-" : "";
+    if (decpt > 16 || decpt < -3) {
+      var mant = digitos.length > 1 ? digitos[0] + "." + digitos.slice(1) : digitos[0];
+      return signo + mant + "e" + (exp < 0 ? "-" : "+") + (Math.abs(exp) < 10 ? "0" : "") + Math.abs(exp);
+    }
+    if (decpt <= 0) return signo + "0." + "0".repeat(-decpt) + digitos;
+    if (decpt >= digitos.length) return signo + digitos + "0".repeat(decpt - digitos.length) + ".0";
+    return signo + digitos.slice(0, decpt) + "." + digitos.slice(decpt);
+  }
+
+  function hexa(n, ancho) { var s = n.toString(16); while (s.length < ancho) s = "0" + s; return s; }
+  var DIAGONAL = String.fromCharCode(92);
+  // Caracteres que Python no considera imprimibles (repr los escribe con \x, \u o \U)
+  var NO_IMPRIMIBLE = /[\p{Cc}\p{Cf}\p{Cs}\p{Co}\p{Cn}\p{Zl}\p{Zp}\p{Zs}]/u;
+  function escaparCaracter(c, comilla) {
+    var code = c.codePointAt(0);
+    if (c === DIAGONAL) return DIAGONAL + DIAGONAL;
+    if (c === comilla) return DIAGONAL + comilla;
+    if (c === "\n") return DIAGONAL + "n";
+    if (c === "\r") return DIAGONAL + "r";
+    if (c === "\t") return DIAGONAL + "t";
+    if (code < 32 || code === 127) return DIAGONAL + "x" + hexa(code, 2);
+    if (code > 127 && code !== 32 && NO_IMPRIMIBLE.test(c)) {
+      return DIAGONAL + (code <= 0xff ? "x" + hexa(code, 2) : code <= 0xffff ? "u" + hexa(code, 4) : "U" + hexa(code, 8));
+    }
+    return c;
+  }
+  // repr() de un texto: comillas simples, o dobles si el texto trae ' y no trae ".
+  function pyStr(s) {
+    var q = (s.indexOf("'") >= 0 && s.indexOf('"') < 0) ? '"' : "'";
+    var r = "";
+    for (var c of s) r += escaparCaracter(c, q);
+    return q + r + q;
+  }
+  // Un diccionario de Python conserva el orden: se guarda como lista de pares [clave, valor].
+  function Dic(pares) { this.pares = pares; }
+  function pyRepr(v) {
+    if (v === null || v === undefined) return "None";
+    if (v === true) return "True";
+    if (v === false) return "False";
+    if (v instanceof PyFloat) return pyFloat(v.valor);
+    if (typeof v === "number") return Number.isInteger(v) ? String(v) : pyFloat(v);
+    if (typeof v === "string") return pyStr(v);
+    if (Array.isArray(v)) return "[" + v.map(pyRepr).join(", ") + "]";
+    if (v instanceof Dic) return "{" + v.pares.map(function (p) { return pyRepr(p[0]) + ": " + pyRepr(p[1]); }).join(", ") + "}";
+    throw new Error("tipo no soportado");
+  }
+  function pyTipo(v) {
+    if (v === null || v === undefined) return "NoneType";
+    if (v === true || v === false) return "bool";
+    if (v instanceof PyFloat) return "float";
+    if (typeof v === "number") return Number.isInteger(v) ? "int" : "float";
+    if (typeof v === "string") return "str";
+    if (Array.isArray(v)) return "list";
+    return "dict";
+  }
+  // str(): para los textos es el texto mismo; para lo demás, repr.
+  function pyStrDe(v) { return typeof v === "string" ? v : pyRepr(v); }
+
+  // ---------- csv.writer (dialecto excel, QUOTE_MINIMAL) ----------
+  function csvCampo(v) {
+    var s = (v === null || v === undefined) ? "" : pyStrDe(v);
+    if (/[,"\r\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  }
+  function csvFila(valores) {
+    if (valores.length === 1 && (valores[0] === "" || valores[0] === null)) return '""\r\n';
+    return valores.map(csvCampo).join(",") + "\r\n";
+  }
+
+  // ---------- json.dumps ----------
+  function jsonTexto(s, ascii) {
+    var r = '"';
+    for (var c of s) {
+      var code = c.codePointAt(0);
+      if (c === '"') r += DIAGONAL + '"';
+      else if (c === DIAGONAL) r += DIAGONAL + DIAGONAL;
+      else if (c === "\n") r += DIAGONAL + "n";
+      else if (c === "\r") r += DIAGONAL + "r";
+      else if (c === "\t") r += DIAGONAL + "t";
+      else if (c === "\b") r += DIAGONAL + "b";
+      else if (c === "\f") r += DIAGONAL + "f";
+      else if (code < 0x20) r += DIAGONAL + "u" + hexa(code, 4);
+      else if (ascii && code > 0x7e) {
+        if (code < 0x10000) r += DIAGONAL + "u" + hexa(code, 4);
+        else {
+          var n = code - 0x10000;
+          r += DIAGONAL + "u" + hexa(0xd800 | (n >> 10), 4) + DIAGONAL + "u" + hexa(0xdc00 | (n & 0x3ff), 4);
+        }
+      }
+      else r += c;
+    }
+    return r + '"';
+  }
+  function jsonNumero(v) {
+    var x = v instanceof PyFloat ? v.valor : v;
+    if (v instanceof PyFloat || !Number.isInteger(x)) {
+      if (Number.isNaN(x)) return "NaN";
+      if (x === Infinity) return "Infinity";
+      if (x === -Infinity) return "-Infinity";
+      return pyFloat(x);
+    }
+    return String(x);
+  }
+  // indent: null (todo en una línea) o un entero; ascii = ensure_ascii.
+  function jsonDumps(v, indent, ascii) {
+    function va(x, nivel) {
+      if (x === null || x === undefined) return "null";
+      if (x === true) return "true";
+      if (x === false) return "false";
+      if (typeof x === "string") return jsonTexto(x, ascii);
+      if (typeof x === "number" || x instanceof PyFloat) return jsonNumero(x);
+      var abre, cierra, items;
+      if (Array.isArray(x)) {
+        if (!x.length) return "[]";
+        abre = "["; cierra = "]";
+        items = x.map(function (y) { return va(y, nivel + 1); });
+      } else {
+        if (!x.pares.length) return "{}";
+        abre = "{"; cierra = "}";
+        items = x.pares.map(function (p) { return jsonTexto(p[0], ascii) + ": " + va(p[1], nivel + 1); });
+      }
+      if (indent === null || indent === undefined) return abre + items.join(", ") + cierra;
+      var dentro = "\n" + " ".repeat(indent * (nivel + 1)), fuera = "\n" + " ".repeat(indent * nivel);
+      return abre + dentro + items.join("," + dentro) + fuera + cierra;
+    }
+    return va(v, 0);
+  }
+
+  // Bytes en UTF-8 (para el tamaño del archivo)
+  function bytesUtf8(s) {
+    var n = 0;
+    for (var c of s) {
+      var code = c.codePointAt(0);
+      n += code < 0x80 ? 1 : code < 0x800 ? 2 : code < 0x10000 ? 3 : 4;
+    }
+    return n;
+  }
+
+  // ---------- La tabla de la página ----------
+  var CAMPOS = ["fecha", "tmax", "tmin", "lluvia_mm", "nota", "etiquetas"];
+  var NUMERICOS = { tmax: true, tmin: true, lluvia_mm: true };
+  // Lo que escribe el alumno en una celda -> {valor} o {error}
+  function valorDeCelda(campo, texto) {
+    if (campo === "etiquetas") {
+      return { valor: texto.split(",").map(function (t) { return t.trim(); }).filter(function (t) { return t !== ""; }) };
+    }
+    if (!NUMERICOS[campo]) return { valor: texto };
+    var t = texto.trim();
+    if (t === "") return { valor: null };
+    if (/^[+-]?\d+$/.test(t)) {
+      var n = Number(t);
+      if (Math.abs(n) > 1e15) return { error: "un número tan grande no cabe en esta página" };
+      return { valor: n === 0 ? 0 : n };
+    }
+    if (/^[+-]?(\d+\.\d*|\.\d+|\d+)([eE][+-]?\d+)?$/.test(t)) {
+      var x = Number(t);
+      if (!isFinite(x)) return { error: "es demasiado grande" };
+      return { valor: new PyFloat(x) };
+    }
+    return { error: "no es un número (usa punto decimal, por ejemplo 35.5; vacío es None)" };
+  }
+
+  // Un literal de Python con comillas dobles (como se escribe en el código del curso)
+  function literal(v) {
+    if (v === null || v === undefined) return "None";
+    if (typeof v === "string") {
+      var r = '"';
+      for (var c of v) {
+        var code = c.codePointAt(0);
+        if (c === DIAGONAL) r += DIAGONAL + DIAGONAL;
+        else if (c === '"') r += DIAGONAL + '"';
+        else if (c === "\n") r += DIAGONAL + "n";
+        else if (c === "\r") r += DIAGONAL + "r";
+        else if (c === "\t") r += DIAGONAL + "t";
+        else if (code < 32 || code === 127) r += DIAGONAL + "x" + hexa(code, 2);
+        else if (code > 127 && NO_IMPRIMIBLE.test(c)) r += DIAGONAL + (code <= 0xffff ? "u" + hexa(code, 4) : "U" + hexa(code, 8));
+        else r += c;
+      }
+      return r + '"';
+    }
+    if (Array.isArray(v)) return "[" + v.map(literal).join(", ") + "]";
+    return pyRepr(v);
+  }
+
+  // opciones: {escritor: "dict"|"lista", newline: true|false, indent: null|2|4, ascii: true|false, windows: true|false}
+  function codigoGuardar(regs, o) {
+    var L = ["import csv", "import json", "", "registros = ["];
+    regs.forEach(function (r) {
+      L.push("    {" + CAMPOS.slice(0, 4).map(function (c) { return literal(c) + ": " + literal(r[c]); }).join(", ") + ",");
+      L.push("     " + CAMPOS.slice(4).map(function (c) { return literal(c) + ": " + literal(r[c]); }).join(", ") + "},");
+    });
+    L.push("]");
+    L.push("campos = [" + CAMPOS.map(literal).join(", ") + "]");
+    L.push("");
+    L.push('with open("clima.csv", "w", ' + (o.newline ? 'newline="", ' : "") + 'encoding="utf-8") as f:');
+    if (o.escritor === "dict") {
+      L.push("    escritor = csv.DictWriter(f, fieldnames=campos)");
+      L.push("    escritor.writeheader()");
+      L.push("    escritor.writerows(registros)");
+    } else {
+      L.push("    escritor = csv.writer(f)");
+      L.push("    escritor.writerow(campos)");
+      L.push("    for r in registros:");
+      L.push("        escritor.writerow([r[c] for c in campos])");
+    }
+    L.push("");
+    L.push('with open("clima.json", "w", encoding="utf-8") as f:');
+    L.push("    json.dump(registros, f, indent=" + (o.indent === null ? "None" : o.indent) + ", ensure_ascii=" + (o.ascii ? "True" : "False") + ")");
+    return L.join("\n") + "\n";
+  }
+  // En Windows, un archivo abierto sin newline="" convierte cada \n en \r\n al escribir.
+  function alDisco(texto, traducir) { return traducir ? texto.replace(/\n/g, "\r\n") : texto; }
+  function archivoCSV(regs, o) {
+    var t = csvFila(CAMPOS) + regs.map(function (r) { return csvFila(CAMPOS.map(function (c) { return r[c]; })); }).join("");
+    return alDisco(t, o.windows && !o.newline);
+  }
+  function archivoJSON(regs, o) {
+    var lista = regs.map(function (r) { return new Dic(CAMPOS.map(function (c) { return [c, r[c]]; })); });
+    return alDisco(jsonDumps(lista, o.indent, o.ascii), o.windows);
+  }
+  // Lo que imprime csv.reader con el archivo escrito sin newline="" en Windows
+  function lectorCrudo(regs) {
+    var filas = [CAMPOS].concat(regs.map(function (r) {
+      return CAMPOS.map(function (c) { return r[c] === null ? "" : pyStrDe(r[c]); });
+    }));
+    return filas.map(function (f) { return pyRepr(f) + "\n[]\n"; }).join("");
+  }
+  // El programa que lee los dos archivos y lo que imprime (salida y traceback)
+  var CARPETA = "C:" + DIAGONAL + "semana10";
+  function codigoLeer(i) {
+    return ["import csv", "import json", "",
+            'with open("clima.csv", newline="", encoding="utf-8") as f:',
+            "    filas = list(csv.DictReader(f))",
+            'with open("clima.json", encoding="utf-8") as f:',
+            "    datos = json.load(f)", "",
+            "print(filas[" + i + "])", "print(datos[" + i + "])",
+            'print(type(filas[' + i + ']["tmax"]), type(datos[' + i + ']["tmax"]))',
+            'print(datos[' + i + ']["tmax"] + 1)',
+            'print(filas[' + i + ']["tmax"] + 1)'].join("\n") + "\n";
+  }
+  function traceback(linea, fuente, izquierda, mensaje) {
+    var col = fuente.indexOf(izquierda);
+    var derecha = fuente.slice(col + izquierda.length + 3, fuente.lastIndexOf(")"));
+    return "Traceback (most recent call last):\n  File \"" + CARPETA + DIAGONAL + "leer.py\", line " + linea + ", in <module>\n    " +
+           fuente + "\n    " + " ".repeat(col) + "~".repeat(izquierda.length + 1) + "^" + "~".repeat(derecha.length + 1) + "\n" + mensaje + "\n";
+  }
+  function lectura(regs, i) {
+    var r = regs[i];
+    var deCSV = new Dic(CAMPOS.map(function (c) { return [c, r[c] === null ? "" : pyStrDe(r[c])]; }));
+    var deJSON = new Dic(CAMPOS.map(function (c) { return [c, r[c]]; }));
+    var salida = pyRepr(deCSV) + "\n" + pyRepr(deJSON) + "\n";
+    salida += "<class 'str'> <class '" + pyTipo(r.tmax) + "'>\n";
+    var t = r.tmax;
+    if (t === null) {
+      return { salida: salida, error: traceback(12, 'print(datos[' + i + ']["tmax"] + 1)', 'datos[' + i + ']["tmax"]',
+                                                "TypeError: unsupported operand type(s) for +: 'NoneType' and 'int'") };
+    }
+    salida += (t instanceof PyFloat ? pyFloat(t.valor + 1) : String(t + 1)) + "\n";
+    return { salida: salida, error: traceback(13, 'print(filas[' + i + ']["tmax"] + 1)', 'filas[' + i + ']["tmax"]',
+                                              'TypeError: can only concatenate str (not "int") to str') };
+  }
+
+  return { PyFloat: PyFloat, Dic: Dic, pyFloat: pyFloat, pyStr: pyStr, pyRepr: pyRepr, pyTipo: pyTipo,
+           pyStrDe: pyStrDe, csvCampo: csvCampo, csvFila: csvFila, jsonDumps: jsonDumps, bytesUtf8: bytesUtf8,
+           CAMPOS: CAMPOS, NUMERICOS: NUMERICOS, valorDeCelda: valorDeCelda, literal: literal, codigoGuardar: codigoGuardar,
+           archivoCSV: archivoCSV, archivoJSON: archivoJSON, lectorCrudo: lectorCrudo, codigoLeer: codigoLeer,
+           lectura: lectura, CARPETA: CARPETA };
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(t) {
+    return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  var N = NUCLEO, D = String.fromCharCode(92);
+
+  // ---------- Código Python con los colores del curso ----------
+  var PY_KW = /^(False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)$/;
+  function pyResaltar(linea) {
+    var html = "", i = 0, m, resto;
+    while (i < linea.length) {
+      resto = linea.slice(i);
+      if ((m = /^#.*/.exec(resto))) { html += '<span class="com">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[rRbBfFuU]{0,2}("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/.exec(resto))) { html += '<span class="str">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[A-Za-z_\u00C0-\u024F][\w\u00C0-\u024F]*/.exec(resto))) { html += PY_KW.test(m[0]) ? '<span class="kw">' + m[0] + "</span>" : esc(m[0]); }
+      else if ((m = /^(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?j?/.exec(resto))) { html += '<span class="num">' + m[0] + "</span>"; }
+      else { m = [resto[0]]; html += esc(m[0]); }
+      i += m[0].length;
+    }
+    return html;
+  }
+  function mostrarCodigo(el, codigo) {
+    var lineas = codigo.replace(/\n$/, "").split("\n");
+    el.innerHTML = '<div class="codigo"><ol>' + lineas.map(function (l) {
+      return "<li>" + (pyResaltar(l) || " ") + "</li>";
+    }).join("") + "</ol></div>";
+  }
+
+  // ---------- La tabla ----------
+  var EJEMPLO = [
+    { fecha: "2026-09-03", tmax: "38.0", tmin: "25.0", lluvia_mm: "0.2", nota: "Día más caluroso, lluvia pequeña", etiquetas: "calor" },
+    { fecha: "2026-09-05", tmax: "32.2", tmin: "23.6", lluvia_mm: "6.9", nota: "Segunda lluvia más alta", etiquetas: "lluvia" },
+    { fecha: "2026-09-06", tmax: "30.2", tmin: "22.3", lluvia_mm: "0.7", nota: "Máxima más baja del mes", etiquetas: "" },
+    { fecha: "2026-09-30", tmax: "30.9", tmin: "23.9", lluvia_mm: "8.8", nota: 'La "gran" lluvia del mes', etiquetas: "lluvia, fresco" }
+  ];
+  var MAX_FILAS = 8;
+  var CLAVE = "pb-s10-csv-json";
+  function copia(t) { return t.map(function (f) { var g = {}; N.CAMPOS.forEach(function (c) { g[c] = f[c]; }); return g; }); }
+  var estado = { tabla: copia(EJEMPLO), escritor: "dict", newline: true, indent: 2, ascii: false, windows: true, fila: 0 };
+  try {
+    var g = JSON.parse(localStorage.getItem(CLAVE) || "null");
+    if (g && Array.isArray(g.tabla) && g.tabla.length >= 1 && g.tabla.length <= MAX_FILAS &&
+        g.tabla.every(function (f) { return N.CAMPOS.every(function (c) { return typeof f[c] === "string"; }); })) estado = g;
+  } catch (e) { /* sin almacenamiento */ }
+  function guardar() { try { localStorage.setItem(CLAVE, JSON.stringify(estado)); } catch (e) { /* sin almacenamiento */ } }
+
+  var ENCABEZADOS = { fecha: ["fecha", "str", "c-fecha"], tmax: ["tmax", "°C", "c-num"], tmin: ["tmin", "°C", "c-num"],
+                      lluvia_mm: ["lluvia_mm", "mm", "c-num"], nota: ["nota", "str", "c-nota"], etiquetas: ["etiquetas", "lista", "c-etq"] };
+  function pintarEditor() {
+    $("editor").innerHTML = "<thead><tr><th scope=\"col\">#</th>" + N.CAMPOS.map(function (c) {
+      return '<th scope="col">' + esc(ENCABEZADOS[c][0]) + "<small>" + esc(ENCABEZADOS[c][1]) + "</small></th>";
+    }).join("") + "</tr></thead><tbody>" + estado.tabla.map(function (f, k) {
+      return '<tr><td class="n">' + (k + 1) + "</td>" + N.CAMPOS.map(function (c) {
+        return '<td class="' + ENCABEZADOS[c][2] + '"><input type="text" spellcheck="false" autocomplete="off" data-fila="' + k +
+          '" data-campo="' + c + '" aria-label="' + c + " de la fila " + (k + 1) + '" value="' + esc(f[c]).replace(/"/g, "&quot;") + '"></td>';
+      }).join("") + "</tr>";
+    }).join("") + "</tbody>";
+    $("agregar").disabled = estado.tabla.length >= MAX_FILAS;
+    $("quitarFila").disabled = estado.tabla.length <= 1;
+  }
+  $("editor").addEventListener("input", function (e) {
+    var t = e.target;
+    if (!t.dataset || t.dataset.campo === undefined) return;
+    estado.tabla[Number(t.dataset.fila)][t.dataset.campo] = t.value;
+    actualizar();
+  });
+  $("agregar").addEventListener("click", function () {
+    if (estado.tabla.length >= MAX_FILAS) return;
+    estado.tabla.push({ fecha: "2026-09-15", tmax: "35.9", tmin: "23.0", lluvia_mm: "0.0", nota: "", etiquetas: "" });
+    pintarEditor(); actualizar();
+  });
+  $("quitarFila").addEventListener("click", function () {
+    if (estado.tabla.length <= 1) return;
+    estado.tabla.pop();
+    pintarEditor(); actualizar();
+  });
+  $("ejemplo").addEventListener("click", function () { estado.tabla = copia(EJEMPLO); pintarEditor(); actualizar(); });
+
+  // ---------- Opciones ----------
+  document.querySelectorAll('input[name="escritor"]').forEach(function (r) {
+    r.checked = r.value === estado.escritor;
+    r.addEventListener("change", function () { estado.escritor = r.value; actualizar(); });
+  });
+  document.querySelectorAll('input[name="sistema"]').forEach(function (r) {
+    r.checked = (r.value === "windows") === estado.windows;
+    r.addEventListener("change", function () { estado.windows = r.value === "windows"; actualizar(); });
+  });
+  $("newline").checked = estado.newline;
+  $("newline").addEventListener("change", function () { estado.newline = $("newline").checked; actualizar(); });
+  $("indent").value = estado.indent === null ? "none" : String(estado.indent);
+  $("indent").addEventListener("change", function () { var v = $("indent").value; estado.indent = v === "none" ? null : Number(v); actualizar(); });
+  $("ascii").value = String(estado.ascii);
+  $("ascii").addEventListener("change", function () { estado.ascii = $("ascii").value === "true"; actualizar(); });
+  $("filaLeer").addEventListener("change", function () { estado.fila = Number($("filaLeer").value); actualizar(); });
+
+  // ---------- Archivos con los saltos de línea a la vista ----------
+  var FIN = { "\r\n": D + "r" + D + "n", "\n": D + "n", "\r\r\n": D + "r" + D + "r" + D + "n", "\r": D + "r" };
+  function renglones(texto) {
+    var res = [], re = /([^\r\n]*)(\r\r\n|\r\n|\n|\r)?/g, m;
+    while ((m = re.exec(texto)) !== null) {
+      if (m[0] === "") break;
+      res.push([m[1], m[2] || ""]);
+    }
+    return res;
+  }
+  function htmlCSV(linea) {
+    // Los campos entre comillas, en otro color
+    return esc(linea).replace(/"(?:[^"]|"")*"/g, function (q) { return '<span class="q">' + q + "</span>"; });
+  }
+  function htmlJSON(linea) {
+    var e = esc(linea), bs = D.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return e.replace(new RegExp(bs + "(u[0-9a-f]{4}|[" + bs + '"nrtbf])', "g"), function (x) { return '<span class="escape">' + x + "</span>"; });
+  }
+  function pintarArchivo(el, texto, colorear) {
+    el.innerHTML = renglones(texto).map(function (r) {
+      var fin = r[1] ? '<span class="fin' + (r[1] === "\r\r\n" ? " doble" : "") + '" title="fin de línea">' + FIN[r[1]] + "</span>" : "";
+      return '<span class="r">' + (colorear(r[0]) || "") + fin + "</span>";
+    }).join("");
+  }
+
+  function actualizar() {
+    // Leer la tabla: valores de Python, o avisos si una celda no sirve
+    var regs = [], avisos = [];
+    estado.tabla.forEach(function (f, k) {
+      var r = {};
+      N.CAMPOS.forEach(function (c) {
+        var v = N.valorDeCelda(c, f[c]);
+        var inp = $("editor").querySelector('input[data-fila="' + k + '"][data-campo="' + c + '"]');
+        if (v.error) {
+          avisos.push("Fila " + (k + 1) + ", " + c + ": " + v.error + ".");
+          if (inp) { inp.classList.add("invalido"); inp.setAttribute("aria-invalid", "true"); }
+        } else {
+          r[c] = v.valor;
+          if (inp) { inp.classList.remove("invalido"); inp.removeAttribute("aria-invalid"); }
+        }
+      });
+      regs.push(r);
+    });
+    $("avisos").innerHTML = avisos.map(function (a) { return "<li>" + esc(a) + "</li>"; }).join("");
+    guardar();
+    if (avisos.length) {
+      $("verCSV").innerHTML = $("verJSON").innerHTML = '<span class="r" style="color:var(--guinda)"> Corrige las celdas marcadas.</span>';
+      $("tamCSV").textContent = $("tamJSON").textContent = "";
+      return;
+    }
+    var o = { escritor: estado.escritor, newline: estado.newline, indent: estado.indent, ascii: estado.ascii, windows: estado.windows };
+    mostrarCodigo($("codigoGuardar"), N.codigoGuardar(regs, o));
+    var csv = N.archivoCSV(regs, o), json = N.archivoJSON(regs, o);
+    pintarArchivo($("verCSV"), csv, htmlCSV);
+    pintarArchivo($("verJSON"), json, htmlJSON);
+    var nCSV = renglones(csv).length;
+    $("tamCSV").textContent = N.bytesUtf8(csv) + " bytes en UTF-8 · " + nCSV + " renglones: el encabezado y " + regs.length + (regs.length === 1 ? " fila" : " filas") +
+      (o.windows && !o.newline ? ". Cada renglón termina en \\r\\r\\n." : ".");
+    $("tamJSON").textContent = N.bytesUtf8(json) + " bytes en UTF-8" + (o.indent === null ? " · todo en un renglón" : "") +
+      (o.windows && o.indent !== null ? " · en Windows cada \\n queda como \\r\\n" : "") + " · json.dump no agrega un salto de línea al final.";
+    // Leer de regreso
+    if (estado.fila >= regs.length) estado.fila = 0;
+    $("filaLeer").innerHTML = regs.map(function (r, k) { return '<option value="' + k + '">' + (k + 1) + " · " + esc(r.fecha) + "</option>"; }).join("");
+    $("filaLeer").value = estado.fila;
+    var i = estado.fila;
+    mostrarCodigo($("codigoLeer"), N.codigoLeer(i));
+    var lec = N.lectura(regs, i);
+    $("consolaLeer").innerHTML = '<span class="prompt">' + esc(N.CARPETA) + "&gt; </span>python leer.py\n" + esc(lec.salida) +
+      '<span class="error">' + esc(lec.error) + "</span>";
+    var t = regs[i].tmax;
+    $("explicaLeer").innerHTML = "<b>Del CSV todo regresa como texto:</b> <code>" + esc(N.pyRepr(t === null ? "" : N.pyStrDe(t))) +
+      "</code> es un str, aunque en la tabla sea un número; la lista de etiquetas también regresa como texto. <b>El JSON conserva los tipos:</b> <code>" +
+      esc(N.pyRepr(t)) + "</code> es " + esc(N.pyTipo(t)) + " y las etiquetas regresan como lista. Para hacer cuentas con el CSV hay que convertir: <code>float(filas[" + i + ']["tmax"])</code>.';
+    $("consolaCrudo").textContent = "C:" + D + "semana10> python ver_filas.py\n" + N.lectorCrudo(regs);
+  }
+
+  mostrarCodigo($("codigoCrudo"), 'import csv\n\nwith open("clima.csv", newline="", encoding="utf-8") as f:\n    for fila in csv.reader(f):\n        print(fila)\n');
+  // repr de "Día más caluroso, lluvia pequeña" escrito en UTF-8 y leído como cp1252
+  var A = String.fromCharCode(0xC3);
+  $("mojibake").textContent = "'D" + A + D + "xada m" + A + String.fromCharCode(0xA1) + "s caluroso, lluvia peque" + A + String.fromCharCode(0xB1) + "a'";
+  pintarEditor();
+  actualizar();
+})();
+</script>
+<div id="qr-sitio" class="qr-capa" hidden>
+  <div class="qr-caja" role="dialog" aria-modal="true" aria-label="Código QR de esta página">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 45" role="img" aria-label="Código QR de https://memosanchezg.github.io/programacion-basica-interactivos/semana-10-csv-json.html" shape-rendering="crispEdges"><rect width="45" height="45" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM11 2h4v1h-4zM16 2h1v1h-1zM19 2h3v1h-3zM23 2h5v1h-5zM30 2h1v1h-1zM33 2h2v1h-2zM36 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM14 3h3v1h-3zM18 3h2v1h-2zM23 3h1v1h-1zM27 3h4v1h-4zM32 3h1v1h-1zM34 3h1v1h-1zM36 3h1v1h-1zM42 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM10 4h3v1h-3zM15 4h3v1h-3zM19 4h6v1h-6zM26 4h2v1h-2zM29 4h2v1h-2zM33 4h2v1h-2zM36 4h1v1h-1zM38 4h3v1h-3zM42 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h1v1h-1zM14 5h3v1h-3zM18 5h1v1h-1zM23 5h1v1h-1zM26 5h1v1h-1zM28 5h1v1h-1zM32 5h3v1h-3zM36 5h1v1h-1zM38 5h3v1h-3zM42 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h1v1h-1zM15 6h3v1h-3zM20 6h2v1h-2zM24 6h2v1h-2zM30 6h2v1h-2zM33 6h2v1h-2zM36 6h1v1h-1zM38 6h3v1h-3zM42 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h2v1h-2zM13 7h2v1h-2zM17 7h1v1h-1zM22 7h1v1h-1zM26 7h1v1h-1zM29 7h2v1h-2zM34 7h1v1h-1zM36 7h1v1h-1zM42 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM30 8h1v1h-1zM32 8h1v1h-1zM34 8h1v1h-1zM36 8h7v1h-7zM10 9h1v1h-1zM12 9h2v1h-2zM15 9h1v1h-1zM17 9h2v1h-2zM20 9h1v1h-1zM23 9h1v1h-1zM25 9h2v1h-2zM28 9h1v1h-1zM33 9h2v1h-2zM2 10h1v1h-1zM4 10h5v1h-5zM13 10h2v1h-2zM17 10h3v1h-3zM22 10h1v1h-1zM24 10h1v1h-1zM27 10h3v1h-3zM31 10h1v1h-1zM36 10h5v1h-5zM2 11h2v1h-2zM5 11h2v1h-2zM9 11h2v1h-2zM12 11h1v1h-1zM14 11h1v1h-1zM19 11h5v1h-5zM25 11h1v1h-1zM27 11h1v1h-1zM30 11h1v1h-1zM32 11h3v1h-3zM36 11h3v1h-3zM40 11h3v1h-3zM2 12h2v1h-2zM6 12h1v1h-1zM8 12h2v1h-2zM11 12h2v1h-2zM17 12h1v1h-1zM22 12h2v1h-2zM29 12h4v1h-4zM34 12h1v1h-1zM37 12h1v1h-1zM2 13h2v1h-2zM5 13h1v1h-1zM7 13h1v1h-1zM10 13h2v1h-2zM13 13h2v1h-2zM18 13h1v1h-1zM23 13h2v1h-2zM28 13h1v1h-1zM32 13h4v1h-4zM38 13h2v1h-2zM42 13h1v1h-1zM3 14h2v1h-2zM7 14h2v1h-2zM12 14h3v1h-3zM16 14h2v1h-2zM19 14h1v1h-1zM21 14h2v1h-2zM24 14h1v1h-1zM26 14h6v1h-6zM33 14h1v1h-1zM37 14h1v1h-1zM39 14h2v1h-2zM42 14h1v1h-1zM2 15h2v1h-2zM7 15h1v1h-1zM9 15h3v1h-3zM14 15h2v1h-2zM17 15h4v1h-4zM23 15h2v1h-2zM29 15h1v1h-1zM32 15h1v1h-1zM34 15h9v1h-9zM2 16h1v1h-1zM5 16h1v1h-1zM7 16h4v1h-4zM12 16h1v1h-1zM16 16h3v1h-3zM22 16h2v1h-2zM25 16h2v1h-2zM29 16h5v1h-5zM35 16h1v1h-1zM37 16h1v1h-1zM40 16h1v1h-1zM2 17h1v1h-1zM6 17h2v1h-2zM12 17h1v1h-1zM14 17h1v1h-1zM17 17h2v1h-2zM23 17h1v1h-1zM25 17h1v1h-1zM28 17h2v1h-2zM33 17h2v1h-2zM36 17h2v1h-2zM39 17h1v1h-1zM41 17h1v1h-1zM4 18h2v1h-2zM7 18h3v1h-3zM11 18h1v1h-1zM13 18h2v1h-2zM18 18h2v1h-2zM22 18h1v1h-1zM25 18h1v1h-1zM27 18h3v1h-3zM31 18h3v1h-3zM35 18h1v1h-1zM37 18h1v1h-1zM40 18h1v1h-1zM3 19h2v1h-2zM6 19h1v1h-1zM10 19h2v1h-2zM13 19h2v1h-2zM16 19h1v1h-1zM18 19h1v1h-1zM20 19h3v1h-3zM25 19h2v1h-2zM30 19h5v1h-5zM36 19h4v1h-4zM41 19h2v1h-2zM2 20h3v1h-3zM7 20h3v1h-3zM11 20h1v1h-1zM14 20h1v1h-1zM16 20h1v1h-1zM18 20h1v1h-1zM20 20h1v1h-1zM22 20h1v1h-1zM24 20h1v1h-1zM29 20h3v1h-3zM35 20h1v1h-1zM38 20h2v1h-2zM41 20h1v1h-1zM4 21h1v1h-1zM9 21h1v1h-1zM16 21h1v1h-1zM21 21h1v1h-1zM28 21h8v1h-8zM38 21h2v1h-2zM41 21h2v1h-2zM3 22h1v1h-1zM7 22h2v1h-2zM10 22h1v1h-1zM15 22h1v1h-1zM17 22h2v1h-2zM20 22h1v1h-1zM23 22h4v1h-4zM29 22h1v1h-1zM37 22h1v1h-1zM39 22h3v1h-3zM3 23h1v1h-1zM5 23h2v1h-2zM10 23h3v1h-3zM14 23h2v1h-2zM17 23h3v1h-3zM21 23h3v1h-3zM25 23h1v1h-1zM27 23h2v1h-2zM30 23h1v1h-1zM32 23h3v1h-3zM36 23h7v1h-7zM2 24h3v1h-3zM7 24h2v1h-2zM11 24h3v1h-3zM15 24h4v1h-4zM20 24h1v1h-1zM22 24h1v1h-1zM24 24h1v1h-1zM27 24h4v1h-4zM34 24h1v1h-1zM38 24h1v1h-1zM40 24h1v1h-1zM4 25h2v1h-2zM7 25h1v1h-1zM12 25h2v1h-2zM15 25h1v1h-1zM18 25h1v1h-1zM20 25h2v1h-2zM23 25h2v1h-2zM29 25h1v1h-1zM33 25h3v1h-3zM42 25h1v1h-1zM4 26h1v1h-1zM7 26h2v1h-2zM10 26h1v1h-1zM12 26h1v1h-1zM14 26h1v1h-1zM19 26h1v1h-1zM25 26h7v1h-7zM33 26h1v1h-1zM40 26h1v1h-1zM3 27h2v1h-2zM7 27h1v1h-1zM12 27h2v1h-2zM15 27h2v1h-2zM18 27h2v1h-2zM21 27h3v1h-3zM25 27h1v1h-1zM27 27h1v1h-1zM30 27h1v1h-1zM32 27h2v1h-2zM35 27h5v1h-5zM41 27h2v1h-2zM2 28h1v1h-1zM7 28h4v1h-4zM13 28h1v1h-1zM16 28h3v1h-3zM20 28h1v1h-1zM22 28h1v1h-1zM26 28h5v1h-5zM32 28h1v1h-1zM34 28h1v1h-1zM36 28h3v1h-3zM2 29h1v1h-1zM4 29h3v1h-3zM12 29h6v1h-6zM21 29h4v1h-4zM26 29h1v1h-1zM28 29h1v1h-1zM30 29h1v1h-1zM33 29h2v1h-2zM38 29h2v1h-2zM42 29h1v1h-1zM2 30h2v1h-2zM5 30h1v1h-1zM8 30h1v1h-1zM11 30h1v1h-1zM13 30h1v1h-1zM15 30h1v1h-1zM17 30h1v1h-1zM19 30h1v1h-1zM24 30h2v1h-2zM27 30h2v1h-2zM31 30h1v1h-1zM33 30h1v1h-1zM39 30h3v1h-3zM2 31h2v1h-2zM7 31h1v1h-1zM11 31h2v1h-2zM14 31h7v1h-7zM22 31h1v1h-1zM26 31h2v1h-2zM29 31h4v1h-4zM35 31h2v1h-2zM38 31h1v1h-1zM40 31h1v1h-1zM42 31h1v1h-1zM2 32h1v1h-1zM4 32h1v1h-1zM7 32h5v1h-5zM13 32h2v1h-2zM16 32h1v1h-1zM19 32h3v1h-3zM23 32h2v1h-2zM27 32h2v1h-2zM31 32h1v1h-1zM35 32h3v1h-3zM39 32h1v1h-1zM2 33h1v1h-1zM4 33h2v1h-2zM7 33h1v1h-1zM10 33h5v1h-5zM16 33h2v1h-2zM20 33h5v1h-5zM26 33h1v1h-1zM30 33h1v1h-1zM34 33h4v1h-4zM39 33h1v1h-1zM41 33h2v1h-2zM2 34h1v1h-1zM6 34h1v1h-1zM8 34h1v1h-1zM10 34h2v1h-2zM13 34h2v1h-2zM16 34h2v1h-2zM19 34h1v1h-1zM21 34h2v1h-2zM24 34h1v1h-1zM26 34h3v1h-3zM31 34h1v1h-1zM33 34h6v1h-6zM40 34h1v1h-1zM42 34h1v1h-1zM10 35h2v1h-2zM13 35h1v1h-1zM18 35h2v1h-2zM21 35h3v1h-3zM25 35h3v1h-3zM30 35h1v1h-1zM33 35h2v1h-2zM38 35h1v1h-1zM41 35h2v1h-2zM2 36h7v1h-7zM12 36h1v1h-1zM17 36h1v1h-1zM19 36h1v1h-1zM22 36h2v1h-2zM27 36h4v1h-4zM32 36h3v1h-3zM36 36h1v1h-1zM38 36h1v1h-1zM40 36h1v1h-1zM2 37h1v1h-1zM8 37h1v1h-1zM10 37h4v1h-4zM16 37h1v1h-1zM18 37h4v1h-4zM23 37h2v1h-2zM26 37h2v1h-2zM33 37h2v1h-2zM38 37h2v1h-2zM2 38h1v1h-1zM4 38h3v1h-3zM8 38h1v1h-1zM10 38h1v1h-1zM12 38h4v1h-4zM18 38h1v1h-1zM23 38h1v1h-1zM26 38h1v1h-1zM28 38h2v1h-2zM32 38h1v1h-1zM34 38h5v1h-5zM40 38h1v1h-1zM2 39h1v1h-1zM4 39h3v1h-3zM8 39h1v1h-1zM10 39h2v1h-2zM15 39h2v1h-2zM18 39h5v1h-5zM24 39h3v1h-3zM30 39h2v1h-2zM33 39h1v1h-1zM35 39h1v1h-1zM37 39h1v1h-1zM39 39h2v1h-2zM2 40h1v1h-1zM4 40h3v1h-3zM8 40h1v1h-1zM10 40h2v1h-2zM14 40h5v1h-5zM22 40h1v1h-1zM24 40h1v1h-1zM26 40h2v1h-2zM29 40h2v1h-2zM34 40h5v1h-5zM40 40h1v1h-1zM2 41h1v1h-1zM8 41h1v1h-1zM12 41h2v1h-2zM17 41h1v1h-1zM19 41h2v1h-2zM23 41h1v1h-1zM25 41h1v1h-1zM28 41h3v1h-3zM34 41h2v1h-2zM38 41h2v1h-2zM41 41h1v1h-1zM2 42h7v1h-7zM10 42h3v1h-3zM14 42h6v1h-6zM21 42h1v1h-1zM24 42h5v1h-5zM31 42h1v1h-1zM33 42h1v1h-1zM35 42h4v1h-4zM40 42h1v1h-1z"/></svg>
+    <p class="qr-texto">Escanea con la cámara del celular para abrir esta página</p>
+    <p class="qr-url">https://memosanchezg.github.io/programacion-basica-interactivos/semana-10-csv-json.html</p>
+    <button type="button" class="qr-cerrar">Cerrar</button>
+  </div>
+</div>
+<style>
+  .qr-capa { position:fixed; top:0; right:0; bottom:0; left:0; z-index:10000; display:flex; align-items:center;
+             justify-content:center; padding:16px; background:#fff; }
+  .qr-capa[hidden] { display:none; }
+  .qr-caja { max-width:100%; text-align:center; color:#0A2A57; font:16px/1.4 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .qr-caja svg { display:block; width:min(62vh, 84vw); height:auto; margin:0 auto; }
+  .qr-texto { margin:12px 0 2px; font-size:1.15rem; font-weight:bold; }
+  .qr-url { margin:0 0 12px; color:#5B6472; word-break:break-all; }
+  .qr-cerrar { font:inherit; padding:6px 20px; border:2px solid #00408F; border-radius:4px; background:#fff;
+               color:#00408F; cursor:pointer; }
+</style>
+<script>
+  (function () {
+    var capa = document.getElementById("qr-sitio");
+    document.querySelectorAll("a.qr-abrir").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        capa.hidden = false;
+        capa.querySelector(".qr-cerrar").focus();
+      });
+    });
+    capa.addEventListener("click", function (e) {
+      if (e.target === capa || e.target.classList.contains("qr-cerrar")) capa.hidden = true;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !capa.hidden) capa.hidden = true;
+    });
+  })();
+</script>
+</body>
+</html>

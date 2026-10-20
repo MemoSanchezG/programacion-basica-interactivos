@@ -1,0 +1,685 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="tipo" content="ejercicio">
+<title>Ejercicio de clases</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<style>
+  :root {
+    --azul:#00408F; --azul-oscuro:#0A2A57; --guinda:#8C1D35; --oro:#B8975A; --oro-texto:#8A6A2E;
+    --azul-claro:#E8EEF7; --oro-claro:#F7F1E6; --guinda-claro:#F5E6EA; --verde:#2F7D5B;
+    --tinta:#1B1F2A; --gris:#5B6472; --gris-claro:#E9ECF1; --borde:#D9DEE6; --fondo:#FFFFFF;
+    --cmd-fondo:#0C0C0C; --cmd-texto:#E6E6E6;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--fondo); color:var(--tinta);
+         font:16px/1.45 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .franja { height:8px; background:var(--azul); border-bottom:3px solid var(--oro); }
+  header { max-width:1280px; margin:0 auto; padding:12px 18px 4px; }
+  .semana { color:var(--guinda); font-weight:bold; letter-spacing:.04em; font-size:.85rem; text-transform:uppercase; }
+  h1 { font-family:Cambria,Georgia,serif; color:var(--azul-oscuro); font-size:1.7rem; margin:2px 0 2px; }
+  .sub { color:var(--gris); margin:0; }
+  main { max-width:1280px; margin:0 auto; padding:8px 18px 24px; }
+  .fila { display:grid; grid-template-columns:minmax(260px,380px) minmax(0,1fr); gap:16px; align-items:start; }
+  .panel { background:#fff; border:1px solid var(--borde); border-radius:10px; padding:12px 14px; min-width:0; }
+  .panel h2 { font-size:1.02rem; color:var(--azul-oscuro); margin:0 0 8px; }
+  .panel h3 { font-size:.95rem; color:var(--azul-oscuro); margin:12px 0 4px; }
+  .panel ol, .panel ul { padding-left:20px; margin:4px 0; }
+  .panel li { margin:4px 0; }
+  code { font-family:Consolas,"Courier New",monospace; color:var(--azul); }
+  .lectura { background:var(--oro-claro); border-left:4px solid var(--oro); border-radius:8px; padding:10px 12px;
+             margin-top:12px; line-height:1.55; }
+  .barra { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-bottom:8px; }
+  button.accion { font:inherit; font-weight:bold; border-radius:8px; padding:7px 12px;
+                  border:1px solid var(--azul); background:#fff; color:var(--azul); cursor:pointer; }
+  button.accion:hover:not(:disabled), button.accion:focus-visible { background:var(--azul); color:#fff; outline:none; }
+  button.accion.primaria { background:var(--azul); color:#fff; }
+  button.accion.primaria:hover:not(:disabled) { background:var(--azul-oscuro); }
+  button.accion:disabled { opacity:.5; cursor:wait; }
+  #estado { color:var(--gris); font-size:.92rem; margin-left:4px; }
+  #estado.listo { color:var(--verde); }
+  .editor-caja { border:1px solid var(--tinta); }
+  .CodeMirror { height:auto; min-height:260px; font:15px/1.5 Consolas,"Courier New",monospace; }
+  .CodeMirror-linenumber { color:var(--gris); font:11px Cambria,Georgia,serif; padding-top:3px; }
+  .cm-s-default .cm-keyword { color:#000080; font-weight:bold; }
+  .cm-s-default .cm-string { color:#0000FF; }
+  .cm-s-default .cm-number { color:#0000FF; }
+  .cm-s-default .cm-comment { color:#008800; font-style:italic; }
+  .cm-s-default .cm-builtin, .cm-s-default .cm-variable, .cm-s-default .cm-def,
+  .cm-s-default .cm-property, .cm-s-default .cm-operator { color:var(--tinta); }
+  textarea#editor { width:100%; min-height:260px; font:15px/1.5 Consolas,"Courier New",monospace; border:0; padding:8px; }
+  .consola { background:var(--cmd-fondo); color:var(--cmd-texto); font:15px/1.45 Consolas,"Courier New",monospace;
+             white-space:pre-wrap; word-break:break-word; padding:8px 12px; border-radius:4px; margin:6px 0; min-height:2.6em; }
+  .consola .error { color:#FF8A80; }
+  .consola .aviso { color:#B8975A; }
+  ul.pruebas { list-style:none; padding-left:0; }
+  ul.pruebas li { padding:4px 0 4px 26px; position:relative; }
+  ul.pruebas li::before { content:"•"; position:absolute; left:8px; color:var(--gris); }
+  ul.pruebas li.ok::before { content:"✓"; color:var(--verde); font-weight:bold; left:4px; }
+  ul.pruebas li.mal::before { content:"✗"; color:var(--guinda); font-weight:bold; left:4px; }
+  ul.pruebas li.mal { color:var(--guinda); }
+  .resumen { font-weight:bold; margin:6px 0; }
+  .resumen.ok { color:var(--verde); }
+  .resumen.mal { color:var(--guinda); }
+  footer { max-width:1280px; margin:0 auto; padding:6px 18px 18px; color:var(--gris); font-size:.85rem; }
+  footer a { color:var(--azul); }
+  @media (max-width: 860px) { .fila { grid-template-columns:1fr; } }
+
+  /* Propios de este ejercicio */
+  details.entradas { margin:6px 0; }
+  details.entradas summary { cursor:pointer; font-weight:bold; color:var(--azul-oscuro); }
+  details.entradas textarea { width:100%; min-height:3.2em; font:15px Consolas,"Courier New",monospace; border:1px solid var(--borde);
+                              border-radius:6px; padding:6px; margin-top:4px; }
+  table.metodos { width:100%; border-collapse:collapse; font-size:.95rem; margin-top:4px; }
+  table.metodos th, table.metodos td { border:1px solid var(--borde); padding:3px 6px; text-align:left; vertical-align:top; }
+  table.metodos th { background:var(--gris-claro); color:var(--azul-oscuro); }
+  table.metodos td:first-child { font-family:Consolas,"Courier New",monospace; color:var(--azul-oscuro); }
+  @media (max-width: 480px) {
+    header { padding:10px 12px 4px; } main { padding:8px 10px 20px; } footer { padding:6px 12px 16px; }
+    .panel { padding:10px; } h1 { font-size:1.45rem; }
+  }
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header>
+  <div class="semana">Semana 8 · Paradigmas de programación · Ejercicio con Python</div>
+  <h1>Una clase Estacion</h1>
+  <p class="sub">Escribe una clase para una estación meteorológica que guarda sus lecturas de temperatura, córrela aquí mismo y verifica que cada estación lleve sus propios datos.</p>
+</header>
+<main>
+  <div class="fila">
+    <div class="panel">
+      <h2>Instrucciones</h2>
+      <ol>
+        <li>Presiona <b>▶ Ejecutar</b>: la clase todavía no hace nada, así que todo imprime <code>None</code>.</li>
+        <li>Completa <code>__init__</code>: guarda <code>nombre</code> y <code>ciudad</code> como atributos (con <code>self.</code>) y empieza <code>self.lecturas</code> como una lista vacía.</li>
+        <li>Completa los métodos:
+          <div style="overflow-x:auto"><table class="metodos">
+            <thead><tr><th scope="col">Método</th><th scope="col">Qué hace</th></tr></thead>
+            <tbody>
+              <tr><td>registrar(temperatura)</td><td>Si está entre -40 y 60 °C (incluidos), la agrega a las lecturas y regresa <code>True</code>; si no, no la agrega y regresa <code>False</code>.</td></tr>
+              <tr><td>ultima()</td><td>Regresa la última lectura, o <code>None</code> si todavía no hay.</td></tr>
+              <tr><td>cuantas()</td><td>Regresa cuántas lecturas tiene.</td></tr>
+            </tbody>
+          </table></div>
+        </li>
+        <li>Opcional: agrega <code>__str__</code> para que <code>print(fcfm)</code> muestre <code>Estación FCFM en San Nicolás</code>.</li>
+        <li>Presiona <b>✓ Verificar</b>.</li>
+      </ol>
+      <h3>Lo que se revisa al presionar Verificar</h3>
+      <ul class="pruebas" id="lista-pruebas"></ul>
+      <div class="lectura"><b>Pista:</b> todo lo que es de cada estación se crea dentro de <code>__init__</code> con <code>self.</code>; dentro de los métodos, los atributos también se usan con <code>self.</code> (<code>self.lecturas</code>).</div>
+    </div>
+    <div class="panel">
+      <div class="barra">
+        <button type="button" class="accion primaria" id="ejecutar" disabled>▶ Ejecutar</button>
+        <button type="button" class="accion" id="verificar" disabled>✓ Verificar</button>
+        <button type="button" class="accion" id="restaurar">↺ Código inicial</button>
+        <button type="button" class="accion" id="descargar">⬇ Descargar .py</button>
+        <span id="estado" role="status">Cargando Python…</span>
+      </div>
+      <div class="editor-caja"><textarea id="editor" spellcheck="false" aria-label="Editor de código Python: estacion.py"></textarea></div>
+      <details class="entradas">
+        <summary>Entradas para input() (una por renglón)</summary>
+        <label for="entradas" class="sub">Si tu programa usa input(), escribe aquí lo que teclearías.</label>
+        <textarea id="entradas" spellcheck="false"></textarea>
+      </details>
+      <h3>Salida de <code>python estacion.py</code></h3>
+      <div class="consola" id="salida" aria-live="polite"></div>
+      <div id="resultados" aria-live="polite"></div>
+    </div>
+  </div>
+</main>
+<footer>
+  Programación Básica · FCFM-UANL · Python corre en tu navegador (la primera vez descarga unos 10 MB;
+  después funciona más rápido). Ctrl+Enter ejecuta. Tu código se guarda en este navegador.
+  En tu computadora, la dirección de print(objeto) y las rutas de los errores serán otras.
+  <a href="index.html">Índice de simuladores</a> · <a href="#qr-sitio" class="qr-abrir">Abrir en el celular (QR)</a>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.27.7/full/pyodide.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  // ===================== Configuración del ejercicio =====================
+  var CLAVE = "pb-s08-clases";
+  var ARCHIVO = "estacion.py";
+  var CODIGO_INICIAL = "class Estacion:\n    def __init__(self, nombre, ciudad):\n        # Completa: guarda nombre y ciudad como atributos y empieza\n        # con una lista vacía de lecturas\n        pass\n\n    def registrar(self, temperatura):\n        # Completa: si la temperatura está entre -40 y 60 (incluidos),\n        # agrégala a las lecturas y regresa True; si no, no la agregues\n        # y regresa False\n        pass\n\n    def ultima(self):\n        # Completa: regresa la última lectura, o None si todavía no hay\n        pass\n\n    def cuantas(self):\n        # Completa: regresa cuántas lecturas tiene la estación\n        pass\n\n    # Opcional: __str__, para que print(fcfm) muestre: Estación FCFM en San Nicolás\n\n\nfcfm = Estacion(\"FCFM\", \"San Nicolás\")\nobispado = Estacion(\"Obispado\", \"Monterrey\")\nprint(fcfm.registrar(24.5))\nprint(fcfm.registrar(99))\nprint(fcfm.registrar(26.1))\nprint(obispado.registrar(22.8))\nprint(fcfm.ultima(), obispado.ultima())\nprint(fcfm.cuantas(), obispado.cuantas())\nprint(fcfm)\n";
+  var PRUEBAS = [
+    "Estacion(\"FCFM\", \"San Nicolás\") guarda nombre, ciudad y una lista vacía de lecturas",
+    "registrar acepta de -40 a 60 °C (regresa True y la agrega) y rechaza lo demás (regresa False)",
+    "ultima() regresa None sin lecturas y la última lectura válida después",
+    "cuantas() cuenta las lecturas válidas",
+    "Cada estación guarda sus propios datos: registrar o cambiar una no afecta a la otra",
+    "(Opcional) __str__ muestra: Estación FCFM en San Nicolás"
+  ];
+  // El arnés corre el archivo como "python estacion.py" y da los errores como python.exe.
+  var ARNES_PY = String.raw`import sys, io, os, json, ast, shutil, importlib, linecache, traceback, builtins
+
+_TRABAJO = '/home/pyodide/clases'
+_PROPIOS = ('estacion',)
+sys.dont_write_bytecode = True
+
+
+# ---------- Errores como los imprime python.exe 3.12 ----------
+# Las sugerencias "Did you mean" siguen a Python/suggestions.c (mide en bytes UTF-8 y busca
+# primero en las variables locales, luego en las globales y al final en builtins).
+def _costo(a, b):
+    if (a & 31) != (b & 31):
+        return 2
+    if a == b:
+        return 0
+    if 65 <= a <= 90:
+        a += 32
+    if 65 <= b <= 90:
+        b += 32
+    return 1 if a == b else 2
+
+
+def _distancia(a, b, maximo):
+    while a and b and a[0] == b[0]:
+        a, b = a[1:], b[1:]
+    while a and b and a[-1] == b[-1]:
+        a, b = a[:-1], b[:-1]
+    if not a or not b:
+        return (len(a) + len(b)) * 2
+    if len(a) > 40 or len(b) > 40:
+        return maximo + 1
+    if len(b) < len(a):
+        a, b = b, a
+    if (len(b) - len(a)) * 2 > maximo:
+        return maximo + 1
+    fila = [(i + 1) * 2 for i in range(len(a))]
+    resultado = 0
+    for j, cb in enumerate(b):
+        distancia = resultado = j * 2
+        minimo = sys.maxsize
+        for k, ca in enumerate(a):
+            sustituir = distancia + _costo(cb, ca)
+            distancia = fila[k]
+            resultado = min(min(resultado, distancia) + 2, sustituir)
+            fila[k] = resultado
+            if resultado < minimo:
+                minimo = resultado
+        if minimo > maximo:
+            return maximo + 1
+    return resultado
+
+
+def _sugerir(candidatos, nombre):
+    if len(candidatos) >= 750:
+        return None
+    nb = nombre.encode('utf-8', 'surrogatepass')
+    mejor, mejor_d = None, sys.maxsize
+    for c in candidatos:
+        if not isinstance(c, str) or c == nombre:
+            continue
+        cb = c.encode('utf-8', 'surrogatepass')
+        maximo = min((len(nb) + len(cb) + 3) * 2 // 6, mejor_d - 1)
+        d = _distancia(nb, cb, maximo)
+        if d > maximo:
+            continue
+        if mejor is None or d < mejor_d:
+            mejor, mejor_d = c, d
+    return mejor
+
+
+def _sugerencia(e):
+    try:
+        if isinstance(e, ImportError):
+            if getattr(e, 'name_from', None) is None or not isinstance(e.name, str):
+                return None
+            m = sys.modules.get(e.name)
+            return None if m is None else _sugerir(dir(m), e.name_from)
+        nombre = getattr(e, 'name', None)
+        if not isinstance(nombre, str):
+            return None
+        if isinstance(e, AttributeError):
+            return _sugerir(dir(e.obj), nombre)
+        if isinstance(e, NameError):
+            tb = e.__traceback__
+            if tb is None:
+                return None
+            while tb.tb_next is not None:
+                tb = tb.tb_next
+            marco = tb.tb_frame
+            locales = list(marco.f_code.co_varnames)
+            if 'self' in locales:
+                yo = marco.f_locals.get('self', None)
+                if 'self' in marco.f_locals and hasattr(yo, nombre):
+                    return 'self.' + nombre
+            return (_sugerir(locales, nombre) or _sugerir(list(marco.f_globals), nombre)
+                    or _sugerir(list(marco.f_builtins), nombre))
+    except Exception:
+        return None
+    return None
+
+
+def _mensaje(e):
+    texto = traceback._safe_string(e, 'exception')
+    s = _sugerencia(e)
+    if s:
+        texto += ". Did you mean: '" + s + "'?"
+    if isinstance(e, NameError) and isinstance(getattr(e, 'name', None), str) and e.name in sys.stdlib_module_names:
+        texto += (" Or did you forget to import '%s'?" if s else ". Did you forget to import '%s'?") % e.name
+    return texto
+
+
+def _ajustar(te, e, vistos):
+    if id(te) in vistos:
+        return
+    vistos.add(id(te))
+    te.stack = traceback.StackSummary.from_list(
+        [m for m in te.stack if m.filename.startswith(os.path.join(_TRABAJO, ''))])
+    if not isinstance(e, SyntaxError):
+        te._str = _mensaje(e)
+    if te.__cause__ is not None and e.__cause__ is not None:
+        _ajustar(te.__cause__, e.__cause__, vistos)
+    if te.__context__ is not None and e.__context__ is not None:
+        _ajustar(te.__context__, e.__context__, vistos)
+
+
+def _formatear_error(e):
+    te = traceback.TracebackException.from_exception(e)
+    _ajustar(te, e, set())
+    return ''.join(te.format())
+
+
+# ---------- input() con las entradas de la caja ----------
+_pendientes = []
+_salida = io.StringIO()
+
+
+def _input(mensaje=''):
+    _salida.write(str(mensaje))
+    if not _pendientes:
+        raise EOFError('EOF when reading a line')
+    valor = _pendientes.pop(0)
+    _salida.write(valor + '\n')
+    return valor
+
+
+# ---------- La carpeta del proyecto ----------
+def _preparar(archivos):
+    os.makedirs(_TRABAJO, exist_ok=True)
+    os.chdir(_TRABAJO)
+    for n in os.listdir(_TRABAJO):
+        ruta = os.path.join(_TRABAJO, n)
+        if os.path.isdir(ruta):
+            shutil.rmtree(ruta)
+        else:
+            os.remove(ruta)
+    for nombre, contenido in archivos.items():
+        with open(os.path.join(_TRABAJO, nombre), 'w', encoding='utf-8') as f:
+            f.write(contenido)
+    _olvidar()
+    if not sys.path or sys.path[0] != _TRABAJO:
+        while _TRABAJO in sys.path:
+            sys.path.remove(_TRABAJO)
+        sys.path.insert(0, _TRABAJO)
+
+
+def _olvidar():
+    # Borra los módulos del alumno de sys.modules: el siguiente import los vuelve a ejecutar
+    for n in list(sys.modules):
+        m = sys.modules.get(n)
+        archivo = getattr(m, '__file__', None) or ''
+        if n in _PROPIOS or n.split('.')[0] in _PROPIOS or str(archivo).startswith(os.path.join(_TRABAJO, '')):
+            del sys.modules[n]
+    importlib.invalidate_caches()
+    linecache.clearcache()
+
+
+def _capturar(funcion):
+    """Corre funcion() con la salida capturada. Regresa (resultado, texto, error formateado o None)."""
+    global _salida
+    anterior, viejo_out, viejo_err, viejo_input = _salida, sys.stdout, sys.stderr, builtins.input
+    _salida = io.StringIO()
+    sys.stdout = sys.stderr = _salida
+    builtins.input = _input
+    resultado, error = None, None
+    try:
+        resultado = funcion()
+    except SystemExit as e:
+        if e.code is not None and not isinstance(e.code, int):
+            _salida.write(str(e.code) + '\n')
+    except BaseException as e:
+        error = _formatear_error(e)
+    finally:
+        sys.stdout, sys.stderr, builtins.input = viejo_out, viejo_err, viejo_input
+        texto, _salida = _salida.getvalue(), anterior
+    return resultado, texto, error
+
+
+def _correr_archivo(nombre):
+    ruta = os.path.join(_TRABAJO, nombre)
+    with open(ruta, encoding='utf-8') as f:
+        codigo = f.read()
+    ns = {'__name__': '__main__', '__file__': ruta, '__builtins__': builtins}
+    exec(compile(codigo, ruta, 'exec'), ns)
+    return ns
+
+
+def _importar(nombre):
+    _olvidar()
+    return importlib.import_module(nombre)
+
+
+def _correr(archivos_json, entradas_json, script, verificar):
+    archivos = json.loads(archivos_json)
+    _preparar(archivos)
+    _pendientes[:] = json.loads(entradas_json)
+    ns, salida, error = _capturar(lambda: _correr_archivo(script))
+    resultados = None
+    if verificar and error is None:
+        try:
+            resultados = [[bool(ok), str(msg)] for ok, msg in revisar(archivos, salida, ns)]
+        except Exception as e:
+            resultados = [[False, 'No se pudo revisar: ' + ''.join(traceback.format_exception_only(type(e), e)).strip()]]
+        _preparar(archivos)
+    return json.dumps({'salida': salida, 'error': error, 'resultados': resultados})
+`;
+  var PRUEBAS_PY = String.raw`FORMATO = 'Estación FCFM en San Nicolás'
+
+
+def _crear(E, *args):
+    try:
+        return E(*args), None
+    except Exception as e:
+        return None, f'{type(e).__name__}: {e}'
+
+
+def _llamar(obj, metodo, *args):
+    f = getattr(obj, metodo, None)
+    if not callable(f):
+        return None, f'la estación no tiene el método {metodo}'
+    try:
+        return f(*args), None
+    except Exception as e:
+        llamada = metodo + '(' + ', '.join(repr(a) for a in args) + ')'
+        return None, f'{llamada} lanzó {type(e).__name__}: {e}'
+
+
+def _lecturas(obj):
+    return getattr(obj, 'lecturas', None)
+
+
+def revisar(archivos, salida, ns):
+    r = []
+    E = ns.get('Estacion')
+    if not isinstance(E, type):
+        return [(False, 'No encontré la clase Estacion (class Estacion:)')]
+    est, err = _crear(E, 'FCFM', 'San Nicolás')
+    if err:
+        return [(False, 'Estacion("FCFM", "San Nicolás") lanzó ' + err)]
+    # 1. Atributos que crea __init__
+    faltan = [a for a in ('nombre', 'ciudad', 'lecturas') if not hasattr(est, a)]
+    if faltan:
+        if len(faltan) == 1:
+            r.append((False, f'Al crear la estación falta el atributo {faltan[0]}: créalo en __init__ con self.'))
+        else:
+            r.append((False, 'Al crear la estación faltan los atributos ' + ', '.join(faltan[:-1]) + ' y ' + faltan[-1] +
+                      ': créalos en __init__ con self.'))
+    else:
+        ok = est.nombre == 'FCFM' and est.ciudad == 'San Nicolás' and type(est.lecturas) is list and est.lecturas == []
+        r.append((ok, 'Estacion("FCFM", "San Nicolás") guarda nombre, ciudad y una lista vacía de lecturas' if ok else
+                  f'Al crearla, nombre={est.nombre!r}, ciudad={est.ciudad!r} y lecturas={est.lecturas!r}; '
+                  "se esperaba 'FCFM', 'San Nicolás' y []"))
+    # 2. registrar: valida el rango y agrega
+    mal = []
+    for t, esperado in [(24.5, True), (99, False), (-40, True), (60, True), (60.5, False), (-40.1, False), (26.1, True)]:
+        e2, err = _crear(E, 'FCFM', 'San Nicolás')
+        antes = list(_lecturas(e2) or [])
+        res, err = _llamar(e2, 'registrar', t)
+        if err:
+            mal.append(err)
+            break
+        despues = _lecturas(e2)
+        if res is not esperado:
+            mal.append(f'registrar({t!r}) regresa {res!r} (se esperaba {esperado!r})')
+        elif esperado and despues != antes + [t]:
+            mal.append(f'después de registrar({t!r}), lecturas es {despues!r} (se esperaba {antes + [t]!r})')
+        elif not esperado and despues != antes:
+            mal.append(f'registrar({t!r}) no debe agregar nada, pero lecturas quedó {despues!r}')
+        if mal:
+            break
+    r.append((not mal, 'registrar acepta de -40 a 60 °C (regresa True y la agrega) y rechaza lo demás (False)' if not mal else mal[0]))
+    # 3. ultima
+    e3, _ = _crear(E, 'FCFM', 'San Nicolás')
+    res, err = _llamar(e3, 'ultima')
+    if err:
+        r.append((False, 'ultima() con la estación vacía: ' + err))
+    elif res is not None:
+        r.append((False, f'ultima() con la estación vacía regresa {res!r} (se esperaba None)'))
+    else:
+        pasos = [_llamar(e3, 'registrar', x) for x in (24.5, 26.1, 99)]
+        res, err = _llamar(e3, 'ultima')
+        ok = err is None and res == 26.1
+        r.append((ok, 'ultima() regresa None sin lecturas y la última lectura válida después' if ok else
+                  'Después de registrar 24.5, 26.1 y 99, ' + (err or f'ultima() regresa {res!r} (se esperaba 26.1)')))
+    # 4. cuantas
+    e4, _ = _crear(E, 'FCFM', 'San Nicolás')
+    cero, err = _llamar(e4, 'cuantas')
+    if err:
+        r.append((False, 'cuantas(): ' + err))
+    else:
+        for x in (24.5, 99, 26.1):
+            _llamar(e4, 'registrar', x)
+        dos, err = _llamar(e4, 'cuantas')
+        ok = cero == 0 and dos == 2
+        r.append((ok, 'cuantas() da 0 al principio y 2 después de dos lecturas válidas' if ok else
+                  f'cuantas() da {cero!r} al principio y {dos!r} después de registrar 24.5, 99 y 26.1 (se esperaba 0 y 2)'))
+    # 5. Cada estación es independiente
+    a, _ = _crear(E, 'FCFM', 'San Nicolás')
+    b, _ = _crear(E, 'Obispado', 'Monterrey')
+    _llamar(a, 'registrar', 20.0)
+    la, lb = _lecturas(a), _lecturas(b)
+    if la is None or lb is None:
+        r.append((False, 'Para revisar que cada estación sea independiente, primero crea el atributo lecturas en __init__'))
+    elif la is lb:
+        r.append((False, 'Las dos estaciones comparten la MISMA lista de lecturas: créala en __init__ (self.lecturas = []), no en la clase'))
+    elif lb != []:
+        r.append((False, f'Registrar en una estación cambió a la otra: sus lecturas quedaron {lb!r}'))
+    else:
+        a.nombre = 'Otra'
+        ok = getattr(b, 'nombre', None) == 'Obispado'
+        r.append((ok, 'Cada estación guarda sus propios datos: registrar o cambiar una no afecta a la otra' if ok else
+                  'Cambiar el nombre de una estación cambió el de la otra'))
+    # 6. __str__ (opcional)
+    if type(est).__str__ is object.__str__:
+        r.append((True, 'Opcional: todavía no defines __str__, así que print(estacion) muestra <__main__.Estacion object at 0x...>'))
+    else:
+        try:
+            s = str(est)
+        except Exception as e:
+            s = None
+            r.append((False, f'str(estacion) lanzó {type(e).__name__}: {e}'))
+        if s is not None:
+            ok = s == FORMATO
+            r.append((ok, f'__str__ (opcional): {s!r}' if ok else f'__str__ (opcional) da {s!r}; el formato es {FORMATO!r}'))
+    return r
+`;
+  // =========================================================================
+
+  var $ = function (id) { return document.getElementById(id); };
+  var pyodide = null, editor = null;
+
+  function esc(t) {
+    return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  function estado(texto, listo) {
+    $("estado").textContent = texto;
+    $("estado").className = listo ? "listo" : "";
+  }
+  var memoria = {};
+  function leer() {
+    if (Object.prototype.hasOwnProperty.call(memoria, "codigo")) return memoria.codigo;
+    try { return localStorage.getItem(CLAVE); } catch (e) { return null; }
+  }
+  function guardar() {
+    memoria.codigo = obtenerCodigo();
+    try { localStorage.setItem(CLAVE, memoria.codigo); } catch (e) { /* sin almacenamiento */ }
+  }
+  function obtenerCodigo() { return editor ? editor.getValue() : $("editor").value; }
+  function ponerCodigo(t) { if (editor) { editor.setValue(t); editor.clearHistory(); } else $("editor").value = t; }
+
+  $("lista-pruebas").innerHTML = PRUEBAS.map(function (p) { return "<li>" + esc(p) + "</li>"; }).join("");
+
+  $("editor").value = leer() || CODIGO_INICIAL;
+  if (window.CodeMirror) {
+    editor = CodeMirror.fromTextArea($("editor"), {
+      mode: "python", lineNumbers: true, indentUnit: 4, tabSize: 4, smartIndent: true,
+      extraKeys: {
+        "Tab": function (cm) { cm.replaceSelection("    "); },
+        "Ctrl-Enter": function () { ejecutar(false); },
+        "Cmd-Enter": function () { ejecutar(false); }
+      }
+    });
+    editor.getInputField().setAttribute("aria-label", "Editor de código Python: estacion.py");
+    var temporizador = null;
+    editor.on("change", function () { clearTimeout(temporizador); temporizador = setTimeout(guardar, 500); });
+  } else {
+    $("editor").addEventListener("keydown", function (e) {
+      if (e.key === "Tab") {
+        e.preventDefault();
+        var t = e.target, i = t.selectionStart;
+        t.value = t.value.slice(0, i) + "    " + t.value.slice(t.selectionEnd);
+        t.selectionStart = t.selectionEnd = i + 4;
+      } else if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault(); ejecutar(false);
+      }
+    });
+    $("editor").addEventListener("input", guardar);
+  }
+
+  function limpiar() {
+    $("salida").innerHTML = "";
+    $("resultados").innerHTML = "";
+  }
+  function entradas() {
+    var t = $("entradas").value.replace(/\r/g, "");
+    if (t === "") return [];
+    var l = t.split("\n");
+    if (l[l.length - 1] === "") l.pop();
+    return l;
+  }
+
+  async function ejecutar(verificar) {
+    if (!pyodide) return;
+    guardar();
+    limpiar();
+    $("ejecutar").disabled = $("verificar").disabled = true;
+    estado(verificar ? "Verificando…" : "Ejecutando…");
+    await new Promise(function (r) { setTimeout(r, 30); });   // deja que se pinte el estado
+    var r, archivos = {};
+    archivos[ARCHIVO] = obtenerCodigo();
+    try {
+      pyodide.globals.set("_archivos_json", JSON.stringify(archivos));
+      pyodide.globals.set("_entradas_json", JSON.stringify(entradas()));
+      pyodide.globals.set("_script", ARCHIVO);
+      pyodide.globals.set("_verificar", !!verificar);
+      r = JSON.parse(await pyodide.runPythonAsync("_correr(_archivos_json, _entradas_json, _script, _verificar)"));
+    } catch (e) {
+      $("salida").innerHTML = '<span class="error">' + esc(String(e)) + "</span>";
+      $("ejecutar").disabled = $("verificar").disabled = false;
+      estado("Python listo", true);
+      return;
+    }
+    var html = esc(r.salida);
+    if (r.error) html += '<span class="error">' + esc(r.error) + "</span>";
+    if (!r.salida && !r.error) html = '<span class="aviso">(el programa terminó sin imprimir nada)</span>';
+    $("salida").innerHTML = html;
+    if (verificar) {
+      if (r.error) {
+        $("resultados").innerHTML = '<p class="resumen mal">Corrige el error de arriba y vuelve a verificar.</p>';
+      } else if (r.resultados) {
+        var bien = r.resultados.filter(function (x) { return x[0]; }).length;
+        var total = r.resultados.length;
+        $("resultados").innerHTML =
+          '<p class="resumen ' + (bien === total ? "ok" : "mal") + '">' +
+          (bien === total ? "¡Todas las pruebas pasan! (" + total + " de " + total + ")" : bien + " de " + total + " pruebas pasan") +
+          "</p><ul class=\"pruebas\">" + r.resultados.map(function (x) {
+            return '<li class="' + (x[0] ? "ok" : "mal") + '">' + esc(x[1]) + "</li>";
+          }).join("") + "</ul>";
+      }
+    }
+    $("ejecutar").disabled = $("verificar").disabled = false;
+    estado("Python listo", true);
+  }
+
+  $("ejecutar").addEventListener("click", function () { ejecutar(false); });
+  $("verificar").addEventListener("click", function () { ejecutar(true); });
+  $("restaurar").addEventListener("click", function () {
+    if (confirm("¿Regresar al código inicial? Se perderán tus cambios.")) { ponerCodigo(CODIGO_INICIAL); guardar(); limpiar(); }
+  });
+  $("descargar").addEventListener("click", function () {
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([obtenerCodigo()], { type: "text/x-python" }));
+    a.download = ARCHIVO;
+    a.click();
+  });
+
+  async function iniciar() {
+    if (!window.loadPyodide) {
+      estado("No se pudo descargar Python: revisa tu conexión a internet y recarga la página.");
+      return;
+    }
+    try {
+      pyodide = await loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.27.7/full/" });
+      pyodide.runPython(ARNES_PY);
+      pyodide.runPython(PRUEBAS_PY);
+      $("ejecutar").disabled = $("verificar").disabled = false;
+      estado("Python listo", true);
+    } catch (e) {
+      estado("No se pudo preparar Python: " + e);
+    }
+  }
+  iniciar();
+})();
+</script>
+<div id="qr-sitio" class="qr-capa" hidden>
+  <div class="qr-caja" role="dialog" aria-modal="true" aria-label="Código QR de esta página">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 45" role="img" aria-label="Código QR de https://memosanchezg.github.io/programacion-basica-interactivos/semana-08-ejercicio-clases.html" shape-rendering="crispEdges"><rect width="45" height="45" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM11 2h3v1h-3zM15 2h3v1h-3zM19 2h1v1h-1zM21 2h7v1h-7zM30 2h1v1h-1zM33 2h2v1h-2zM36 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM11 3h4v1h-4zM17 3h3v1h-3zM22 3h2v1h-2zM26 3h1v1h-1zM28 3h3v1h-3zM34 3h1v1h-1zM36 3h1v1h-1zM42 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM10 4h3v1h-3zM18 4h3v1h-3zM22 4h3v1h-3zM26 4h1v1h-1zM28 4h3v1h-3zM33 4h2v1h-2zM36 4h1v1h-1zM38 4h3v1h-3zM42 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h2v1h-2zM14 5h2v1h-2zM18 5h1v1h-1zM23 5h1v1h-1zM26 5h3v1h-3zM31 5h1v1h-1zM33 5h2v1h-2zM36 5h1v1h-1zM38 5h3v1h-3zM42 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM17 6h1v1h-1zM20 6h2v1h-2zM24 6h2v1h-2zM30 6h2v1h-2zM33 6h2v1h-2zM36 6h1v1h-1zM38 6h3v1h-3zM42 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h2v1h-2zM13 7h2v1h-2zM16 7h2v1h-2zM22 7h1v1h-1zM26 7h1v1h-1zM29 7h2v1h-2zM34 7h1v1h-1zM36 7h1v1h-1zM42 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM30 8h1v1h-1zM32 8h1v1h-1zM34 8h1v1h-1zM36 8h7v1h-7zM10 9h1v1h-1zM13 9h1v1h-1zM16 9h3v1h-3zM20 9h1v1h-1zM23 9h1v1h-1zM25 9h2v1h-2zM28 9h1v1h-1zM33 9h2v1h-2zM2 10h1v1h-1zM4 10h5v1h-5zM11 10h1v1h-1zM13 10h1v1h-1zM15 10h1v1h-1zM17 10h3v1h-3zM22 10h1v1h-1zM24 10h1v1h-1zM27 10h3v1h-3zM31 10h1v1h-1zM36 10h5v1h-5zM2 11h5v1h-5zM12 11h3v1h-3zM16 11h1v1h-1zM19 11h5v1h-5zM25 11h1v1h-1zM27 11h1v1h-1zM30 11h1v1h-1zM32 11h3v1h-3zM36 11h3v1h-3zM40 11h3v1h-3zM2 12h1v1h-1zM7 12h2v1h-2zM10 12h3v1h-3zM14 12h1v1h-1zM17 12h1v1h-1zM22 12h2v1h-2zM29 12h4v1h-4zM34 12h2v1h-2zM37 12h1v1h-1zM4 13h3v1h-3zM11 13h1v1h-1zM13 13h1v1h-1zM23 13h2v1h-2zM28 13h1v1h-1zM32 13h3v1h-3zM36 13h1v1h-1zM38 13h2v1h-2zM42 13h1v1h-1zM6 14h1v1h-1zM8 14h2v1h-2zM12 14h1v1h-1zM14 14h1v1h-1zM16 14h1v1h-1zM18 14h2v1h-2zM21 14h2v1h-2zM24 14h1v1h-1zM26 14h4v1h-4zM31 14h1v1h-1zM33 14h1v1h-1zM37 14h1v1h-1zM39 14h3v1h-3zM2 15h2v1h-2zM6 15h1v1h-1zM9 15h2v1h-2zM13 15h3v1h-3zM20 15h1v1h-1zM24 15h1v1h-1zM30 15h1v1h-1zM32 15h11v1h-11zM2 16h1v1h-1zM5 16h1v1h-1zM8 16h3v1h-3zM12 16h2v1h-2zM17 16h4v1h-4zM22 16h2v1h-2zM25 16h2v1h-2zM29 16h1v1h-1zM31 16h2v1h-2zM34 16h2v1h-2zM37 16h1v1h-1zM40 16h1v1h-1zM2 17h1v1h-1zM7 17h1v1h-1zM14 17h2v1h-2zM20 17h1v1h-1zM23 17h1v1h-1zM25 17h1v1h-1zM28 17h3v1h-3zM33 17h1v1h-1zM36 17h2v1h-2zM39 17h1v1h-1zM41 17h1v1h-1zM3 18h2v1h-2zM6 18h1v1h-1zM8 18h2v1h-2zM13 18h5v1h-5zM19 18h1v1h-1zM25 18h1v1h-1zM27 18h3v1h-3zM31 18h2v1h-2zM35 18h1v1h-1zM37 18h1v1h-1zM40 18h1v1h-1zM3 19h2v1h-2zM6 19h2v1h-2zM10 19h1v1h-1zM12 19h1v1h-1zM14 19h1v1h-1zM16 19h1v1h-1zM20 19h3v1h-3zM25 19h3v1h-3zM30 19h1v1h-1zM32 19h3v1h-3zM36 19h4v1h-4zM41 19h2v1h-2zM2 20h2v1h-2zM5 20h1v1h-1zM7 20h2v1h-2zM11 20h3v1h-3zM18 20h1v1h-1zM20 20h1v1h-1zM24 20h1v1h-1zM28 20h5v1h-5zM35 20h1v1h-1zM38 20h2v1h-2zM41 20h1v1h-1zM4 21h1v1h-1zM10 21h3v1h-3zM16 21h3v1h-3zM21 21h1v1h-1zM29 21h2v1h-2zM33 21h3v1h-3zM38 21h2v1h-2zM41 21h2v1h-2zM3 22h2v1h-2zM7 22h3v1h-3zM11 22h1v1h-1zM15 22h4v1h-4zM20 22h2v1h-2zM23 22h4v1h-4zM29 22h1v1h-1zM31 22h2v1h-2zM39 22h3v1h-3zM2 23h4v1h-4zM10 23h1v1h-1zM14 23h1v1h-1zM16 23h4v1h-4zM21 23h3v1h-3zM25 23h1v1h-1zM27 23h1v1h-1zM30 23h1v1h-1zM32 23h3v1h-3zM36 23h3v1h-3zM40 23h3v1h-3zM2 24h2v1h-2zM8 24h2v1h-2zM11 24h3v1h-3zM15 24h4v1h-4zM20 24h1v1h-1zM22 24h1v1h-1zM24 24h1v1h-1zM27 24h4v1h-4zM34 24h1v1h-1zM37 24h3v1h-3zM4 25h1v1h-1zM11 25h3v1h-3zM16 25h1v1h-1zM18 25h1v1h-1zM20 25h2v1h-2zM23 25h2v1h-2zM29 25h1v1h-1zM33 25h3v1h-3zM37 25h1v1h-1zM39 25h1v1h-1zM42 25h1v1h-1zM3 26h1v1h-1zM5 26h2v1h-2zM8 26h1v1h-1zM10 26h1v1h-1zM12 26h1v1h-1zM19 26h1v1h-1zM25 26h7v1h-7zM33 26h1v1h-1zM40 26h1v1h-1zM42 26h1v1h-1zM2 27h1v1h-1zM4 27h2v1h-2zM7 27h1v1h-1zM10 27h1v1h-1zM15 27h1v1h-1zM17 27h1v1h-1zM19 27h1v1h-1zM21 27h3v1h-3zM25 27h1v1h-1zM27 27h1v1h-1zM30 27h1v1h-1zM32 27h2v1h-2zM35 27h5v1h-5zM41 27h2v1h-2zM3 28h1v1h-1zM5 28h1v1h-1zM7 28h3v1h-3zM13 28h1v1h-1zM16 28h1v1h-1zM18 28h1v1h-1zM20 28h1v1h-1zM22 28h1v1h-1zM26 28h5v1h-5zM32 28h1v1h-1zM34 28h1v1h-1zM36 28h3v1h-3zM2 29h1v1h-1zM5 29h2v1h-2zM9 29h2v1h-2zM12 29h1v1h-1zM14 29h4v1h-4zM21 29h4v1h-4zM26 29h1v1h-1zM28 29h1v1h-1zM30 29h1v1h-1zM33 29h3v1h-3zM38 29h2v1h-2zM2 30h1v1h-1zM4 30h6v1h-6zM11 30h1v1h-1zM13 30h1v1h-1zM15 30h1v1h-1zM17 30h1v1h-1zM19 30h1v1h-1zM24 30h2v1h-2zM27 30h2v1h-2zM30 30h2v1h-2zM33 30h2v1h-2zM39 30h4v1h-4zM2 31h2v1h-2zM7 31h1v1h-1zM11 31h3v1h-3zM16 31h3v1h-3zM20 31h1v1h-1zM22 31h1v1h-1zM26 31h2v1h-2zM30 31h7v1h-7zM38 31h1v1h-1zM40 31h1v1h-1zM42 31h1v1h-1zM2 32h1v1h-1zM4 32h1v1h-1zM8 32h3v1h-3zM13 32h2v1h-2zM16 32h1v1h-1zM18 32h4v1h-4zM23 32h2v1h-2zM27 32h3v1h-3zM31 32h1v1h-1zM34 32h4v1h-4zM39 32h1v1h-1zM2 33h1v1h-1zM4 33h2v1h-2zM10 33h1v1h-1zM14 33h2v1h-2zM17 33h1v1h-1zM21 33h4v1h-4zM26 33h1v1h-1zM29 33h1v1h-1zM35 33h3v1h-3zM39 33h1v1h-1zM41 33h2v1h-2zM2 34h1v1h-1zM5 34h1v1h-1zM8 34h1v1h-1zM14 34h1v1h-1zM16 34h1v1h-1zM19 34h1v1h-1zM21 34h1v1h-1zM24 34h1v1h-1zM26 34h3v1h-3zM31 34h1v1h-1zM34 34h5v1h-5zM40 34h1v1h-1zM42 34h1v1h-1zM10 35h1v1h-1zM12 35h2v1h-2zM15 35h2v1h-2zM19 35h5v1h-5zM25 35h3v1h-3zM30 35h2v1h-2zM33 35h2v1h-2zM38 35h1v1h-1zM41 35h2v1h-2zM2 36h7v1h-7zM11 36h7v1h-7zM19 36h1v1h-1zM22 36h2v1h-2zM27 36h5v1h-5zM33 36h2v1h-2zM36 36h1v1h-1zM38 36h1v1h-1zM40 36h1v1h-1zM2 37h1v1h-1zM8 37h1v1h-1zM10 37h3v1h-3zM15 37h1v1h-1zM18 37h3v1h-3zM22 37h3v1h-3zM26 37h2v1h-2zM32 37h3v1h-3zM38 37h2v1h-2zM2 38h1v1h-1zM4 38h3v1h-3zM8 38h1v1h-1zM10 38h2v1h-2zM14 38h1v1h-1zM17 38h2v1h-2zM23 38h1v1h-1zM26 38h1v1h-1zM28 38h2v1h-2zM31 38h1v1h-1zM34 38h5v1h-5zM40 38h1v1h-1zM2 39h1v1h-1zM4 39h3v1h-3zM8 39h1v1h-1zM10 39h2v1h-2zM15 39h1v1h-1zM18 39h1v1h-1zM20 39h3v1h-3zM24 39h3v1h-3zM30 39h4v1h-4zM35 39h1v1h-1zM37 39h1v1h-1zM39 39h2v1h-2zM2 40h1v1h-1zM4 40h3v1h-3zM8 40h1v1h-1zM10 40h1v1h-1zM12 40h1v1h-1zM14 40h1v1h-1zM16 40h3v1h-3zM20 40h1v1h-1zM22 40h1v1h-1zM24 40h1v1h-1zM26 40h2v1h-2zM29 40h2v1h-2zM34 40h7v1h-7zM2 41h1v1h-1zM8 41h1v1h-1zM11 41h3v1h-3zM15 41h3v1h-3zM23 41h1v1h-1zM25 41h1v1h-1zM28 41h3v1h-3zM34 41h2v1h-2zM38 41h1v1h-1zM41 41h1v1h-1zM2 42h7v1h-7zM10 42h1v1h-1zM14 42h4v1h-4zM19 42h1v1h-1zM21 42h1v1h-1zM24 42h5v1h-5zM31 42h1v1h-1zM33 42h1v1h-1zM35 42h4v1h-4zM40 42h1v1h-1z"/></svg>
+    <p class="qr-texto">Escanea con la cámara del celular para abrir esta página</p>
+    <p class="qr-url">https://memosanchezg.github.io/programacion-basica-interactivos/semana-08-ejercicio-clases.html</p>
+    <button type="button" class="qr-cerrar">Cerrar</button>
+  </div>
+</div>
+<style>
+  .qr-capa { position:fixed; top:0; right:0; bottom:0; left:0; z-index:10000; display:flex; align-items:center;
+             justify-content:center; padding:16px; background:#fff; }
+  .qr-capa[hidden] { display:none; }
+  .qr-caja { max-width:100%; text-align:center; color:#0A2A57; font:16px/1.4 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .qr-caja svg { display:block; width:min(62vh, 84vw); height:auto; margin:0 auto; }
+  .qr-texto { margin:12px 0 2px; font-size:1.15rem; font-weight:bold; }
+  .qr-url { margin:0 0 12px; color:#5B6472; word-break:break-all; }
+  .qr-cerrar { font:inherit; padding:6px 20px; border:2px solid #00408F; border-radius:4px; background:#fff;
+               color:#00408F; cursor:pointer; }
+</style>
+<script>
+  (function () {
+    var capa = document.getElementById("qr-sitio");
+    document.querySelectorAll("a.qr-abrir").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        capa.hidden = false;
+        capa.querySelector(".qr-cerrar").focus();
+      });
+    });
+    capa.addEventListener("click", function (e) {
+      if (e.target === capa || e.target.classList.contains("qr-cerrar")) capa.hidden = true;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !capa.hidden) capa.hidden = true;
+    });
+  })();
+</script>
+</body>
+</html>

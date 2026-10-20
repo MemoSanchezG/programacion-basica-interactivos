@@ -1,0 +1,1481 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="tipo" content="simulador">
+<title>Terminal simulada</title>
+
+<style>
+  :root {
+    --azul:#00408F; --azul-oscuro:#0A2A57; --guinda:#8C1D35; --oro:#B8975A; --oro-texto:#8A6A2E;
+    --azul-claro:#E8EEF7; --oro-claro:#F7F1E6; --guinda-claro:#F5E6EA; --verde:#2F7D5B;
+    --tinta:#1B1F2A; --gris:#5B6472; --gris-claro:#E9ECF1; --borde:#D9DEE6; --fondo:#FFFFFF;
+    --cmd-fondo:#0C0C0C; --cmd-texto:#E6E6E6;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--fondo); color:var(--tinta);
+         font:16px/1.45 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .franja { height:8px; background:var(--azul); border-bottom:3px solid var(--oro); }
+  header { max-width:1280px; margin:0 auto; padding:12px 18px 4px; }
+  .semana { color:var(--guinda); font-weight:bold; letter-spacing:.04em; font-size:.85rem; text-transform:uppercase; }
+  h1 { font-family:Cambria,Georgia,serif; color:var(--azul-oscuro); font-size:1.7rem; margin:2px 0 2px; }
+  .sub { color:var(--gris); margin:0; }
+  main { max-width:1280px; margin:0 auto; padding:8px 18px 24px; }
+  nav.pestanas { display:flex; gap:4px; flex-wrap:wrap; border-bottom:2px solid var(--gris-claro); margin:6px 0 12px; }
+  nav.pestanas button { font:inherit; font-weight:bold; border:none; background:none; color:var(--gris);
+                        padding:8px 14px; cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; }
+  nav.pestanas button.activo { color:var(--azul-oscuro); border-bottom-color:var(--azul); }
+  nav.pestanas button:focus-visible { outline:2px solid var(--azul); }
+  section.vista { display:none; }
+  section.vista.activo { display:block; }
+  .fila { display:grid; grid-template-columns:minmax(0,1.65fr) minmax(260px,1fr); gap:16px; align-items:start; }
+  .fila > * { min-width:0; }
+  .panel { background:#fff; border:1px solid var(--borde); border-radius:10px; padding:12px 14px; min-width:0; }
+  .panel h2 { font-size:1.02rem; color:var(--azul-oscuro); margin:0 0 8px; }
+  button.accion { font:inherit; font-weight:bold; border-radius:8px; padding:7px 12px; margin:8px 6px 0 0;
+                  border:1px solid var(--azul); background:#fff; color:var(--azul); cursor:pointer; }
+  button.accion:hover:not(:disabled), button.accion:focus-visible { background:var(--azul); color:#fff; outline:none; }
+  button.accion:disabled { opacity:.45; cursor:default; }
+  .lectura { background:var(--oro-claro); border-left:4px solid var(--oro); border-radius:8px; padding:10px 12px;
+             margin-top:12px; line-height:1.55; }
+  .lectura b { color:var(--azul-oscuro); }
+  .preguntas { background:var(--azul-claro); border-radius:8px; padding:10px 14px; margin-top:12px; }
+  .preguntas h3 { margin:0 0 4px; font-size:.95rem; color:var(--azul-oscuro); }
+  .preguntas ol { margin:0; padding-left:20px; }
+  .preguntas li { margin:3px 0; }
+  .codigo { border:1px solid var(--tinta); background:#fff; font:15px/1.5 Consolas,"Courier New",monospace;
+            overflow-x:auto; margin:8px 0; }
+  .codigo ol { margin:0; padding:8px 12px 8px 3.4em; }
+  .codigo li { white-space:pre; }
+  .codigo li::marker { color:var(--gris); font:11px Cambria,Georgia,serif; }
+  .codigo .kw { color:#000080; font-weight:bold; }
+  .codigo .str, .codigo .num { color:#0000FF; }
+  .codigo .com { color:#008800; font-style:italic; }
+  .consola { background:var(--cmd-fondo); color:var(--cmd-texto); font:15px/1.45 Consolas,"Courier New",monospace;
+             white-space:pre; overflow-x:auto; padding:8px 12px; border-radius:4px; margin:8px 0; }
+  footer { max-width:1280px; margin:0 auto; padding:6px 18px 18px; color:var(--gris); font-size:.85rem; }
+  footer a { color:var(--azul); }
+  @media (max-width: 900px) { .fila { grid-template-columns:1fr; } }
+
+  /* Propios de este simulador */
+  [hidden] { display:none !important; }
+  code { font-family:Consolas,"Courier New",monospace; color:var(--azul-oscuro); }
+  .oculto { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+  .terminal { background:var(--cmd-fondo); color:var(--cmd-texto); font:15px/1.4 Consolas,"Courier New",monospace; border-radius:6px;
+              border:1px solid #333; padding:8px 10px; height:440px; overflow:auto; cursor:text; }
+  .terminal .barra-titulo { display:flex; justify-content:space-between; font:12px Calibri,"Segoe UI",sans-serif; color:#9AA0A6;
+                            margin:-8px -10px 6px; padding:4px 10px; background:#1F1F1F; border-radius:6px 6px 0 0; }
+  #salida { white-space:pre-wrap; word-break:break-word; margin:0; }
+  #salida .nota { display:block; white-space:normal; color:#E3C98A; font-family:Calibri,"Segoe UI",sans-serif; font-style:italic;
+                  border-left:3px solid #B8975A; padding-left:8px; margin:2px 0 4px; }
+  .linea-cmd { display:flex; align-items:baseline; flex-wrap:wrap; }
+  .linea-cmd .prompt { white-space:pre-wrap; word-break:break-all; }
+  .linea-cmd input { flex:1 1 120px; min-width:80px; background:transparent; border:none; color:#fff; font:inherit; padding:0; outline:none; caret-color:#fff; }
+  .terminal:focus-within { outline:2px solid var(--oro); outline-offset:2px; }
+  .botones { display:flex; flex-wrap:wrap; gap:0 6px; }
+  .editor { border:1px solid #3C3C3C; border-radius:6px; overflow:hidden; margin-top:12px; background:#1E1E1E; }
+  .editor .tabs { display:flex; justify-content:space-between; align-items:center; background:#252526; color:#CCCCCC; font:13px Calibri,"Segoe UI",sans-serif; }
+  .editor .tabs .tab { background:#1E1E1E; padding:6px 12px; border-top:2px solid #B8975A; }
+  .editor .tabs .estado-ed { padding:0 10px; color:#E3C98A; }
+  .editor .cuerpo { display:flex; }
+  .editor .gutter { color:#858585; font:15px/1.5 Consolas,"Courier New",monospace; text-align:right; padding:8px 8px 8px 10px; user-select:none; white-space:pre; }
+  .editor textarea { flex:1; min-width:0; min-height:190px; resize:vertical; background:#1E1E1E; color:#D4D4D4; border:none; outline:none;
+                     font:15px/1.5 Consolas,"Courier New",monospace; padding:8px; white-space:pre; overflow-x:auto; tab-size:4; }
+  .editor textarea:focus-visible { box-shadow:inset 0 0 0 2px var(--oro); }
+  .editor .pie { background:#00408F; color:#fff; font:12.5px Calibri,"Segoe UI",sans-serif; padding:3px 10px; display:flex; flex-wrap:wrap; gap:4px 14px; }
+  .editor .pie button { font:inherit; font-weight:bold; background:#fff; color:var(--azul); border:none; border-radius:4px; padding:2px 10px; cursor:pointer; }
+  .editor .pie button:focus-visible { outline:2px solid var(--oro); }
+  ol.misiones { list-style:none; margin:0; padding:0; display:grid; gap:10px; }
+  ol.misiones > li { border:1px solid var(--borde); border-radius:8px; padding:8px 10px; }
+  ol.misiones > li.hecha { border-color:var(--verde); background:#F3F9F5; }
+  ol.misiones h3 { margin:0 0 4px; font-size:1rem; color:var(--azul-oscuro); }
+  ol.misiones h3 .ok { color:var(--verde); }
+  ul.pasos { list-style:none; margin:4px 0 0; padding:0; font-size:.95rem; }
+  ul.pasos li { padding:1px 0 1px 22px; position:relative; }
+  ul.pasos li::before { content:"○"; position:absolute; left:3px; color:var(--gris); }
+  ul.pasos li.hecho::before { content:"✓"; color:var(--verde); font-weight:bold; }
+  ul.pasos li.hecho { color:var(--gris); }
+  ul.pasos code { font-size:.92rem; }
+  details.pista { margin-top:4px; font-size:.93rem; }
+  details.pista summary { cursor:pointer; color:var(--guinda); font-weight:bold; }
+  .arbol { font:13.5px/1.5 Consolas,"Courier New",monospace; background:var(--gris-claro); border-radius:6px; padding:6px 10px; white-space:pre; overflow-x:auto; }
+  .arbol .aqui { background:var(--oro-claro); outline:1px solid var(--oro); font-weight:bold; }
+  .linux p { margin:6px 0; }
+  .linux h3 { color:var(--azul-oscuro); font-size:1rem; margin:14px 0 4px; }
+  .pasos-linux { display:grid; grid-template-columns:minmax(0,1fr); gap:10px; }
+  .pasos-linux > div { min-width:0; }
+  .pasos-linux .num { font-weight:bold; color:var(--guinda); }
+  @media (max-width: 480px) {
+    header { padding:10px 12px 4px; }
+    main { padding:8px 10px 20px; }
+    footer { padding:6px 12px 16px; }
+    .panel { padding:10px; }
+    h1 { font-size:1.45rem; }
+    .terminal, .consola, .editor textarea, .editor .gutter { font-size:13px; }
+    .terminal { height:380px; }
+    nav.pestanas button { padding:8px 10px; }
+  }
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header>
+  <div class="semana">Semana 02 · Python desde un enfoque profesional</div>
+  <h1>Terminal simulada</h1>
+  <p class="sub">Una consola de Windows para practicar: muévete entre carpetas, encuentra tu Python, corre un script, crea un entorno virtual, instala un paquete y depura hola.py.</p>
+</header>
+<main>
+  <nav class="pestanas" role="tablist" aria-label="Secciones">
+    <button type="button" class="activo" data-vista="v-windows" role="tab" aria-selected="true">Terminal de Windows</button>
+    <button type="button" data-vista="v-linux" role="tab" aria-selected="false">Linux y macOS: el shebang</button>
+  </nav>
+
+  <section class="vista activo" id="v-windows" role="tabpanel" aria-label="Terminal de Windows">
+    <div class="fila">
+      <div>
+        <div class="terminal" id="terminal">
+          <div class="barra-titulo" aria-hidden="true"><span>Símbolo del sistema</span><span>simulado</span></div>
+          <div id="salida" role="log" aria-live="polite" aria-label="Salida de la terminal"></div>
+          <div class="linea-cmd">
+            <label for="cmd" class="prompt" id="prompt">C:\Users\alumno&gt;</label>
+            <input id="cmd" type="text" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" aria-describedby="ayudaCmd">
+          </div>
+        </div>
+        <p class="sub" id="ayudaCmd" style="font-size:.9rem;margin-top:4px">Escribe un comando y presiona Enter. Flecha arriba: comandos anteriores. Escribe <code>help</code> para ver qué entiende esta terminal.</p>
+        <div class="botones">
+          <button type="button" class="accion" id="abrirEditor">Abrir hola.py en el editor</button>
+          <button type="button" class="accion" id="reiniciar">Reiniciar la terminal</button>
+        </div>
+        <div class="editor" id="editor" hidden>
+          <div class="tabs"><span class="tab" id="tabEditor">hola.py</span><span class="estado-ed" id="estadoEditor" aria-live="polite"></span></div>
+          <div class="cuerpo">
+            <div class="gutter" id="gutter" aria-hidden="true">1</div>
+            <label for="texto" class="oculto">Contenido de hola.py</label>
+            <textarea id="texto" spellcheck="false" autocomplete="off" autocapitalize="off" wrap="off"></textarea>
+          </div>
+          <div class="pie">
+            <button type="button" id="guardar">Guardar (Ctrl+S)</button>
+            <button type="button" id="cerrarEditor">Cerrar</button>
+            <span>Python 3.12.10 · UTF-8 · CRLF</span>
+          </div>
+        </div>
+        <div class="preguntas">
+          <h3>Para explorar</h3>
+          <ol>
+            <li><code>where python</code> encuentra más de un python.exe. ¿Cuál se usa cuando escribes <code>python</code>?</li>
+            <li>¿Por qué <code>python hola.py</code> falla en C:\Users\alumno? Lee la ruta que dice el mensaje.</li>
+            <li>¿Qué cambia en <code>echo %PATH%</code> y en <code>where python</code> después de activar el entorno?</li>
+            <li>Instala requests con el entorno activo, desactívalo y corre <code>pip list</code>. ¿Aparece requests? ¿Por qué?</li>
+            <li>Cambia hola.py en el editor sin guardar y córrelo. ¿Qué versión ejecutó Python?</li>
+          </ol>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Misiones</h2>
+        <ol class="misiones" id="misiones"></ol>
+        <h2 style="margin-top:14px">Dónde estás</h2>
+        <div class="arbol" id="arbol" aria-live="polite"></div>
+        <button type="button" class="accion" id="borrarMisiones">Borrar el avance de las misiones</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="vista" id="v-linux" role="tabpanel" aria-label="Linux y macOS">
+    <div class="panel linux">
+      <h2>En Linux y macOS: el shebang y los permisos</h2>
+      <p>En Linux y macOS también puedes escribir <code>python3 hola.py</code>. Pero un script se puede ejecutar como cualquier programa si cumple dos cosas: su primera línea dice con qué intérprete se corre (el <b>shebang</b>) y tiene <b>permiso de ejecución</b>.</p>
+      <h3>1. La primera línea: el shebang</h3>
+      <div class="codigo"><ol><li><span class="com">#!/usr/bin/env python3</span></li><li><span class="com"># hola.py: mi primer programa</span></li><li>nombre = <span class="str">"Ana"</span></li><li>print(<span class="str">"Hola,"</span>, nombre)</li><li>print(<span class="str">"Bienvenida a Programación Básica"</span>)</li></ol></div>
+      <p><code>#!</code> se lee "shebang". Le dice al sistema qué programa debe leer el archivo. <code>/usr/bin/env python3</code> busca <code>python3</code> en el PATH, igual que cuando lo escribes en la terminal; por eso respeta el entorno virtual activo. Para Python esa línea es solo un comentario.</p>
+      <h3>2. Correrlo en la terminal</h3>
+      <div class="pasos-linux">
+        <div><span class="num">a)</span> Como siempre, pidiéndole a Python que lo lea:
+          <div class="consola">alumno@laptop:~/programacion$ python3 hola.py
+Hola, Ana
+Bienvenida a Programación Básica</div></div>
+        <div><span class="num">b)</span> Como programa: <code>./</code> quiere decir "en esta carpeta" (en Linux la carpeta actual no está en el PATH). Sin permiso de ejecución, el sistema no lo deja correr:
+          <div class="consola">alumno@laptop:~/programacion$ ./hola.py
+bash: ./hola.py: Permission denied</div></div>
+        <div><span class="num">c)</span> <code>chmod +x</code> le da permiso de ejecución (solo una vez). Ahora sí:
+          <div class="consola">alumno@laptop:~/programacion$ chmod +x hola.py
+alumno@laptop:~/programacion$ ./hola.py
+Hola, Ana
+Bienvenida a Programación Básica</div></div>
+      </div>
+      <div class="lectura"><b>¿Y en Windows?</b> cmd no usa el shebang ni los permisos: el sistema decide con qué programa abrir un archivo por su extensión (.py). Por eso en Windows se escribe <code>python hola.py</code>. Aun así, conviene dejar el shebang en tus scripts: no estorba y el mismo archivo funciona en Linux y macOS.</div>
+      <div class="preguntas">
+        <h3>Para explorar</h3>
+        <ol>
+          <li>¿Qué pasaría si el script no tuviera la línea del shebang y lo corrieras con <code>./hola.py</code>?</li>
+          <li>¿Por qué <code>/usr/bin/env python3</code> es mejor que escribir la ruta fija <code>/usr/bin/python3</code>?</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+</main>
+<footer>
+  Programación Básica · FCFM-UANL · funciona sin internet. Lo que muestra Python es lo que imprime Python 3.12 en Windows; esta terminal es una simulación para practicar.
+  <a href="index.html">Índice de simuladores</a> · <a href="#qr-sitio" class="qr-abrir">Abrir en el celular (QR)</a>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(t) {
+    return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  // ==== NÚCLEO 1: un Python pequeño (sin DOM) ====
+  // Ejecuta programas con print(), variables, textos, números y operaciones, con los mensajes de error
+  // de Python 3.12. Si el programa usa algo que no entiende, regresa {noSoportado: motivo}.
+  function NoSoportado(motivo) { this.motivo = motivo; }
+  function ns(motivo) { throw new NoSoportado(motivo); }
+
+  // repr() de un float de Python: la representación más corta que vuelve al mismo número.
+  function pyFloat(x) {
+    if (Number.isNaN(x)) return "nan";
+    if (x === Infinity) return "inf";
+    if (x === -Infinity) return "-inf";
+    if (x === 0) return Object.is(x, -0) ? "-0.0" : "0.0";
+    var partes = Math.abs(x).toExponential().split("e");
+    var digitos = partes[0].replace(".", "");
+    var exp = parseInt(partes[1], 10);
+    var decpt = exp + 1, signo = x < 0 ? "-" : "";
+    if (decpt > 16 || decpt < -3) {
+      var mant = digitos.length > 1 ? digitos[0] + "." + digitos.slice(1) : digitos[0];
+      return signo + mant + "e" + (exp < 0 ? "-" : "+") + (Math.abs(exp) < 10 ? "0" : "") + Math.abs(exp);
+    }
+    if (decpt <= 0) return signo + "0." + "0".repeat(-decpt) + digitos;
+    if (decpt >= digitos.length) return signo + digitos + "0".repeat(decpt - digitos.length) + ".0";
+    return signo + digitos.slice(0, decpt) + "." + digitos.slice(decpt);
+  }
+  function hexa(n, ancho) { var s = n.toString(16); while (s.length < ancho) s = "0" + s; return s; }
+  var NO_IMPRIMIBLE = /[\p{Cc}\p{Cf}\p{Cs}\p{Co}\p{Cn}\p{Zl}\p{Zp}\p{Zs}]/u;
+  function pyStr(s) {                              // repr() de un texto
+    var q = (s.indexOf("'") >= 0 && s.indexOf('"') < 0) ? '"' : "'", r = "";
+    for (var c of s) {
+      var code = c.codePointAt(0);
+      if (c === "\\") r += "\\\\";
+      else if (c === q) r += "\\" + q;
+      else if (c === "\n") r += "\\n";
+      else if (c === "\r") r += "\\r";
+      else if (c === "\t") r += "\\t";
+      else if (code < 32 || code === 127) r += "\\x" + hexa(code, 2);
+      else if (code > 127 && NO_IMPRIMIBLE.test(c)) r += code <= 0xff ? "\\x" + hexa(code, 2) : code <= 0xffff ? "\\u" + hexa(code, 4) : "\\U" + hexa(code, 8);
+      else r += c;
+    }
+    return q + r + q;
+  }
+  function utf8(s) {
+    var b = [];
+    for (var c of s) {
+      var cp = c.codePointAt(0);
+      if (cp < 0x80) b.push(cp);
+      else if (cp < 0x800) b.push(0xC0 | (cp >> 6), 0x80 | (cp & 63));
+      else if (cp < 0x10000) b.push(0xE0 | (cp >> 12), 0x80 | ((cp >> 6) & 63), 0x80 | (cp & 63));
+      else b.push(0xF0 | (cp >> 18), 0x80 | ((cp >> 12) & 63), 0x80 | ((cp >> 6) & 63), 0x80 | (cp & 63));
+    }
+    return b;
+  }
+
+  // Sugerencias de NameError ("Did you mean"), como Python 3.12: primero las variables globales y
+  // después las funciones integradas; distancia de Levenshtein sobre los bytes UTF-8.
+  var BUILTINS = ("__name__ __doc__ __package__ __loader__ __spec__ __build_class__ __import__ abs all any ascii bin breakpoint callable chr compile delattr dir divmod eval exec format getattr globals hasattr hash hex id input isinstance issubclass iter aiter len locals max min next anext oct ord pow print repr round setattr sorted sum vars None Ellipsis NotImplemented False True bool memoryview bytearray bytes classmethod complex dict enumerate filter float frozenset property int list map object range reversed set slice staticmethod str super tuple type zip __debug__ BaseException BaseExceptionGroup Exception GeneratorExit KeyboardInterrupt SystemExit ArithmeticError AssertionError AttributeError BufferError EOFError ImportError LookupError MemoryError NameError OSError ReferenceError RuntimeError StopAsyncIteration StopIteration SyntaxError SystemError TypeError ValueError Warning FloatingPointError OverflowError ZeroDivisionError BytesWarning DeprecationWarning EncodingWarning FutureWarning ImportWarning PendingDeprecationWarning ResourceWarning RuntimeWarning SyntaxWarning UnicodeWarning UserWarning BlockingIOError ChildProcessError ConnectionError FileExistsError FileNotFoundError InterruptedError IsADirectoryError NotADirectoryError PermissionError ProcessLookupError TimeoutError IndentationError IndexError KeyError ModuleNotFoundError NotImplementedError RecursionError UnboundLocalError UnicodeError BrokenPipeError ConnectionAbortedError ConnectionRefusedError ConnectionResetError TabError UnicodeDecodeError UnicodeEncodeError UnicodeTranslateError ExceptionGroup EnvironmentError IOError WindowsError open quit exit copyright credits license help").split(" ");
+  var STDLIB = ("__future__ _abc _aix_support _ast _asyncio _bisect _blake2 _bz2 _codecs _codecs_cn _codecs_hk _codecs_iso2022 _codecs_jp _codecs_kr _codecs_tw _collections _collections_abc _compat_pickle _compression _contextvars _crypt _csv _ctypes _curses _curses_panel _datetime _dbm _decimal _elementtree _frozen_importlib _frozen_importlib_external _functools _gdbm _hashlib _heapq _imp _io _json _locale _lsprof _lzma _markupbase _md5 _msi _multibytecodec _multiprocessing _opcode _operator _osx_support _overlapped _pickle _posixshmem _posixsubprocess _py_abc _pydatetime _pydecimal _pyio _pylong _queue _random _scproxy _sha1 _sha2 _sha3 _signal _sitebuiltins _socket _sqlite3 _sre _ssl _stat _statistics _string _strptime _struct _symtable _thread _threading_local _tkinter _tokenize _tracemalloc _typing _uuid _warnings _weakref _weakrefset _winapi _wmi _zoneinfo abc aifc antigravity argparse array ast asyncio atexit audioop base64 bdb binascii bisect builtins bz2 cProfile calendar cgi cgitb chunk cmath cmd code codecs codeop collections colorsys compileall concurrent configparser contextlib contextvars copy copyreg crypt csv ctypes curses dataclasses datetime dbm decimal difflib dis doctest email encodings ensurepip enum errno faulthandler fcntl filecmp fileinput fnmatch fractions ftplib functools gc genericpath getopt getpass gettext glob graphlib grp gzip hashlib heapq hmac html http idlelib imaplib imghdr importlib inspect io ipaddress itertools json keyword lib2to3 linecache locale logging lzma mailbox mailcap marshal math mimetypes mmap modulefinder msilib msvcrt multiprocessing netrc nis nntplib nt ntpath nturl2path numbers opcode operator optparse os ossaudiodev pathlib pdb pickle pickletools pipes pkgutil platform plistlib poplib posix posixpath pprint profile pstats pty pwd py_compile pyclbr pydoc pydoc_data pyexpat queue quopri random re readline reprlib resource rlcompleter runpy sched secrets select selectors shelve shlex shutil signal site smtplib sndhdr socket socketserver spwd sqlite3 sre_compile sre_constants sre_parse ssl stat statistics string stringprep struct subprocess sunau symtable sys sysconfig syslog tabnanny tarfile telnetlib tempfile termios textwrap this threading time timeit tkinter token tokenize tomllib trace traceback tracemalloc tty turtle turtledemo types typing unicodedata unittest urllib uu uuid venv warnings wave weakref webbrowser winreg winsound wsgiref xdrlib xml xmlrpc zipapp zipfile zipimport zlib zoneinfo").split(" ");
+  var GLOBALES_INICIALES = ["__name__", "__doc__", "__package__", "__loader__", "__spec__", "__annotations__", "__builtins__", "__file__", "__cached__"];
+  function costoSust(a, b) {
+    if ((a & 31) !== (b & 31)) return 2;
+    if (a === b) return 0;
+    if (a >= 65 && a <= 90) a += 32;
+    if (b >= 65 && b <= 90) b += 32;
+    return a === b ? 1 : 2;
+  }
+  function levenshtein(a, b, max) {
+    var i0 = 0, an = a.length, bn = b.length, j0 = 0;
+    while (an && bn && a[i0] === b[j0]) { i0++; j0++; an--; bn--; }
+    while (an && bn && a[i0 + an - 1] === b[j0 + bn - 1]) { an--; bn--; }
+    if (!an || !bn) return (an + bn) * 2;
+    if (an > 40 || bn > 40) return max + 1;
+    var A = a.slice(i0, i0 + an), B = b.slice(j0, j0 + bn), t;
+    if (B.length < A.length) { t = A; A = B; B = t; }
+    if ((B.length - A.length) * 2 > max) return max + 1;
+    var buf = [], tmp = 2, i, res = 0;
+    for (i = 0; i < A.length; i++) { buf[i] = tmp; tmp += 2; }
+    for (var bi = 0; bi < B.length; bi++) {
+      var code = B[bi], dist = res = bi * 2, minimo = Infinity;
+      for (i = 0; i < A.length; i++) {
+        var sust = dist + costoSust(code, A[i]);
+        dist = buf[i];
+        res = Math.min(Math.min(res, dist) + 2, sust);
+        buf[i] = res;
+        if (res < minimo) minimo = res;
+      }
+      if (minimo > max) return max + 1;
+    }
+    return res;
+  }
+  function sugerir(lista, nombre) {
+    if (lista.length >= 750) return null;
+    var nb = utf8(nombre), mejor = null, mejorD = Infinity;
+    lista.forEach(function (item) {
+      if (item === nombre) return;
+      var ib = utf8(item), max = Math.min(Math.floor((nb.length + ib.length + 3) * 2 / 6), mejorD - 1);
+      var d = levenshtein(nb, ib, max);
+      if (d > max) return;
+      if (!mejor || d < mejorD) { mejor = item; mejorD = d; }
+    });
+    return mejor;
+  }
+  function mensajeNameError(nombre, globales) {
+    var s = sugerir(GLOBALES_INICIALES.concat(globales), nombre) || sugerir(BUILTINS, nombre);
+    var m = "name '" + nombre + "' is not defined";
+    if (s) m += ". Did you mean: '" + s + "'?";
+    if (STDLIB.indexOf(nombre) >= 0) m += s ? " Or did you forget to import '" + nombre + "'?" : ". Did you forget to import '" + nombre + "'?";
+    return m;
+  }
+
+  // ---------- Tokenizador (como el de CPython, para lo que entiende esta página) ----------
+  var KEYWORDS = /^(and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)$/;
+  var CIERRA = { ")": "(", "]": "[", "}": "{" };
+  var ESCAPES = { n: "\n", t: "\t", "\\": "\\", "'": "'", '"': '"' };
+  function nCar(L, a, b) { return Array.from(L.slice(a, b)).length; }    // caracteres (como Python) entre dos posiciones
+  function ErrorSintaxis(tipo, mensaje, linea, col, fin, sinCaret) {
+    this.tipo = tipo; this.mensaje = mensaje; this.linea = linea; this.col = col; this.fin = fin; this.sinCaret = !!sinCaret;
+  }
+  function tokenizar(lineas) {
+    var toks = [], pila = [], sangrias = [0], errorTok = null;
+    function tok(t, v, n, col, fin) { toks.push({ t: t, v: v, linea: n, col: col, fin: fin, nivel: pila.length }); }
+    outer:
+    for (var n = 1; n <= lineas.length; n++) {
+      var L = lineas[n - 1], i = 0;
+      if (pila.length === 0) {
+        var m = 0;
+        while (m < L.length && (L[m] === " " || L[m] === "\t" || L[m] === "\f")) m++;
+        if (m === L.length || L[m] === "#") continue;
+        if (L.slice(0, m).indexOf("\t") >= 0 || L.slice(0, m).indexOf("\f") >= 0) ns("tabuladores al inicio de una línea");
+        if (m > sangrias[sangrias.length - 1]) { sangrias.push(m); tok("INDENT", null, n, 0, m); }
+        else if (m < sangrias[sangrias.length - 1]) {
+          while (m < sangrias[sangrias.length - 1]) { sangrias.pop(); tok("DEDENT", null, n, m, m); }
+          if (m !== sangrias[sangrias.length - 1]) {
+            errorTok = new ErrorSintaxis("IndentationError", "unindent does not match any outer indentation level", n, L.length, L.length + 1);
+            break outer;
+          }
+        }
+        i = m;
+      }
+      while (i < L.length) {
+        var c = L[i], resto = L.slice(i), mm;
+        if (c === " " || c === "\t" || c === "\f") { i++; continue; }
+        if (c === "#") break;
+        if (c === "\\") ns("una diagonal invertida fuera de un texto");
+        if ((mm = /^([A-Za-z]{1,2})(["'])/.exec(resto)) && /^[rRbBuUfF]{1,2}$/.test(mm[1])) {
+          if (!/^[fF]$/.test(mm[1])) ns("textos con prefijo " + mm[1]);
+        }
+        var esF = /^[fF]["']/.test(resto);
+        if (c === '"' || c === "'" || esF) {
+          var q = esF ? L[i + 1] : c, ini = i, j = i + (esF ? 2 : 1), valor = "";
+          if (L.substr(j - 1, 3) === q + q + q) ns("comillas triples");
+          for (;;) {
+            if (j >= L.length) {
+              if (esF) ns("un texto f sin cerrar");
+              errorTok = new ErrorSintaxis("SyntaxError", "unterminated string literal (detected at line " + n + ")", n, ini, ini + 1);
+              break outer;
+            }
+            var d = L[j];
+            if (d === "\\") {
+              var e = L[j + 1];
+              if (e === undefined || !Object.prototype.hasOwnProperty.call(ESCAPES, e)) ns("secuencias de escape con \\ en los textos");
+              valor += ESCAPES[e]; j += 2; continue;
+            }
+            if (d === q) { j++; break; }
+            valor += d; j++;
+          }
+          if (esF) {
+            var crudo = L.slice(ini + 2, j - 1), sinDobles = crudo.replace(/\{\{|\}\}/g, ""), abiertas = 0;
+            for (var k = 0; k < sinDobles.length; k++) {
+              if (sinDobles[k] === "{") abiertas++;
+              else if (sinDobles[k] === "}") abiertas--;
+              if (abiertas < 0 || abiertas > 1) ns("llaves sin pareja en un texto f");
+            }
+            if (abiertas !== 0) ns("llaves sin pareja en un texto f");
+            tok("FSTRING", crudo, n, ini, j);
+          } else tok("STRING", valor, n, ini, j);
+          i = j; continue;
+        }
+        if ((mm = /^[\p{L}_][\p{L}\p{Nd}_]*/u.exec(resto))) {
+          var nombre = mm[0];
+          if (nombre !== nombre.normalize("NFKC")) ns("nombres con caracteres especiales");
+          if (KEYWORDS.test(nombre)) ns("la palabra reservada " + nombre);
+          if (nombre === "True" || nombre === "False" || nombre === "None") tok("CONST", nombre, n, i, i + nombre.length);
+          else tok("NAME", nombre, n, i, i + nombre.length);
+          i += nombre.length; continue;
+        }
+        if (/[0-9]/.test(c) || (c === "." && /[0-9]/.test(L[i + 1] || ""))) {
+          mm = /^(\d+\.?\d*|\.\d+)/.exec(resto);
+          var num = mm[0], sig = L[i + num.length] || "";
+          if (/^0\d/.test(num) && !/^0+$/.test(num.split(".")[0])) ns("números con ceros a la izquierda");
+          if (/[A-Za-z_]/.test(sig)) {
+            if (num.indexOf(".") >= 0 || /[eEjJ_]/.test(sig) || (num === "0" && /[xXoObB]/.test(sig))) ns("números con letras o guion bajo");
+            var adelante = L.slice(i + num.length);
+            if (/^(and|else|for|if|in|is|or|not)/.test(adelante)) ns("un número pegado a una palabra reservada");
+            errorTok = new ErrorSintaxis("SyntaxError", "invalid decimal literal", n, i + num.length - 1, i + num.length);
+            break outer;
+          }
+          if (/[^\x00-\x7f]/.test(sig) && /[\p{L}\p{N}]/u.test(sig)) ns("un número pegado a una letra con acento");
+          if (num.indexOf(".") < 0 && num.length > 15) ns("enteros muy grandes");
+          tok("NUMBER", num, n, i, i + num.length); i += num.length; continue;
+        }
+        if ("([{".indexOf(c) >= 0) { tok("OP", c, n, i, i + 1); pila.push({ c: c, linea: n, col: i }); i++; continue; }
+        if (")]}".indexOf(c) >= 0) {
+          if (!pila.length) { errorTok = new ErrorSintaxis("SyntaxError", "unmatched '" + c + "'", n, i, i + 1); break outer; }
+          var abre = pila[pila.length - 1];
+          if (abre.c !== CIERRA[c]) {
+            errorTok = new ErrorSintaxis("SyntaxError", "closing parenthesis '" + c + "' does not match opening parenthesis '" + abre.c + "'" +
+                                         (abre.linea !== n ? " on line " + abre.linea : ""), n, i, i + 1);
+            break outer;
+          }
+          pila.pop(); tok("OP", c, n, i, i + 1); i++; continue;
+        }
+        if ((mm = /^(\*\*=|\/\/=|>>=|<<=|\*\*|\/\/|==|!=|<=|>=|->|:=|\+=|-=|\*=|\/=|%=|&=|\|=|\^=|<<|>>|[-+*\/%=<>,:;.@&|^~])/.exec(resto))) {
+          tok("OP", mm[0], n, i, i + mm[0].length); i += mm[0].length; continue;
+        }
+        if (c === "!" || c === "$" || c === "?" || c === "`") ns("el carácter " + c);
+        var cp = L.codePointAt(i), car = String.fromCodePoint(cp);
+        errorTok = new ErrorSintaxis("SyntaxError", "invalid character '" + car + "' (U+" + hexa(cp, 4).toUpperCase() + ")", n, i, i + car.length);
+        break outer;
+      }
+      var ult = toks[toks.length - 1];
+      if (pila.length === 0 && ult && ult.linea === n && ult.t !== "NEWLINE" && ult.t !== "INDENT" && ult.t !== "DEDENT") tok("NEWLINE", null, n, L.length, L.length + 1);
+    }
+    var abierto = null;
+    if (!errorTok && pila.length) {
+      var p = pila[pila.length - 1];
+      abierto = new ErrorSintaxis("SyntaxError", "'" + p.c + "' was never closed", p.linea, p.col, p.col + 1);
+    }
+    if (!errorTok && !abierto) tok("END", null, lineas.length + 1, 0, 0);
+    return { toks: toks, errorTok: errorTok, abierto: abierto };
+  }
+
+  // ---------- Analizador (sentencias: nombre = expresión, o una expresión) ----------
+  function ErrorParser(e, ultimo) { this.e = e; this.ultimo = ultimo; }
+  function analizar(toks) {
+    var p = 0, sentencias = [];
+    function t(k) { return toks[p + (k || 0)]; }
+    function esOp(x, v) { return x && x.t === "OP" && x.v === v; }
+    function empiezaExpr(x) { return x && (x.t === "NAME" || x.t === "NUMBER" || x.t === "STRING" || x.t === "FSTRING" || x.t === "CONST" || esOp(x, "(") || esOp(x, "-") || esOp(x, "+")); }
+    function primerToken(nodo) {                   // el primer token de una expresión
+      for (var k = 0; k < toks.length; k++) if (toks[k].linea === nodo.linea && toks[k].col === nodo.col) return toks[k];
+      return {};
+    }
+    function generico(x) {                        // invalid syntax en el token x
+      throw new ErrorParser(new ErrorSintaxis("SyntaxError", "invalid syntax", x.linea, x.col, Math.max(x.fin, x.col + 1)), x);
+    }
+    function sinFin() {                            // se acabaron los tokens: un paréntesis sin cerrar
+      throw new ErrorParser(null, { linea: Infinity });
+    }
+    function atomo() {
+      var x = t();
+      if (!x || x.t === "END") sinFin();
+      if (x.t === "NUMBER") { p++; return { k: "num", v: Number(x.v), esFloat: x.v.indexOf(".") >= 0, col: x.col, fin: x.fin, linea: x.linea }; }
+      if (x.t === "CONST") { p++; return { k: "const", v: x.v, col: x.col, fin: x.fin, linea: x.linea }; }
+      if (x.t === "NAME") { p++; return { k: "nombre", n: x.v, col: x.col, fin: x.fin, linea: x.linea }; }
+      if (x.t === "STRING" || x.t === "FSTRING") {
+        var partes = [], ini = x;
+        while (t() && (t().t === "STRING" || t().t === "FSTRING")) {
+          var y = t();
+          if (y.linea !== ini.linea) ns("textos partidos en varias líneas");
+          partes.push(y.t === "STRING" ? { texto: y.v } : { f: y });
+          p++;
+        }
+        var fin = toks[p - 1].fin;
+        if (partes.some(function (q) { return q.f; })) return { k: "fstr", partes: partes.map(analizarF), col: ini.col, fin: fin, linea: ini.linea };
+        return { k: "str", v: partes.map(function (q) { return q.texto; }).join(""), col: ini.col, fin: fin, linea: ini.linea };
+      }
+      if (esOp(x, "(")) {
+        p++;
+        if (esOp(t(), ")")) ns("tuplas");
+        var dentro = expr();
+        if (esOp(t(), ",")) ns("tuplas");
+        if (!esOp(t(), ")")) { if (!t() || t().t === "END") sinFin(); dentroDeParentesis(dentro); }
+        var cierre = t(); p++;
+        return { k: "grupo", x: dentro, col: x.col, fin: cierre.fin, linea: x.linea };
+      }
+      if (esOp(x, "[") || esOp(x, "{")) ns("listas o diccionarios");
+      generico(x);
+    }
+    // Dentro de paréntesis, después de una expresión completa viene algo que no es ',' ni ')'
+    function dentroDeParentesis(a) {
+      var x = t();
+      if (!x || x.t === "END") sinFin();
+      if (x.t === "NEWLINE") generico(x);
+      if (esOp(x, "=")) {
+        if (a.k === "nombre") ns("argumentos con nombre, como sep=");
+        throw new ErrorParser(new ErrorSintaxis("SyntaxError", "expression cannot contain assignment, perhaps you meant \"==\"?", a.linea, interno(a).col, x.fin), x);
+      }
+      if (empiezaExpr(x) && !esOp(x, "-") && !esOp(x, "+") && !esOp(x, "(")) {
+        var inicioA = primerToken(a);
+        if (inicioA.t === "NAME" && /^(match|case|_|type)$/.test(inicioA.v)) ns("nombres especiales como " + inicioA.v);
+        if (a.k === "nombre" && (a.n === "print" || a.n === "exec")) ns("print sin paréntesis dentro de otra expresión");
+        if (a.k === "nombre" && x.t === "STRING") {
+          var k2 = p;
+          while (toks[k2] && toks[k2].t === "STRING") k2++;
+          if (empiezaExpr(toks[k2]) && !esOp(toks[k2], "-") && !esOp(toks[k2], "+")) ns("un nombre, un texto y otro valor sin comas");
+          generico(x);
+        }
+        var b;
+        try { b = expr(); } catch (err) { if (err instanceof ErrorParser) ns("un error dentro de otro error"); throw err; }
+        if (b.linea !== a.linea || toks[p - 1].linea !== a.linea) ns("una coma que falta entre líneas distintas");
+        throw new ErrorParser(new ErrorSintaxis("SyntaxError", "invalid syntax. Perhaps you forgot a comma?", a.linea, interno(a).col, toks[p - 1].fin), t() || toks[p - 1]);
+      }
+      if (x.t === "OP" && /^(==|!=|<=|>=|<|>|\*\*|\.|:|;|%|@|&|\||\^|~|<<|>>|\+=|-=|\*=|\/=|:=|->)$/.test(x.v)) ns("el operador " + x.v);
+      generico(x);
+    }
+    function primario() {
+      var a = atomo();
+      while (esOp(t(), "(")) {
+        if (a.k === "str" || a.k === "fstr" || a.k === "num" || a.k === "const") ns("llamar a un valor como si fuera función");
+        var abre = t(); p++;
+        var args = [];
+        while (!esOp(t(), ")")) {
+          if (!t() || t().t === "END") sinFin();
+          if (t().t === "NAME" && esOp(t(1), "=") && !esOp(t(2), "=")) ns("argumentos con nombre, como sep=");
+          if (esOp(t(), "*")) ns("argumentos con *");
+          var arg = expr();
+          args.push(arg);
+          if (esOp(t(), ",")) { p++; continue; }
+          if (esOp(t(), ")")) break;
+          dentroDeParentesis(arg);
+        }
+        var cierre = t(); p++;
+        a = { k: "llamada", f: a, args: args, col: a.col, fin: cierre.fin, linea: a.linea, abre: abre };
+      }
+      if (esOp(t(), "[") || esOp(t(), ".")) ns("índices o atributos");
+      return a;
+    }
+    function factor() {
+      if (esOp(t(), "-") || esOp(t(), "+")) {
+        var op = t(); p++;
+        var x = factor();
+        return { k: "un", op: op.v, x: x, col: op.col, fin: x.fin, linea: op.linea };
+      }
+      if (esOp(t(), "~")) ns("el operador ~");
+      var b = primario();
+      if (esOp(t(), "**")) ns("el operador **");
+      return b;
+    }
+    function termino() {
+      var a = factor();
+      while (t() && t().t === "OP" && /^(\*|\/|\/\/|%)$/.test(t().v)) {
+        var op = t(); p++;
+        if (!empiezaExpr(t())) { if (!t() || t().t === "END") sinFin(); if (t().t === "OP" && t().v !== ")" && t().v !== "," && t().v !== "=") ns("un operador después de otro"); generico(t()); }
+        var b = factor();
+        a = { k: "bin", op: op.v, izq: a, der: b, col: a.col, fin: b.fin, linea: a.linea };
+      }
+      return a;
+    }
+    function expr() {
+      var a = termino();
+      while (esOp(t(), "+") || esOp(t(), "-")) {
+        var op = t(); p++;
+        if (!empiezaExpr(t())) { if (!t() || t().t === "END") sinFin(); if (t().t === "OP" && t().v !== ")" && t().v !== "," && t().v !== "=") ns("un operador después de otro"); generico(t()); }
+        var b = termino();
+        a = { k: "bin", op: op.v, izq: a, der: b, col: a.col, fin: b.fin, linea: a.linea };
+      }
+      if (t() && t().t === "OP" && /^(==|!=|<=|>=|<|>|\*\*|if)$/.test(t().v)) ns("comparaciones");
+      return a;
+    }
+    while (p < toks.length) {
+      var x = t();
+      if (x.t === "END") break;
+      if (x.t === "NEWLINE" || x.t === "DEDENT") { p++; continue; }
+      if (x.t === "INDENT") throw new ErrorParser(new ErrorSintaxis("IndentationError", "unexpected indent", x.linea, 0, 0, true), x, true);
+      var s;
+      if (x.t === "NAME" && esOp(t(1), ":")) ns("anotaciones de tipo (nombre: tipo)");
+      if (x.t === "NAME" && esOp(t(1), "=")) {
+        p += 2;
+        if (!empiezaExpr(t())) {
+          if (!t() || t().t === "END") sinFin();
+          if (t().t === "OP" && !esOp(t(), ")") && !esOp(t(), "]") && !esOp(t(), "}")) ns("una asignación rara");
+          generico(t());
+        }
+        s = { k: "asig", n: x.v, valor: expr(), linea: x.linea, col: x.col };
+      } else if (x.t === "NAME" && x.v === "print" && t(1) && (t(1).t === "STRING" || t(1).t === "FSTRING" || t(1).t === "NAME" || t(1).t === "NUMBER" || t(1).t === "CONST")) {
+        p++;
+        var ultimo = expr();
+        while (esOp(t(), ",")) { p++; if (!empiezaExpr(t())) break; ultimo = expr(); }
+        if (ultimo.linea !== x.linea) ns("print sin paréntesis en varias líneas");
+        throw new ErrorParser(new ErrorSintaxis("SyntaxError", "Missing parentheses in call to 'print'. Did you mean print(...)?", x.linea, x.col, toks[p - 1].fin), toks[p - 1]);
+      } else {
+        if (x.t === "OP" && x.v !== "(" && x.v !== "-" && x.v !== "+") {
+          if (x.v === ")" || x.v === "]" || x.v === "}") generico(x);
+          ns("una línea que empieza con " + x.v);
+        }
+        s = { k: "expr", valor: expr(), linea: x.linea, col: x.col };
+      }
+      var y = t();
+      if (y && y.t === "OP" && y.v === "=") ns("asignaciones a algo que no es un nombre");
+      if (y && y.t !== "NEWLINE" && y.t !== "END") {
+        if (y.t === "OP" && y.v === ";") ns("varias instrucciones en una línea con ;");
+        if (y.t === "OP" && y.v === ":" && toks[p + 1] && toks[p + 1].t !== "NEWLINE") ns("dos puntos a la mitad de una línea");
+        if (y.t === "OP" && /^(==|!=|<=|>=|<|>|\.|\[|:=|\+=|-=|\*=|\/=)$/.test(y.v)) ns("el operador " + y.v);
+        if (y.t !== "OP" || y.v === ":" || y.v === ")" || y.v === "," ) {
+          if (y.t === "OP" && y.v === ",") ns("tuplas");
+          generico(y);
+        }
+        ns("algo después de la instrucción");
+      }
+      s.fin = toks[p - 1].fin;
+      sentencias.push(s);
+      if (y && y.t === "NEWLINE") p++;
+    }
+    return sentencias;
+  }
+  // f"...": partes de texto y expresiones {nombre} o {expresión sencilla}
+  function analizarF(parte) {
+    if (!parte.f) return parte;
+    var tk = parte.f, crudo = tk.v, res = [], i = 0, texto = "";
+    while (i < crudo.length) {
+      var c = crudo[i];
+      if (c === "\\") {
+        var e = crudo[i + 1];
+        if (!Object.prototype.hasOwnProperty.call(ESCAPES, e)) ns("secuencias de escape en un texto f");
+        texto += ESCAPES[e]; i += 2; continue;
+      }
+      if (c === "{" && crudo[i + 1] === "{") { texto += "{"; i += 2; continue; }
+      if (c === "}" && crudo[i + 1] === "}") { texto += "}"; i += 2; continue; }
+      if (c === "}") ns("una llave } suelta en un texto f");
+      if (c === "{") {
+        var j = crudo.indexOf("}", i);
+        if (j < 0) ns("una llave { sin cerrar en un texto f");
+        var dentro = crudo.slice(i + 1, j);
+        if (/[{:!'"=\\]/.test(dentro) || !dentro.trim()) ns("expresiones complicadas dentro de un texto f");
+        if (texto) { res.push({ texto: texto }); texto = ""; }
+        var desplazamiento = tk.col + 2 + i + 1;
+        var sub = tokenizar([" ".repeat(desplazamiento) + dentro]);
+        if (sub.errorTok || sub.abierto) ns("un error dentro de un texto f");
+        var tks = sub.toks.filter(function (x) { return x.t !== "INDENT" && x.t !== "DEDENT"; }).map(function (x) {
+          x.linea = tk.linea; return x;
+        });
+        var arbol;
+        try { arbol = analizar(tks); } catch (err) { if (err instanceof ErrorParser) ns("un error dentro de un texto f"); throw err; }
+        if (arbol.length !== 1 || arbol[0].k !== "expr") ns("expresiones complicadas dentro de un texto f");
+        res.push({ expr: arbol[0].valor });
+        i = j + 1; continue;
+      }
+      texto += c; i++;
+    }
+    if (texto) res.push({ texto: texto });
+    return { partes: res };
+  }
+
+  // ---------- Ejecución ----------
+  function ErrorPy(tipo, mensaje, nodo, anclas) { this.tipo = tipo; this.mensaje = mensaje; this.nodo = nodo; this.anclas = !!anclas; }
+  function tipoDe(v) {
+    if (typeof v === "string") return "str";
+    if (typeof v === "boolean") return "bool";
+    if (v === null) return "NoneType";
+    if (v && v.float !== undefined) return "float";
+    if (typeof v === "number") return "int";
+    if (v && v.funcion) return "builtin_function_or_method";
+    if (v && v.clase) return "type";
+    return "?";
+  }
+  function F(x) { return { float: x }; }
+  function num(v) { return typeof v === "number" ? v : v.float; }
+  function esNum(v) { return typeof v === "number" || (v && v.float !== undefined) || typeof v === "boolean"; }
+  function comoNum(v) { return typeof v === "boolean" ? (v ? 1 : 0) : num(v); }
+  function esFloatV(v) { return v && v.float !== undefined; }
+  function aTexto(v) {
+    if (typeof v === "string") return v;
+    if (typeof v === "boolean") return v ? "True" : "False";
+    if (v === null) return "None";
+    if (esFloatV(v)) return pyFloat(v.float);
+    if (typeof v === "number") return String(v);
+    if (v && v.funcion) return "<built-in function " + v.funcion + ">";
+    if (v && v.clase) return "<class '" + v.clase + "'>";
+    ns("mostrar ese valor");
+  }
+  function revisarEntero(x) { if (!Number.isSafeInteger(x)) ns("enteros muy grandes"); return x; }
+  var FUNCIONES = { print: 1, str: 1, int: 1, float: 1, len: 1, abs: 1, type: 1 };
+  var CLASES = { str: 1, int: 1, float: 1, type: 1 };
+  function ejecutarArbol(sentencias, alImprimir) {
+    var globales = {}, orden = [];
+    function valorDe(nodo) {
+      switch (nodo.k) {
+        case "num": return nodo.esFloat ? F(nodo.v) : revisarEntero(nodo.v);
+        case "str": return nodo.v;
+        case "const": return nodo.v === "True" ? true : nodo.v === "False" ? false : null;
+        case "grupo": return valorDe(nodo.x);
+        case "fstr":
+          return nodo.partes.map(function (q) {
+            if (q.texto !== undefined) return q.texto;
+            return q.partes.map(function (r) { return r.texto !== undefined ? r.texto : aTexto(valorDe(r.expr)); }).join("");
+          }).join("");
+        case "nombre":
+          if (Object.prototype.hasOwnProperty.call(globales, nodo.n)) return globales[nodo.n];
+          if (FUNCIONES[nodo.n]) return CLASES[nodo.n] && nodo.n !== "type" ? { clase: nodo.n } : nodo.n === "type" ? { clase: "type" } : { funcion: nodo.n };
+          if (BUILTINS.indexOf(nodo.n) >= 0) ns("la función " + nodo.n + "()");
+          throw new ErrorPy("NameError", mensajeNameError(nodo.n, orden), nodo);
+        case "un": {
+          var x = valorDe(nodo.x);
+          if (!esNum(x)) throw new ErrorPy("TypeError", "bad operand type for unary " + nodo.op + ": '" + tipoDe(x) + "'", nodo);
+          var v = comoNum(x);
+          if (nodo.op === "+") return esFloatV(x) ? F(v) : v;
+          return esFloatV(x) ? F(-v) : revisarEntero(-v);
+        }
+        case "bin": return binaria(nodo, valorDe(nodo.izq), valorDe(nodo.der));
+        case "llamada": return llamar(nodo);
+      }
+      ns("esa expresión");
+    }
+    function binaria(nodo, a, b) {
+      var op = nodo.op, ta = tipoDe(a), tb = tipoDe(b);
+      function noSoporta() { return new ErrorPy("TypeError", "unsupported operand type(s) for " + op + ": '" + ta + "' and '" + tb + "'", nodo, true); }
+      if (typeof a === "string" || typeof b === "string") {
+        if (op === "+") {
+          if (typeof a === "string" && typeof b === "string") return a + b;
+          if (typeof a === "string") throw new ErrorPy("TypeError", "can only concatenate str (not \"" + tb + "\") to str", nodo, true);
+          throw noSoporta();
+        }
+        if (op === "*") {
+          var s = typeof a === "string" ? a : b, n = typeof a === "string" ? b : a, tn = tipoDe(n);
+          if (tn === "int" || tn === "bool") {
+            var veces = comoNum(n);
+            if (veces * s.length > 100000) ns("textos enormes");
+            return veces > 0 ? s.repeat(veces) : "";
+          }
+          if (typeof a === "string" && typeof b === "string") throw new ErrorPy("TypeError", "can't multiply sequence by non-int of type 'str'", nodo, true);
+          throw new ErrorPy("TypeError", "can't multiply sequence by non-int of type '" + tn + "'", nodo, true);
+        }
+        if (op === "%" && typeof a === "string") ns("el formato con %");
+        throw noSoporta();
+      }
+      if (!esNum(a) || !esNum(b)) throw noSoporta();
+      var x = comoNum(a), y = comoNum(b), flotante = esFloatV(a) || esFloatV(b);
+      if (op === "+") return flotante ? F(x + y) : revisarEntero(x + y);
+      if (op === "-") return flotante ? F(x - y) : revisarEntero(x - y);
+      if (op === "*") return flotante ? F(x * y) : revisarEntero(x * y);
+      if (op === "/") {
+        if (y === 0) throw new ErrorPy("ZeroDivisionError", flotante ? "float division by zero" : "division by zero", nodo, true);
+        return F(x / y);
+      }
+      if (flotante) ns("// o % con números con punto decimal");
+      if (y === 0) throw new ErrorPy("ZeroDivisionError", op === "%" ? "integer modulo by zero" : "integer division or modulo by zero", nodo, true);
+      var resto = x % y, cociente = (x - resto) / y;
+      if (resto !== 0 && (resto < 0) !== (y < 0)) { cociente -= 1; resto += y; }
+      return op === "//" ? cociente : resto + 0;
+    }
+    function llamar(nodo) {
+      var f = valorDe(nodo.f);
+      if (!(f && (f.funcion || f.clase))) throw new ErrorPy("TypeError", "'" + tipoDe(f) + "' object is not callable", nodo);
+      var nombre = f.funcion || f.clase, args = nodo.args.map(valorDe);
+      if (nombre === "print") { alImprimir(args.map(aTexto).join(" ") + "\n"); return null; }
+      if (nombre === "type") { if (args.length !== 1) ns("type() con varios valores"); return { clase: tipoDe(args[0]) }; }
+      if (args.length !== 1) ns(nombre + "() con " + args.length + " valores");
+      var v = args[0], tv = tipoDe(v);
+      if (nombre === "str") return aTexto(v);
+      if (nombre === "len") {
+        if (typeof v === "string") return Array.from(v).length;
+        throw new ErrorPy("TypeError", "object of type '" + tv + "' has no len()", nodo);
+      }
+      if (nombre === "abs") {
+        if (!esNum(v)) throw new ErrorPy("TypeError", "bad operand type for abs(): '" + tv + "'", nodo);
+        return esFloatV(v) ? F(Math.abs(v.float)) : Math.abs(comoNum(v));
+      }
+      if (nombre === "int") {
+        if (typeof v === "boolean") return v ? 1 : 0;
+        if (typeof v === "number") return v;
+        if (esFloatV(v)) { if (!isFinite(v.float)) ns("int() de infinito"); return revisarEntero(Math.trunc(v.float)); }
+        if (typeof v === "string") {
+          if (/[^\x00-\x7f]/.test(v)) ns("int() de un texto con caracteres especiales");
+          var limpio = v.trim();
+          if (/^[+-]?\d+$/.test(limpio)) { if (limpio.replace(/^[+-]/, "").length > 15) ns("enteros muy grandes"); return Number(limpio); }
+          if (/_/.test(limpio)) ns("int() con guion bajo");
+          throw new ErrorPy("ValueError", "invalid literal for int() with base 10: " + pyStr(v), nodo);
+        }
+        throw new ErrorPy("TypeError", "int() argument must be a string, a bytes-like object or a real number, not '" + tv + "'", nodo);
+      }
+      if (nombre === "float") {
+        if (typeof v === "boolean") return F(v ? 1 : 0);
+        if (typeof v === "number") return F(v);
+        if (esFloatV(v)) return v;
+        if (typeof v === "string") {
+          if (/[^\x00-\x7f]/.test(v)) ns("float() de un texto con caracteres especiales");
+          var t2 = v.trim();
+          if (/^[+-]?(\d+\.?\d*|\.\d+)$/.test(t2)) return F(Number(t2));
+          if (/(inf|nan|e|_)/i.test(t2)) ns("float() de ese texto");
+          throw new ErrorPy("ValueError", "could not convert string to float: " + pyStr(v), nodo);
+        }
+        throw new ErrorPy("TypeError", "float() argument must be a string or a real number, not '" + tv + "'", nodo);
+      }
+      ns("esa función");
+    }
+    sentencias.forEach(function (s) {
+      var v = valorDe(s.valor);
+      if (s.k === "asig") {
+        if (!Object.prototype.hasOwnProperty.call(globales, s.n)) orden.push(s.n);
+        globales[s.n] = v;
+      }
+    });
+  }
+
+  // ---------- Cómo lo muestra Python ----------
+  function lineaMostrada(L) { var i = 0; while (i < L.length && (L[i] === " " || L[i] === "\t" || L[i] === "\f")) i++; return { texto: L.slice(i), quita: i }; }
+  function textoSyntaxError(e, lineas, ruta) {
+    var L = lineas[e.linea - 1] || "", m = lineaMostrada(L), s = '  File "' + ruta + '", line ' + e.linea + "\n    " + m.texto + "\n";
+    if (!e.sinCaret) {
+      var ini = Math.min(e.col, L.length), fin = Math.min(Math.max(e.fin, e.col + 1), L.length + 1);
+      var col = nCar(L, 0, ini) - nCar(L, 0, m.quita);
+      var largo = Math.max(1, nCar(L, ini, fin) + (fin > L.length ? 1 : 0));
+      if (col >= 0) s += "    " + " ".repeat(col) + "^".repeat(largo) + "\n";
+    }
+    return s + e.tipo + ": " + e.mensaje + "\n";
+  }
+  function interno(n) { return n.k === "grupo" ? interno(n.x) : n; }
+  // En los tracebacks, Python 3.12 cuenta como 2 columnas los caracteres anchos (East Asian Width W o F,
+  // como los emojis y el chino); estos son sus rangos en Unicode 15.0, el de Python 3.12.
+  var ANCHOS = "1100-115f 231a-231b 2329-232a 23e9-23ec 23f0 23f3 25fd-25fe 2614-2615 2648-2653 267f 2693 26a1 26aa-26ab 26bd-26be 26c4-26c5 26ce 26d4 26ea 26f2-26f3 26f5 26fa 26fd 2705 270a-270b 2728 274c 274e 2753-2755 2757 2795-2797 27b0 27bf 2b1b-2b1c 2b50 2b55 2e80-2e99 2e9b-2ef3 2f00-2fd5 2ff0-2ffb 3000-303e 3041-3096 3099-30ff 3105-312f 3131-318e 3190-31e3 31f0-321e 3220-3247 3250-4dbf 4e00-a48c a490-a4c6 a960-a97c ac00-d7a3 f900-faff fe10-fe19 fe30-fe52 fe54-fe66 fe68-fe6b ff01-ff60 ffe0-ffe6 16fe0-16fe4 16ff0-16ff1 17000-187f7 18800-18cd5 18d00-18d08 1aff0-1aff3 1aff5-1affb 1affd-1affe 1b000-1b122 1b132 1b150-1b152 1b155 1b164-1b167 1b170-1b2fb 1f004 1f0cf 1f18e 1f191-1f19a 1f200-1f202 1f210-1f23b 1f240-1f248 1f250-1f251 1f260-1f265 1f300-1f320 1f32d-1f335 1f337-1f37c 1f37e-1f393 1f3a0-1f3ca 1f3cf-1f3d3 1f3e0-1f3f0 1f3f4 1f3f8-1f43e 1f440 1f442-1f4fc 1f4ff-1f53d 1f54b-1f54e 1f550-1f567 1f57a 1f595-1f596 1f5a4 1f5fb-1f64f 1f680-1f6c5 1f6cc 1f6d0-1f6d2 1f6d5-1f6d7 1f6dc-1f6df 1f6eb-1f6ec 1f6f4-1f6fc 1f7e0-1f7eb 1f7f0 1f90c-1f93a 1f93c-1f945 1f947-1f9ff 1fa70-1fa7c 1fa80-1fa88 1fa90-1fabd 1fabf-1fac5 1face-1fadb 1fae0-1fae8 1faf0-1faf8 20000-2fffd 30000-3fffd"
+    .split(" ").map(function (r) { var p = r.split("-"); return [parseInt(p[0], 16), parseInt(p[1] || p[0], 16)]; });
+  function esAncho(cp) {
+    for (var i = 0; i < ANCHOS.length; i++) { if (cp < ANCHOS[i][0]) return false; if (cp <= ANCHOS[i][1]) return true; }
+    return false;
+  }
+  function anchoPy(L, a, b) { var w = 0; for (var c of L.slice(a, b)) w += esAncho(c.codePointAt(0)) ? 2 : 1; return w; }
+  function textoTraceback(err, lineas, ruta) {
+    var n = err.nodo, L = lineas[n.linea - 1], m = lineaMostrada(L), s = "Traceback (most recent call last):\n";
+    s += '  File "' + ruta + '", line ' + n.linea + ", in <module>\n    " + m.texto + "\n";
+    var ini = n.col, fin = n.fin;
+    if (fin > L.length) ns("una instrucción en varias líneas");
+    var margen = " ".repeat(anchoPy(L, m.quita, ini));
+    if (err.anclas && n.k === "bin") {
+      var izq = interno(n.izq), der = interno(n.der), a = -1, b = -1;
+      for (var i = izq.fin; i < der.col; i++) {
+        var c = L[i];
+        if (c === " " || c === "\t" || c === "\f") continue;
+        a = i; b = i + 1;
+        if (i + 1 < der.col && !/[ \t\f]/.test(L[i + 1])) b++;
+        if (i + 1 < der.col && c === ")") continue;
+        break;
+      }
+      s += "    " + margen + "~".repeat(anchoPy(L, ini, a)) + "^".repeat(anchoPy(L, a, b)) + "~".repeat(anchoPy(L, b, fin)) + "\n";
+    } else if (nCar(L, ini, fin) !== nCar(m.texto, 0, m.texto.length)) {
+      s += "    " + margen + "^".repeat(anchoPy(L, ini, fin)) + "\n";
+    }
+    return s + err.tipo + ": " + err.mensaje + "\n";
+  }
+
+  // Corre un programa como "python archivo.py": regresa {salida, error (true si terminó con error)} o {noSoportado}
+  function correrPython(fuente, ruta) {
+    var lineas = fuente.replace(/\r\n?/g, "\n").split("\n");
+    if (lineas.length && lineas[lineas.length - 1] === "") lineas.pop();
+    try {
+      var tk = tokenizar(lineas), arbol = null, errorParser = null;
+      try {
+        arbol = analizar(tk.toks);
+      } catch (e) {
+        if (!(e instanceof ErrorParser)) throw e;
+        errorParser = e;
+      }
+      var final = null;
+      if (errorParser && errorParser.e && !tk.errorTok) {
+        // En la segunda pasada, Python 3.12 reporta "Missing parentheses" en un print -1 anterior al error
+        var hasta = tk.toks.indexOf(errorParser.ultimo);
+        for (var q = 0; q + 1 < (hasta < 0 ? tk.toks.length : hasta); q++) {
+          var a1 = tk.toks[q], a2 = tk.toks[q + 1];
+          if (a1.t === "NAME" && (a1.v === "print" || a1.v === "exec") && a2.t === "OP" && /^[-+~]$/.test(a2.v)) {
+            return { noSoportado: "print seguido de + o - junto con otro error" };
+          }
+        }
+      }
+      if (errorParser && errorParser.e && errorParser.e.mensaje === "unexpected indent") final = errorParser.e;
+      else if (tk.errorTok) final = tk.errorTok;
+      else if (errorParser && !errorParser.e) final = tk.abierto;
+      else if (errorParser) {
+        if (tk.abierto) {
+          var lineaErr = errorParser.ultimo.linea;
+          if (lineaErr > tk.abierto.linea) final = tk.abierto;
+          else if (lineaErr < tk.abierto.linea) final = errorParser.e;
+          else return { noSoportado: "un error y un paréntesis sin cerrar en la misma línea" };
+        } else final = errorParser.e;
+      } else if (tk.abierto) final = tk.abierto;
+      if (final) return { salida: textoSyntaxError(final, lineas, ruta), error: true };
+      var salida = "";
+      try {
+        ejecutarArbol(arbol, function (t) { salida += t; });
+      } catch (e) {
+        if (!(e instanceof ErrorPy)) throw e;
+        return { salida: salida + textoTraceback(e, lineas, ruta), error: true };
+      }
+      return { salida: salida, error: false };
+    } catch (e) {
+      if (e instanceof NoSoportado) return { noSoportado: e.motivo };
+      throw e;
+    }
+  }
+  // ==== FIN DEL NÚCLEO 1 ====
+
+  // ==== NÚCLEO 2: la terminal de cmd (sin DOM) ====
+  var PY_VERSION = "3.12.10";
+  var BASE = "C:\\Users\\alumno\\AppData\\Local\\Programs\\Python\\Python312";
+  var PY_EXE = BASE + "\\python.exe";
+  var PATH_BASE = "C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\;C:\\WINDOWS\\System32\\OpenSSH\\;" +
+    BASE + "\\Scripts\\;" + BASE + "\\;C:\\Users\\alumno\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\alumno\\AppData\\Local\\Programs\\Microsoft VS Code\\bin";
+  var NO_RECONOCIDO = " no se reconoce como un comando interno o externo,\nprograma o archivo por lotes ejecutable.\n";
+  var HOLA_INICIAL = "# hola.py: mi primer programa\nnombre = \"Ana\"\nprint(\"Hola,\", nombre)\nprint(\"Bienvenida a Programación Básica\")\n";
+  var TABLA = "# tabla.py: la tabla del 7\nfor i in range(1, 4):\n    print(7, \"x\", i, \"=\", 7 * i)\n";
+  var SALIDA_TABLA = "7 x 1 = 7\n7 x 2 = 14\n7 x 3 = 21\n";
+  var PAQUETES_REQUESTS = [["certifi", "2025.8.3"], ["charset-normalizer", "3.4.3"], ["idna", "3.10"], ["requests", "2.32.5"], ["urllib3", "2.5.0"]];
+  var INSTALAR_REQUESTS = "Collecting requests\n  Downloading requests-2.32.5-py3-none-any.whl.metadata (4.9 kB)\n" +
+    "Collecting charset_normalizer<4,>=2 (from requests)\n  Downloading charset_normalizer-3.4.3-cp312-cp312-win_amd64.whl.metadata (37 kB)\n" +
+    "Collecting idna<4,>=2.5 (from requests)\n  Downloading idna-3.10-py3-none-any.whl.metadata (10 kB)\n" +
+    "Collecting urllib3<3,>=1.21.1 (from requests)\n  Downloading urllib3-2.5.0-py3-none-any.whl.metadata (6.5 kB)\n" +
+    "Collecting certifi>=2017.4.17 (from requests)\n  Downloading certifi-2025.8.3-py3-none-any.whl.metadata (2.4 kB)\n" +
+    "Downloading requests-2.32.5-py3-none-any.whl (64 kB)\nDownloading charset_normalizer-3.4.3-cp312-cp312-win_amd64.whl (107 kB)\n" +
+    "Downloading idna-3.10-py3-none-any.whl (70 kB)\nDownloading urllib3-2.5.0-py3-none-any.whl (129 kB)\nDownloading certifi-2025.8.3-py3-none-any.whl (161 kB)\n" +
+    "Installing collected packages: urllib3, idna, charset_normalizer, certifi, requests\n" +
+    "Successfully installed certifi-2025.8.3 charset_normalizer-3.4.3 idna-3.10 requests-2.32.5 urllib3-2.5.0\n";
+
+  function carpeta(nombre, hijos, hora, oculta) {
+    var h = {};
+    (hijos || []).forEach(function (x) { h[x.nombre.toLowerCase()] = x; });
+    return { nombre: nombre, dir: true, hijos: h, hora: hora || "09:12 a. m.", oculta: !!oculta };
+  }
+  function archivo(nombre, contenido, hora, tam) { return { nombre: nombre, dir: false, contenido: contenido, hora: hora || "09:12 a. m.", tam: tam }; }
+  function bytesArchivo(a) {
+    if (a.tam !== undefined) return a.tam;
+    var t = a.contenido.replace(/\r\n/g, "\n").replace(/\n/g, "\r\n");
+    return utf8(t).length;
+  }
+  function nuevaTerminal() {
+    var programacion = carpeta("programacion", [
+      archivo("hola.py", HOLA_INICIAL, "10:20 a. m."),
+      carpeta("ejercicios", [archivo("tabla.py", TABLA, "10:18 a. m.")], "10:18 a. m.")
+    ], "10:20 a. m.");
+    var raiz = carpeta("C:", [
+      carpeta("Users", [
+        carpeta("alumno", [
+          carpeta("AppData", [], "09:00 a. m.", true),
+          carpeta("Desktop"), carpeta("Documents", [programacion], "10:15 a. m."), carpeta("Downloads"),
+          carpeta("Music"), carpeta("Pictures"), carpeta("Videos")
+        ], "09:00 a. m.")
+      ], "09:00 a. m."),
+      carpeta("Windows", [], "08:00 a. m.")
+    ]);
+    return { raiz: raiz, cwd: ["C:", "Users", "alumno"], venv: null, paquetes: { global: [["pip", "25.0.1"]] }, horaVenv: 0, eventos: [] };
+  }
+  function textoRuta(segs) { return segs.length === 1 ? segs[0] + "\\" : segs.join("\\"); }
+  function nodoEn(T, segs) {
+    var n = T.raiz;
+    for (var i = 1; i < segs.length; i++) {
+      if (!n.dir) return null;
+      n = n.hijos[segs[i].toLowerCase()];
+      if (!n) return null;
+    }
+    return n;
+  }
+  // Resuelve una ruta escrita (relativa o absoluta) a segmentos; conserva lo escrito, como cmd
+  function resolver(T, ruta) {
+    ruta = ruta.replace(/\//g, "\\").replace(/^"(.*)"$/, "$1");
+    var segs;
+    if (/^[a-zA-Z]:/.test(ruta)) {
+      if (ruta[0].toUpperCase() !== "C") return null;
+      segs = ["C:"]; ruta = ruta.slice(2);
+      if (ruta[0] !== "\\") ruta = "\\" + ruta;
+    } else if (ruta[0] === "\\") segs = ["C:"];
+    else segs = T.cwd.slice();
+    ruta.split("\\").forEach(function (p) {
+      if (p === "" || p === ".") return;
+      if (p === "..") { if (segs.length > 1) segs.pop(); return; }
+      segs.push(p.replace(/[. ]+$/, "") || p);
+    });
+    return segs;
+  }
+  function existeDir(T, segs) { var n = segs && nodoEn(T, segs); return !!(n && n.dir); }
+  function prompt(T) { return (T.venv ? "(" + T.venv.nombre + ") " : "") + textoRuta(T.cwd) + ">"; }
+  function rutaVenv(T) { return T.venv ? textoRuta(T.venv.segs) : null; }
+  function paquetesActivos(T) { return T.venv ? T.venv.paquetes : T.paquetes.global; }
+  function miles(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
+  function relleno(s, n) { s = String(s); while (s.length < n) s = " " + s; return s; }
+  function listarDir(T, segs) {
+    var n = nodoEn(T, segs);
+    var s = " El volumen de la unidad C no tiene etiqueta.\n El número de serie del volumen es: 5A3C-91F2\n\n Directorio de " + textoRuta(segs) + "\n\n";
+    var filas = [], archivos = 0, bytes = 0, dirs = 0;
+    if (segs.length > 1) { filas.push(["19/10/2026  " + n.hora + "    <DIR>          .", "."]); filas.push(["19/10/2026  " + n.hora + "    <DIR>          ..", ".."]); dirs += 2; }
+    Object.keys(n.hijos).sort().forEach(function (k) {
+      var h = n.hijos[k];
+      if (h.oculta) return;
+      if (h.dir) { filas.push(["19/10/2026  " + h.hora + "    <DIR>          " + h.nombre]); dirs++; }
+      else { var b = bytesArchivo(h); filas.push(["19/10/2026  " + h.hora + " " + relleno(miles(b), 17) + " " + h.nombre]); archivos++; bytes += b; }
+    });
+    s += filas.map(function (f) { return f[0]; }).join("\n") + "\n";
+    s += relleno(archivos, 16) + " archivos " + relleno(miles(bytes), 14) + " bytes\n";
+    s += relleno(dirs, 16) + " dirs  98,765,432,320 bytes libres\n";
+    return s;
+  }
+  function pipList(T, freeze) {
+    var lista = paquetesActivos(T).slice().sort(function (a, b) { return a[0].toLowerCase() < b[0].toLowerCase() ? -1 : 1; });
+    if (freeze) return lista.filter(function (p) { return p[0] !== "pip"; }).map(function (p) { return p[0] + "==" + p[1]; }).join("\n") + (lista.length > 1 ? "\n" : "");
+    var w1 = Math.max(7, Math.max.apply(null, lista.map(function (p) { return p[0].length; })));
+    var w2 = Math.max(7, Math.max.apply(null, lista.map(function (p) { return p[1].length; })));
+    function izq(s, n) { s = String(s); while (s.length < n) s += " "; return s; }
+    return [izq("Package", w1) + " " + "Version", "-".repeat(w1) + " " + "-".repeat(w2)].concat(lista.map(function (p) { return izq(p[0], w1) + " " + p[1]; })).join("\n") + "\n";
+  }
+  function quitarComillas(s) { return s.replace(/^"(.*)"$/, "$1"); }
+  // Ejecuta una línea de comando; regresa {salida, nota, limpiar, editor}
+  function comando(T, linea) {
+    var r = { salida: "", nota: null };
+    var cmd = linea.trim();
+    if (!cmd) return r;
+    var m = /^(\S+?)(?=$|\s|\\|\/|\.\.)(.*)$/.exec(cmd) || [cmd, cmd, ""];
+    var nombre = m[1], resto = m[2].trim(), bajo = nombre.toLowerCase();
+    function evento(e) { T.eventos.push(e); }
+    if (bajo === "cd" || bajo === "chdir" || /^cd\.\.?$/i.test(nombre) || /^cd\\/i.test(cmd)) {
+      var arg = /^cd\b/i.test(cmd) ? cmd.slice(2).trim() : resto;
+      arg = arg.replace(/^\/d\s+/i, "");
+      if (!arg) { r.salida = textoRuta(T.cwd) + "\n"; return r; }
+      var segs = resolver(T, quitarComillas(arg));
+      if (!existeDir(T, segs)) { r.salida = "El sistema no puede encontrar la ruta especificada.\n"; return r; }
+      T.cwd = segs;
+      evento("cd");
+      return r;
+    }
+    if (bajo === "cls") { r.limpiar = true; return r; }
+    if (bajo === "dir") {
+      var objetivo = resto ? resolver(T, quitarComillas(resto)) : T.cwd;
+      if (resto && /^\/|\s\//.test(resto)) { r.nota = "Esta terminal solo entiende dir sin opciones o con el nombre de una carpeta."; return r; }
+      if (!existeDir(T, objetivo)) {
+        r.salida = " El volumen de la unidad C no tiene etiqueta.\n El número de serie del volumen es: 5A3C-91F2\n\n Directorio de " + textoRuta(T.cwd) + "\n\nNo se encuentra el archivo\n";
+        return r;
+      }
+      r.salida = listarDir(T, objetivo);
+      evento("dir");
+      return r;
+    }
+    if (bajo === "echo." || bajo === "echo/") { r.salida = "\n"; return r; }
+    if (bajo === "echo") {
+      if (!resto) { r.salida = "ECHO está activado.\n"; return r; }
+      r.salida = resto.replace(/%([^%]+)%/g, function (todo, v) {
+        var vv = v.toUpperCase();
+        if (vv === "PATH") return (T.venv ? rutaVenv(T) + "\\Scripts;" : "") + PATH_BASE;
+        if (vv === "VIRTUAL_ENV") return T.venv ? rutaVenv(T) : todo;
+        if (vv === "USERNAME") return "alumno";
+        if (vv === "USERPROFILE") return "C:\\Users\\alumno";
+        if (vv === "CD") return textoRuta(T.cwd);
+        return todo;
+      }) + "\n";
+      if (/%path%/i.test(resto)) evento("path");
+      return r;
+    }
+    if (bajo === "where") {
+      var que = resto.toLowerCase().replace(/\.exe$/, "");
+      if (que === "python") {
+        r.salida = (T.venv ? rutaVenv(T) + "\\Scripts\\python.exe\n" : "") + PY_EXE + "\nC:\\Users\\alumno\\AppData\\Local\\Microsoft\\WindowsApps\\python.exe\n";
+        evento(T.venv ? "where_venv" : "where_python");
+        return r;
+      }
+      if (que === "pip") { r.salida = (T.venv ? rutaVenv(T) + "\\Scripts\\pip.exe\n" : "") + BASE + "\\Scripts\\pip.exe\n"; return r; }
+      if (que === "code") { r.salida = "C:\\Users\\alumno\\AppData\\Local\\Programs\\Microsoft VS Code\\bin\\code\nC:\\Users\\alumno\\AppData\\Local\\Programs\\Microsoft VS Code\\bin\\code.cmd\n"; return r; }
+      if (!que) { r.nota = "Escribe qué programa buscar, por ejemplo: where python"; return r; }
+      if (que === "py" || que === "deactivate" || que === "activate") { r.nota = "Esta terminal no simula esa búsqueda."; return r; }
+      r.salida = "INFORMACIÓN: no se pudo encontrar ningún archivo para los patrones dados.\n";
+      return r;
+    }
+    if (bajo === "type") {
+      var a = resto && nodoEn(T, resolver(T, quitarComillas(resto)) || []);
+      if (!resto) { r.salida = "La sintaxis del comando no es correcta.\n"; return r; }
+      if (!a) { r.salida = "El sistema no puede encontrar el archivo especificado.\n"; return r; }
+      if (a.dir) { r.salida = "Acceso denegado.\n"; return r; }
+      r.salida = a.contenido.replace(/\r\n/g, "\n");
+      if (r.salida && !/\n$/.test(r.salida)) r.salida += "\n";
+      return r;
+    }
+    if (bajo === "code" || bajo === "notepad" || bajo === "code.cmd" || bajo === "notepad.exe") {
+      var cual = quitarComillas(resto || "");
+      var objetivo2 = cual === "." || cual === "" ? null : resolver(T, cual);
+      var nodo2 = objetivo2 ? nodoEn(T, objetivo2) : null;
+      var esHola = nodo2 && !nodo2.dir && nodo2.nombre.toLowerCase() === "hola.py" && objetivo2.slice(0, -1).join("\\").toLowerCase() === "c:\\users\\alumno\\documents\\programacion";
+      if (esHola || (cual === "." && T.cwd.join("\\").toLowerCase() === "c:\\users\\alumno\\documents\\programacion")) { r.editor = true; evento("editor"); return r; }
+      r.nota = "En esta simulación el editor solo abre C:\\Users\\alumno\\Documents\\programacion\\hola.py.";
+      return r;
+    }
+    if (bajo === "deactivate" || bajo === "deactivate.bat") {
+      if (!T.venv) { r.salida = "'" + nombre + "'" + NO_RECONOCIDO; return r; }
+      T.venv = null; evento("deactivate"); return r;
+    }
+    if (/^(call\s+)?(\.\\)?[^\\]+\\scripts\\activate(\.bat)?$/i.test(cmd)) {
+      var limpio = cmd.replace(/^call\s+/i, "").replace(/^\.\\/, "");
+      var partes = limpio.split("\\"), carpetaVenv = resolver(T, partes[0]);
+      var nv = carpetaVenv && nodoEn(T, carpetaVenv);
+      if (!nv || !nv.dir || !nv.esVenv) { r.salida = "El sistema no puede encontrar la ruta especificada.\n"; return r; }
+      T.venv = { segs: carpetaVenv, nombre: nv.nombre, paquetes: nv.paquetes };
+      evento("activar");
+      return r;
+    }
+    if (bajo === "python" || bajo === "python.exe" || bajo === "python3") {
+      if (bajo === "python3") { r.salida = "'python3'" + NO_RECONOCIDO; r.nota = "En Windows el comando es python; python3 es el nombre que se usa en Linux y macOS."; return r; }
+      return correrComandoPython(T, resto, r, evento);
+    }
+    if (bajo === "pip" || bajo === "pip3" || bajo === "pip.exe") return comandoPip(T, resto, r, evento);
+    if (bajo === "py") { r.nota = "Esta terminal simulada no incluye el lanzador py; usa python."; return r; }
+    if (bajo === "help") {
+      r.nota = "Esta terminal entiende: cd, cd.., dir, cls, type, echo (con %PATH% y %VIRTUAL_ENV%), where, python --version, python archivo.py, python -m venv .venv, .venv\\Scripts\\activate, deactivate, pip install requests, pip list, pip freeze y code hola.py (abre el editor de la página). En la terminal real, help muestra la lista de todos los comandos de cmd.";
+      return r;
+    }
+    if (bajo === "exit") { r.nota = "En una terminal real, exit cierra la ventana. Aquí puedes usar Reiniciar la terminal."; return r; }
+    if (/^(md|mkdir|rd|rmdir|move|del|erase|ren|rename|copy|xcopy|attrib|set|path|ver|title|color|tree|start|mklink)$/.test(bajo)) {
+      r.nota = "El comando " + nombre + " existe en cmd, pero esta terminal simulada no lo incluye: practícalo en la terminal de tu computadora.";
+      return r;
+    }
+    var primero = /^[^\s\/]+/.exec(cmd);
+    var malo = primero ? primero[0] : cmd.split(/\s/)[0];
+    if (/^\.\//.test(cmd)) malo = ".";
+    if (/^[a-zA-Z]:$/.test(malo)) {
+      if (malo.toUpperCase() === "C:") return r;
+      r.salida = "El sistema no puede encontrar la unidad especificada.\n"; return r;
+    }
+    r.salida = "'" + malo + "'" + NO_RECONOCIDO;
+    if (/^(pyhton|phyton|pytohn|pyton|pythn|pythno)$/i.test(malo)) evento("typo");
+    return r;
+  }
+  function correrComandoPython(T, resto, r, evento) {
+    var args = resto.match(/"[^"]*"|\S+/g) || [];
+    if (!args.length) { r.nota = "En tu computadora, python sin nada abre el intérprete interactivo (>>>), del que sales con exit(). Esta terminal no lo simula: escribe python seguido del nombre de un archivo."; return r; }
+    var a0 = args[0];
+    if (a0 === "--version" || a0 === "-V") { r.salida = "Python " + PY_VERSION + "\n"; evento("version"); return r; }
+    if (a0 === "--help" || a0 === "-h" || a0 === "-?") { r.nota = "python --help muestra la ayuda de Python. Pruébalo en la terminal de tu computadora."; return r; }
+    if (a0 === "-m") {
+      var mod = args[1] || "";
+      if (mod === "venv") {
+        var dest = args[2];
+        if (!dest) { r.nota = "Falta el nombre de la carpeta del entorno, por ejemplo: python -m venv .venv"; return r; }
+        var segs = resolver(T, quitarComillas(dest)), padre = nodoEn(T, segs.slice(0, -1));
+        if (!padre || !padre.dir) { r.nota = "Esta terminal solo crea entornos dentro de carpetas que existen."; return r; }
+        var nombreV = segs[segs.length - 1], hora = "10:3" + (T.horaVenv++ % 10) + " a. m.";
+        var rutaV = textoRuta(segs);
+        var cfg = "home = " + BASE + "\ninclude-system-site-packages = false\nversion = " + PY_VERSION + "\nexecutable = " + PY_EXE + "\ncommand = " + PY_EXE + " -m venv " + rutaV + "\n";
+        var existente = padre.hijos[nombreV.toLowerCase()];
+        if (existente && !existente.dir) { r.nota = "Ya existe un archivo con ese nombre."; return r; }
+        if (!existente) {
+          var scripts = carpeta("Scripts", ["activate", "activate.bat", "Activate.ps1", "deactivate.bat", "pip.exe", "pip3.12.exe", "pip3.exe", "python.exe", "pythonw.exe"].map(function (n) {
+            var tam = { "activate": 2190, "activate.bat": 1012, "Activate.ps1": 9031, "deactivate.bat": 393, "pip.exe": 108451, "pip3.12.exe": 108451, "pip3.exe": 108451, "python.exe": 270104, "pythonw.exe": 258840 }[n];
+            return archivo(n, "", hora, tam);
+          }), hora);
+          var v = carpeta(nombreV, [carpeta("Include", [], hora), carpeta("Lib", [carpeta("site-packages", [], hora)], hora), scripts, archivo("pyvenv.cfg", cfg, hora)], hora);
+          v.esVenv = true; v.paquetes = [["pip", "25.0.1"]];
+          padre.hijos[nombreV.toLowerCase()] = v;
+        }
+        evento(segs.join("\\").toLowerCase() === "c:\\users\\alumno\\documents\\programacion\\.venv" ? "venv_creado" : "venv_otro");
+        return r;
+      }
+      if (mod === "pip") return comandoPip(T, args.slice(2).join(" "), r, evento);
+      r.nota = "Esta terminal solo simula python -m venv y python -m pip.";
+      return r;
+    }
+    if (a0[0] === "-") { r.nota = "Esta terminal no simula esa opción de python."; return r; }
+    var rutaEscrita = quitarComillas(a0), segs2 = resolver(T, rutaEscrita), n = segs2 && nodoEn(T, segs2);
+    var absoluta = textoRuta(segs2 || T.cwd), prefijo = T.venv ? PY_EXE : "python";
+    if (!n) {
+      r.salida = prefijo + ": can't open file " + pyStr(absoluta) + ": [Errno 2] No such file or directory\n";
+      evento("no_encontrado");
+      return r;
+    }
+    if (n.dir) {                                   // este mensaje lo da runpy con sys.executable
+      r.salida = (T.venv ? rutaVenv(T) + "\\Scripts\\python.exe" : PY_EXE) + ": can't find '__main__' module in " + pyStr(absoluta) + "\n";
+      return r;
+    }
+    if (args.length > 1) { r.nota = "Esta terminal no le pasa argumentos al programa."; return r; }
+    if (n.nombre.toLowerCase() === "tabla.py") { r.salida = SALIDA_TABLA; return r; }
+    if (!/\.py$/i.test(n.nombre) || n.contenido === "") { r.nota = "Esta terminal solo corre hola.py y ejercicios\\tabla.py."; return r; }
+    var res = correrPython(n.contenido, absoluta);
+    if (res.noSoportado) {
+      r.nota = "No puedo ejecutar esta versión de hola.py en la simulación: usa " + res.noSoportado + ". Esta terminal entiende print(), variables, textos (también f\"...\"), números, + - * / // %, str(), int(), float(), len(), abs() y type(). Pruébalo con Python en tu computadora.";
+      return r;
+    }
+    r.salida = res.salida;
+    if (n.nombre.toLowerCase() === "hola.py") {
+      evento(res.error ? "hola_error" : (n.contenido.replace(/\r\n/g, "\n") === HOLA_INICIAL ? "hola_ok" : "hola_ok_editado"));
+      if (!res.error) evento("hola_corrio");
+    }
+    return r;
+  }
+  function comandoPip(T, resto, r, evento) {
+    var args = resto.split(/\s+/).filter(Boolean), sub = (args[0] || "").toLowerCase();
+    var lista = paquetesActivos(T);
+    if (args[0] === "--version" || args[0] === "-V") {
+      r.salida = "pip 25.0.1 from " + (T.venv ? rutaVenv(T) + "\\Lib\\site-packages\\pip" : BASE + "\\Lib\\site-packages\\pip") + " (python 3.12)\n";
+      return r;
+    }
+    if (sub === "list") { r.salida = pipList(T, false); evento(T.venv ? "pip_list_venv" : "pip_list_global"); return r; }
+    if (sub === "freeze") { r.salida = pipList(T, true); return r; }
+    if (sub === "install") {
+      var paquete = (args[1] || "").toLowerCase();
+      if (!paquete) { r.salida = "ERROR: You must give at least one requirement to install (see \"pip help install\")\n"; return r; }
+      if (paquete !== "requests" || args.length > 2) { r.nota = "En esta simulación solo se puede instalar requests (pip install requests). Con internet, en tu computadora, pip instala cualquier paquete de PyPI."; return r; }
+      var sitio = (T.venv ? rutaVenv(T) + "\\Lib\\site-packages" : BASE + "\\Lib\\site-packages").toLowerCase();
+      if (lista.some(function (p) { return p[0] === "requests"; })) {
+        r.salida = "Requirement already satisfied: requests in " + sitio + " (2.32.5)\n" +
+          "Requirement already satisfied: charset_normalizer<4,>=2 in " + sitio + " (from requests) (3.4.3)\n" +
+          "Requirement already satisfied: idna<4,>=2.5 in " + sitio + " (from requests) (3.10)\n" +
+          "Requirement already satisfied: urllib3<3,>=1.21.1 in " + sitio + " (from requests) (2.5.0)\n" +
+          "Requirement already satisfied: certifi>=2017.4.17 in " + sitio + " (from requests) (2025.8.3)\n";
+        return r;
+      }
+      PAQUETES_REQUESTS.forEach(function (p) { lista.push(p.slice()); });
+      if (T.venv) {
+        var scripts = nodoEn(T, T.venv.segs.concat(["Scripts"]));
+        if (scripts) scripts.hijos["normalizer.exe"] = archivo("normalizer.exe", "", "10:40 a. m.", 108468);
+      }
+      r.salida = INSTALAR_REQUESTS;
+      evento(T.venv ? "pip_venv" : "pip_global");
+      return r;
+    }
+    if (!sub) { r.nota = "pip sin nada muestra su ayuda. Prueba pip list o pip install requests."; return r; }
+    r.nota = "Esta terminal simula pip install requests, pip list, pip freeze y pip --version.";
+    return r;
+  }
+  // ==== FIN DEL NÚCLEO 2 ====
+
+  // ---------- Interfaz: la terminal ----------
+  var T = nuevaTerminal(), historial = [], posHist = 0, borrador = "";
+  var BANNER = "Microsoft Windows [Versión 10.0.26100.4652]\n(c) Microsoft Corporation. Todos los derechos reservados.\n\n";
+  function escribir(texto, clase) {
+    var s = document.createElement("span");
+    if (clase) s.className = clase;
+    s.textContent = texto;
+    $("salida").appendChild(s);
+  }
+  function actualizarPrompt() { $("prompt").textContent = prompt(T); pintarArbol(); }
+  function bajarScroll() { var t = $("terminal"); t.scrollTop = t.scrollHeight; }
+  function ejecutarLinea(linea) {
+    escribir(prompt(T) + linea + "\n");
+    var r = comando(T, linea);
+    if (r.limpiar) { $("salida").textContent = ""; actualizarPrompt(); return; }
+    if (r.salida) escribir(r.salida);
+    if (r.nota) escribir("ⓘ " + r.nota, "nota");
+    if (linea.trim()) escribir("\n");
+    if (r.editor) abrirEditor();
+    actualizarPrompt();
+    procesarEventos();
+    bajarScroll();
+  }
+  $("cmd").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      var linea = $("cmd").value;
+      $("cmd").value = "";
+      if (linea.trim()) { historial.push(linea); }
+      posHist = historial.length; borrador = "";
+      ejecutarLinea(linea);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      if (posHist === historial.length) borrador = $("cmd").value;
+      if (posHist > 0) { posHist--; $("cmd").value = historial[posHist]; }
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      if (posHist < historial.length) { posHist++; $("cmd").value = posHist === historial.length ? borrador : historial[posHist]; }
+    } else if (e.key === "Escape") {
+      $("cmd").value = "";
+    }
+  });
+  $("terminal").addEventListener("click", function () {
+    if (!window.getSelection || String(window.getSelection()) === "") $("cmd").focus();
+  });
+  function reiniciarTerminal() {
+    T = nuevaTerminal();
+    $("salida").textContent = "";
+    escribir(BANNER);
+    $("texto").value = HOLA_INICIAL;
+    marcarGuardado();
+    $("editor").hidden = true;
+    actualizarPrompt();
+  }
+  $("reiniciar").addEventListener("click", function () {
+    if (confirm("¿Reiniciar la terminal? Se borran el entorno virtual, los paquetes y los cambios a hola.py (el avance de las misiones se queda).")) { reiniciarTerminal(); $("cmd").focus(); }
+  });
+
+  // ---------- Editor de hola.py ----------
+  function holaNodo() { return nodoEn(T, ["C:", "Users", "alumno", "Documents", "programacion", "hola.py"]); }
+  function pintarGutter() {
+    var n = $("texto").value.split("\n").length;
+    var s = [];
+    for (var i = 1; i <= n; i++) s.push(i);
+    $("gutter").textContent = s.join("\n");
+  }
+  function marcarGuardado() {
+    var guardado = holaNodo() ? holaNodo().contenido : HOLA_INICIAL, cambiado = $("texto").value !== guardado;
+    $("tabEditor").textContent = "hola.py" + (cambiado ? " ●" : "");
+    $("estadoEditor").textContent = cambiado ? "Cambios sin guardar: Python corre la última versión guardada" : "Guardado";
+    pintarGutter();
+  }
+  function abrirEditor() {
+    var n = holaNodo();
+    if (!n) return;
+    if ($("editor").hidden) $("texto").value = n.contenido;
+    $("editor").hidden = false;
+    marcarGuardado();
+    eventoInterfaz("editor");
+  }
+  function guardarHola() {
+    var n = holaNodo();
+    if (!n) return;
+    var antes = n.contenido;
+    n.contenido = $("texto").value;
+    n.hora = "10:4" + (Math.floor(Date.now() / 1000) % 10) + " a. m.";
+    marcarGuardado();
+    if (n.contenido !== antes && n.contenido.replace(/\r\n/g, "\n") !== HOLA_INICIAL) eventoInterfaz("guardado_cambiado");
+  }
+  $("abrirEditor").addEventListener("click", function () { abrirEditor(); $("texto").focus(); });
+  $("guardar").addEventListener("click", guardarHola);
+  $("cerrarEditor").addEventListener("click", function () { $("editor").hidden = true; $("cmd").focus(); });
+  $("texto").addEventListener("input", marcarGuardado);
+  $("texto").addEventListener("scroll", function () { $("gutter").style.transform = "translateY(" + (-$("texto").scrollTop) + "px)"; });
+  $("texto").addEventListener("keydown", function (e) {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") { e.preventDefault(); guardarHola(); }
+    else if (e.key === "Tab" && !e.shiftKey) {
+      e.preventDefault();
+      var t = e.target, i = t.selectionStart;
+      t.value = t.value.slice(0, i) + "    " + t.value.slice(t.selectionEnd);
+      t.selectionStart = t.selectionEnd = i + 4;
+      marcarGuardado();
+    } else if (e.key === "Escape") { $("cmd").focus(); }
+  });
+
+  // ---------- Misiones ----------
+  var MISIONES = [
+    { titulo: "1. Encuentra tu Python",
+      pasos: [["where_python", "Escribe <code>where python</code> para ver dónde está."], ["version", "Escribe <code>python --version</code> para ver qué versión es."],
+              ["path", "Opcional: <code>echo %PATH%</code> muestra dónde busca Windows los programas."]],
+      necesarios: ["where_python", "version"],
+      pista: "where busca el programa en las carpetas del PATH, en orden. Si escribes mal el nombre (pyhton), cmd dice que no lo reconoce." },
+    { titulo: "2. Corre hola.py desde la carpeta correcta",
+      pasos: [["no_encontrado", "Prueba <code>python hola.py</code> aquí mismo, en C:\\Users\\alumno. ¿Qué dice?"], ["llegar", "Muévete con <code>cd Documents</code> y <code>cd programacion</code> (o <code>cd Documents\\programacion</code>). <code>dir</code> muestra qué hay."],
+              ["hola_corrio", "Ahora sí: <code>python hola.py</code>."]],
+      necesarios: ["hola_corrio"],
+      pista: "Python busca el archivo en la carpeta donde está parada la terminal (la que dice el prompt). cd .. regresa a la carpeta de arriba." },
+    { titulo: "3. Crea y usa un entorno virtual",
+      pasos: [["venv_creado", "En la carpeta programacion: <code>python -m venv .venv</code>"], ["activar", "Actívalo: <code>.venv\\Scripts\\activate</code> (el prompt cambia)."],
+              ["where_venv", "Con el entorno activo: <code>where python</code>. ¿Cuál sale primero?"], ["pip_venv", "Instala un paquete: <code>pip install requests</code>"],
+              ["pip_list_venv", "Revisa: <code>pip list</code>"], ["deactivate", "Opcional: sal con <code>deactivate</code> y vuelve a correr <code>pip list</code>."]],
+      necesarios: ["venv_creado", "activar", "where_venv", "pip_venv", "pip_list_venv"],
+      pista: "Un entorno virtual es una carpeta con su propio python y sus propios paquetes. activate pone su carpeta Scripts al principio del PATH." },
+    { titulo: "4. Edita, ejecuta y depura",
+      pasos: [["editor", "Abre hola.py: <code>code hola.py</code> (o el botón Abrir hola.py en el editor)."],
+              ["guardado_cambiado", "Cambia \"Ana\" por tu nombre y agrega una línea con tu carrera, por ejemplo <code>print(\"Estudio Actuaría\")</code>. Guarda con Ctrl+S."],
+              ["hola_error", "A propósito, bórrale el último paréntesis a tu línea nueva, guarda y córrelo. Lee el error."],
+              ["hola_ok_editado", "Corrígelo, guarda y vuelve a correrlo hasta que funcione."]],
+      necesarios: ["editor", "guardado_cambiado", "hola_error", "hola_ok_editado"], ordenado: ["hola_error", "hola_ok_editado"],
+      pista: "Python corre el archivo guardado, no lo que ves en el editor: si no guardas, corre la versión anterior. El error dice la línea y marca con ^ dónde lo encontró." }
+  ];
+  var CLAVE = "pb-s02-terminal";
+  var hechos = {};
+  try { hechos = JSON.parse(localStorage.getItem(CLAVE) || "{}") || {}; } catch (e) { hechos = {}; }
+  function guardarMisiones() { try { localStorage.setItem(CLAVE, JSON.stringify(hechos)); } catch (e) { /* sin almacenamiento */ } }
+  function marca(clave) {
+    if (hechos[clave]) return;
+    if (clave === "hola_ok_editado" && !hechos.hola_error) return;
+    hechos[clave] = true;
+    guardarMisiones();
+  }
+  function eventoInterfaz(e) { marca(e); pintarMisiones(); }
+  function procesarEventos() {
+    T.eventos.forEach(function (e) {
+      if (e === "cd" && T.cwd.join("\\").toLowerCase() === "c:\\users\\alumno\\documents\\programacion") marca("llegar");
+      else if (e === "hola_ok") { marca("hola_corrio"); }
+      else if (e === "hola_ok_editado") { marca("hola_corrio"); marca("hola_ok_editado"); }
+      else marca(e);
+    });
+    T.eventos = [];
+    pintarMisiones();
+  }
+  function pintarMisiones() {
+    $("misiones").innerHTML = MISIONES.map(function (m) {
+      var hecha = m.necesarios.every(function (k) { return hechos[k]; });
+      return '<li class="' + (hecha ? "hecha" : "") + '"><h3>' + esc(m.titulo) + (hecha ? ' <span class="ok">✓</span>' : "") + '</h3><ul class="pasos">' +
+        m.pasos.map(function (p) { return '<li class="' + (hechos[p[0]] ? "hecho" : "") + '">' + p[1] + "</li>"; }).join("") +
+        '</ul><details class="pista"><summary>Pista</summary>' + esc(m.pista) + "</details></li>";
+    }).join("");
+  }
+  $("borrarMisiones").addEventListener("click", function () {
+    if (!confirm("¿Borrar el avance de las misiones?")) return;
+    hechos = {}; guardarMisiones(); pintarMisiones();
+  });
+  // Árbol de carpetas: se abre el camino hasta la carpeta actual y hasta programacion
+  function pintarArbol() {
+    var cwd = T.cwd.join("\\").toLowerCase(), lineas = [];
+    var CAMINO = "c:\\users\\alumno\\documents\\programacion";
+    function dentro(ruta, de) { return de === ruta || de.indexOf(ruta + "\\") === 0; }
+    function poner(prefijo, n, ruta) {
+      var nombre = n.nombre + (n.dir ? "\\" : "");
+      lineas.push(prefijo + (ruta === cwd ? '<span class="aqui">' + esc(nombre) + "</span>  ← aquí" : esc(nombre)));
+    }
+    function rec(n, segs, sangria) {
+      var ruta = segs.join("\\").toLowerCase();
+      if (!n.dir || !(dentro(ruta, cwd) || (dentro(ruta, CAMINO) && !n.esVenv))) return;
+      var hijos = Object.keys(n.hijos).sort().map(function (k) { return n.hijos[k]; })
+        .filter(function (h) { return !h.oculta && (h.dir || ruta === cwd || ruta === CAMINO); });
+      hijos.forEach(function (h, i) {
+        var ultimo = i === hijos.length - 1, s2 = segs.concat([h.nombre]);
+        poner(sangria + (ultimo ? "└─ " : "├─ "), h, s2.join("\\").toLowerCase());
+        rec(h, s2, sangria + (ultimo ? "   " : "│  "));
+      });
+    }
+    poner("", T.raiz, "c:");
+    rec(T.raiz, ["C:"], "");
+    $("arbol").innerHTML = lineas.join("\n");
+  }
+
+  // ---------- Pestañas ----------
+  document.querySelectorAll("nav.pestanas button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      document.querySelectorAll("nav.pestanas button").forEach(function (x) { x.classList.remove("activo"); x.setAttribute("aria-selected", "false"); });
+      document.querySelectorAll("section.vista").forEach(function (x) { x.classList.remove("activo"); });
+      b.classList.add("activo"); b.setAttribute("aria-selected", "true");
+      $(b.dataset.vista).classList.add("activo");
+    });
+  });
+
+  reiniciarTerminal();
+  pintarMisiones();
+})();
+</script>
+<div id="qr-sitio" class="qr-capa" hidden>
+  <div class="qr-caja" role="dialog" aria-modal="true" aria-label="Código QR de esta página">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 45" role="img" aria-label="Código QR de https://memosanchezg.github.io/programacion-basica-interactivos/semana-02-terminal.html" shape-rendering="crispEdges"><rect width="45" height="45" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM12 2h1v1h-1zM14 2h1v1h-1zM18 2h10v1h-10zM30 2h1v1h-1zM33 2h2v1h-2zM36 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM11 3h2v1h-2zM14 3h2v1h-2zM19 3h1v1h-1zM23 3h1v1h-1zM26 3h5v1h-5zM32 3h1v1h-1zM34 3h1v1h-1zM36 3h1v1h-1zM42 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM10 4h1v1h-1zM13 4h1v1h-1zM16 4h1v1h-1zM18 4h4v1h-4zM23 4h2v1h-2zM26 4h2v1h-2zM29 4h2v1h-2zM33 4h2v1h-2zM36 4h1v1h-1zM38 4h3v1h-3zM42 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h1v1h-1zM13 5h2v1h-2zM17 5h2v1h-2zM23 5h1v1h-1zM26 5h1v1h-1zM28 5h1v1h-1zM32 5h3v1h-3zM36 5h1v1h-1zM38 5h3v1h-3zM42 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h1v1h-1zM15 6h3v1h-3zM20 6h2v1h-2zM24 6h2v1h-2zM30 6h2v1h-2zM33 6h2v1h-2zM36 6h1v1h-1zM38 6h3v1h-3zM42 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h2v1h-2zM13 7h2v1h-2zM17 7h1v1h-1zM22 7h1v1h-1zM26 7h1v1h-1zM29 7h2v1h-2zM34 7h1v1h-1zM36 7h1v1h-1zM42 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM30 8h1v1h-1zM32 8h1v1h-1zM34 8h1v1h-1zM36 8h7v1h-7zM10 9h1v1h-1zM12 9h2v1h-2zM15 9h1v1h-1zM17 9h2v1h-2zM20 9h1v1h-1zM23 9h1v1h-1zM25 9h2v1h-2zM28 9h1v1h-1zM33 9h2v1h-2zM2 10h1v1h-1zM4 10h5v1h-5zM13 10h2v1h-2zM17 10h3v1h-3zM22 10h1v1h-1zM24 10h1v1h-1zM27 10h3v1h-3zM31 10h1v1h-1zM36 10h5v1h-5zM4 11h2v1h-2zM7 11h1v1h-1zM9 11h2v1h-2zM12 11h1v1h-1zM14 11h1v1h-1zM19 11h5v1h-5zM25 11h1v1h-1zM27 11h1v1h-1zM30 11h1v1h-1zM32 11h3v1h-3zM36 11h3v1h-3zM40 11h3v1h-3zM2 12h2v1h-2zM7 12h6v1h-6zM17 12h1v1h-1zM22 12h2v1h-2zM29 12h4v1h-4zM34 12h1v1h-1zM37 12h1v1h-1zM4 13h4v1h-4zM10 13h2v1h-2zM13 13h2v1h-2zM18 13h1v1h-1zM23 13h2v1h-2zM28 13h1v1h-1zM32 13h4v1h-4zM38 13h2v1h-2zM3 14h1v1h-1zM8 14h1v1h-1zM12 14h3v1h-3zM16 14h4v1h-4zM21 14h2v1h-2zM24 14h1v1h-1zM26 14h6v1h-6zM33 14h1v1h-1zM37 14h1v1h-1zM39 14h3v1h-3zM2 15h2v1h-2zM9 15h3v1h-3zM13 15h1v1h-1zM18 15h3v1h-3zM23 15h2v1h-2zM29 15h1v1h-1zM32 15h1v1h-1zM34 15h9v1h-9zM2 16h1v1h-1zM5 16h1v1h-1zM7 16h5v1h-5zM13 16h1v1h-1zM15 16h1v1h-1zM17 16h1v1h-1zM22 16h1v1h-1zM25 16h2v1h-2zM29 16h5v1h-5zM35 16h1v1h-1zM37 16h1v1h-1zM40 16h1v1h-1zM2 17h1v1h-1zM6 17h2v1h-2zM16 17h2v1h-2zM23 17h1v1h-1zM25 17h1v1h-1zM28 17h2v1h-2zM33 17h2v1h-2zM36 17h2v1h-2zM39 17h1v1h-1zM41 17h1v1h-1zM4 18h2v1h-2zM7 18h3v1h-3zM11 18h3v1h-3zM15 18h1v1h-1zM17 18h3v1h-3zM22 18h1v1h-1zM25 18h1v1h-1zM27 18h3v1h-3zM31 18h3v1h-3zM35 18h1v1h-1zM37 18h1v1h-1zM40 18h1v1h-1zM3 19h2v1h-2zM6 19h1v1h-1zM10 19h1v1h-1zM12 19h2v1h-2zM15 19h1v1h-1zM17 19h2v1h-2zM20 19h3v1h-3zM25 19h2v1h-2zM30 19h5v1h-5zM36 19h4v1h-4zM41 19h2v1h-2zM2 20h3v1h-3zM7 20h3v1h-3zM11 20h1v1h-1zM15 20h3v1h-3zM20 20h1v1h-1zM22 20h1v1h-1zM24 20h1v1h-1zM29 20h3v1h-3zM35 20h1v1h-1zM38 20h2v1h-2zM41 20h1v1h-1zM4 21h1v1h-1zM9 21h1v1h-1zM12 21h2v1h-2zM15 21h2v1h-2zM22 21h1v1h-1zM28 21h8v1h-8zM38 21h2v1h-2zM41 21h2v1h-2zM3 22h1v1h-1zM5 22h1v1h-1zM7 22h2v1h-2zM12 22h1v1h-1zM15 22h1v1h-1zM17 22h2v1h-2zM20 22h1v1h-1zM23 22h4v1h-4zM29 22h1v1h-1zM37 22h1v1h-1zM39 22h3v1h-3zM2 23h3v1h-3zM11 23h1v1h-1zM14 23h2v1h-2zM17 23h3v1h-3zM21 23h3v1h-3zM25 23h1v1h-1zM27 23h2v1h-2zM30 23h1v1h-1zM32 23h3v1h-3zM36 23h7v1h-7zM2 24h3v1h-3zM7 24h7v1h-7zM15 24h4v1h-4zM20 24h1v1h-1zM22 24h1v1h-1zM24 24h1v1h-1zM27 24h4v1h-4zM34 24h1v1h-1zM38 24h1v1h-1zM5 25h2v1h-2zM9 25h1v1h-1zM12 25h2v1h-2zM15 25h1v1h-1zM18 25h1v1h-1zM20 25h2v1h-2zM23 25h2v1h-2zM29 25h1v1h-1zM33 25h3v1h-3zM42 25h1v1h-1zM2 26h2v1h-2zM7 26h3v1h-3zM12 26h1v1h-1zM14 26h1v1h-1zM19 26h1v1h-1zM25 26h7v1h-7zM33 26h1v1h-1zM40 26h1v1h-1zM2 27h2v1h-2zM5 27h2v1h-2zM10 27h1v1h-1zM12 27h2v1h-2zM15 27h2v1h-2zM18 27h2v1h-2zM21 27h3v1h-3zM25 27h1v1h-1zM27 27h1v1h-1zM30 27h1v1h-1zM32 27h2v1h-2zM35 27h5v1h-5zM41 27h2v1h-2zM4 28h3v1h-3zM8 28h1v1h-1zM10 28h1v1h-1zM13 28h1v1h-1zM16 28h3v1h-3zM20 28h1v1h-1zM22 28h1v1h-1zM26 28h5v1h-5zM32 28h1v1h-1zM34 28h1v1h-1zM36 28h3v1h-3zM2 29h1v1h-1zM5 29h1v1h-1zM10 29h1v1h-1zM12 29h6v1h-6zM21 29h4v1h-4zM26 29h1v1h-1zM28 29h1v1h-1zM30 29h1v1h-1zM33 29h2v1h-2zM38 29h2v1h-2zM41 29h2v1h-2zM3 30h3v1h-3zM8 30h1v1h-1zM11 30h1v1h-1zM13 30h1v1h-1zM15 30h1v1h-1zM17 30h1v1h-1zM19 30h1v1h-1zM24 30h2v1h-2zM27 30h2v1h-2zM31 30h1v1h-1zM33 30h1v1h-1zM39 30h2v1h-2zM42 30h1v1h-1zM2 31h2v1h-2zM11 31h4v1h-4zM16 31h2v1h-2zM19 31h2v1h-2zM22 31h1v1h-1zM26 31h2v1h-2zM29 31h4v1h-4zM35 31h2v1h-2zM38 31h1v1h-1zM40 31h1v1h-1zM42 31h1v1h-1zM2 32h1v1h-1zM4 32h1v1h-1zM7 32h5v1h-5zM15 32h4v1h-4zM20 32h2v1h-2zM23 32h2v1h-2zM27 32h2v1h-2zM31 32h1v1h-1zM35 32h3v1h-3zM39 32h1v1h-1zM2 33h1v1h-1zM4 33h2v1h-2zM7 33h1v1h-1zM10 33h1v1h-1zM12 33h5v1h-5zM18 33h1v1h-1zM21 33h4v1h-4zM26 33h1v1h-1zM30 33h1v1h-1zM34 33h4v1h-4zM39 33h1v1h-1zM41 33h2v1h-2zM2 34h1v1h-1zM6 34h1v1h-1zM8 34h1v1h-1zM10 34h1v1h-1zM12 34h3v1h-3zM19 34h1v1h-1zM21 34h1v1h-1zM24 34h1v1h-1zM26 34h3v1h-3zM31 34h1v1h-1zM33 34h6v1h-6zM40 34h1v1h-1zM42 34h1v1h-1zM10 35h2v1h-2zM13 35h15v1h-15zM30 35h1v1h-1zM33 35h2v1h-2zM38 35h1v1h-1zM41 35h2v1h-2zM2 36h7v1h-7zM11 36h2v1h-2zM14 36h4v1h-4zM19 36h1v1h-1zM23 36h1v1h-1zM27 36h4v1h-4zM32 36h3v1h-3zM36 36h1v1h-1zM38 36h1v1h-1zM40 36h1v1h-1zM2 37h1v1h-1zM8 37h1v1h-1zM10 37h2v1h-2zM17 37h1v1h-1zM19 37h2v1h-2zM22 37h3v1h-3zM26 37h2v1h-2zM33 37h2v1h-2zM38 37h2v1h-2zM2 38h1v1h-1zM4 38h3v1h-3zM8 38h1v1h-1zM10 38h2v1h-2zM13 38h2v1h-2zM18 38h1v1h-1zM23 38h1v1h-1zM26 38h1v1h-1zM28 38h2v1h-2zM32 38h1v1h-1zM34 38h5v1h-5zM40 38h1v1h-1zM2 39h1v1h-1zM4 39h3v1h-3zM8 39h1v1h-1zM10 39h2v1h-2zM15 39h2v1h-2zM18 39h5v1h-5zM24 39h3v1h-3zM30 39h2v1h-2zM33 39h1v1h-1zM35 39h1v1h-1zM37 39h1v1h-1zM39 39h2v1h-2zM2 40h1v1h-1zM4 40h3v1h-3zM8 40h1v1h-1zM10 40h2v1h-2zM14 40h5v1h-5zM22 40h1v1h-1zM24 40h1v1h-1zM26 40h2v1h-2zM29 40h2v1h-2zM34 40h5v1h-5zM40 40h1v1h-1zM2 41h1v1h-1zM8 41h1v1h-1zM12 41h2v1h-2zM17 41h1v1h-1zM19 41h2v1h-2zM23 41h1v1h-1zM25 41h1v1h-1zM28 41h3v1h-3zM34 41h2v1h-2zM38 41h2v1h-2zM41 41h1v1h-1zM2 42h7v1h-7zM10 42h3v1h-3zM14 42h6v1h-6zM21 42h1v1h-1zM24 42h5v1h-5zM31 42h1v1h-1zM33 42h1v1h-1zM35 42h4v1h-4zM40 42h1v1h-1z"/></svg>
+    <p class="qr-texto">Escanea con la cámara del celular para abrir esta página</p>
+    <p class="qr-url">https://memosanchezg.github.io/programacion-basica-interactivos/semana-02-terminal.html</p>
+    <button type="button" class="qr-cerrar">Cerrar</button>
+  </div>
+</div>
+<style>
+  .qr-capa { position:fixed; top:0; right:0; bottom:0; left:0; z-index:10000; display:flex; align-items:center;
+             justify-content:center; padding:16px; background:#fff; }
+  .qr-capa[hidden] { display:none; }
+  .qr-caja { max-width:100%; text-align:center; color:#0A2A57; font:16px/1.4 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .qr-caja svg { display:block; width:min(62vh, 84vw); height:auto; margin:0 auto; }
+  .qr-texto { margin:12px 0 2px; font-size:1.15rem; font-weight:bold; }
+  .qr-url { margin:0 0 12px; color:#5B6472; word-break:break-all; }
+  .qr-cerrar { font:inherit; padding:6px 20px; border:2px solid #00408F; border-radius:4px; background:#fff;
+               color:#00408F; cursor:pointer; }
+</style>
+<script>
+  (function () {
+    var capa = document.getElementById("qr-sitio");
+    document.querySelectorAll("a.qr-abrir").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        capa.hidden = false;
+        capa.querySelector(".qr-cerrar").focus();
+      });
+    });
+    capa.addEventListener("click", function (e) {
+      if (e.target === capa || e.target.classList.contains("qr-cerrar")) capa.hidden = true;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !capa.hidden) capa.hidden = true;
+    });
+  })();
+</script>
+</body>
+</html>

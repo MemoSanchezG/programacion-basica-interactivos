@@ -1,0 +1,738 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="tipo" content="simulador">
+<title>¿Cuántos pasos tarda?</title>
+
+<style>
+  :root {
+    --azul:#00408F; --azul-oscuro:#0A2A57; --guinda:#8C1D35; --oro:#B8975A; --oro-texto:#8A6A2E;
+    --azul-claro:#E8EEF7; --oro-claro:#F7F1E6; --guinda-claro:#F5E6EA; --verde:#2F7D5B;
+    --tinta:#1B1F2A; --gris:#5B6472; --gris-claro:#E9ECF1; --borde:#D9DEE6; --fondo:#FFFFFF;
+    --cmd-fondo:#0C0C0C; --cmd-texto:#E6E6E6;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--fondo); color:var(--tinta);
+         font:16px/1.45 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .franja { height:8px; background:var(--azul); border-bottom:3px solid var(--oro); }
+  header { max-width:1280px; margin:0 auto; padding:12px 18px 4px; }
+  .semana { color:var(--guinda); font-weight:bold; letter-spacing:.04em; font-size:.85rem; text-transform:uppercase; }
+  h1 { font-family:Cambria,Georgia,serif; color:var(--azul-oscuro); font-size:1.7rem; margin:2px 0 2px; }
+  .sub { color:var(--gris); margin:0; }
+  main { max-width:1280px; margin:0 auto; padding:8px 18px 24px; }
+  nav.pestanas { display:flex; gap:4px; flex-wrap:wrap; border-bottom:2px solid var(--gris-claro); margin:6px 0 12px; }
+  nav.pestanas button { font:inherit; font-weight:bold; border:none; background:none; color:var(--gris);
+                        padding:8px 14px; cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; }
+  nav.pestanas button.activo { color:var(--azul-oscuro); border-bottom-color:var(--azul); }
+  nav.pestanas button:focus-visible { outline:2px solid var(--azul); }
+  section.vista { display:none; }
+  section.vista.activo { display:block; }
+  .fila { display:grid; grid-template-columns:minmax(260px,360px) minmax(0,1fr); gap:16px; align-items:start; }
+  .panel { background:#fff; border:1px solid var(--borde); border-radius:10px; padding:12px 14px; }
+  .panel h2 { font-size:1.02rem; color:var(--azul-oscuro); margin:0 0 8px; }
+  label { display:block; font-weight:bold; color:var(--azul-oscuro); margin-top:10px; }
+  label small { font-weight:normal; color:var(--gris); }
+  input[type=range] { width:100%; }
+  input[type=number], input[type=text], select, textarea { font:inherit; padding:4px 6px; border:1px solid var(--borde);
+                        border-radius:6px; }
+  input.mono, textarea.mono { font-family:Consolas,"Courier New",monospace; }
+  button.accion { font:inherit; font-weight:bold; border-radius:8px; padding:7px 12px; margin:8px 6px 0 0;
+                  border:1px solid var(--azul); background:#fff; color:var(--azul); cursor:pointer; }
+  button.accion:hover, button.accion:focus-visible { background:var(--azul); color:#fff; outline:none; }
+  .lectura { background:var(--oro-claro); border-left:4px solid var(--oro); border-radius:8px; padding:10px 12px;
+             margin-top:12px; line-height:1.55; }
+  .lectura b { color:var(--azul-oscuro); }
+  .ok { color:var(--verde); font-weight:bold; }
+  .mal { color:var(--guinda); font-weight:bold; }
+  .preguntas { background:var(--azul-claro); border-radius:8px; padding:10px 14px; margin-top:12px; }
+  .preguntas h3 { margin:0 0 4px; font-size:.95rem; color:var(--azul-oscuro); }
+  .preguntas ol { margin:0; padding-left:20px; }
+  .preguntas li { margin:4px 0; }
+  /* Código Python con los colores del curso (minted, estilo borland) y salida de consola (cmd). */
+  .codigo { border:1px solid var(--tinta); background:#fff; font:15px/1.5 Consolas,"Courier New",monospace;
+            overflow-x:auto; margin:8px 0; }
+  .codigo ol { margin:0; padding:8px 12px 8px 3.4em; }
+  .codigo li { white-space:pre; }
+  .codigo li::marker { color:var(--gris); font:11px Cambria,Georgia,serif; }
+  .codigo .kw { color:#000080; font-weight:bold; }
+  .codigo .str, .codigo .num { color:#0000FF; }
+  .codigo .com { color:#008800; font-style:italic; }
+  .codigo .marca { background:var(--oro-claro); outline:1px solid var(--oro); }
+  .consola { background:var(--cmd-fondo); color:var(--cmd-texto); font:15px/1.45 Consolas,"Courier New",monospace;
+             white-space:pre-wrap; word-break:break-word; padding:8px 12px; border-radius:4px; margin:8px 0; min-height:2.2em; }
+  footer { max-width:1280px; margin:0 auto; padding:6px 18px 18px; color:var(--gris); font-size:.85rem; }
+  footer a { color:var(--azul); }
+  @media (max-width: 820px) { .fila { grid-template-columns:1fr; } }
+
+  /* Propios de este simulador */
+  [hidden] { display:none !important; }
+  code { font-family:Consolas,"Courier New",monospace; color:var(--azul-oscuro); }
+  .fila > * { min-width:0; }
+  textarea.mono, input.mono { width:100%; }
+  .nota { color:var(--gris); font-size:.92rem; margin:6px 0 0; }
+  .aviso { color:var(--guinda); font-size:.92rem; margin:4px 0 0; min-height:1em; }
+  button.accion.primaria { background:var(--azul); color:#fff; }
+  button.accion.primaria:hover, button.accion.primaria:focus-visible { background:var(--azul-oscuro); }
+  button.accion:disabled { opacity:.45; cursor:default; }
+  h3.parte { font-size:1rem; color:var(--azul-oscuro); margin:14px 0 4px; }
+  h3.parte:first-child { margin-top:0; }
+  .contador { margin:6px 0 0; font-size:1.02rem; }
+  .contador b { font:bold 1.15rem Consolas,"Courier New",monospace; color:var(--guinda); }
+  ol.celdas { list-style:none; display:flex; flex-wrap:wrap; gap:4px; margin:6px 0 0; padding:0; }
+  ol.celdas li { min-width:76px; border:1px solid var(--oro); background:var(--oro-claro); border-radius:6px; padding:2px 6px 3px;
+                 text-align:center; font:14px Consolas,"Courier New",monospace; transition:background .2s, border-color .2s; }
+  ol.celdas li small { display:block; font:11px Calibri,"Segoe UI",sans-serif; color:var(--gris); }
+  ol.celdas li.actual { border:2px solid var(--azul); background:#fff; }
+  ol.celdas li.revisada { border-color:var(--borde); background:var(--gris-claro); color:var(--gris); }
+  ol.celdas li.encontrada { border:2px solid var(--verde); background:#EAF4EF; color:var(--verde); font-weight:bold; }
+  .cajones { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:4px; margin-top:6px; }
+  .cajon { display:flex; flex-wrap:wrap; align-items:center; gap:4px 6px; border:1px solid var(--borde); border-radius:6px; padding:3px 6px; min-height:30px;
+           font:13px Consolas,"Courier New",monospace; background:#fff; }
+  .cajon .num-cajon { font:bold 12px Calibri,"Segoe UI",sans-serif; color:var(--gris); min-width:2.2em; }
+  .cajon span.el { border:1px solid var(--oro); background:var(--oro-claro); border-radius:5px; padding:0 4px; }
+  .cajon.destino { border:2px solid var(--azul); background:var(--azul-claro); }
+  .cajon span.el.actual { border:2px solid var(--azul); background:#fff; }
+  .cajon span.el.revisada { border-color:var(--borde); background:var(--gris-claro); color:var(--gris); }
+  .cajon span.el.encontrada { border:2px solid var(--verde); background:#EAF4EF; color:var(--verde); font-weight:bold; }
+  .cajon .vacio { color:var(--gris); font-style:italic; font-family:Calibri,"Segoe UI",sans-serif; }
+  .hashpaso { margin:4px 0 0; min-height:1.5em; }
+  fieldset { border:1px solid var(--borde); border-radius:8px; margin:12px 0 0; padding:6px 10px 10px; }
+  legend { font-weight:bold; color:var(--azul-oscuro); padding:0 4px; }
+  fieldset label { font-weight:normal; color:var(--tinta); margin:4px 0 0; display:flex; align-items:center; gap:6px; cursor:pointer; }
+  .leyenda-graf { display:flex; flex-wrap:wrap; gap:4px 16px; font-size:.95rem; margin:0 0 4px; }
+  .leyenda-graf span { display:inline-flex; align-items:center; gap:6px; }
+  .leyenda-graf i { display:inline-block; width:18px; height:3px; border-radius:2px; }
+  .grafica { position:relative; }
+  .grafica svg { display:block; width:100%; height:auto; }
+  .grafica .eje { font:12px Calibri,"Segoe UI",sans-serif; fill:#5B6472; }
+  .grafica .titulo-eje { font:bold 12px Calibri,"Segoe UI",sans-serif; fill:#5B6472; }
+  .grafica .rejilla { stroke:#E9ECF1; stroke-width:1; }
+  .grafica .base { stroke:#C9CED6; stroke-width:1; }
+  .grafica .etq { font:bold 13px Calibri,"Segoe UI",sans-serif; fill:#1B1F2A; }
+  .grafica .cruz { stroke:#9AA3B0; stroke-width:1; }
+  .tip { position:absolute; pointer-events:none; background:#fff; border:1px solid var(--borde); border-radius:8px; padding:6px 9px;
+         box-shadow:0 2px 8px rgba(0,0,0,.12); font-size:.92rem; line-height:1.35; min-width:150px; }
+  .tip b { color:var(--azul-oscuro); }
+  .tip i { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:5px; vertical-align:-1px; }
+  table.tabla { border-collapse:collapse; width:100%; margin-top:10px; font-size:.95rem; }
+  table.tabla th, table.tabla td { border-bottom:1px solid var(--gris-claro); padding:4px 8px; text-align:right; font-variant-numeric:tabular-nums; }
+  table.tabla th { color:var(--azul-oscuro); }
+  table.tabla th:first-child, table.tabla td:first-child { text-align:left; }
+  .tabla-scroll { overflow-x:auto; }
+  .oculto { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+  .rejilla-pares { display:grid; gap:2px; margin:8px 0; max-width:420px; }
+  .rejilla-pares div { aspect-ratio:1; border-radius:3px; background:#F3F3F3; display:flex; align-items:center; justify-content:center;
+                       font:10px Calibri,"Segoe UI",sans-serif; color:var(--gris); }
+  .rejilla-pares div.par { background:var(--oro-claro); border:1px solid #E5D7BC; }
+  .rejilla-pares div.hecho { background:var(--oro); border-color:var(--oro); color:#fff; }
+  .rejilla-pares div.ahora { background:var(--azul); border-color:var(--azul); color:#fff; }
+  .rejilla-pares div.enc { background:none; font-weight:bold; color:var(--azul-oscuro); }
+  .fila-set { display:flex; flex-wrap:wrap; gap:3px; margin:6px 0; }
+  .fila-set div { min-width:26px; height:26px; border-radius:4px; border:1px solid var(--borde); display:flex; align-items:center; justify-content:center;
+                  font:12px Consolas,"Courier New",monospace; color:var(--gris); }
+  .fila-set div.hecho { background:var(--guinda); border-color:var(--guinda); color:#fff; }
+  .fila-set div.ahora { background:#fff; border:2px solid var(--guinda); color:var(--guinda); }
+  .quiz .marcador { display:flex; flex-wrap:wrap; justify-content:space-between; gap:4px 12px; font-weight:bold; color:var(--guinda);
+                    text-transform:uppercase; letter-spacing:.04em; font-size:.85rem; }
+  .quiz .pregunta { font:bold 1.12rem/1.35 Cambria,Georgia,serif; color:var(--azul-oscuro); margin:10px 0 6px; }
+  .quiz .entrada { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  .quiz .entrada input { font:18px Consolas,"Courier New",monospace; width:12em; max-width:100%; padding:6px 8px; border:1px solid var(--tinta); }
+  .quiz .entrada button.accion { margin:0; }
+  .retro { margin:10px 0 0; }
+  .retro.bien { background:#EAF4EF; border-left:4px solid var(--verde); border-radius:8px; padding:8px 12px; }
+  .retro.mal { background:var(--guinda-claro); border-left:4px solid var(--guinda); border-radius:8px; padding:8px 12px; font-weight:normal; color:var(--tinta); }
+  @media (max-width: 480px) {
+    header { padding:10px 12px 4px; }
+    main { padding:8px 10px 20px; }
+    footer { padding:6px 12px 16px; }
+    .panel { padding:10px; }
+    h1 { font-size:1.45rem; }
+    .codigo, .consola { font-size:13px; }
+    .codigo ol { padding-left:2.9em; }
+    ol.celdas li { min-width:68px; }
+    nav.pestanas button { padding:8px 9px; }
+  }
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header>
+  <div class="semana">Semana 06 · Estructuras de datos · Día 5</div>
+  <h1>¿Cuántos pasos tarda?</h1>
+  <p class="sub">Cuenta los pasos de buscar con <code>in</code> en una lista y en un set, y de comparar todos contra todos. Sin cronómetro: solo pasos.</p>
+</header>
+<main>
+  <nav class="pestanas" role="tablist" aria-label="Vistas">
+    <button type="button" class="activo" data-vista="v1" role="tab" aria-selected="true" aria-controls="v1" id="tab1">Buscar</button>
+    <button type="button" data-vista="v2" role="tab" aria-selected="false" aria-controls="v2" id="tab2" tabindex="-1">¿Cuántos pasos?</button>
+    <button type="button" data-vista="v3" role="tab" aria-selected="false" aria-controls="v3" id="tab3" tabindex="-1">Un ciclo o dos</button>
+    <button type="button" data-vista="v4" role="tab" aria-selected="false" aria-controls="v4" id="tab4" tabindex="-1">Pon a prueba</button>
+  </nav>
+
+  <section class="vista activo" id="v1" role="tabpanel" aria-labelledby="tab1">
+    <div class="fila">
+      <div class="panel">
+        <h2>Los datos</h2>
+        <label for="numeros">Números <small>(matrículas, separadas por comas)</small></label>
+        <textarea id="numeros" class="mono" rows="3" spellcheck="false">1934567, 2012345, 2045678, 1987654, 2023456, 1999999, 2000017, 1956789, 2031415, 1972222</textarea>
+        <p class="aviso" id="avisoNumeros"></p>
+        <label for="buscado">Número que buscas <small>(x)</small></label>
+        <input id="buscado" type="text" class="mono" inputmode="numeric" spellcheck="false" value="2031415">
+        <p class="aviso" id="avisoBuscado"></p>
+        <label for="cajones">Cajones del set</label>
+        <select id="cajones"><option value="8">8 cajones</option><option value="16" selected>16 cajones</option><option value="32">32 cajones</option></select>
+        <div>
+          <button type="button" class="accion primaria" id="animar">▶ Buscar paso a paso</button>
+          <button type="button" class="accion" id="verTodo">Ver el resultado</button>
+        </div>
+        <div class="lectura" id="lecturaBuscar" aria-live="polite"></div>
+      </div>
+      <div class="panel">
+        <h3 class="parte">En la lista: <code>x in numeros</code> compara uno por uno</h3>
+        <ol class="celdas" id="celdasLista" aria-label="Elementos de la lista"></ol>
+        <p class="contador">Comparaciones: <b id="cuentaLista">0</b></p>
+        <h3 class="parte">En el set: <code>x in conjunto</code> va directo a su cajón</h3>
+        <p class="hashpaso" id="hashPaso"></p>
+        <div class="cajones" id="vistaCajones" aria-label="Cajones del set"></div>
+        <p class="contador">Comparaciones: <b id="cuentaSet">0</b></p>
+        <p class="nota">Modelo simplificado: Python guarda cada elemento según su <code>hash</code> en una tabla con más lugares que elementos, así que casi nunca hay choques. Para un <code>int</code>, <code>hash(x)</code> es el mismo número.</p>
+        <h3 class="parte">El código en Python</h3>
+        <div id="codigoBuscar"></div>
+        <div class="consola" id="salidaBuscar" aria-label="Lo que imprime el programa"></div>
+        <div class="preguntas">
+          <h3>Para explorar</h3>
+          <ol>
+            <li>Busca un número que no esté, por ejemplo 2000000. ¿Cuántas comparaciones hace la lista? ¿Y el set?</li>
+            <li>Con 8 cajones, ¿qué números caen en el mismo cajón? ¿Qué pasa con 32 cajones?</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="vista" id="v2" role="tabpanel" aria-labelledby="tab2">
+    <div class="fila">
+      <div class="panel">
+        <h2>Controles</h2>
+        <fieldset>
+          <legend>¿Dónde está x?</legend>
+          <label><input type="radio" name="donde" value="no" checked> No está (el peor caso)</label>
+          <label><input type="radio" name="donde" value="principio"> Al principio</label>
+          <label><input type="radio" name="donde" value="mitad"> A la mitad</label>
+          <label><input type="radio" name="donde" value="final"> Al final</label>
+        </fieldset>
+        <fieldset>
+          <legend>Eje vertical</legend>
+          <label><input type="radio" name="escala" value="log" checked> Escala logarítmica</label>
+          <label><input type="radio" name="escala" value="normal"> Escala normal</label>
+        </fieldset>
+        <div class="lectura" id="lecturaPasos"></div>
+      </div>
+      <div class="panel">
+        <h2>Pasos para buscar x, según el tamaño</h2>
+        <div class="leyenda-graf" aria-hidden="true">
+          <span><i style="background:#00408F"></i>lista: compara uno por uno</span>
+          <span><i style="background:#8C1D35"></i>set: va directo a su cajón</span>
+        </div>
+        <div class="grafica" id="grafica"></div>
+        <div class="tabla-scroll"><table class="tabla" id="tablaPasos"></table></div>
+        <div class="preguntas">
+          <h3>Para explorar</h3>
+          <ol start="3">
+            <li>Con "No está", si la lista crece 10 veces, ¿cuántas veces más pasos da? ¿Y el set?</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="vista" id="v3" role="tabpanel" aria-labelledby="tab3">
+    <div class="fila">
+      <div class="panel">
+        <h2>¿Hay repetidos?</h2>
+        <p class="nota" style="margin-top:0">Para saber si una lista tiene repetidos puedes comparar <b>todos contra todos</b> (dos ciclos) o recorrerla <b>una vez</b> guardando lo que ya viste en un set. Aquí la lista no tiene repetidos: es el peor caso, hay que revisar todo.</p>
+        <label for="nCiclos">Elementos en la lista <small>(n = <span id="nTxt"></span>)</small></label>
+        <input type="range" id="nCiclos" min="2" max="12" step="1" value="6">
+        <button type="button" class="accion primaria" id="animarCiclos">▶ Comparar paso a paso</button>
+        <h3 class="parte">Dos ciclos: cada par se compara una vez</h3>
+        <div class="rejilla-pares" id="rejilla" role="img"></div>
+        <p class="contador">Comparaciones: <b id="cuentaPares">0</b></p>
+        <h3 class="parte">Un ciclo con un set de vistos</h3>
+        <div class="fila-set" id="filaSet" role="img"></div>
+        <p class="contador">Pasos: <b id="cuentaVistos">0</b></p>
+      </div>
+      <div class="panel">
+        <h3 class="parte">El programa que cuenta los pasos</h3>
+        <div id="codigoCiclos"></div>
+        <div class="consola" id="salidaCiclos" aria-label="Lo que imprime el programa"></div>
+        <h3 class="parte">Con listas más grandes</h3>
+        <div class="tabla-scroll"><table class="tabla" id="tablaCiclos"></table></div>
+        <div class="preguntas">
+          <h3>Para explorar</h3>
+          <ol start="4">
+            <li>Si n se duplica, ¿cuántas veces más comparaciones hacen los dos ciclos? ¿Y el ciclo con el set?</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="vista" id="v4" role="tabpanel" aria-labelledby="tab4">
+    <div class="panel quiz" style="max-width:760px">
+      <div class="marcador"><span id="qNum"></span><span id="qPuntos"></span></div>
+      <p class="pregunta" id="qTexto"></p>
+      <label for="qResp">Tu respuesta <small>(un número)</small></label>
+      <div class="entrada">
+        <input id="qResp" type="text" inputmode="numeric" autocomplete="off" spellcheck="false">
+        <button type="button" class="accion primaria" id="qRevisar">Revisar</button>
+        <button type="button" class="accion" id="qSiguiente" hidden>Siguiente pregunta</button>
+      </div>
+      <div class="retro" id="qRetro" aria-live="polite"></div>
+      <button type="button" class="accion" id="qOtraVez" hidden>Empezar de nuevo</button>
+    </div>
+  </section>
+</main>
+<footer>
+  Programación Básica · FCFM-UANL · funciona sin internet. Se cuentan pasos, no se mide tiempo.
+  <a href="index.html">Índice de simuladores</a> · <a href="#qr-sitio" class="qr-abrir">Abrir en el celular (QR)</a> · <a href="semana-06-conjuntos.html">Conjuntos y diagramas de Venn</a>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+
+  // ==== NÚCLEO (sin DOM): hash de enteros, conteo de pasos y programas que se muestran ====
+  function esc(t) {
+    return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  // hash() de un int de Python: el mismo número (salvo -1, que da -2); válido para |x| < 2**61 - 1.
+  function hashInt(x) { return x === -1 ? -2 : x; }
+  // % de Python: el resultado tiene el signo del divisor.
+  function modPy(a, m) { return ((a % m) + m) % m; }
+  function cajonDe(x, m) { return modPy(hashInt(x), m); }
+  // "1934567, 2012345" -> enteros; lo que no es un entero se reporta.
+  function leerEnteros(texto) {
+    var nums = [], malos = [];
+    texto.split(",").forEach(function (t) {
+      t = t.trim();
+      if (!t) return;
+      if (/^[+-]?\d{1,15}$/.test(t)) nums.push(parseInt(t, 10)); else malos.push(t);
+    });
+    return { nums: nums, malos: malos };
+  }
+  // Pasos de x in lista: cuántos elementos revisa (hasta encontrarlo, o todos si no está).
+  function pasosLista(nums, x) {
+    var i = nums.indexOf(x);
+    return i >= 0 ? i + 1 : nums.length;
+  }
+  // Pasos de x in lista para una lista de tamaño n, según dónde esté x.
+  function pasosTamano(n, donde) {
+    if (donde === "principio") return 1;
+    if (donde === "mitad") return Math.floor(n / 2) + 1;
+    return n;   // "final" o "no"
+  }
+  // Cajones del modelo: cada cajón guarda, en orden de llegada, los números distintos que le tocan.
+  function armarCajones(nums, m) {
+    var cajones = [], vistos = new Set();
+    for (var i = 0; i < m; i++) cajones.push([]);
+    nums.forEach(function (x) { if (!vistos.has(x)) { vistos.add(x); cajones[cajonDe(x, m)].push(x); } });
+    return cajones;
+  }
+  function pasosSet(nums, x, m) {
+    var c = armarCajones(nums, m)[cajonDe(x, m)], i = c.indexOf(x);
+    return i >= 0 ? i + 1 : c.length;
+  }
+  function programaBuscar(nums, x, m) {
+    var lineas = ["numeros = ["];
+    if (nums.length <= 5) lineas[0] += nums.join(", ") + "]";
+    else {
+      for (var i = 0; i < nums.length; i += 5) {
+        var trozo = nums.slice(i, i + 5).join(", ");
+        if (i === 0) lineas[0] += trozo + ",";
+        else lineas.push("           " + trozo + (i + 5 >= nums.length ? "]" : ","));
+      }
+    }
+    lineas.push("conjunto = set(numeros)", "x = " + x, "print(x in numeros)", "print(x in conjunto)", "print(hash(x), hash(x) % " + m + ")");
+    var esta = nums.indexOf(x) >= 0;
+    var salida = (esta ? "True" : "False") + "\n" + (esta ? "True" : "False") + "\n" + hashInt(x) + " " + cajonDe(x, m) + "\n";
+    return { codigo: lineas.join("\n"), salida: salida };
+  }
+  function comparacionesTodos(n) { return n * (n - 1) / 2; }
+  function programaCiclos(n) {
+    var codigo = [
+      "numeros = list(range(" + n + "))   # " + n + " números distintos",
+      "",
+      "comparaciones = 0",
+      "for i in range(len(numeros)):",
+      "    for j in range(i + 1, len(numeros)):",
+      "        comparaciones += 1          # numeros[i] == numeros[j]",
+      "print(\"Dos ciclos:\", comparaciones)",
+      "",
+      "pasos = 0",
+      "vistos = set()",
+      "for x in numeros:",
+      "    pasos += 1                      # x in vistos",
+      "    vistos.add(x)",
+      "print(\"Un ciclo con set:\", pasos)"
+    ].join("\n");
+    return { codigo: codigo, salida: "Dos ciclos: " + comparacionesTodos(n) + "\nUn ciclo con set: " + n + "\n" };
+  }
+  // Un número con espacios cada tres cifras: 1000000 -> "1 000 000".
+  function miles(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " "); }
+  // ==== FIN DEL NÚCLEO ====
+
+  // ---------- Código Python con los colores del curso ----------
+  var PY_KW = /^(False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)$/;
+  function pyResaltar(linea) {
+    var html = "", i = 0, m, resto;
+    while (i < linea.length) {
+      resto = linea.slice(i);
+      if ((m = /^#.*/.exec(resto))) { html += '<span class="com">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[rRbBfFuU]{0,2}("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/.exec(resto))) { html += '<span class="str">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[\p{L}_][\p{L}\p{N}_]*/u.exec(resto))) { html += PY_KW.test(m[0]) ? '<span class="kw">' + m[0] + "</span>" : esc(m[0]); }
+      else if ((m = /^(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?j?/.exec(resto))) { html += '<span class="num">' + m[0] + "</span>"; }
+      else { m = [resto[0]]; html += esc(m[0]); }
+      i += m[0].length;
+    }
+    return html;
+  }
+  function mostrarCodigo(el, codigo, marcar) {
+    var lineas = codigo.replace(/\n$/, "").split("\n");
+    el.innerHTML = '<div class="codigo"><ol>' + lineas.map(function (l, k) {
+      return "<li" + (marcar && marcar.indexOf(k + 1) >= 0 ? ' class="marca"' : "") + ">" + (pyResaltar(l) || " ") + "</li>";
+    }).join("") + "</ol></div>";
+  }
+
+  // ---------- Pestañas ----------
+  var botonesTab = document.querySelectorAll("nav.pestanas button");
+  function activarTab(b) {
+    botonesTab.forEach(function (x) {
+      var activo = x === b;
+      x.classList.toggle("activo", activo);
+      x.setAttribute("aria-selected", activo ? "true" : "false");
+      x.tabIndex = activo ? 0 : -1;
+      $(x.dataset.vista).classList.toggle("activo", activo);
+    });
+    if (b.dataset.vista === "v2") grafica();
+  }
+  botonesTab.forEach(function (b, i) {
+    b.addEventListener("click", function () { activarTab(b); });
+    b.addEventListener("keydown", function (e) {
+      if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+      e.preventDefault();
+      var otro = botonesTab[(i + (e.key === "ArrowRight" ? 1 : botonesTab.length - 1)) % botonesTab.length];
+      activarTab(otro);
+      otro.focus();
+    });
+  });
+
+  // ---------- Pestaña 1: buscar en la lista y en el set ----------
+  var MAX_NUMS = 16, relojBuscar = null;
+  function datosBuscar() {
+    var r = leerEnteros($("numeros").value), aviso = [];
+    if (r.malos.length) aviso.push("Se ignoraron (no son enteros): " + r.malos.slice(0, 4).join(", ") + (r.malos.length > 4 ? "..." : ""));
+    if (r.nums.length > MAX_NUMS) { aviso.push("Solo se usan los primeros " + MAX_NUMS + " números."); r.nums = r.nums.slice(0, MAX_NUMS); }
+    $("avisoNumeros").textContent = aviso.join(" ");
+    var b = leerEnteros($("buscado").value), x = b.nums.length === 1 && !b.malos.length ? b.nums[0] : null;
+    $("avisoBuscado").textContent = x === null ? "Escribe un solo número entero." : "";
+    return { nums: r.nums, x: x, m: Number($("cajones").value) };
+  }
+  // estado: hasta qué paso va la animación de cada lado (Infinity = terminado)
+  function pintarBuscar(d, pasoL, pasoS) {
+    var nl = d.x === null ? 0 : pasosLista(d.nums, d.x), encontrada = d.x !== null && d.nums.indexOf(d.x) >= 0;
+    var hechasL = Math.min(pasoL, nl);
+    $("celdasLista").innerHTML = d.nums.map(function (v, i) {
+      var cls = "";
+      if (i < hechasL) cls = (i === hechasL - 1 && encontrada && i === nl - 1) ? "encontrada" : "revisada";
+      if (i === hechasL - 1 && pasoL < Infinity && pasoL <= nl && !(encontrada && i === nl - 1)) cls = "actual";
+      return "<li" + (cls ? ' class="' + cls + '"' : "") + "><small>[" + i + "]</small>" + v + "</li>";
+    }).join("") || "<li>(lista vacía)</li>";
+    $("cuentaLista").textContent = hechasL;
+    // Set: paso 1 = calcular el cajón; pasos 2... = comparar dentro del cajón
+    var caj = armarCajones(d.nums, d.m), destino = d.x === null ? -1 : cajonDe(d.x, d.m);
+    var enCajon = destino >= 0 ? caj[destino] : [], ns = d.x === null ? 0 : pasosSet(d.nums, d.x, d.m);
+    var hechasS = pasoS >= 1 ? Math.min(pasoS - 1, ns) : 0, encS = enCajon.indexOf(d.x) >= 0;
+    $("vistaCajones").innerHTML = caj.map(function (c, k) {
+      var dest = pasoS >= 1 && k === destino;
+      var dentro = c.length ? c.map(function (v, i) {
+        var cls = "";
+        if (dest && i < hechasS) cls = (encS && i === ns - 1) ? "encontrada" : "revisada";
+        return '<span class="el' + (cls ? " " + cls : "") + '">' + v + "</span>";
+      }).join(" ") : '<span class="vacio">vacío</span>';
+      return '<div class="cajon' + (dest ? " destino" : "") + '"><span class="num-cajon">' + k + "</span>" + dentro + "</div>";
+    }).join("");
+    $("cuentaSet").textContent = hechasS;
+    $("hashPaso").innerHTML = d.x === null ? "" : pasoS >= 1
+      ? "<code>hash(" + d.x + ")</code> = " + hashInt(d.x) + " y <code>" + hashInt(d.x) + " % " + d.m + "</code> = <b>" + destino + "</b>: Python va directo al cajón " + destino + "."
+      : "Primero Python calcula el <code>hash</code> de x para saber a qué cajón ir.";
+    var p = programaBuscar(d.nums, d.x === null ? 0 : d.x, d.m);
+    mostrarCodigo($("codigoBuscar"), d.x === null ? "# escribe un número para x" : p.codigo, null);
+    $("salidaBuscar").textContent = d.x === null ? "" : (pasoL === Infinity && pasoS === Infinity ? p.salida : "");
+    var lec = $("lecturaBuscar");
+    if (d.x === null) lec.innerHTML = "Escribe el número que quieres buscar.";
+    else if (pasoL === Infinity && pasoS === Infinity) {
+      lec.innerHTML = "<b>La lista</b> " + (encontrada ? "encontró " + d.x + " en la posición " + (nl - 1) + " después de " + nl + (nl === 1 ? " comparación" : " comparaciones") : "revisó los " + d.nums.length + " números y no lo encontró") + ". " +
+        "<b>El set</b> fue directo al cajón " + destino + " y " + (ns === 0 ? "como estaba vacío, supo que no está sin comparar nada" : "comparó con " + ns + (ns === 1 ? " número" : " números")) + ". " +
+        (ns > 1 ? "Hubo " + (ns - 1 === 1 ? "un choque" : "choques") + ": varios números cayeron en el mismo cajón. Con más cajones hay menos choques." : "Entre más números haya, la lista tarda más; el set casi no cambia.");
+    } else lec.innerHTML = "Buscando <code>" + d.x + "</code>...";
+  }
+  function detenerBuscar() { if (relojBuscar) { clearInterval(relojBuscar); relojBuscar = null; } $("animar").disabled = false; }
+  function verTodo() { detenerBuscar(); pintarBuscar(datosBuscar(), Infinity, Infinity); }
+  $("animar").addEventListener("click", function () {
+    var d = datosBuscar();
+    detenerBuscar();
+    if (d.x === null) { pintarBuscar(d, Infinity, Infinity); return; }
+    var nl = pasosLista(d.nums, d.x), ns = pasosSet(d.nums, d.x, d.m), t = 0;
+    $("animar").disabled = true;
+    pintarBuscar(d, 0, 0);
+    relojBuscar = setInterval(function () {
+      t++;
+      var finL = t > nl, finS = t > ns + 1;
+      pintarBuscar(d, finL ? Infinity : t, finS ? Infinity : t);
+      if (finL && finS) { detenerBuscar(); pintarBuscar(d, Infinity, Infinity); }
+    }, 550);
+  });
+  $("verTodo").addEventListener("click", verTodo);
+  ["numeros", "buscado"].forEach(function (id) { $(id).addEventListener("input", verTodo); });
+  $("cajones").addEventListener("change", verTodo);
+
+  // ---------- Pestaña 2: la gráfica de pasos ----------
+  var TAMANOS = [10, 100, 1000, 10000, 100000, 1000000], AZUL = "#00408F", GUINDA = "#8C1D35";
+  function grafica() {
+    var donde = document.querySelector('input[name="donde"]:checked').value;
+    var escala = document.querySelector('input[name="escala"]:checked').value;
+    var lista = TAMANOS.map(function (n) { return pasosTamano(n, donde); }), conj = TAMANOS.map(function () { return 1; });
+    var caja = $("grafica"), W = Math.max(300, caja.clientWidth || 600), H = Math.round(Math.min(380, Math.max(250, W * 0.6)));
+    var angosta = W < 520;
+    var m = { izq: W < 420 ? 62 : 72, der: W < 420 ? 64 : 92, arr: 14, aba: angosta ? 58 : 46 };
+    var ancho = W - m.izq - m.der, alto = H - m.arr - m.aba;
+    function xPos(i) { return m.izq + ancho * (i / (TAMANOS.length - 1)); }
+    var maxV = Math.max.apply(null, lista), yPos, ticks;
+    if (escala === "log") {
+      var top = Math.max(1, Math.ceil(Math.log10(maxV)));
+      yPos = function (v) { return m.arr + alto * (1 - Math.log10(v) / top); };
+      ticks = []; for (var e = 0; e <= top; e++) ticks.push(Math.pow(10, e));
+    } else {
+      var paso = Math.pow(10, Math.floor(Math.log10(maxV))), techo = Math.ceil(maxV / paso) * paso;
+      if (techo / paso > 6) paso *= 2;
+      if (techo / paso < 3 && paso >= 5) paso /= 5;
+      techo = Math.ceil(maxV / paso) * paso;
+      yPos = function (v) { return m.arr + alto * (1 - v / techo); };
+      ticks = []; for (var t = 0; t <= techo; t += paso) ticks.push(t);
+    }
+    var s = [];
+    ticks.forEach(function (t) {
+      var y = yPos(t);
+      s.push('<line class="rejilla" x1="' + m.izq + '" x2="' + (m.izq + ancho) + '" y1="' + y + '" y2="' + y + '"/>');
+      s.push('<text class="eje" x="' + (m.izq - 8) + '" y="' + (y + 4) + '" text-anchor="end">' + miles(t) + "</text>");
+    });
+    s.push('<line class="base" x1="' + m.izq + '" x2="' + (m.izq + ancho) + '" y1="' + (m.arr + alto) + '" y2="' + (m.arr + alto) + '"/>');
+    // En pantallas angostas, las etiquetas del eje x van en dos renglones alternados para no encimarse.
+    TAMANOS.forEach(function (n, i) {
+      var dy = angosta && i % 2 ? 31 : 17;
+      s.push('<text class="eje" x="' + xPos(i) + '" y="' + (m.arr + alto + dy) + '" text-anchor="middle">' + miles(n) + "</text>");
+    });
+    s.push('<text class="titulo-eje" x="' + (m.izq + ancho / 2) + '" y="' + (H - 6) + '" text-anchor="middle">tamaño de la lista o del set (n)</text>');
+    s.push('<text class="titulo-eje" x="' + m.izq + '" y="' + (m.arr - 2) + '" text-anchor="start" dy="-2">pasos</text>');
+    function serie(vals, color) {
+      var d = vals.map(function (v, i) { return (i ? "L" : "M") + xPos(i) + " " + yPos(v); }).join(" ");
+      s.push('<path d="' + d + '" fill="none" stroke="' + color + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>');
+      vals.forEach(function (v, i) { s.push('<circle cx="' + xPos(i) + '" cy="' + yPos(v) + '" r="4.5" fill="' + color + '" stroke="#fff" stroke-width="2"/>'); });
+    }
+    serie(conj, GUINDA);
+    serie(lista, AZUL);
+    // Etiquetas directas al final de cada línea (en tinta, junto a su punto)
+    var yl = yPos(lista[lista.length - 1]), ys = yPos(1), xf = xPos(TAMANOS.length - 1) + 9;
+    if (Math.abs(yl - ys) < 16) { yl = ys - 16; }
+    s.push('<text class="etq" x="' + xf + '" y="' + (yl + 4) + '">' + miles(lista[lista.length - 1]) + "</text>");
+    s.push('<text class="etq" x="' + xf + '" y="' + (ys + 4) + '">1</text>');
+    s.push('<line class="cruz" id="cruz" x1="0" x2="0" y1="' + m.arr + '" y2="' + (m.arr + alto) + '" visibility="hidden"/>');
+    TAMANOS.forEach(function (n, i) {
+      var x0 = i === 0 ? m.izq - 10 : (xPos(i - 1) + xPos(i)) / 2, x1 = i === TAMANOS.length - 1 ? m.izq + ancho + 10 : (xPos(i) + xPos(i + 1)) / 2;
+      s.push('<rect class="banda" data-i="' + i + '" x="' + x0 + '" y="' + m.arr + '" width="' + (x1 - x0) + '" height="' + alto + '" fill="transparent"/>');
+    });
+    var desc = "Gráfica de pasos contra tamaño, escala " + (escala === "log" ? "logarítmica" : "normal") + ". " +
+      TAMANOS.map(function (n, i) { return "n " + miles(n) + ": lista " + miles(lista[i]) + ", set 1"; }).join("; ") + ".";
+    caja.innerHTML = '<svg viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="' + esc(desc) + '">' + s.join("") + '</svg><div class="tip" id="tip" hidden></div>';
+    // Puntero: cruz y tooltip con los dos valores de ese tamaño
+    var svg = caja.querySelector("svg");
+    function mostrar(i, ev) {
+      var cruz = $("cruz"), tip = $("tip"), x = xPos(i);
+      cruz.setAttribute("x1", x); cruz.setAttribute("x2", x); cruz.setAttribute("visibility", "visible");
+      tip.innerHTML = "<b>n = " + miles(TAMANOS[i]) + "</b><br><i style=\"background:" + AZUL + "\"></i>lista: " + miles(lista[i]) + (lista[i] === 1 ? " paso" : " pasos") +
+        "<br><i style=\"background:" + GUINDA + "\"></i>set: 1 paso";
+      tip.hidden = false;
+      var escalaX = svg.clientWidth / W, izq = x * escalaX + 12;
+      if (izq + 170 > caja.clientWidth) izq = x * escalaX - 182;
+      tip.style.left = Math.max(0, izq) + "px";
+      tip.style.top = (m.arr + 8) * (svg.clientHeight / H) + "px";
+    }
+    svg.querySelectorAll("rect.banda").forEach(function (r) {
+      r.addEventListener("pointerenter", function (ev) { mostrar(Number(r.dataset.i), ev); });
+      r.addEventListener("pointerdown", function (ev) { mostrar(Number(r.dataset.i), ev); });
+    });
+    svg.addEventListener("pointerleave", function () { $("cruz").setAttribute("visibility", "hidden"); $("tip").hidden = true; });
+    // Tabla con los mismos valores
+    $("tablaPasos").innerHTML = '<caption class="oculto">Pasos de la lista y del set para cada tamaño</caption>' +
+      '<thead><tr><th scope="col">n</th><th scope="col">lista</th><th scope="col">set</th></tr></thead><tbody>' +
+      TAMANOS.map(function (n, i) { return '<tr><th scope="row">' + miles(n) + "</th><td>" + miles(lista[i]) + "</td><td>1</td></tr>"; }).join("") + "</tbody>";
+    var textos = {
+      no: "Si x <b>no está</b>, la lista tiene que revisar los n elementos para estar segura: con un millón, un millón de comparaciones.",
+      principio: "Si x está <b>al principio</b>, la lista lo encuentra en 1 paso... pero no puedes contar con esa suerte.",
+      mitad: "Si x está <b>a la mitad</b>, la lista revisa la mitad de los elementos (más uno).",
+      final: "Si x está <b>al final</b>, la lista revisa todos los elementos, igual que si no estuviera."
+    };
+    $("lecturaPasos").innerHTML = textos[donde] + " El set siempre da <b>1 paso</b>: calcula el cajón y revisa ahí, sin importar cuántos elementos tenga." +
+      (escala === "log" ? " <br><b>Escala logarítmica:</b> cada raya vale 10 veces la anterior; así caben juntos 1 y 1 000 000." : " <br><b>Escala normal:</b> la línea del set se queda pegada al piso.");
+  }
+  document.querySelectorAll('input[name="donde"], input[name="escala"]').forEach(function (r) { r.addEventListener("change", grafica); });
+
+  // ---------- Pestaña 3: un ciclo o dos ----------
+  var relojCiclos = null;
+  function pintarCiclos(n, hechos, vistos) {
+    var total = comparacionesTodos(n), cuadros = [];
+    $("nTxt").textContent = n;
+    $("rejilla").style.gridTemplateColumns = "repeat(" + (n + 1) + ", 1fr)";
+    var k = 0;
+    cuadros.push('<div class="enc"></div>');
+    for (var c = 0; c < n; c++) cuadros.push('<div class="enc">' + c + "</div>");
+    for (var i = 0; i < n; i++) {
+      cuadros.push('<div class="enc">' + i + "</div>");
+      for (var j = 0; j < n; j++) {
+        if (j > i) {
+          k++;
+          cuadros.push('<div class="par' + (k < hechos ? " hecho" : k === hechos ? " ahora" : "") + '" title="numeros[' + i + "] == numeros[" + j + ']"></div>');
+        } else cuadros.push("<div></div>");
+      }
+    }
+    $("rejilla").innerHTML = cuadros.join("");
+    $("rejilla").setAttribute("aria-label", "Cuadrícula de pares: " + Math.min(hechos, total) + " de " + total + " comparaciones hechas");
+    $("cuentaPares").textContent = Math.min(hechos, total);
+    var celdas = [];
+    for (var v = 0; v < n; v++) celdas.push('<div class="' + (v < vistos - 1 ? "hecho" : v === vistos - 1 ? "ahora" : "") + '">' + v + "</div>");
+    $("filaSet").innerHTML = celdas.join("");
+    $("filaSet").setAttribute("aria-label", Math.min(vistos, n) + " de " + n + " pasos del ciclo con set");
+    $("cuentaVistos").textContent = Math.min(vistos, n);
+    var p = programaCiclos(n);
+    mostrarCodigo($("codigoCiclos"), p.codigo, [5, 6]);
+    $("salidaCiclos").textContent = hechos >= total && vistos >= n ? p.salida : "";
+  }
+  function tablaCiclos() {
+    $("tablaCiclos").innerHTML = '<caption class="oculto">Comparaciones de cada forma para listas grandes</caption>' +
+      '<thead><tr><th scope="col">n</th><th scope="col">dos ciclos</th><th scope="col">un ciclo con set</th></tr></thead><tbody>' +
+      [10, 100, 1000, 10000].map(function (n) {
+        return '<tr><th scope="row">' + miles(n) + "</th><td>" + miles(comparacionesTodos(n)) + "</td><td>" + miles(n) + "</td></tr>";
+      }).join("") + "</tbody>";
+  }
+  function detenerCiclos() { if (relojCiclos) { clearInterval(relojCiclos); relojCiclos = null; } $("animarCiclos").disabled = false; }
+  function cicloCompleto() { detenerCiclos(); var n = Number($("nCiclos").value); pintarCiclos(n, comparacionesTodos(n) + 1, n + 1); }
+  $("nCiclos").addEventListener("input", cicloCompleto);
+  $("animarCiclos").addEventListener("click", function () {
+    detenerCiclos();
+    var n = Number($("nCiclos").value), total = comparacionesTodos(n), t = 0;
+    $("animarCiclos").disabled = true;
+    relojCiclos = setInterval(function () {
+      t++;
+      pintarCiclos(n, t, Math.min(t, n + 1));
+      if (t > total) { detenerCiclos(); pintarCiclos(n, total + 1, n + 1); }
+    }, Math.max(70, 2400 / total));
+  });
+
+  // ---------- Pestaña 4: pon a prueba ----------
+  var PREGUNTAS = [
+    { texto: "Una lista tiene 1 000 números y x no está. ¿Cuántas comparaciones hace x in lista?", r: pasosTamano(1000, "no"),
+      explica: "Para estar segura de que no está, la lista compara x con los 1 000 elementos." },
+    { texto: "La misma lista de 1 000 números, pero x es el primer elemento. ¿Cuántas comparaciones?", r: pasosTamano(1000, "principio"),
+      explica: "Lo encuentra en la primera comparación y se detiene." },
+    { texto: "Una lista de 1 000 números tiene a x en la posición 499. ¿Cuántas comparaciones?", r: 499 + 1,
+      explica: "Revisa las posiciones 0 a 499: son 500 comparaciones." },
+    { texto: "La lista creció a 10 000 números y x no está. ¿Cuántas comparaciones?", r: pasosTamano(10000, "no"),
+      explica: "Diez veces más elementos, diez veces más comparaciones: 10 000." },
+    { texto: "Un set tiene 1 000 000 de números. ¿A cuántos cajones va x in conjunto?", r: 1,
+      explica: "A uno: el hash de x dice en qué cajón buscar, sin importar cuántos elementos haya." },
+    { texto: "Dos ciclos anidados comparan cada par una sola vez (j empieza en i + 1). ¿Cuántas comparaciones hacen con 100 números?", r: comparacionesTodos(100),
+      explica: "100 · 99 / 2 = 4 950 pares." },
+    { texto: "¿Y con 1 000 números?", r: comparacionesTodos(1000),
+      explica: "1 000 · 999 / 2 = 499 500: diez veces más números, casi cien veces más comparaciones." }
+  ];
+  var q = 0, puntos = 0, contestada = false;
+  function pintarQuiz() {
+    var fin = q >= PREGUNTAS.length;
+    $("qNum").textContent = fin ? "Terminaste" : "Pregunta " + (q + 1) + " de " + PREGUNTAS.length;
+    $("qPuntos").textContent = "Aciertos: " + puntos;
+    $("qTexto").textContent = fin ? "Acertaste " + puntos + " de " + PREGUNTAS.length + "." : PREGUNTAS[q].texto;
+    $("qResp").disabled = fin || contestada;
+    $("qRevisar").hidden = fin || contestada;
+    $("qSiguiente").hidden = fin || !contestada;
+    $("qOtraVez").hidden = !fin;
+    if (!contestada && !fin) { $("qRetro").className = "retro"; $("qRetro").innerHTML = ""; }
+  }
+  function revisarQuiz() {
+    var t = $("qResp").value.replace(/[\s,]/g, ""), p = PREGUNTAS[q];
+    if (!/^\d+$/.test(t)) { $("qRetro").className = "retro mal"; $("qRetro").textContent = "Escribe un número (sin letras)."; return; }
+    contestada = true;
+    var bien = Number(t) === p.r;
+    if (bien) puntos++;
+    $("qRetro").className = "retro " + (bien ? "bien" : "mal");
+    $("qRetro").innerHTML = (bien ? '<span class="ok">¡Correcto!</span> ' : '<span class="mal">No: son ' + miles(p.r) + ".</span> ") + esc(p.explica);
+    pintarQuiz();
+    $("qSiguiente").focus();
+  }
+  $("qRevisar").addEventListener("click", revisarQuiz);
+  $("qResp").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); if (!contestada) revisarQuiz(); } });
+  $("qSiguiente").addEventListener("click", function () { q++; contestada = false; $("qResp").value = ""; pintarQuiz(); if (q < PREGUNTAS.length) $("qResp").focus(); });
+  $("qOtraVez").addEventListener("click", function () { q = 0; puntos = 0; contestada = false; $("qResp").value = ""; $("qRetro").innerHTML = ""; pintarQuiz(); $("qResp").focus(); });
+
+  var anchoPrevio = 0;
+  window.addEventListener("resize", function () {
+    var w = $("grafica").clientWidth;
+    if (w && w !== anchoPrevio) { anchoPrevio = w; grafica(); }
+  });
+  verTodo();
+  cicloCompleto();
+  tablaCiclos();
+  pintarQuiz();
+})();
+</script>
+<div id="qr-sitio" class="qr-capa" hidden>
+  <div class="qr-caja" role="dialog" aria-modal="true" aria-label="Código QR de esta página">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 45" role="img" aria-label="Código QR de https://memosanchezg.github.io/programacion-basica-interactivos/semana-06-complejidad.html" shape-rendering="crispEdges"><rect width="45" height="45" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM10 2h1v1h-1zM12 2h2v1h-2zM15 2h3v1h-3zM23 2h9v1h-9zM36 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM11 3h1v1h-1zM13 3h1v1h-1zM15 3h3v1h-3zM20 3h2v1h-2zM23 3h2v1h-2zM26 3h3v1h-3zM30 3h1v1h-1zM33 3h1v1h-1zM36 3h1v1h-1zM42 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM11 4h2v1h-2zM14 4h1v1h-1zM16 4h1v1h-1zM19 4h2v1h-2zM22 4h1v1h-1zM24 4h2v1h-2zM28 4h2v1h-2zM31 4h4v1h-4zM36 4h1v1h-1zM38 4h3v1h-3zM42 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h2v1h-2zM15 5h1v1h-1zM17 5h1v1h-1zM19 5h1v1h-1zM21 5h1v1h-1zM23 5h1v1h-1zM25 5h1v1h-1zM30 5h1v1h-1zM32 5h3v1h-3zM36 5h1v1h-1zM38 5h3v1h-3zM42 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h3v1h-3zM15 6h1v1h-1zM22 6h2v1h-2zM25 6h1v1h-1zM27 6h1v1h-1zM29 6h4v1h-4zM36 6h1v1h-1zM38 6h3v1h-3zM42 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h1v1h-1zM12 7h4v1h-4zM21 7h1v1h-1zM23 7h1v1h-1zM26 7h3v1h-3zM30 7h1v1h-1zM33 7h1v1h-1zM36 7h1v1h-1zM42 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM30 8h1v1h-1zM32 8h1v1h-1zM34 8h1v1h-1zM36 8h7v1h-7zM10 9h3v1h-3zM14 9h1v1h-1zM17 9h1v1h-1zM19 9h1v1h-1zM23 9h2v1h-2zM28 9h1v1h-1zM30 9h5v1h-5zM2 10h1v1h-1zM6 10h1v1h-1zM8 10h3v1h-3zM12 10h5v1h-5zM18 10h2v1h-2zM21 10h1v1h-1zM23 10h2v1h-2zM31 10h1v1h-1zM33 10h7v1h-7zM42 10h1v1h-1zM2 11h3v1h-3zM6 11h1v1h-1zM9 11h1v1h-1zM11 11h2v1h-2zM15 11h1v1h-1zM17 11h1v1h-1zM19 11h2v1h-2zM25 11h1v1h-1zM28 11h3v1h-3zM32 11h1v1h-1zM35 11h5v1h-5zM42 11h1v1h-1zM2 12h4v1h-4zM7 12h3v1h-3zM11 12h1v1h-1zM13 12h2v1h-2zM19 12h2v1h-2zM22 12h5v1h-5zM29 12h1v1h-1zM34 12h1v1h-1zM36 12h1v1h-1zM38 12h1v1h-1zM42 12h1v1h-1zM3 13h4v1h-4zM9 13h4v1h-4zM14 13h1v1h-1zM17 13h1v1h-1zM19 13h2v1h-2zM23 13h1v1h-1zM25 13h2v1h-2zM28 13h1v1h-1zM30 13h2v1h-2zM33 13h5v1h-5zM39 13h1v1h-1zM41 13h1v1h-1zM5 14h2v1h-2zM8 14h5v1h-5zM14 14h2v1h-2zM17 14h3v1h-3zM22 14h3v1h-3zM31 14h1v1h-1zM34 14h1v1h-1zM37 14h1v1h-1zM42 14h1v1h-1zM4 15h2v1h-2zM7 15h1v1h-1zM11 15h1v1h-1zM14 15h1v1h-1zM16 15h1v1h-1zM20 15h2v1h-2zM24 15h1v1h-1zM26 15h3v1h-3zM30 15h1v1h-1zM32 15h1v1h-1zM36 15h3v1h-3zM42 15h1v1h-1zM5 16h9v1h-9zM19 16h1v1h-1zM21 16h1v1h-1zM25 16h2v1h-2zM30 16h1v1h-1zM35 16h2v1h-2zM38 16h1v1h-1zM40 16h1v1h-1zM42 16h1v1h-1zM2 17h1v1h-1zM6 17h2v1h-2zM11 17h1v1h-1zM14 17h1v1h-1zM16 17h2v1h-2zM19 17h1v1h-1zM21 17h5v1h-5zM28 17h1v1h-1zM31 17h2v1h-2zM34 17h1v1h-1zM38 17h2v1h-2zM41 17h2v1h-2zM3 18h1v1h-1zM5 18h4v1h-4zM11 18h2v1h-2zM15 18h1v1h-1zM19 18h1v1h-1zM22 18h2v1h-2zM29 18h1v1h-1zM31 18h4v1h-4zM37 18h1v1h-1zM39 18h1v1h-1zM41 18h1v1h-1zM6 19h2v1h-2zM9 19h1v1h-1zM11 19h6v1h-6zM18 19h3v1h-3zM25 19h2v1h-2zM28 19h5v1h-5zM35 19h4v1h-4zM40 19h1v1h-1zM42 19h1v1h-1zM3 20h2v1h-2zM6 20h1v1h-1zM8 20h2v1h-2zM11 20h1v1h-1zM18 20h1v1h-1zM20 20h1v1h-1zM22 20h8v1h-8zM31 20h2v1h-2zM35 20h3v1h-3zM39 20h1v1h-1zM41 20h2v1h-2zM2 21h1v1h-1zM5 21h3v1h-3zM9 21h1v1h-1zM13 21h1v1h-1zM15 21h1v1h-1zM17 21h2v1h-2zM21 21h3v1h-3zM25 21h3v1h-3zM29 21h1v1h-1zM31 21h1v1h-1zM33 21h5v1h-5zM39 21h1v1h-1zM41 21h1v1h-1zM7 22h2v1h-2zM13 22h1v1h-1zM15 22h4v1h-4zM22 22h1v1h-1zM25 22h3v1h-3zM32 22h4v1h-4zM4 23h3v1h-3zM10 23h3v1h-3zM14 23h2v1h-2zM18 23h3v1h-3zM24 23h2v1h-2zM28 23h3v1h-3zM32 23h1v1h-1zM35 23h5v1h-5zM42 23h1v1h-1zM2 24h2v1h-2zM6 24h1v1h-1zM8 24h3v1h-3zM12 24h1v1h-1zM14 24h1v1h-1zM17 24h1v1h-1zM19 24h1v1h-1zM22 24h1v1h-1zM25 24h5v1h-5zM31 24h2v1h-2zM34 24h1v1h-1zM36 24h1v1h-1zM39 24h1v1h-1zM42 24h1v1h-1zM2 25h2v1h-2zM6 25h1v1h-1zM9 25h1v1h-1zM11 25h2v1h-2zM14 25h2v1h-2zM19 25h1v1h-1zM21 25h1v1h-1zM23 25h1v1h-1zM25 25h2v1h-2zM29 25h9v1h-9zM39 25h1v1h-1zM41 25h1v1h-1zM2 26h5v1h-5zM8 26h1v1h-1zM10 26h1v1h-1zM14 26h2v1h-2zM17 26h3v1h-3zM21 26h3v1h-3zM25 26h2v1h-2zM30 26h2v1h-2zM34 26h2v1h-2zM39 26h1v1h-1zM42 26h1v1h-1zM2 27h3v1h-3zM6 27h1v1h-1zM11 27h1v1h-1zM16 27h4v1h-4zM25 27h1v1h-1zM28 27h3v1h-3zM32 27h1v1h-1zM34 27h1v1h-1zM36 27h3v1h-3zM40 27h1v1h-1zM42 27h1v1h-1zM3 28h6v1h-6zM10 28h1v1h-1zM12 28h1v1h-1zM16 28h2v1h-2zM19 28h1v1h-1zM22 28h1v1h-1zM24 28h2v1h-2zM27 28h3v1h-3zM31 28h1v1h-1zM34 28h1v1h-1zM42 28h1v1h-1zM2 29h1v1h-1zM6 29h1v1h-1zM9 29h2v1h-2zM14 29h4v1h-4zM19 29h5v1h-5zM25 29h1v1h-1zM28 29h1v1h-1zM31 29h5v1h-5zM37 29h1v1h-1zM39 29h1v1h-1zM42 29h1v1h-1zM3 30h2v1h-2zM8 30h3v1h-3zM13 30h1v1h-1zM16 30h4v1h-4zM21 30h1v1h-1zM23 30h4v1h-4zM29 30h3v1h-3zM35 30h1v1h-1zM41 30h1v1h-1zM2 31h1v1h-1zM4 31h2v1h-2zM9 31h2v1h-2zM12 31h1v1h-1zM14 31h1v1h-1zM18 31h6v1h-6zM28 31h1v1h-1zM31 31h2v1h-2zM36 31h1v1h-1zM38 31h2v1h-2zM41 31h2v1h-2zM4 32h1v1h-1zM6 32h1v1h-1zM8 32h4v1h-4zM13 32h2v1h-2zM17 32h4v1h-4zM22 32h2v1h-2zM27 32h3v1h-3zM32 32h1v1h-1zM35 32h1v1h-1zM38 32h2v1h-2zM42 32h1v1h-1zM4 33h4v1h-4zM10 33h1v1h-1zM12 33h1v1h-1zM14 33h1v1h-1zM17 33h3v1h-3zM23 33h1v1h-1zM26 33h1v1h-1zM29 33h4v1h-4zM35 33h1v1h-1zM38 33h2v1h-2zM41 33h1v1h-1zM2 34h9v1h-9zM12 34h5v1h-5zM19 34h1v1h-1zM21 34h6v1h-6zM31 34h1v1h-1zM34 34h6v1h-6zM41 34h2v1h-2zM10 35h1v1h-1zM13 35h1v1h-1zM20 35h1v1h-1zM23 35h1v1h-1zM25 35h7v1h-7zM34 35h1v1h-1zM38 35h3v1h-3zM42 35h1v1h-1zM2 36h7v1h-7zM10 36h2v1h-2zM16 36h2v1h-2zM19 36h1v1h-1zM22 36h1v1h-1zM25 36h2v1h-2zM29 36h1v1h-1zM32 36h3v1h-3zM36 36h1v1h-1zM38 36h1v1h-1zM40 36h1v1h-1zM42 36h1v1h-1zM2 37h1v1h-1zM8 37h1v1h-1zM12 37h2v1h-2zM16 37h6v1h-6zM24 37h2v1h-2zM28 37h1v1h-1zM30 37h1v1h-1zM33 37h2v1h-2zM38 37h2v1h-2zM42 37h1v1h-1zM2 38h1v1h-1zM4 38h3v1h-3zM8 38h1v1h-1zM10 38h2v1h-2zM13 38h3v1h-3zM17 38h2v1h-2zM20 38h3v1h-3zM24 38h1v1h-1zM26 38h3v1h-3zM33 38h7v1h-7zM41 38h1v1h-1zM2 39h1v1h-1zM4 39h3v1h-3zM8 39h1v1h-1zM11 39h1v1h-1zM16 39h3v1h-3zM23 39h1v1h-1zM25 39h3v1h-3zM29 39h4v1h-4zM34 39h1v1h-1zM37 39h1v1h-1zM40 39h2v1h-2zM2 40h1v1h-1zM4 40h3v1h-3zM8 40h1v1h-1zM12 40h2v1h-2zM16 40h2v1h-2zM19 40h2v1h-2zM22 40h1v1h-1zM25 40h1v1h-1zM27 40h1v1h-1zM29 40h1v1h-1zM31 40h2v1h-2zM34 40h2v1h-2zM42 40h1v1h-1zM2 41h1v1h-1zM8 41h1v1h-1zM11 41h2v1h-2zM14 41h1v1h-1zM17 41h3v1h-3zM23 41h2v1h-2zM26 41h1v1h-1zM28 41h2v1h-2zM31 41h2v1h-2zM34 41h4v1h-4zM39 41h1v1h-1zM41 41h2v1h-2zM2 42h7v1h-7zM10 42h2v1h-2zM15 42h1v1h-1zM19 42h2v1h-2zM22 42h5v1h-5zM29 42h1v1h-1zM31 42h1v1h-1zM34 42h1v1h-1zM36 42h4v1h-4zM41 42h1v1h-1z"/></svg>
+    <p class="qr-texto">Escanea con la cámara del celular para abrir esta página</p>
+    <p class="qr-url">https://memosanchezg.github.io/programacion-basica-interactivos/semana-06-complejidad.html</p>
+    <button type="button" class="qr-cerrar">Cerrar</button>
+  </div>
+</div>
+<style>
+  .qr-capa { position:fixed; top:0; right:0; bottom:0; left:0; z-index:10000; display:flex; align-items:center;
+             justify-content:center; padding:16px; background:#fff; }
+  .qr-capa[hidden] { display:none; }
+  .qr-caja { max-width:100%; text-align:center; color:#0A2A57; font:16px/1.4 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .qr-caja svg { display:block; width:min(62vh, 84vw); height:auto; margin:0 auto; }
+  .qr-texto { margin:12px 0 2px; font-size:1.15rem; font-weight:bold; }
+  .qr-url { margin:0 0 12px; color:#5B6472; word-break:break-all; }
+  .qr-cerrar { font:inherit; padding:6px 20px; border:2px solid #00408F; border-radius:4px; background:#fff;
+               color:#00408F; cursor:pointer; }
+</style>
+<script>
+  (function () {
+    var capa = document.getElementById("qr-sitio");
+    document.querySelectorAll("a.qr-abrir").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        capa.hidden = false;
+        capa.querySelector(".qr-cerrar").focus();
+      });
+    });
+    capa.addEventListener("click", function (e) {
+      if (e.target === capa || e.target.classList.contains("qr-cerrar")) capa.hidden = true;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !capa.hidden) capa.hidden = true;
+    });
+  })();
+</script>
+</body>
+</html>

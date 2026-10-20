@@ -1,0 +1,648 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="tipo" content="simulador">
+<title>Conjuntos y diagramas de Venn</title>
+
+<style>
+  :root {
+    --azul:#00408F; --azul-oscuro:#0A2A57; --guinda:#8C1D35; --oro:#B8975A; --oro-texto:#8A6A2E;
+    --azul-claro:#E8EEF7; --oro-claro:#F7F1E6; --guinda-claro:#F5E6EA; --verde:#2F7D5B;
+    --tinta:#1B1F2A; --gris:#5B6472; --gris-claro:#E9ECF1; --borde:#D9DEE6; --fondo:#FFFFFF;
+    --cmd-fondo:#0C0C0C; --cmd-texto:#E6E6E6;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--fondo); color:var(--tinta);
+         font:16px/1.45 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .franja { height:8px; background:var(--azul); border-bottom:3px solid var(--oro); }
+  header { max-width:1280px; margin:0 auto; padding:12px 18px 4px; }
+  .semana { color:var(--guinda); font-weight:bold; letter-spacing:.04em; font-size:.85rem; text-transform:uppercase; }
+  h1 { font-family:Cambria,Georgia,serif; color:var(--azul-oscuro); font-size:1.7rem; margin:2px 0 2px; }
+  .sub { color:var(--gris); margin:0; }
+  main { max-width:1280px; margin:0 auto; padding:8px 18px 24px; }
+  nav.pestanas { display:flex; gap:4px; flex-wrap:wrap; border-bottom:2px solid var(--gris-claro); margin:6px 0 12px; }
+  nav.pestanas button { font:inherit; font-weight:bold; border:none; background:none; color:var(--gris);
+                        padding:8px 14px; cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; }
+  nav.pestanas button.activo { color:var(--azul-oscuro); border-bottom-color:var(--azul); }
+  nav.pestanas button:focus-visible { outline:2px solid var(--azul); }
+  section.vista { display:none; }
+  section.vista.activo { display:block; }
+  .fila { display:grid; grid-template-columns:minmax(260px,360px) minmax(0,1fr); gap:16px; align-items:start; }
+  .panel { background:#fff; border:1px solid var(--borde); border-radius:10px; padding:12px 14px; }
+  .panel h2 { font-size:1.02rem; color:var(--azul-oscuro); margin:0 0 8px; }
+  label { display:block; font-weight:bold; color:var(--azul-oscuro); margin-top:10px; }
+  label small { font-weight:normal; color:var(--gris); }
+  input[type=range] { width:100%; }
+  input[type=number], input[type=text], select, textarea { font:inherit; padding:4px 6px; border:1px solid var(--borde);
+                        border-radius:6px; }
+  input.mono, textarea.mono { font-family:Consolas,"Courier New",monospace; }
+  button.accion { font:inherit; font-weight:bold; border-radius:8px; padding:7px 12px; margin:8px 6px 0 0;
+                  border:1px solid var(--azul); background:#fff; color:var(--azul); cursor:pointer; }
+  button.accion:hover, button.accion:focus-visible { background:var(--azul); color:#fff; outline:none; }
+  canvas { width:100%; display:block; border:1px solid var(--borde); border-radius:10px; background:#fff; }
+  .lectura { background:var(--oro-claro); border-left:4px solid var(--oro); border-radius:8px; padding:10px 12px;
+             margin-top:12px; line-height:1.55; }
+  .lectura b { color:var(--azul-oscuro); }
+  .ok { color:var(--verde); font-weight:bold; }
+  .mal { color:var(--guinda); font-weight:bold; }
+  .preguntas { background:var(--azul-claro); border-radius:8px; padding:10px 14px; margin-top:12px; }
+  .preguntas h3 { margin:0 0 4px; font-size:.95rem; color:var(--azul-oscuro); }
+  .preguntas ol { margin:0; padding-left:20px; }
+  .preguntas li { margin:4px 0; }
+  /* Código Python con los colores del curso (minted, estilo borland) y salida de consola (cmd). */
+  .codigo { border:1px solid var(--tinta); background:#fff; font:15px/1.5 Consolas,"Courier New",monospace;
+            overflow-x:auto; margin:8px 0; }
+  .codigo ol { margin:0; padding:8px 12px 8px 3.4em; }
+  .codigo li { white-space:pre; }
+  .codigo li::marker { color:var(--gris); font:11px Cambria,Georgia,serif; }
+  .codigo .kw { color:#000080; font-weight:bold; }
+  .codigo .str, .codigo .num { color:#0000FF; }
+  .codigo .com { color:#008800; font-style:italic; }
+  .codigo .marca { background:var(--oro-claro); outline:1px solid var(--oro); }
+  .consola { background:var(--cmd-fondo); color:var(--cmd-texto); font:15px/1.45 Consolas,"Courier New",monospace;
+             white-space:pre-wrap; word-break:break-word; padding:8px 12px; border-radius:4px; margin:8px 0; min-height:2.2em; }
+  footer { max-width:1280px; margin:0 auto; padding:6px 18px 18px; color:var(--gris); font-size:.85rem; }
+  footer a { color:var(--azul); }
+  @media (max-width: 820px) { .fila { grid-template-columns:1fr; } }
+
+  /* Propios de este simulador */
+  [hidden] { display:none !important; }
+  code { font-family:Consolas,"Courier New",monospace; color:var(--azul-oscuro); }
+  .fila > * { min-width:0; }
+  input.mono { width:100%; }
+  .nota { color:var(--gris); font-size:.92rem; margin:6px 0 0; }
+  .aviso { color:var(--guinda); font-size:.92rem; margin:4px 0 0; }
+  label.casilla { display:flex; align-items:center; gap:6px; font-weight:bold; cursor:pointer; }
+  label.casilla input { width:18px; height:18px; accent-color:var(--azul); }
+  fieldset { border:1px solid var(--borde); border-radius:8px; margin:12px 0 0; padding:6px 10px 10px; }
+  legend { font-weight:bold; color:var(--azul-oscuro); padding:0 4px; }
+  .ops { display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:6px; }
+  .ops button { font:inherit; text-align:left; border:1px solid var(--borde); border-radius:8px; background:#fff; color:var(--tinta);
+                padding:6px 8px; cursor:pointer; }
+  .ops button code { font-weight:bold; color:var(--guinda); }
+  .ops button[aria-pressed="true"] { border:2px solid var(--azul); background:var(--azul-claro); }
+  .ops button:focus-visible { outline:2px solid var(--azul); outline-offset:1px; }
+  .operandos { display:flex; flex-wrap:wrap; align-items:end; gap:6px 10px; margin-top:8px; }
+  .operandos label { margin:0; font-size:.95rem; }
+  .operandos select { display:block; margin-top:2px; }
+  .operandos .simbolo { font:bold 20px Consolas,"Courier New",monospace; color:var(--guinda); padding-bottom:4px; }
+  .forma { display:flex; flex-wrap:wrap; gap:4px 14px; margin-top:8px; }
+  .forma label { margin:0; font-weight:normal; display:flex; align-items:center; gap:5px; cursor:pointer; }
+  .resultado { font-size:1.05rem; margin:10px 0 0; }
+  .resultado b { color:var(--guinda); }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; margin:6px 0 0; padding:0; list-style:none; }
+  .chips li { font:15px Consolas,"Courier New",monospace; border:1px solid var(--oro); background:var(--oro-claro); border-radius:14px; padding:1px 10px; }
+  .chips li.repetido { border-style:dashed; border-color:var(--borde); background:#fff; color:var(--gris); text-decoration:line-through; }
+  .chips li.unico { border-color:var(--verde); background:#EAF4EF; }
+  .chips.vacio { color:var(--gris); font-style:italic; }
+  h3.sub2 { font-size:.98rem; color:var(--azul-oscuro); margin:14px 0 2px; }
+  .oculto { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+  @media (max-width: 480px) {
+    header { padding:10px 12px 4px; }
+    main { padding:8px 10px 20px; }
+    footer { padding:6px 12px 16px; }
+    .panel { padding:10px; }
+    h1 { font-size:1.45rem; }
+    .codigo, .consola { font-size:13px; }
+    .codigo ol { padding-left:2.9em; }
+  }
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header>
+  <div class="semana">Semana 06 · Estructuras de datos · Día 3</div>
+  <h1>Conjuntos y diagramas de Venn</h1>
+  <p class="sub">Escribe quién está inscrito en cada materia y mira qué región resalta cada operación de conjuntos, con el programa de Python y lo que imprime.</p>
+</header>
+<main>
+  <nav class="pestanas" role="tablist" aria-label="Vistas">
+    <button type="button" class="activo" data-vista="v1" role="tab" aria-selected="true" aria-controls="v1" id="tab1">Diagrama de Venn</button>
+    <button type="button" data-vista="v2" role="tab" aria-selected="false" aria-controls="v2" id="tab2" tabindex="-1">Quitar duplicados e in</button>
+  </nav>
+
+  <section class="vista activo" id="v1" role="tabpanel" aria-labelledby="tab1">
+    <div class="fila">
+      <div class="panel">
+        <h2>Los conjuntos</h2>
+        <label for="setA">Inscritos en Cálculo <small>(calculo)</small></label>
+        <input id="setA" type="text" class="mono" spellcheck="false" autocomplete="off" value="Ana, Beto, Caro, Dani">
+        <p class="aviso" id="avisoA"></p>
+        <label for="setB">Inscritos en Física <small>(fisica)</small></label>
+        <input id="setB" type="text" class="mono" spellcheck="false" autocomplete="off" value="Caro, Dani, Eli">
+        <p class="aviso" id="avisoB"></p>
+        <label class="casilla"><input type="checkbox" id="usarC" checked> Tercer conjunto</label>
+        <div id="cajaC">
+          <label for="setC">Inscritos en Programación <small>(programacion)</small></label>
+          <input id="setC" type="text" class="mono" spellcheck="false" autocomplete="off" value="Ana, Caro, Fer">
+          <p class="aviso" id="avisoC"></p>
+        </div>
+        <p class="nota">Separa los nombres con comas. Cada nombre es un texto: mayúsculas, acentos y espacios cuentan ("Ana" y "ana" son distintos).</p>
+        <fieldset>
+          <legend>Operación</legend>
+          <div class="ops" id="ops">
+            <button type="button" data-op="union" aria-pressed="false"><code>|</code> unión</button>
+            <button type="button" data-op="intersection" aria-pressed="true"><code>&amp;</code> intersección</button>
+            <button type="button" data-op="difference" aria-pressed="false"><code>-</code> diferencia</button>
+            <button type="button" data-op="symmetric_difference" aria-pressed="false"><code>^</code> diferencia simétrica</button>
+            <button type="button" data-op="issubset" aria-pressed="false"><code>&lt;=</code> ¿subconjunto?</button>
+          </div>
+          <div class="operandos">
+            <label for="izq">Conjunto izquierdo <select id="izq"></select></label>
+            <span class="simbolo" id="simbolo" aria-hidden="true">&amp;</span>
+            <label for="der">Conjunto derecho <select id="der"></select></label>
+          </div>
+          <div class="forma" role="radiogroup" aria-label="Cómo se escribe la operación">
+            <label><input type="radio" name="forma" value="operador" checked> con operador</label>
+            <label><input type="radio" name="forma" value="metodo"> con método</label>
+          </div>
+        </fieldset>
+      </div>
+      <div class="panel">
+        <h2>El diagrama</h2>
+        <canvas id="venn" role="img" aria-label="Diagrama de Venn"></canvas>
+        <p class="resultado" id="resumen" aria-live="polite"></p>
+        <h2 style="margin-top:12px">El código en Python</h2>
+        <div id="codigo1"></div>
+        <div class="consola" id="salida1" aria-label="Lo que imprime el programa"></div>
+        <div class="lectura" id="lectura1"></div>
+        <div class="preguntas">
+          <h3>Para explorar</h3>
+          <ol>
+            <li>¿Qué operación da los alumnos que llevan Cálculo pero no Física? ¿Da lo mismo si inviertes los conjuntos?</li>
+            <li>¿Qué diferencia hay entre <code>|</code> y <code>^</code>? Busca un caso en que den el mismo resultado.</li>
+            <li>Cambia los nombres para que <code>calculo.issubset(fisica)</code> sea True. ¿Qué región del diagrama queda vacía?</li>
+            <li>¿Por qué el programa imprime <code>sorted(resultado)</code> y no <code>resultado</code>?</li>
+            <li>Escribe "ana" en un conjunto y "Ana" en otro. ¿Aparecen en la intersección?</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="vista" id="v2" role="tabpanel" aria-labelledby="tab2">
+    <div class="fila">
+      <div class="panel">
+        <h2>La lista de asistencia</h2>
+        <label for="lista">Nombres, con repetidos <small>(asistencia)</small></label>
+        <input id="lista" type="text" class="mono" spellcheck="false" autocomplete="off" value="Ana, Beto, Ana, Caro, Beto, Ana">
+        <label for="buscar">Buscar con <code>in</code></label>
+        <input id="buscar" type="text" class="mono" spellcheck="false" autocomplete="off" value="Caro">
+        <p class="nota">Cada vez que alguien asiste se anota su nombre, así que la lista tiene repetidos. ¿Cuántas personas distintas vinieron?</p>
+        <h3 class="sub2">La lista</h3>
+        <ul class="chips" id="chipsLista" aria-label="Elementos de la lista, en orden"></ul>
+        <h3 class="sub2">El conjunto <small style="font-weight:normal;color:var(--gris)">(mostrado con sorted)</small></h3>
+        <ul class="chips" id="chipsSet" aria-label="Elementos del conjunto, ordenados"></ul>
+      </div>
+      <div class="panel">
+        <h2>El código en Python</h2>
+        <div id="codigo2"></div>
+        <div class="consola" id="salida2" aria-label="Lo que imprime el programa"></div>
+        <div class="lectura" id="lectura2"></div>
+        <div class="preguntas">
+          <h3>Para explorar</h3>
+          <ol start="6">
+            <li>Si todos los nombres de la lista son iguales, ¿cuántos elementos tiene <code>set(asistencia)</code>?</li>
+            <li>¿Qué imprime la última línea si buscas "caro" en lugar de "Caro"?</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<footer>
+  Programación Básica · FCFM-UANL · funciona sin internet.
+  <a href="index.html">Índice de simuladores</a> · <a href="#qr-sitio" class="qr-abrir">Abrir en el celular (QR)</a> · <a href="semana-06-complejidad.html">¿Cuántos pasos tarda?</a>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  // Colores FCFM para el lienzo
+  var C = { azul:"#00408F", azulOscuro:"#0A2A57", guinda:"#8C1D35", oro:"#B8975A", oroTexto:"#8A6A2E",
+            verde:"#2F7D5B", gris:"#5B6472", grisClaro:"#E9ECF1", borde:"#D9DEE6", tinta:"#1B1F2A",
+            azulClaro:"#E8EEF7" };
+
+  // ==== NÚCLEO (sin DOM): textos de Python, conjuntos y el programa que se muestra ====
+  function esc(t) {
+    return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  function hexa(n, ancho) { var s = n.toString(16); while (s.length < ancho) s = "0" + s; return s; }
+  // Caracteres que Python no considera imprimibles (repr los escribe como \x.., \u.. o \U........)
+  var NO_IMPRIMIBLE = /[\p{Cc}\p{Cf}\p{Cs}\p{Co}\p{Cn}\p{Zl}\p{Zp}\p{Zs}]/u;
+  function escaparCaracter(c, comilla) {
+    var code = c.codePointAt(0);
+    if (c === "\\") return "\\\\";
+    if (c === comilla) return "\\" + comilla;
+    if (c === "\n") return "\\n";
+    if (c === "\r") return "\\r";
+    if (c === "\t") return "\\t";
+    if (code < 32 || code === 127) return "\\x" + hexa(code, 2);
+    if (code > 127 && NO_IMPRIMIBLE.test(c)) {
+      return code <= 0xff ? "\\x" + hexa(code, 2) : code <= 0xffff ? "\\u" + hexa(code, 4) : "\\U" + hexa(code, 8);
+    }
+    return c;
+  }
+  // repr() de un texto: comillas simples, o dobles si el texto trae ' y no trae ".
+  function pyStr(s) {
+    var q = (s.indexOf("'") >= 0 && s.indexOf('"') < 0) ? '"' : "'";
+    var r = "";
+    for (var c of s) r += escaparCaracter(c, q);
+    return q + r + q;
+  }
+  // Un texto escrito en el código, con comillas dobles como en el curso.
+  function pyLiteral(s) {
+    var r = "";
+    for (var c of s) r += escaparCaracter(c, '"');
+    return '"' + r + '"';
+  }
+  // sorted() de textos: Python compara punto de código por punto de código.
+  function compararPy(a, b) {
+    var x = Array.from(a), y = Array.from(b), n = Math.min(x.length, y.length);
+    for (var i = 0; i < n; i++) {
+      var d = x[i].codePointAt(0) - y[i].codePointAt(0);
+      if (d) return d;
+    }
+    return x.length - y.length;
+  }
+  function ordenar(lista) { return lista.slice().sort(compararPy); }
+  function reprLista(lista) { return "[" + lista.map(pyStr).join(", ") + "]"; }
+
+  // Lee "Ana, Beto, Ana" como lista de textos (sin espacios en las orillas y sin vacíos).
+  function leerNombres(texto) {
+    return texto.split(",").map(function (s) { return s.trim(); }).filter(function (s) { return s !== ""; });
+  }
+  // Sin repetidos, en el orden en que aparecen.
+  function sinRepetidos(lista) {
+    var vistos = new Set(), r = [];
+    lista.forEach(function (x) { if (!vistos.has(x)) { vistos.add(x); r.push(x); } });
+    return r;
+  }
+
+  var OPS = {
+    union: { op: "|", nombre: "unión" },
+    intersection: { op: "&", nombre: "intersección" },
+    difference: { op: "-", nombre: "diferencia" },
+    symmetric_difference: { op: "^", nombre: "diferencia simétrica" },
+    issubset: { op: "<=", nombre: "subconjunto" }
+  };
+  // ¿El elemento queda en el resultado? (pertenencia al izquierdo y al derecho)
+  function enResultado(op, enI, enD) {
+    if (op === "union") return enI || enD;
+    if (op === "intersection") return enI && enD;
+    if (op === "difference" || op === "issubset") return enI && !enD;
+    return enI !== enD;
+  }
+
+  // conjuntos: [{variable, nombres}] (sin repetidos); izq y der: índices; forma: "operador" o "metodo".
+  function programaVenn(conjuntos, op, izq, der, forma) {
+    var L = conjuntos[izq], R = conjuntos[der];
+    var codigo = conjuntos.map(function (c) {
+      return c.variable + " = " + (c.nombres.length ? "{" + c.nombres.map(pyLiteral).join(", ") + "}" : "set()");
+    });
+    codigo.push("");
+    var enR = new Set(R.nombres), salida, resultado = [], linea;
+    if (op === "issubset") {
+      var es = L.nombres.every(function (x) { return enR.has(x); });
+      linea = codigo.length + 1;
+      codigo.push("print(" + (forma === "metodo" ? L.variable + ".issubset(" + R.variable + ")" : L.variable + " <= " + R.variable) + ")");
+      salida = (es ? "True" : "False") + "\n";
+      resultado = L.nombres.filter(function (x) { return !enR.has(x); });
+      return { codigo: codigo.join("\n"), salida: salida, linea: linea, resultado: resultado, booleano: es };
+    }
+    var enL = new Set(L.nombres), todos = sinRepetidos(L.nombres.concat(R.nombres));
+    resultado = todos.filter(function (x) { return enResultado(op, enL.has(x), enR.has(x)); });
+    linea = codigo.length + 1;
+    codigo.push("resultado = " + (forma === "metodo" ? L.variable + "." + op + "(" + R.variable + ")" : L.variable + " " + OPS[op].op + " " + R.variable));
+    codigo.push("print(sorted(resultado))");
+    codigo.push("print(len(resultado))");
+    salida = reprLista(ordenar(resultado)) + "\n" + resultado.length + "\n";
+    return { codigo: codigo.join("\n"), salida: salida, linea: linea, resultado: resultado, booleano: null };
+  }
+
+  function programaDuplicados(lista, buscado) {
+    var codigo = [
+      "asistencia = [" + lista.map(pyLiteral).join(", ") + "]",
+      "unicos = set(asistencia)",
+      "print(len(asistencia), len(unicos))",
+      "print(sorted(unicos))",
+      "print(" + pyLiteral(buscado) + " in unicos)"
+    ];
+    var unicos = sinRepetidos(lista);
+    var salida = lista.length + " " + unicos.length + "\n" + reprLista(ordenar(unicos)) + "\n" +
+                 (unicos.indexOf(buscado) >= 0 ? "True" : "False") + "\n";
+    return { codigo: codigo.join("\n"), salida: salida, unicos: unicos };
+  }
+  // ==== FIN DEL NÚCLEO ====
+
+  // ---------- Código Python con los colores del curso ----------
+  var PY_KW = /^(False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)$/;
+  function pyResaltar(linea) {
+    var html = "", i = 0, m, resto;
+    while (i < linea.length) {
+      resto = linea.slice(i);
+      if ((m = /^#.*/.exec(resto))) { html += '<span class="com">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[rRbBfFuU]{0,2}("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/.exec(resto))) { html += '<span class="str">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[\p{L}_][\p{L}\p{N}_]*/u.exec(resto))) { html += PY_KW.test(m[0]) ? '<span class="kw">' + m[0] + "</span>" : esc(m[0]); }
+      else if ((m = /^(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?j?/.exec(resto))) { html += '<span class="num">' + m[0] + "</span>"; }
+      else { m = [resto[0]]; html += esc(m[0]); }
+      i += m[0].length;
+    }
+    return html;
+  }
+  // Pinta código en un contenedor, con números de línea; marcar = número de línea (1, 2...) a resaltar.
+  function mostrarCodigo(el, codigo, marcar) {
+    var lineas = codigo.replace(/\n$/, "").split("\n");
+    el.innerHTML = '<div class="codigo"><ol>' + lineas.map(function (l, k) {
+      return "<li" + (marcar === k + 1 ? ' class="marca"' : "") + ">" + (pyResaltar(l) || " ") + "</li>";
+    }).join("") + "</ol></div>";
+  }
+
+  // Lienzo nítido en pantallas de alta densidad; proporcion = alto/ancho
+  function preparar(cv, proporcion) {
+    var dpr = window.devicePixelRatio || 1, w = cv.clientWidth || 600;
+    cv.style.height = (w * proporcion) + "px";
+    cv.width = Math.round(w * dpr); cv.height = Math.round(w * proporcion * dpr);
+    var g = cv.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { g: g, w: w, h: w * proporcion };
+  }
+
+  // ---------- Pestañas ----------
+  var botonesTab = document.querySelectorAll("nav.pestanas button");
+  function activarTab(b) {
+    botonesTab.forEach(function (x) {
+      var activo = x === b;
+      x.classList.toggle("activo", activo);
+      x.setAttribute("aria-selected", activo ? "true" : "false");
+      x.tabIndex = activo ? 0 : -1;
+      $(x.dataset.vista).classList.toggle("activo", activo);
+    });
+    dibujarTodo();
+  }
+  botonesTab.forEach(function (b, i) {
+    b.addEventListener("click", function () { activarTab(b); });
+    b.addEventListener("keydown", function (e) {
+      if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+      e.preventDefault();
+      var otro = botonesTab[(i + 1) % botonesTab.length];
+      activarTab(otro);
+      otro.focus();
+    });
+  });
+
+  // ---------- Vista 1: diagrama de Venn ----------
+  var CONJ = [
+    { id: "setA", aviso: "avisoA", variable: "calculo", nombre: "Cálculo", color: C.azul },
+    { id: "setB", aviso: "avisoB", variable: "fisica", nombre: "Física", color: C.guinda },
+    { id: "setC", aviso: "avisoC", variable: "programacion", nombre: "Programación", color: C.verde }
+  ];
+  var MAX_NOMBRES = 15, operacion = "intersection";
+
+  function leerConjuntos() {
+    var n = $("usarC").checked ? 3 : 2;
+    return CONJ.slice(0, n).map(function (c) {
+      var todos = leerNombres($(c.id).value), unicos = sinRepetidos(todos), aviso = "";
+      if (unicos.length > MAX_NOMBRES) { aviso = "Solo se usan los primeros " + MAX_NOMBRES + " nombres."; unicos = unicos.slice(0, MAX_NOMBRES); }
+      else if (todos.length > unicos.length) {
+        aviso = "Un conjunto no guarda repetidos: " + (todos.length - unicos.length) + (todos.length - unicos.length === 1 ? " nombre repetido se quitó." : " nombres repetidos se quitaron.");
+      }
+      $(c.aviso).textContent = aviso;
+      return { variable: c.variable, nombre: c.nombre, color: c.color, nombres: unicos };
+    });
+  }
+
+  function llenarOperandos() {
+    var n = $("usarC").checked ? 3 : 2;
+    ["izq", "der"].forEach(function (id, k) {
+      var sel = $(id), antes = sel.value === "" ? k : Number(sel.value);
+      sel.innerHTML = CONJ.slice(0, n).map(function (c, i) { return '<option value="' + i + '">' + c.variable + "</option>"; }).join("");
+      sel.value = String(antes < n ? antes : k);
+    });
+  }
+
+  // Región de cada punto del lienzo: bits 1 = A, 2 = B, 4 = C.
+  function geometria(w, h, n) {
+    if (n === 2) {
+      var r2 = Math.min(w * 0.27, h * 0.42);
+      return { r: r2, c: [[w * 0.5 - r2 * 0.62, h * 0.53], [w * 0.5 + r2 * 0.62, h * 0.53]] };
+    }
+    var r3 = Math.min(w * 0.22, h * 0.31);
+    return { r: r3, c: [[w * 0.5 - r3 * 0.6, h * 0.38], [w * 0.5 + r3 * 0.6, h * 0.38], [w * 0.5, h * 0.38 + r3 * 1.0]] };
+  }
+  function regionDe(x, y, geo) {
+    var bits = 0;
+    geo.c.forEach(function (c, i) { var dx = x - c[0], dy = y - c[1]; if (dx * dx + dy * dy <= geo.r * geo.r) bits |= (1 << i); });
+    return bits;
+  }
+
+  function dibujarVenn(conjs, prog) {
+    var n = conjs.length, cv = $("venn"), P = preparar(cv, n === 3 ? 0.78 : 0.62), g = P.g, w = P.w, h = P.h;
+    var geo = geometria(w, h, n), izq = Number($("izq").value), der = Number($("der").value);
+    // Regiones del resultado (según la pertenencia al izquierdo y al derecho)
+    function resaltada(bits) {
+      var enI = !!(bits & (1 << izq)), enD = !!(bits & (1 << der));
+      if (operacion === "issubset") return enI;
+      return enResultado(operacion, enI, enD);
+    }
+    function problema(bits) { return operacion === "issubset" && !!(bits & (1 << izq)) && !(bits & (1 << der)); }
+    // Relleno de las regiones, píxel por píxel
+    var dpr = window.devicePixelRatio || 1, W = cv.width, H = cv.height;
+    var img = g.createImageData(W, H), d = img.data;
+    var oro = [235, 221, 194], guinda = [235, 205, 213];
+    for (var py = 0; py < H; py++) {
+      for (var px = 0; px < W; px++) {
+        var b = regionDe(px / dpr, py / dpr, geo), k = (py * W + px) * 4, col = null;
+        if (b && resaltada(b)) col = problema(b) && prog.resultado.length ? guinda : oro;
+        if (col) { d[k] = col[0]; d[k + 1] = col[1]; d[k + 2] = col[2]; d[k + 3] = 255; }
+        else { d[k] = d[k + 1] = d[k + 2] = 255; d[k + 3] = 255; }
+      }
+    }
+    g.putImageData(img, 0, 0);
+    // Contornos y nombres de los conjuntos
+    geo.c.forEach(function (c, i) {
+      g.beginPath(); g.arc(c[0], c[1], geo.r, 0, 2 * Math.PI);
+      g.lineWidth = (i === izq || i === der) ? 3 : 1.5; g.strokeStyle = conjs[i].color; g.stroke();
+    });
+    var fs = Math.max(12, Math.min(16, w / 34));
+    g.font = "bold " + fs + "px Calibri, 'Segoe UI', sans-serif";
+    g.textBaseline = "middle";
+    geo.c.forEach(function (c, i) {
+      g.fillStyle = conjs[i].color;
+      var tx = conjs[i].variable, ty;
+      if (n === 2) { g.textAlign = i === 0 ? "right" : "left"; ty = c[1] - geo.r * 0.86; g.fillText(tx, c[0] + (i === 0 ? -geo.r * 0.45 : geo.r * 0.45), ty); }
+      else if (i < 2) { g.textAlign = i === 0 ? "right" : "left"; g.fillText(tx, c[0] + (i === 0 ? -geo.r * 0.55 : geo.r * 0.55), c[1] - geo.r * 0.92); }
+      else { g.textAlign = "center"; g.fillText(tx, c[0], Math.min(h - fs * 0.7, c[1] + geo.r + fs * 0.75)); }
+    });
+    // Centro aproximado y altura disponible de cada región (por muestreo)
+    var suma = {}, paso = Math.max(3, w / 140);
+    for (var yy = 0; yy < h; yy += paso) {
+      for (var xx = 0; xx < w; xx += paso) {
+        var bb = regionDe(xx, yy, geo);
+        if (!bb) continue;
+        suma[bb] = suma[bb] || { x: 0, y: 0, n: 0 };
+        suma[bb].x += xx; suma[bb].y += yy; suma[bb].n++;
+      }
+    }
+    var porRegion = {};
+    conjs.forEach(function (c, i) {
+      c.nombres.forEach(function (x) {
+        var bits = 0;
+        conjs.forEach(function (o, j) { if (o.nombres.indexOf(x) >= 0) bits |= (1 << j); });
+        (porRegion[bits] = porRegion[bits] || []).indexOf(x) < 0 && porRegion[bits].push(x);
+      });
+    });
+    var enRes = new Set(prog.resultado), fsN = Math.max(11, Math.min(14, w / 40)), alto = fsN * 1.25;
+    g.font = fsN + "px Consolas, 'Courier New', monospace";
+    g.textAlign = "center";
+    Object.keys(porRegion).forEach(function (bits) {
+      var s = suma[bits];
+      if (!s) return;
+      var cx = s.x / s.n, cy = s.y / s.n;
+      // cuántos renglones caben: recorre hacia arriba y abajo mientras siga en la región
+      var arriba = 0, abajo = 0;
+      while (regionDe(cx, cy - arriba - 2, geo) === Number(bits) && arriba < h) arriba += 2;
+      while (regionDe(cx, cy + abajo + 2, geo) === Number(bits) && abajo < h) abajo += 2;
+      var caben = Math.max(1, Math.floor((arriba + abajo - 6) / alto));
+      var lista = ordenar(porRegion[bits]), mostrar = lista.length > caben ? lista.slice(0, caben - 1) : lista;
+      var lineas = mostrar.slice();
+      if (lista.length > caben) lineas.push("+" + (lista.length - mostrar.length) + " más");
+      var y0 = cy - (lineas.length - 1) * alto / 2;
+      lineas.forEach(function (t, j) {
+        // En el resultado: negritas (en guinda, los que impiden ser subconjunto); fuera: gris.
+        var nombre = mostrar[j], destacado = nombre !== undefined && enRes.has(nombre);
+        g.fillStyle = destacado ? (prog.booleano !== null ? C.guinda : C.tinta) : C.gris;
+        g.font = (destacado ? "bold " : "") + fsN + "px Consolas, 'Courier New', monospace";
+        var letras = Array.from(t), corto = letras.length > 12 ? letras.slice(0, 11).join("") + "…" : t;
+        g.fillText(corto, cx, y0 + j * alto);
+      });
+    });
+    // Descripción para lectores de pantalla
+    var L = conjs[izq], R = conjs[der], texto;
+    if (operacion === "issubset") texto = L.variable + " <= " + R.variable + " es " + (prog.booleano ? "True" : "False") + (prog.resultado.length ? "; nombres de " + L.variable + " que no están en " + R.variable + ": " + ordenar(prog.resultado).join(", ") : "");
+    else texto = L.variable + " " + OPS[operacion].op + " " + R.variable + " tiene " + prog.resultado.length + " nombres" + (prog.resultado.length ? ": " + ordenar(prog.resultado).join(", ") : "");
+    cv.setAttribute("aria-label", "Diagrama de Venn de " + conjs.map(function (c) { return c.variable; }).join(", ") + ". Resaltado: " + texto + ".");
+  }
+
+  function vista1() {
+    var conjs = leerConjuntos(), izq = Number($("izq").value), der = Number($("der").value);
+    var forma = document.querySelector('input[name="forma"]:checked').value;
+    var prog = programaVenn(conjs, operacion, izq, der, forma);
+    $("simbolo").textContent = OPS[operacion].op;
+    mostrarCodigo($("codigo1"), prog.codigo, prog.linea);
+    $("salida1").textContent = prog.salida;
+    dibujarVenn(conjs, prog);
+    var L = conjs[izq], R = conjs[der], res = ordenar(prog.resultado);
+    if (operacion === "issubset") {
+      $("resumen").innerHTML = "<code>" + L.variable + ".issubset(" + R.variable + ")</code> es <b>" + (prog.booleano ? "True" : "False") + "</b>" +
+        (prog.booleano ? ": todos los de " + esc(L.nombre) + " están también en " + esc(R.nombre) + "." :
+         ": " + res.map(function (x) { return "<code>" + esc(pyStr(x)) + "</code>"; }).join(", ") + (res.length === 1 ? " está" : " están") + " en " + esc(L.nombre) + " pero no en " + esc(R.nombre) + " (en guinda).");
+    } else {
+      $("resumen").innerHTML = "Resultado: <b>" + prog.resultado.length + "</b> " + (prog.resultado.length === 1 ? "nombre" : "nombres") + " (las regiones resaltadas).";
+    }
+    var expl = {
+      union: "<b>Unión</b>: los nombres que están en al menos uno de los dos conjuntos, sin repetir.",
+      intersection: "<b>Intersección</b>: solo los nombres que están en los dos conjuntos.",
+      difference: "<b>Diferencia</b>: los nombres del conjunto izquierdo que no están en el derecho. Si inviertes los conjuntos, cambia.",
+      symmetric_difference: "<b>Diferencia simétrica</b>: los nombres que están en uno solo de los dos conjuntos (la unión menos la intersección).",
+      issubset: "<b>Subconjunto</b>: <code>a &lt;= b</code> (o <code>a.issubset(b)</code>) es True si todos los elementos de a también están en b."
+    }[operacion];
+    var vacio = prog.booleano === null && !prog.resultado.length;
+    $("lectura1").innerHTML = expl + " Cada operación crea un conjunto <b>nuevo</b>; los originales no cambian." +
+      (prog.booleano === null ? " <br><b>¿Por qué <code>sorted</code>?</b> Un set no tiene orden: <code>print(resultado)</code> mostraría los mismos nombres entre llaves, pero con textos el orden puede cambiar cada vez que corres el programa. <code>sorted(resultado)</code> da una lista ordenada que siempre sale igual." : "") +
+      (vacio ? " Aquí el resultado está vacío: <code>print(resultado)</code> imprimiría <code>set()</code> (y no <code>{}</code>, que es un diccionario vacío)." : "");
+  }
+
+  // ---------- Vista 2: quitar duplicados e in ----------
+  function vista2() {
+    var lista = leerNombres($("lista").value).slice(0, 40), buscado = $("buscar").value.trim();
+    var prog = programaDuplicados(lista, buscado);
+    mostrarCodigo($("codigo2"), prog.codigo, 2);
+    $("salida2").textContent = prog.salida;
+    var vistos = new Set();
+    $("chipsLista").className = "chips" + (lista.length ? "" : " vacio");
+    $("chipsLista").innerHTML = lista.length ? lista.map(function (x) {
+      var rep = vistos.has(x); vistos.add(x);
+      return '<li' + (rep ? ' class="repetido" title="repetido"' : "") + ">" + esc(pyStr(x)) + (rep ? '<span class="oculto"> (repetido)</span>' : "") + "</li>";
+    }).join("") : "<li>(la lista está vacía)</li>";
+    var orden = ordenar(prog.unicos);
+    $("chipsSet").className = "chips" + (orden.length ? "" : " vacio");
+    $("chipsSet").innerHTML = orden.length ? orden.map(function (x) { return '<li class="unico">' + esc(pyStr(x)) + "</li>"; }).join("") : "<li>(vacío: set())</li>";
+    var esta = prog.unicos.indexOf(buscado) >= 0;
+    $("lectura2").innerHTML = "<code>set(asistencia)</code> deja cada nombre <b>una sola vez</b>: de " + lista.length + " anotaciones quedan " + prog.unicos.length + " personas distintas. " +
+      "<code>" + esc(pyLiteral(buscado)) + " in unicos</code> pregunta si el nombre está en el conjunto: " + (esta ? "<b>True</b>." : "<b>False</b>.") +
+      " Con un set, <code>in</code> va directo a buscarlo, sin revisar los nombres uno por uno (mira <a href=\"semana-06-complejidad.html\">¿Cuántos pasos tarda?</a>).";
+  }
+
+  function dibujarTodo() {
+    if ($("v1").classList.contains("activo")) vista1(); else vista2();
+  }
+
+  // ---------- Eventos ----------
+  $("ops").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-op]");
+    if (!b) return;
+    operacion = b.dataset.op;
+    document.querySelectorAll("#ops button").forEach(function (x) { x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
+    vista1();
+  });
+  ["setA", "setB", "setC", "izq", "der"].forEach(function (id) { $(id).addEventListener("input", vista1); });
+  ["izq", "der"].forEach(function (id) { $(id).addEventListener("change", vista1); });
+  document.querySelectorAll('input[name="forma"]').forEach(function (r) { r.addEventListener("change", vista1); });
+  $("usarC").addEventListener("change", function () {
+    $("cajaC").hidden = !$("usarC").checked;
+    llenarOperandos();
+    vista1();
+  });
+  ["lista", "buscar"].forEach(function (id) { $(id).addEventListener("input", vista2); });
+  var anchoPrevio = 0;
+  window.addEventListener("resize", function () {
+    var w = $("venn").clientWidth;
+    if (w !== anchoPrevio) { anchoPrevio = w; dibujarTodo(); }
+  });
+  llenarOperandos();
+  $("der").value = "1";
+  dibujarTodo();
+})();
+</script>
+<div id="qr-sitio" class="qr-capa" hidden>
+  <div class="qr-caja" role="dialog" aria-modal="true" aria-label="Código QR de esta página">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 45" role="img" aria-label="Código QR de https://memosanchezg.github.io/programacion-basica-interactivos/semana-06-conjuntos.html" shape-rendering="crispEdges"><rect width="45" height="45" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM12 2h1v1h-1zM17 2h2v1h-2zM20 2h3v1h-3zM24 2h3v1h-3zM30 2h2v1h-2zM33 2h2v1h-2zM36 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM11 3h4v1h-4zM16 3h2v1h-2zM20 3h1v1h-1zM24 3h1v1h-1zM26 3h1v1h-1zM29 3h3v1h-3zM34 3h1v1h-1zM36 3h1v1h-1zM42 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM10 4h4v1h-4zM21 4h2v1h-2zM26 4h1v1h-1zM28 4h7v1h-7zM36 4h1v1h-1zM38 4h3v1h-3zM42 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h1v1h-1zM12 5h4v1h-4zM18 5h1v1h-1zM20 5h2v1h-2zM23 5h2v1h-2zM26 5h1v1h-1zM33 5h2v1h-2zM36 5h1v1h-1zM38 5h3v1h-3zM42 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h3v1h-3zM15 6h3v1h-3zM21 6h1v1h-1zM25 6h1v1h-1zM28 6h1v1h-1zM30 6h5v1h-5zM36 6h1v1h-1zM38 6h3v1h-3zM42 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h6v1h-6zM17 7h1v1h-1zM22 7h1v1h-1zM26 7h1v1h-1zM29 7h2v1h-2zM34 7h1v1h-1zM36 7h1v1h-1zM42 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM30 8h1v1h-1zM32 8h1v1h-1zM34 8h1v1h-1zM36 8h7v1h-7zM10 9h1v1h-1zM13 9h1v1h-1zM15 9h4v1h-4zM20 9h1v1h-1zM23 9h1v1h-1zM25 9h2v1h-2zM28 9h1v1h-1zM33 9h2v1h-2zM2 10h1v1h-1zM4 10h5v1h-5zM12 10h2v1h-2zM15 10h5v1h-5zM22 10h1v1h-1zM24 10h1v1h-1zM27 10h3v1h-3zM31 10h1v1h-1zM36 10h5v1h-5zM4 11h2v1h-2zM9 11h1v1h-1zM12 11h1v1h-1zM14 11h1v1h-1zM19 11h5v1h-5zM25 11h1v1h-1zM27 11h1v1h-1zM30 11h1v1h-1zM32 11h3v1h-3zM36 11h3v1h-3zM40 11h3v1h-3zM2 12h2v1h-2zM5 12h5v1h-5zM11 12h4v1h-4zM22 12h2v1h-2zM29 12h4v1h-4zM34 12h4v1h-4zM2 13h2v1h-2zM5 13h1v1h-1zM10 13h2v1h-2zM14 13h1v1h-1zM18 13h1v1h-1zM23 13h2v1h-2zM28 13h1v1h-1zM32 13h4v1h-4zM38 13h2v1h-2zM41 13h1v1h-1zM2 14h2v1h-2zM6 14h4v1h-4zM12 14h3v1h-3zM16 14h1v1h-1zM18 14h2v1h-2zM21 14h1v1h-1zM24 14h1v1h-1zM27 14h3v1h-3zM31 14h1v1h-1zM33 14h1v1h-1zM37 14h1v1h-1zM39 14h2v1h-2zM6 15h1v1h-1zM9 15h2v1h-2zM17 15h1v1h-1zM19 15h2v1h-2zM22 15h3v1h-3zM26 15h1v1h-1zM29 15h2v1h-2zM32 15h1v1h-1zM36 15h7v1h-7zM2 16h1v1h-1zM5 16h9v1h-9zM15 16h2v1h-2zM18 16h4v1h-4zM24 16h1v1h-1zM31 16h2v1h-2zM35 16h1v1h-1zM37 16h1v1h-1zM40 16h1v1h-1zM6 17h2v1h-2zM11 17h2v1h-2zM14 17h1v1h-1zM16 17h1v1h-1zM20 17h4v1h-4zM26 17h1v1h-1zM28 17h1v1h-1zM30 17h1v1h-1zM34 17h1v1h-1zM36 17h2v1h-2zM39 17h1v1h-1zM41 17h1v1h-1zM4 18h2v1h-2zM7 18h5v1h-5zM13 18h3v1h-3zM19 18h1v1h-1zM21 18h1v1h-1zM27 18h2v1h-2zM31 18h3v1h-3zM35 18h1v1h-1zM37 18h1v1h-1zM40 18h1v1h-1zM4 19h4v1h-4zM9 19h4v1h-4zM16 19h1v1h-1zM19 19h1v1h-1zM21 19h3v1h-3zM25 19h3v1h-3zM30 19h1v1h-1zM32 19h3v1h-3zM36 19h4v1h-4zM41 19h2v1h-2zM2 20h3v1h-3zM7 20h2v1h-2zM10 20h7v1h-7zM19 20h1v1h-1zM22 20h2v1h-2zM27 20h4v1h-4zM32 20h1v1h-1zM35 20h1v1h-1zM38 20h2v1h-2zM41 20h1v1h-1zM4 21h1v1h-1zM12 21h3v1h-3zM16 21h1v1h-1zM19 21h6v1h-6zM27 21h1v1h-1zM29 21h2v1h-2zM33 21h3v1h-3zM38 21h2v1h-2zM41 21h2v1h-2zM3 22h2v1h-2zM7 22h4v1h-4zM17 22h2v1h-2zM21 22h1v1h-1zM23 22h1v1h-1zM25 22h2v1h-2zM28 22h2v1h-2zM32 22h1v1h-1zM39 22h3v1h-3zM2 23h2v1h-2zM6 23h1v1h-1zM10 23h1v1h-1zM12 23h1v1h-1zM14 23h1v1h-1zM16 23h10v1h-10zM27 23h1v1h-1zM30 23h1v1h-1zM33 23h2v1h-2zM36 23h7v1h-7zM3 24h2v1h-2zM7 24h2v1h-2zM11 24h3v1h-3zM15 24h4v1h-4zM20 24h1v1h-1zM22 24h1v1h-1zM24 24h1v1h-1zM27 24h4v1h-4zM34 24h1v1h-1zM39 24h2v1h-2zM2 25h2v1h-2zM9 25h1v1h-1zM11 25h1v1h-1zM13 25h1v1h-1zM15 25h1v1h-1zM18 25h1v1h-1zM20 25h2v1h-2zM23 25h2v1h-2zM29 25h1v1h-1zM33 25h3v1h-3zM37 25h1v1h-1zM39 25h1v1h-1zM41 25h1v1h-1zM2 26h1v1h-1zM5 26h1v1h-1zM8 26h2v1h-2zM11 26h2v1h-2zM16 26h1v1h-1zM19 26h1v1h-1zM25 26h7v1h-7zM33 26h1v1h-1zM39 26h4v1h-4zM2 27h1v1h-1zM4 27h1v1h-1zM6 27h2v1h-2zM12 27h1v1h-1zM15 27h2v1h-2zM19 27h1v1h-1zM21 27h3v1h-3zM25 27h1v1h-1zM27 27h1v1h-1zM30 27h1v1h-1zM32 27h2v1h-2zM35 27h5v1h-5zM42 27h1v1h-1zM5 28h4v1h-4zM10 28h1v1h-1zM13 28h2v1h-2zM16 28h1v1h-1zM18 28h1v1h-1zM20 28h1v1h-1zM22 28h1v1h-1zM26 28h5v1h-5zM32 28h1v1h-1zM34 28h1v1h-1zM37 28h2v1h-2zM2 29h3v1h-3zM6 29h1v1h-1zM12 29h7v1h-7zM21 29h4v1h-4zM26 29h1v1h-1zM28 29h1v1h-1zM30 29h1v1h-1zM33 29h3v1h-3zM38 29h2v1h-2zM41 29h2v1h-2zM3 30h1v1h-1zM5 30h1v1h-1zM7 30h3v1h-3zM11 30h1v1h-1zM15 30h1v1h-1zM17 30h3v1h-3zM22 30h1v1h-1zM24 30h5v1h-5zM30 30h2v1h-2zM33 30h1v1h-1zM39 30h2v1h-2zM42 30h1v1h-1zM2 31h2v1h-2zM6 31h1v1h-1zM11 31h3v1h-3zM15 31h3v1h-3zM20 31h1v1h-1zM27 31h1v1h-1zM29 31h1v1h-1zM31 31h6v1h-6zM38 31h1v1h-1zM40 31h1v1h-1zM42 31h1v1h-1zM2 32h1v1h-1zM4 32h1v1h-1zM8 32h4v1h-4zM14 32h3v1h-3zM18 32h1v1h-1zM22 32h10v1h-10zM34 32h4v1h-4zM39 32h1v1h-1zM2 33h1v1h-1zM4 33h4v1h-4zM10 33h1v1h-1zM12 33h1v1h-1zM14 33h1v1h-1zM23 33h3v1h-3zM29 33h1v1h-1zM34 33h4v1h-4zM39 33h1v1h-1zM41 33h2v1h-2zM2 34h1v1h-1zM5 34h2v1h-2zM8 34h1v1h-1zM12 34h1v1h-1zM15 34h3v1h-3zM19 34h1v1h-1zM24 34h6v1h-6zM31 34h1v1h-1zM33 34h6v1h-6zM40 34h1v1h-1zM42 34h1v1h-1zM10 35h1v1h-1zM12 35h1v1h-1zM16 35h3v1h-3zM20 35h3v1h-3zM25 35h2v1h-2zM30 35h2v1h-2zM33 35h2v1h-2zM38 35h1v1h-1zM41 35h2v1h-2zM2 36h7v1h-7zM11 36h1v1h-1zM13 36h1v1h-1zM17 36h2v1h-2zM20 36h1v1h-1zM22 36h1v1h-1zM24 36h1v1h-1zM29 36h3v1h-3zM33 36h2v1h-2zM36 36h1v1h-1zM38 36h1v1h-1zM40 36h1v1h-1zM2 37h1v1h-1zM8 37h1v1h-1zM10 37h1v1h-1zM14 37h1v1h-1zM16 37h2v1h-2zM21 37h1v1h-1zM26 37h1v1h-1zM28 37h1v1h-1zM31 37h4v1h-4zM38 37h2v1h-2zM2 38h1v1h-1zM4 38h3v1h-3zM8 38h1v1h-1zM10 38h1v1h-1zM12 38h1v1h-1zM14 38h2v1h-2zM17 38h2v1h-2zM20 38h1v1h-1zM23 38h2v1h-2zM26 38h1v1h-1zM29 38h1v1h-1zM34 38h5v1h-5zM40 38h1v1h-1zM2 39h1v1h-1zM4 39h3v1h-3zM8 39h1v1h-1zM10 39h2v1h-2zM15 39h1v1h-1zM18 39h1v1h-1zM21 39h2v1h-2zM25 39h2v1h-2zM28 39h1v1h-1zM30 39h4v1h-4zM35 39h1v1h-1zM37 39h1v1h-1zM2 40h1v1h-1zM4 40h3v1h-3zM8 40h1v1h-1zM10 40h1v1h-1zM12 40h1v1h-1zM14 40h1v1h-1zM16 40h5v1h-5zM22 40h1v1h-1zM24 40h1v1h-1zM26 40h2v1h-2zM29 40h2v1h-2zM34 40h7v1h-7zM2 41h1v1h-1zM8 41h1v1h-1zM11 41h3v1h-3zM15 41h1v1h-1zM17 41h1v1h-1zM23 41h1v1h-1zM25 41h1v1h-1zM28 41h3v1h-3zM34 41h2v1h-2zM38 41h1v1h-1zM41 41h1v1h-1zM2 42h7v1h-7zM10 42h2v1h-2zM15 42h1v1h-1zM17 42h5v1h-5zM24 42h5v1h-5zM31 42h1v1h-1zM33 42h1v1h-1zM35 42h4v1h-4zM40 42h1v1h-1z"/></svg>
+    <p class="qr-texto">Escanea con la cámara del celular para abrir esta página</p>
+    <p class="qr-url">https://memosanchezg.github.io/programacion-basica-interactivos/semana-06-conjuntos.html</p>
+    <button type="button" class="qr-cerrar">Cerrar</button>
+  </div>
+</div>
+<style>
+  .qr-capa { position:fixed; top:0; right:0; bottom:0; left:0; z-index:10000; display:flex; align-items:center;
+             justify-content:center; padding:16px; background:#fff; }
+  .qr-capa[hidden] { display:none; }
+  .qr-caja { max-width:100%; text-align:center; color:#0A2A57; font:16px/1.4 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .qr-caja svg { display:block; width:min(62vh, 84vw); height:auto; margin:0 auto; }
+  .qr-texto { margin:12px 0 2px; font-size:1.15rem; font-weight:bold; }
+  .qr-url { margin:0 0 12px; color:#5B6472; word-break:break-all; }
+  .qr-cerrar { font:inherit; padding:6px 20px; border:2px solid #00408F; border-radius:4px; background:#fff;
+               color:#00408F; cursor:pointer; }
+</style>
+<script>
+  (function () {
+    var capa = document.getElementById("qr-sitio");
+    document.querySelectorAll("a.qr-abrir").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        capa.hidden = false;
+        capa.querySelector(".qr-cerrar").focus();
+      });
+    });
+    capa.addEventListener("click", function (e) {
+      if (e.target === capa || e.target.classList.contains("qr-cerrar")) capa.hidden = true;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !capa.hidden) capa.hidden = true;
+    });
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,601 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="tipo" content="simulador">
+<title>¿Qué bloque es?</title>
+
+<style>
+  :root {
+    --azul:#00408F; --azul-oscuro:#0A2A57; --guinda:#8C1D35; --oro:#B8975A; --oro-texto:#8A6A2E;
+    --azul-claro:#E8EEF7; --oro-claro:#F7F1E6; --guinda-claro:#F5E6EA; --verde:#2F7D5B;
+    --tinta:#1B1F2A; --gris:#5B6472; --gris-claro:#E9ECF1; --borde:#D9DEE6; --fondo:#FFFFFF;
+    --cmd-fondo:#0C0C0C; --cmd-texto:#E6E6E6;
+    --b1:#00408F; --b2:#8C1D35; --b3:#2F7D5B; --b4:#8A6A2E;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--fondo); color:var(--tinta);
+         font:16px/1.45 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .franja { height:8px; background:var(--azul); border-bottom:3px solid var(--oro); }
+  header { max-width:1280px; margin:0 auto; padding:12px 18px 4px; }
+  .semana { color:var(--guinda); font-weight:bold; letter-spacing:.04em; font-size:.85rem; text-transform:uppercase; }
+  h1 { font-family:Cambria,Georgia,serif; color:var(--azul-oscuro); font-size:1.7rem; margin:2px 0 2px; }
+  .sub { color:var(--gris); margin:0; }
+  main { max-width:1280px; margin:0 auto; padding:8px 18px 24px; }
+  .fila { display:grid; grid-template-columns:minmax(0,1.2fr) minmax(280px,1fr); gap:16px; align-items:start; }
+  .fila > * { min-width:0; }
+  .panel { background:#fff; border:1px solid var(--borde); border-radius:10px; padding:12px 14px; min-width:0; }
+  .panel h2 { font-size:1.02rem; color:var(--azul-oscuro); margin:0 0 8px; }
+  button.accion { font:inherit; font-weight:bold; border-radius:8px; padding:7px 12px; margin:8px 6px 0 0;
+                  border:1px solid var(--azul); background:#fff; color:var(--azul); cursor:pointer; }
+  button.accion:hover:not(:disabled), button.accion:focus-visible { background:var(--azul); color:#fff; outline:none; }
+  button.accion.primaria { background:var(--azul); color:#fff; }
+  button.accion.primaria:hover, button.accion.primaria:focus-visible { background:var(--azul-oscuro); }
+  button.accion:disabled { opacity:.45; cursor:default; }
+  .lectura { background:var(--oro-claro); border-left:4px solid var(--oro); border-radius:8px; padding:10px 12px;
+             margin-top:12px; line-height:1.55; }
+  .lectura b { color:var(--azul-oscuro); }
+  .ok { color:var(--verde); font-weight:bold; }
+  .mal { color:var(--guinda); font-weight:bold; }
+  .preguntas { background:var(--azul-claro); border-radius:8px; padding:10px 14px; margin-top:12px; }
+  .preguntas h3 { margin:0 0 4px; font-size:.95rem; color:var(--azul-oscuro); }
+  .preguntas ol { margin:0; padding-left:20px; }
+  .consola { background:var(--cmd-fondo); color:var(--cmd-texto); font:15px/1.45 Consolas,"Courier New",monospace;
+             white-space:pre; overflow-x:auto; padding:8px 12px; border-radius:4px; margin:8px 0; min-height:2.2em; }
+  footer { max-width:1280px; margin:0 auto; padding:6px 18px 18px; color:var(--gris); font-size:.85rem; }
+  footer a { color:var(--azul); }
+  @media (max-width: 860px) { .fila { grid-template-columns:1fr; } }
+
+  /* Propios de este juego */
+  [hidden] { display:none !important; }
+  code { font-family:Consolas,"Courier New",monospace; color:var(--azul-oscuro); }
+  .marcador { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:4px 12px; }
+  .marcador .ronda { font-weight:bold; color:var(--guinda); text-transform:uppercase; letter-spacing:.04em; font-size:.85rem; }
+  .marcador .puntos { font-weight:bold; color:var(--azul-oscuro); }
+  .rondas { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 4px; padding:0; list-style:none; }
+  .rondas button { width:30px; height:30px; border-radius:50%; border:2px solid var(--borde); background:#fff;
+                   font:bold 13px Calibri,"Segoe UI",sans-serif; color:var(--gris); cursor:pointer; padding:0; }
+  .rondas button.actual { border-color:var(--azul); color:var(--azul-oscuro); }
+  .rondas button.bien { background:var(--verde); border-color:var(--verde); color:#fff; }
+  .rondas button.mal { background:var(--guinda); border-color:var(--guinda); color:#fff; }
+  .rondas button:focus-visible { outline:2px solid var(--azul); outline-offset:2px; }
+  .etiqueta { display:inline-block; font-size:.85rem; font-weight:bold; border-radius:999px; padding:1px 10px;
+              border:1px solid var(--guinda); color:var(--guinda); margin:6px 0 2px; }
+  .pregunta { font:bold 1.1rem/1.35 Cambria,Georgia,serif; color:var(--azul-oscuro); margin:6px 0; }
+  /* Código como lista de renglones (botones en las rondas de bloques) */
+  .prog { border:1px solid var(--tinta); background:#fff; font:15px/1.5 Consolas,"Courier New",monospace; margin:8px 0;
+          overflow-x:auto; padding:6px 0; }
+  .prog .r { display:flex; align-items:stretch; width:100%; min-width:max-content; border:0; background:none; font:inherit;
+             text-align:left; padding:0 10px 0 0; color:var(--tinta); }
+  .prog button.r { cursor:pointer; }
+  .prog button.r:hover { background:var(--gris-claro); }
+  .prog button.r:focus-visible { outline:2px solid var(--azul); outline-offset:-2px; }
+  .prog .num { flex:0 0 2.6em; text-align:right; padding-right:.8em; color:var(--gris); font:11px/1.9 Cambria,Georgia,serif; user-select:none; }
+  .prog .txt { white-space:pre; }
+  .prog .kw { color:#000080; font-weight:bold; }
+  .prog .str, .prog .num-py { color:#0000FF; }
+  .prog .com { color:#008800; font-style:italic; }
+  .prog .r.marcada { background:var(--oro-claro); box-shadow:inset 4px 0 0 var(--guinda); }
+  .prog .r.dueno { background:#EAF4EF; box-shadow:inset 4px 0 0 var(--verde); }
+  .prog .r.elegida-mal { background:var(--guinda-claro); }
+  .prog .g { display:inline-block; width:4ch; white-space:pre; }
+  .prog .g.v1 { box-shadow:inset 2px 0 0 var(--b1); }
+  .prog .g.v2 { box-shadow:inset 2px 0 0 var(--b2); }
+  .prog .g.v3 { box-shadow:inset 2px 0 0 var(--b3); }
+  .prog .g.v4 { box-shadow:inset 2px 0 0 var(--b4); }
+  .opciones { display:grid; gap:8px; margin-top:6px; }
+  .opciones button { font:inherit; text-align:left; border:2px solid var(--azul); border-radius:10px; background:#fff;
+                     color:var(--azul-oscuro); padding:8px 10px; cursor:pointer; min-width:0; }
+  .opciones button:hover:not(:disabled), .opciones button:focus-visible { background:var(--azul-claro); outline:none; }
+  .opciones button:disabled { cursor:default; opacity:.6; }
+  .opciones button.correcta { border-color:var(--verde); background:#EAF4EF; opacity:1; }
+  .opciones button.incorrecta { border-color:var(--guinda); background:var(--guinda-claro); opacity:1; }
+  .opciones .mini { display:block; background:var(--cmd-fondo); color:var(--cmd-texto); font:14px/1.4 Consolas,"Courier New",monospace;
+                    white-space:pre; overflow-x:auto; padding:6px 10px; border-radius:4px; margin-top:4px; }
+  .opciones .msg { font-family:Consolas,"Courier New",monospace; font-size:.95rem; overflow-wrap:anywhere; }
+  .tutor.bien { background:#EAF4EF; border-left-color:var(--verde); }
+  .tutor.mal { background:var(--guinda-claro); border-left-color:var(--guinda); }
+  .aviso { color:var(--guinda); font-size:.95rem; margin:6px 0 0; }
+  ol.partes { list-style:none; margin:6px 0 0; padding:0; display:grid; grid-template-columns:minmax(0,1fr); gap:8px; }
+  ol.partes li { border:1px solid var(--borde); border-radius:8px; padding:6px 8px; display:flex; gap:8px; align-items:flex-start; background:#fff; min-width:0; }
+  ol.partes li.ok-parte { border-color:var(--verde); background:#F3F9F5; }
+  ol.partes li.mal-parte { border-color:var(--guinda); background:var(--guinda-claro); }
+  ol.partes .pos { font-weight:bold; color:var(--guinda); min-width:1.4em; }
+  ol.partes pre { margin:0; font:14px/1.45 Consolas,"Courier New",monospace; white-space:pre; overflow-x:auto; flex:1; min-width:0; }
+  ol.partes .botones { display:flex; flex-direction:column; gap:4px; }
+  ol.partes .botones button { font:bold 14px Calibri,"Segoe UI",sans-serif; border:1px solid var(--azul); background:#fff; color:var(--azul);
+                              border-radius:6px; width:34px; height:28px; cursor:pointer; padding:0; }
+  ol.partes .botones button:disabled { opacity:.35; cursor:default; }
+  ol.partes .botones button:focus-visible { outline:2px solid var(--azul); }
+  ol.partes .nombre { display:block; font-size:.85rem; color:var(--verde); font-weight:bold; }
+  .puntos-grande { font:bold 1.15rem Cambria,Georgia,serif; color:var(--azul-oscuro); }
+  table.resumen { border-collapse:collapse; width:100%; margin-top:8px; font-size:.95rem; }
+  table.resumen th, table.resumen td { border-bottom:1px solid var(--gris-claro); padding:5px 6px; text-align:left; vertical-align:top; }
+  table.resumen th { color:var(--azul-oscuro); }
+  table.resumen td.n { text-align:right; white-space:nowrap; }
+  .tabla-scroll { overflow-x:auto; }
+  .sub2 { color:var(--gris); font-size:.9rem; margin:4px 0 0; }
+  @media (max-width: 480px) {
+    header { padding:10px 12px 4px; }
+    main { padding:8px 10px 20px; }
+    footer { padding:6px 12px 16px; }
+    .panel { padding:10px; }
+    h1 { font-size:1.45rem; }
+    .prog, .consola { font-size:13px; }
+    .opciones .mini { font-size:12.5px; }
+    .rondas button { width:28px; height:28px; }
+  }
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header>
+  <div class="semana">Semana 02 · Python desde un enfoque profesional</div>
+  <h1>¿Qué bloque es?</h1>
+  <p class="sub">12 rondas sobre la sangría: a qué bloque pertenece cada línea, qué imprime el programa, qué dice Python cuando la sangría está mal y cómo se ordena un programa bien hecho.</p>
+</header>
+<main>
+  <div class="fila" id="vista-juego">
+    <div class="panel">
+      <div class="marcador">
+        <span class="ronda" id="txt-ronda">Ronda 1 de 12</span>
+        <span class="puntos" id="txt-puntos">0 puntos</span>
+      </div>
+      <ul class="rondas" id="rondas" aria-label="Rondas"></ul>
+      <span class="etiqueta" id="etiqueta"></span>
+      <p class="pregunta" id="pregunta"></p>
+      <div id="programa"></div>
+      <div id="corrida"></div>
+    </div>
+    <div class="panel">
+      <h2 id="titulo-respuesta">Tu respuesta</h2>
+      <div id="respuesta"></div>
+      <p class="aviso" id="aviso" aria-live="polite"></p>
+      <div class="lectura tutor" id="tutor" aria-live="polite" hidden></div>
+      <button type="button" class="accion primaria" id="siguiente" hidden>Siguiente ronda</button>
+      <p class="sub2">10 puntos por ronda si aciertas al primer intento. Tu avance se guarda en este navegador.</p>
+      <button type="button" class="accion" id="reiniciar">Empezar de nuevo</button>
+    </div>
+  </div>
+
+  <div class="panel" id="vista-resumen" hidden>
+    <h2>Resumen</h2>
+    <p class="puntos-grande" id="total"></p>
+    <div class="tabla-scroll"><table class="resumen" id="tabla-resumen"></table></div>
+    <div>
+      <button type="button" class="accion primaria" id="repasar">Repasar las que fallé</button>
+      <button type="button" class="accion" id="otra-vez">Jugar otra vez</button>
+    </div>
+    <div class="preguntas">
+      <h3>Para pensar</h3>
+      <ol>
+        <li>¿Cómo sabe Python dónde termina un bloque?</li>
+        <li>En <code>sangrias.py</code> un bloque usa 2 espacios y otro 8, y aun así corre. ¿Por qué se recomienda usar siempre 4?</li>
+        <li>¿Por qué un error de sangría en la línea 4 impide que se ejecute incluso la línea 1?</li>
+        <li>En <code>multiplos3.py</code>, ¿cuántas veces se ejecuta el <code>print</code> en cada una de las tres posiciones, y por qué?</li>
+      </ol>
+    </div>
+  </div>
+</main>
+<footer>
+  Programación Básica · FCFM-UANL · funciona sin internet. Las salidas y los mensajes son los de Python 3.12 en la terminal de Windows.
+  <a href="index.html">Índice de simuladores</a> · <a href="#qr-sitio" class="qr-abrir">Abrir en el celular (QR)</a>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(t) {
+    return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  var PROMPT = "C:\\Users\\alumno\\Documents\\programacion>";
+
+  // ---------- Programas y sus salidas reales (Python 3.12.14, Windows) ----------
+  var P = {
+    clima: { archivo: "clima.py", codigo: "temperatura = 34\nif temperatura > 30:\n    print(\"Hace calor\")\n    print(\"Toma agua\")\nelse:\n    print(\"Clima agradable\")\nprint(\"Fin del reporte\")\n", salida: "Hace calor\nToma agua\nFin del reporte\n" },
+    aprobado: { archivo: "aprobado.py", codigo: "calificacion = 85\nprint(\"Revisando...\")\nif calificacion >= 70:\nprint(\"Aprobado\")\n", salida: "  File \"C:\\Users\\alumno\\Documents\\programacion\\aprobado.py\", line 4\n    print(\"Aprobado\")\n    ^^^^^\nIndentationError: expected an indented block after 'if' statement on line 3\n" },
+    ventas: { archivo: "ventas.py", codigo: "ventas = 0\nfor dia in range(1, 4):\n    print(\"Día\", dia)\n    if dia == 2:\n        print(\"Día de descuento\")\n    ventas = ventas + 100\nprint(\"Ventas:\", ventas)\n", salida: "Día 1\nDía 2\nDía de descuento\nDía 3\nVentas: 300\n" },
+    suma: { archivo: "suma.py", codigo: "suma = 0\nfor n in range(5, 20, 5):\n    suma = suma + n\n    print(\"Suma:\", suma)\n", salida: "Suma: 5\nSuma: 15\nSuma: 30\n" },
+    suma_bien: { archivo: "suma.py", codigo: "suma = 0\nfor n in range(5, 20, 5):\n    suma = suma + n\nprint(\"Suma:\", suma)\n", salida: "Suma: 30\n" },
+    suma_mal1: { archivo: "suma.py", codigo: "suma = 0\nfor n in range(5, 20, 5):\n    suma = suma + n\n    print(\"Suma:\", n)\n", salida: "Suma: 5\nSuma: 10\nSuma: 15\n" },
+    vueltas: { archivo: "vueltas.py", codigo: "for vuelta in range(3):\n    print(\"Vuelta\", vuelta)\n  print(\"Listo\")\n", salida: "  File \"C:\\Users\\alumno\\Documents\\programacion\\vueltas.py\", line 3\n    print(\"Listo\")\n                  ^\nIndentationError: unindent does not match any outer indentation level\n" },
+    saldo: { archivo: "saldo.py", codigo: "saldo = 500\nwhile saldo > 0:\n    saldo = saldo - 200\n    if saldo < 0:\n        print(\"Te faltan\", -saldo)\n    else:\n        print(\"Te quedan\", saldo)\nprint(\"Sin saldo\")\n", salida: "Te quedan 300\nTe quedan 100\nTe faltan 100\nSin saldo\n" },
+    multiplos_a: { archivo: "multiplos3.py", codigo: "cuantos = 0\nfor n in range(1, 11):\n    if n % 3 == 0:\n        cuantos = cuantos + 1\n        print(\"Múltiplos de 3:\", cuantos)\n", salida: "Múltiplos de 3: 1\nMúltiplos de 3: 2\nMúltiplos de 3: 3\n" },
+    multiplos_b: { archivo: "multiplos3.py", codigo: "cuantos = 0\nfor n in range(1, 11):\n    if n % 3 == 0:\n        cuantos = cuantos + 1\n    print(\"Múltiplos de 3:\", cuantos)\n", salida: "Múltiplos de 3: 0\nMúltiplos de 3: 0\nMúltiplos de 3: 1\nMúltiplos de 3: 1\nMúltiplos de 3: 1\nMúltiplos de 3: 2\nMúltiplos de 3: 2\nMúltiplos de 3: 2\nMúltiplos de 3: 3\nMúltiplos de 3: 3\n" },
+    multiplos_c: { archivo: "multiplos3.py", codigo: "cuantos = 0\nfor n in range(1, 11):\n    if n % 3 == 0:\n        cuantos = cuantos + 1\nprint(\"Múltiplos de 3:\", cuantos)\n", salida: "Múltiplos de 3: 3\n" },
+    descuento: { archivo: "descuento.py", codigo: "precio = 80\n    descuento = 10\nprint(precio - descuento)\n", salida: "  File \"C:\\Users\\alumno\\Documents\\programacion\\descuento.py\", line 2\n    descuento = 10\nIndentationError: unexpected indent\n" },
+    tabla: { archivo: "tablas.py", codigo: "def tabla(n):\n    for i in range(1, 4):\n        print(n, \"x\", i, \"=\", n * i)\n    print(\"---\")\n\ntabla(7)\ntabla(9)\n", salida: "7 x 1 = 7\n7 x 2 = 14\n7 x 3 = 21\n---\n9 x 1 = 9\n9 x 2 = 18\n9 x 3 = 27\n---\n" },
+    estrellas: { archivo: "estrellas.py", codigo: "for fila in range(1, 4):\n    linea = \"\"\n    for col in range(fila):\n        linea = linea + \"*\"\n    print(linea)\n", salida: "*\n**\n***\n" },
+    estrellas_b: { archivo: "estrellas.py", codigo: "for fila in range(1, 4):\n    linea = \"\"\n    for col in range(fila):\n        linea = linea + \"*\"\n        print(linea)\n", salida: "*\n*\n**\n*\n**\n***\n" },
+    estrellas_c: { archivo: "estrellas.py", codigo: "for fila in range(1, 4):\n    linea = \"\"\n    for col in range(fila):\n        linea = linea + \"*\"\nprint(linea)\n", salida: "***\n" },
+    mezcla: { archivo: "sangrias.py", codigo: "x = 3\nif x > 0:\n  print(\"positivo\")\nfor i in range(2):\n        print(i)\n", salida: "positivo\n0\n1\n" },
+    estructura: { archivo: "circulos.py", codigo: "\"\"\"Calcula el área de un círculo.\"\"\"\n\nimport math\n\nDECIMALES = 2\n\n\ndef area_circulo(radio):\n    \"\"\"Regresa el área de un círculo de ese radio.\"\"\"\n    return math.pi * radio ** 2\n\n\nradio = 3\nprint(\"Área:\", round(area_circulo(radio), DECIMALES))\n", salida: "Área: 28.27\n" }
+  };
+
+  // ---------- Las 12 rondas ----------
+  var ESPERA_IF = "IndentationError: expected an indented block after 'if' statement on line 3";
+  var RONDAS = [
+    { tipo: "bloque", p: "clima", marcada: 4, dueno: 2,
+      explica: "La línea 4 tiene 4 espacios, igual que la 3: las dos forman el bloque del if de la línea 2. El else de la línea 5 regresa a la orilla y abre otro bloque. La línea 7 no tiene sangría: es del programa principal y se ejecuta siempre." },
+    { tipo: "error", p: "aprobado",
+      opciones: ["No hay error: corre e imprime Revisando... y Aprobado", ESPERA_IF, "IndentationError: unexpected indent", "IndentationError: unindent does not match any outer indentation level"],
+      correcta: 1,
+      explica: "Después de una línea que termina en dos puntos, Python espera un bloque con sangría. La línea 4 está pegada a la orilla, así que el if de la línea 3 se quedó sin bloque: Python avisa en la línea 4 y menciona el if de la línea 3. Es un error de sintaxis: ni siquiera se imprimió Revisando..." },
+    { tipo: "bloque", p: "ventas", marcada: 6, dueno: 2,
+      explica: "La línea 6 tiene 4 espacios, no 8: ya salió del if (cuyo bloque es solo la línea 5) y sigue dentro del for. Por eso suma 100 todos los días y no solo el día 2: Ventas: 300." },
+    { tipo: "salida", p: "suma", opciones: ["suma_bien", "suma", "suma_mal1"], arreglo: "suma_bien",
+      pedido: "Se quería sumar 5 + 10 + 15 e imprimir solo el total.",
+      explica: "El print tiene 4 espacios: está dentro del for y se ejecuta en cada vuelta, con la suma que lleva hasta ese momento (5, 15 y 30). Para imprimir solo el total, el print va sin sangría, después del ciclo. Corregido:" },
+    { tipo: "error", p: "vueltas",
+      opciones: ["No hay error: corre e imprime las tres vueltas y Listo", "IndentationError: expected an indented block after 'for' statement on line 1", "IndentationError: unexpected indent", "IndentationError: unindent does not match any outer indentation level"],
+      correcta: 3,
+      explica: "La línea 3 tiene 2 espacios: no coincide con ningún nivel que esté abierto (0 del for o 4 de su bloque), así que Python no sabe a qué bloque pertenece. Con 4 espacios sería parte del for; con 0, iría después del ciclo." },
+    { tipo: "bloque", p: "saldo", marcada: 7, dueno: 6,
+      explica: "La línea 7 tiene 8 espacios y está debajo del else de la línea 6: pertenece al bloque del else. Ese else está dentro del while, pero el bloque más interno que la contiene es el del else." },
+    { tipo: "arreglo", p: "multiplos_a", linea: 5,
+      pedido: "Se quería contar los múltiplos de 3 del 1 al 10 e imprimir el resultado una sola vez.",
+      opciones: [{ texto: "Donde está: dentro del if (8 espacios)", p: "multiplos_a" },
+                 { texto: "Dentro del for, fuera del if (4 espacios)", p: "multiplos_b" },
+                 { texto: "Fuera del for (sin sangría)", p: "multiplos_c" }],
+      correcta: 2,
+      explica: "Dentro del if, el print se ejecuta cada vez que encuentra un múltiplo (3 veces); dentro del for, en cada una de las 10 vueltas; fuera del for, una sola vez al final, ya con el total. Python no avisa nada en ninguno de los tres casos: es un error lógico. Así imprime cada versión:" },
+    { tipo: "error", p: "descuento",
+      opciones: ["No hay error: imprime 70", "IndentationError: expected an indented block after 'if' statement on line 1", "IndentationError: unexpected indent", "IndentationError: unindent does not match any outer indentation level"],
+      correcta: 2,
+      explica: "La línea 2 tiene sangría, pero la línea 1 no abre ningún bloque (no termina en dos puntos). Python no espera sangría ahí: unexpected indent. Ninguna línea se ejecutó." },
+    { tipo: "bloque", p: "tabla", marcada: 4, dueno: 1,
+      explica: "La línea 4 tiene 4 espacios: ya salió del for (cuyo bloque tiene 8) pero sigue dentro de la función. Por eso --- se imprime una vez por cada llamada, al terminar el for. Las líneas 6 y 7 son el programa principal: ahí se llama dos veces a la función." },
+    { tipo: "salida", p: "estrellas", opciones: ["estrellas_c", "estrellas", "estrellas_b"],
+      pedido: "¿Qué imprime este programa?",
+      explica: "print(linea) está dentro del primer for pero fuera del segundo: se ejecuta una vez por fila, cuando la fila ya tiene todas sus estrellas." },
+    { tipo: "error", p: "mezcla",
+      opciones: ["No hay error: corre completo", "IndentationError: expected an indented block after 'for' statement on line 4", "IndentationError: unexpected indent", "IndentationError: unindent does not match any outer indentation level"],
+      correcta: 0,
+      explica: "Python no exige 4 espacios: exige que las líneas de un mismo bloque tengan la misma sangría y que sea mayor que la del encabezado. Aquí un bloque usa 2 y otro 8, y corre. Aun así, la convención (PEP 8) es usar siempre 4: así nadie se confunde." },
+    { tipo: "orden", p: "estructura",
+      partes: [
+        { nombre: "Docstring del módulo: qué hace el archivo", codigo: "\"\"\"Calcula el área de un círculo.\"\"\"" },
+        { nombre: "Imports", codigo: "import math" },
+        { nombre: "Constantes (en MAYÚSCULAS)", codigo: "DECIMALES = 2" },
+        { nombre: "Funciones", codigo: "def area_circulo(radio):\n    \"\"\"Regresa el área de un círculo de ese radio.\"\"\"\n    return math.pi * radio ** 2" },
+        { nombre: "Programa principal", codigo: "radio = 3\nprint(\"Área:\", round(area_circulo(radio), DECIMALES))" }
+      ],
+      inicial: [4, 2, 0, 3, 1],
+      explica: "Un programa bien estructurado empieza con el docstring del módulo (qué hace el archivo), luego los imports, las constantes, las funciones y, al final, el programa principal, que usa todo lo anterior." }
+  ];
+  var ETIQUETAS = { bloque: "¿De qué bloque es?", error: "¿Qué dice Python?", salida: "¿Qué imprime?", arreglo: "Corrige la sangría", orden: "Ordena el programa" };
+
+  // ¿Qué pasa si las partes de la ronda 12 se ordenan así? (comprobado con Python 3.12 en los 120 órdenes)
+  function resultadoOrden(orden) {
+    var pos = [];
+    orden.forEach(function (parte, k) { pos[parte] = k; });
+    if (pos[3] > pos[4]) return "NameError: name 'area_circulo' is not defined";
+    if (pos[1] > pos[4]) return "NameError: name 'math' is not defined. Did you forget to import 'math'?";
+    if (pos[2] > pos[4]) return "NameError: name 'DECIMALES' is not defined";
+    return "Área: 28.27";
+  }
+
+  // ---------- Código con colores y guías de bloques ----------
+  var PY_KW = /^(False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)$/;
+  function pyResaltar(linea) {
+    var html = "", i = 0, m, resto;
+    while (i < linea.length) {
+      resto = linea.slice(i);
+      if ((m = /^#.*/.exec(resto))) { html += '<span class="com">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^("""[\s\S]*?"""|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/.exec(resto))) { html += '<span class="str">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[A-Za-z_À-ɏ][\wÀ-ɏ]*/.exec(resto))) { html += PY_KW.test(m[0]) ? '<span class="kw">' + m[0] + "</span>" : esc(m[0]); }
+      else if ((m = /^\d+/.exec(resto))) { html += '<span class="num-py">' + m[0] + "</span>"; }
+      else { m = [resto[0]]; html += esc(m[0]); }
+      i += m[0].length;
+    }
+    return html;
+  }
+  // Para cada línea: su sangría y la lista de líneas que abren los bloques que la contienen
+  function bloques(codigo) {
+    var lineas = codigo.replace(/\n$/, "").split("\n"), pila = [], res = [];
+    lineas.forEach(function (l, k) {
+      var sangria = /^ */.exec(l)[0].length;
+      if (l.trim() === "") { res.push({ sangria: 0, duenos: [], vacia: true }); return; }
+      while (pila.length && pila[pila.length - 1].sangria >= sangria) pila.pop();
+      res.push({ sangria: sangria, duenos: pila.map(function (x) { return x.linea; }) });
+      if (/:\s*$/.test(l)) pila.push({ sangria: sangria, linea: k + 1 });
+    });
+    return res;
+  }
+  function esEncabezado(codigo, n) {
+    var l = codigo.replace(/\n$/, "").split("\n")[n - 1];
+    return /:\s*$/.test(l);
+  }
+  // opciones: {botones, marcada, dueno, guias, elegidaMal}
+  function pintarPrograma(el, prog, op) {
+    op = op || {};
+    var lineas = prog.codigo.replace(/\n$/, "").split("\n"), info = bloques(prog.codigo);
+    var etiqueta = "Programa " + prog.archivo + (op.botones ? ": toca la línea que abre el bloque" : "");
+    el.innerHTML = '<div class="prog" role="group" aria-label="' + esc(etiqueta) + '">' + lineas.map(function (l, k) {
+      var n = k + 1, cl = ["r"], texto;
+      if (op.marcada === n) cl.push("marcada");
+      if (op.dueno === n) cl.push("dueno");
+      if (op.elegidaMal === n) cl.push("elegida-mal");
+      if (op.guias && !info[k].vacia && info[k].sangria % 4 === 0 && info[k].duenos.length === info[k].sangria / 4) {
+        var guias = info[k].duenos.map(function (d, j) { return '<span class="g v' + (j % 4 + 1) + '">    </span>'; }).join("");
+        texto = guias + pyResaltar(l.slice(info[k].sangria));
+      } else {
+        texto = pyResaltar(l);
+      }
+      var num = '<span class="num" aria-hidden="true">' + n + "</span>", cuerpo = '<span class="txt">' + (texto || " ") + "</span>";
+      if (op.botones) {
+        return '<button type="button" class="' + cl.join(" ") + '" data-linea="' + n + '" aria-label="Línea ' + n + ": " + esc(l.trim() || "vacía") +
+               (op.marcada === n ? " (la línea marcada)" : "") + '">' + num + cuerpo + "</button>";
+      }
+      return '<div class="' + cl.join(" ") + '">' + num + cuerpo + "</div>";
+    }).join("") + "</div>";
+  }
+  function consola(prog) { return PROMPT + "python " + prog.archivo + "\n" + prog.salida; }
+
+  // ---------- Estado ----------
+  var CLAVE = "pb-s02-bloques";
+  function nuevoEstado() {
+    return { actual: 0, resumen: false, rondas: RONDAS.map(function (r) {
+      return { hecha: false, bien: false, respuesta: null, orden: r.inicial ? r.inicial.slice() : null };
+    }) };
+  }
+  var estado = nuevoEstado();
+  try {
+    var g = JSON.parse(localStorage.getItem(CLAVE) || "null");
+    if (g && Array.isArray(g.rondas) && g.rondas.length === RONDAS.length) estado = g;
+  } catch (e) { /* sin almacenamiento */ }
+  function guardar() { try { localStorage.setItem(CLAVE, JSON.stringify(estado)); } catch (e) { /* sin almacenamiento */ } }
+  function puntos() { return estado.rondas.reduce(function (a, r) { return a + (r.bien ? 10 : 0); }, 0); }
+  function hechas() { return estado.rondas.filter(function (r) { return r.hecha; }).length; }
+
+  // ---------- Pintar una ronda ----------
+  function pintarMarcador() {
+    $("txt-ronda").textContent = "Ronda " + (estado.actual + 1) + " de " + RONDAS.length;
+    $("txt-puntos").textContent = puntos() + " puntos · " + hechas() + " de " + RONDAS.length + " respondidas";
+    $("rondas").innerHTML = RONDAS.map(function (r, k) {
+      var e = estado.rondas[k], clase = (k === estado.actual ? "actual " : "") + (e.hecha ? (e.bien ? "bien" : "mal") : "");
+      var dice = "Ronda " + (k + 1) + (e.hecha ? (e.bien ? ", acertada" : ", fallada") : ", sin responder") + (k === estado.actual ? " (actual)" : "");
+      return '<li><button type="button" class="' + clase + '" data-k="' + k + '" aria-label="' + dice + '"' +
+             (k === estado.actual ? ' aria-current="step"' : "") + ">" + (k + 1) + "</button></li>";
+    }).join("");
+  }
+
+  function pintarRonda() {
+    var r = RONDAS[estado.actual], e = estado.rondas[estado.actual], prog = P[r.p];
+    $("vista-juego").hidden = false;
+    $("vista-resumen").hidden = true;
+    pintarMarcador();
+    $("etiqueta").textContent = ETIQUETAS[r.tipo];
+    $("aviso").textContent = "";
+    $("corrida").innerHTML = "";
+    $("tutor").hidden = true;
+    $("siguiente").hidden = !e.hecha;
+    $("siguiente").textContent = hechas() === RONDAS.length ? "Ver el resumen" : "Siguiente ronda";
+    if (r.tipo === "bloque") {
+      $("pregunta").textContent = "¿A qué bloque pertenece la línea " + r.marcada + "? Toca la línea que abre su bloque.";
+      pintarPrograma($("programa"), prog, { botones: !e.hecha, marcada: r.marcada, dueno: e.hecha ? r.dueno : null,
+                                            elegidaMal: e.hecha && !e.bien ? e.respuesta : null, guias: e.hecha });
+      $("titulo-respuesta").textContent = "Tu respuesta";
+      $("respuesta").innerHTML = '<p style="margin:0">Toca en el código la línea que abre el bloque de la línea ' + r.marcada +
+        ' (una línea que termina en dos puntos), o elige:</p><div class="opciones"><button type="button" id="principal"' + (e.hecha ? " disabled" : "") +
+        '>Ningún bloque: es del programa principal</button></div>';
+    } else if (r.tipo === "error") {
+      $("pregunta").textContent = "Corres python " + prog.archivo + ". ¿Qué dice Python?";
+      pintarPrograma($("programa"), prog, { guias: false });
+      $("titulo-respuesta").textContent = "Lo que va a pasar";
+      $("respuesta").innerHTML = '<div class="opciones">' + r.opciones.map(function (o, k) {
+        return '<button type="button" data-op="' + k + '"' + claseOpcion(e, k, r.correcta) + '><span class="msg">' + esc(o) + "</span></button>";
+      }).join("") + "</div>";
+    } else if (r.tipo === "salida") {
+      $("pregunta").textContent = r.pedido;
+      pintarPrograma($("programa"), prog, { guias: e.hecha });
+      $("titulo-respuesta").textContent = "¿Qué imprime?";
+      $("respuesta").innerHTML = '<div class="opciones">' + r.opciones.map(function (clave, k) {
+        return '<button type="button" data-op="' + k + '"' + claseOpcion(e, k, r.opciones.indexOf(r.p)) + '>Opción ' + (k + 1) +
+               '<span class="mini">' + esc(P[clave].salida.replace(/\n$/, "")) + "</span></button>";
+      }).join("") + "</div>";
+    } else if (r.tipo === "arreglo") {
+      $("pregunta").textContent = r.pedido + " ¿Dónde debe ir el print de la línea " + r.linea + "?";
+      pintarPrograma($("programa"), prog, { marcada: r.linea, guias: e.hecha });
+      $("corrida").innerHTML = '<p class="sub2">Así corre ahora:</p><div class="consola">' + esc(consola(prog)) + "</div>";
+      $("titulo-respuesta").textContent = "Tu respuesta";
+      $("respuesta").innerHTML = '<div class="opciones">' + r.opciones.map(function (o, k) {
+        return '<button type="button" data-op="' + k + '"' + claseOpcion(e, k, r.correcta) + ">" + esc(o.texto) + "</button>";
+      }).join("") + "</div>";
+    } else if (r.tipo === "orden") {
+      $("pregunta").textContent = "Ordena las cinco partes como va un programa bien estructurado. Usa las flechas de cada parte y luego Revisar.";
+      $("programa").innerHTML = "";
+      pintarOrden(e);
+      $("titulo-respuesta").textContent = "Cuando termines";
+      $("respuesta").innerHTML = '<button type="button" class="accion primaria" id="revisar-orden"' + (e.hecha ? " disabled" : "") + ">Revisar el orden</button>";
+    }
+    if (e.hecha) mostrarResultado();
+  }
+
+  function claseOpcion(e, k, correcta) {
+    if (!e.hecha) return "";
+    var cl = k === correcta ? "correcta" : (k === e.respuesta ? "incorrecta" : "");
+    return " disabled" + (cl ? ' class="' + cl + '"' : "");
+  }
+
+  function pintarOrden(e) {
+    var r = RONDAS[estado.actual];
+    $("programa").innerHTML = '<ol class="partes" aria-label="Partes del programa en el orden actual">' + e.orden.map(function (parte, k) {
+      var correcta = e.hecha && parte === k;
+      return '<li class="' + (e.hecha ? (correcta ? "ok-parte" : "mal-parte") : "") + '"><span class="pos">' + (k + 1) + ".</span><pre>" +
+        (e.hecha ? '<span class="nombre">' + esc(r.partes[parte].nombre) + "</span>" : "") + pyResaltarBloque(r.partes[parte].codigo) + "</pre>" +
+        (e.hecha ? "" : '<span class="botones"><button type="button" data-sube="' + k + '" aria-label="Subir la parte ' + (k + 1) + '"' + (k === 0 ? " disabled" : "") + '>▲</button>' +
+        '<button type="button" data-baja="' + k + '" aria-label="Bajar la parte ' + (k + 1) + '"' + (k === e.orden.length - 1 ? " disabled" : "") + ">▼</button></span>") + "</li>";
+    }).join("") + "</ol>";
+  }
+  function pyResaltarBloque(t) { return t.split("\n").map(pyResaltar).join("\n"); }
+
+  function mostrarResultado() {
+    var r = RONDAS[estado.actual], e = estado.rondas[estado.actual], prog = P[r.p], t = $("tutor"), extra = "";
+    if (r.tipo === "bloque") {
+      extra = '<p class="sub2">Las rayas de colores marcan los bloques. Así corre el programa:</p><div class="consola">' + esc(consola(prog)) + "</div>";
+    } else if (r.tipo === "error") {
+      extra = '<p class="sub2">Esto muestra la terminal:</p><div class="consola">' + esc(consola(prog)) + "</div>";
+    } else if (r.tipo === "salida") {
+      extra = '<p class="sub2">Así corre:</p><div class="consola">' + esc(consola(prog)) + "</div>";
+      if (r.arreglo) {
+        var bien = document.createElement("div");
+        pintarPrograma(bien, P[r.arreglo], { guias: true });
+        extra += '<p class="sub2">La versión corregida:</p>' + bien.innerHTML + '<div class="consola">' + esc(consola(P[r.arreglo])) + "</div>";
+      }
+    } else if (r.tipo === "arreglo") {
+      extra = r.opciones.map(function (o) {
+        return '<p class="sub2"><b>' + esc(o.texto) + ":</b></p><div class=\"consola\">" + esc(P[o.p].salida.replace(/\n$/, "")) + "</div>";
+      }).join("");
+    } else if (r.tipo === "orden") {
+      var res = resultadoOrden(e.respuesta);
+      extra = e.bien ? '<p class="sub2">Así corre:</p><div class="consola">' + esc(consola(prog)) + "</div>"
+        : '<p class="sub2">Con tu orden, Python terminaría así' + (res === "Área: 28.27" ? " (corre, pero no sigue la estructura recomendada)" : " (última línea de la terminal)") +
+          ':</p><div class="consola">' + esc(res) + '</div><p class="sub2">El programa bien ordenado:</p>' + pintarProgramaTexto(prog) + '<div class="consola">' + esc(consola(prog)) + "</div>";
+    }
+    t.className = "lectura tutor " + (e.bien ? "bien" : "mal");
+    t.innerHTML = (e.bien ? '<b class="ok">¡Correcto!</b> ' : '<b class="mal">No.</b> ') + esc(r.explica) + extra;
+    t.hidden = false;
+    $("siguiente").hidden = false;
+  }
+  function pintarProgramaTexto(prog) {
+    var d = document.createElement("div");
+    pintarPrograma(d, prog, { guias: true });
+    return d.innerHTML;
+  }
+
+  function responder(valor) {
+    var r = RONDAS[estado.actual], e = estado.rondas[estado.actual];
+    if (e.hecha) return;
+    var bien;
+    if (r.tipo === "bloque") bien = valor === r.dueno;
+    else if (r.tipo === "error" || r.tipo === "arreglo") bien = valor === r.correcta;
+    else if (r.tipo === "salida") bien = r.opciones[valor] === r.p;
+    else if (r.tipo === "orden") bien = valor.every(function (parte, k) { return parte === k; });
+    e.hecha = true; e.bien = bien; e.respuesta = valor;
+    guardar();
+    pintarRonda();
+    $("siguiente").focus();
+  }
+
+  // ---------- Eventos ----------
+  $("programa").addEventListener("click", function (ev) {
+    var r = RONDAS[estado.actual], e = estado.rondas[estado.actual];
+    if (e.hecha) return;
+    if (r.tipo === "bloque") {
+      var b = ev.target.closest("button[data-linea]");
+      if (!b) return;
+      var n = Number(b.dataset.linea), prog = P[r.p];
+      if (n === r.marcada) { $("aviso").textContent = "Esa es la línea marcada. Busca más arriba la línea que abre su bloque."; return; }
+      if (!esEncabezado(prog.codigo, n)) {
+        $("aviso").textContent = "La línea " + n + " no abre ningún bloque: los bloques empiezan en una línea que termina en dos puntos (:). Intenta otra vez; esto no cuenta.";
+        return;
+      }
+      if (n > r.marcada) { $("aviso").textContent = "La línea " + n + " está abajo de la marcada: un bloque siempre se abre antes. Esto no cuenta."; return; }
+      responder(n);
+    } else if (r.tipo === "orden") {
+      var s = ev.target.closest("button[data-sube]"), bj = ev.target.closest("button[data-baja]"), k, tmp;
+      if (s) { k = Number(s.dataset.sube); tmp = e.orden[k - 1]; e.orden[k - 1] = e.orden[k]; e.orden[k] = tmp; k = k - 1; }
+      else if (bj) { k = Number(bj.dataset.baja); tmp = e.orden[k + 1]; e.orden[k + 1] = e.orden[k]; e.orden[k] = tmp; k = k + 1; }
+      else return;
+      guardar();
+      pintarOrden(e);
+      var foco = $("programa").querySelector('button[data-' + (s ? "sube" : "baja") + '="' + k + '"]') ||
+                 $("programa").querySelector('button[data-' + (s ? "baja" : "sube") + '="' + k + '"]');
+      if (foco) foco.focus();
+    }
+  });
+  $("respuesta").addEventListener("click", function (ev) {
+    var r = RONDAS[estado.actual], e = estado.rondas[estado.actual];
+    if (e.hecha) return;
+    if (ev.target.closest("#principal")) { responder(0); return; }
+    if (ev.target.closest("#revisar-orden")) { responder(e.orden.slice()); return; }
+    var b = ev.target.closest("button[data-op]");
+    if (b) responder(Number(b.dataset.op));
+  });
+  function pendiente(desde) {
+    for (var j = 1; j <= RONDAS.length; j++) {
+      var k = (desde + j) % RONDAS.length;
+      if (!estado.rondas[k].hecha) return k;
+    }
+    return -1;
+  }
+  function irA(k) { estado.actual = k; estado.resumen = false; guardar(); pintarRonda(); }
+  $("siguiente").addEventListener("click", function () {
+    var k = pendiente(estado.actual);
+    if (k < 0) pintarResumen(); else irA(k);
+  });
+  $("rondas").addEventListener("click", function (ev) {
+    var b = ev.target.closest("[data-k]");
+    if (b) irA(Number(b.dataset.k));
+  });
+
+  function pintarResumen() {
+    estado.resumen = true;
+    guardar();
+    $("vista-juego").hidden = true;
+    $("vista-resumen").hidden = false;
+    var aciertos = estado.rondas.filter(function (r) { return r.bien; }).length;
+    $("total").textContent = puntos() + " de " + RONDAS.length * 10 + " puntos · " + aciertos + " de " + RONDAS.length + " rondas al primer intento";
+    $("tabla-resumen").innerHTML = "<thead><tr><th>#</th><th>Tipo</th><th>Programa</th><th>Resultado</th></tr></thead><tbody>" +
+      RONDAS.map(function (r, k) {
+        var e = estado.rondas[k];
+        return '<tr><td class="n">' + (k + 1) + "</td><td>" + esc(ETIQUETAS[r.tipo]) + "</td><td><code>" + esc(P[r.p].archivo) + "</code></td><td>" +
+          (e.hecha ? (e.bien ? '<span class="ok">acertada</span>' : '<span class="mal">fallada</span>') : '<span class="mal">sin responder</span>') + "</td></tr>";
+      }).join("") + "</tbody>";
+    $("repasar").hidden = aciertos === RONDAS.length;
+    $("vista-resumen").scrollIntoView({ block: "start" });
+  }
+  $("repasar").addEventListener("click", function () {
+    for (var k = 0; k < RONDAS.length; k++) if (!estado.rondas[k].bien) { irA(k); return; }
+  });
+  function reiniciar() { estado = nuevoEstado(); guardar(); pintarRonda(); }
+  $("otra-vez").addEventListener("click", reiniciar);
+  $("reiniciar").addEventListener("click", function () {
+    if (confirm("¿Empezar de nuevo? Se borran tus respuestas.")) reiniciar();
+  });
+
+  if (estado.resumen) pintarResumen(); else pintarRonda();
+})();
+</script>
+<div id="qr-sitio" class="qr-capa" hidden>
+  <div class="qr-caja" role="dialog" aria-modal="true" aria-label="Código QR de esta página">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 45" role="img" aria-label="Código QR de https://memosanchezg.github.io/programacion-basica-interactivos/semana-02-bloques.html" shape-rendering="crispEdges"><rect width="45" height="45" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM10 2h1v1h-1zM14 2h1v1h-1zM16 2h1v1h-1zM18 2h1v1h-1zM21 2h2v1h-2zM24 2h3v1h-3zM30 2h2v1h-2zM33 2h2v1h-2zM36 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM10 3h1v1h-1zM12 3h1v1h-1zM14 3h2v1h-2zM17 3h1v1h-1zM19 3h1v1h-1zM23 3h3v1h-3zM28 3h1v1h-1zM30 3h1v1h-1zM32 3h1v1h-1zM36 3h1v1h-1zM42 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM11 4h3v1h-3zM15 4h1v1h-1zM18 4h1v1h-1zM20 4h1v1h-1zM22 4h3v1h-3zM27 4h2v1h-2zM31 4h1v1h-1zM34 4h1v1h-1zM36 4h1v1h-1zM38 4h3v1h-3zM42 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h6v1h-6zM18 5h1v1h-1zM20 5h2v1h-2zM23 5h2v1h-2zM26 5h1v1h-1zM33 5h2v1h-2zM36 5h1v1h-1zM38 5h3v1h-3zM42 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM11 6h1v1h-1zM13 6h2v1h-2zM19 6h5v1h-5zM26 6h1v1h-1zM29 6h2v1h-2zM33 6h1v1h-1zM36 6h1v1h-1zM38 6h3v1h-3zM42 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM13 7h1v1h-1zM16 7h1v1h-1zM18 7h1v1h-1zM20 7h5v1h-5zM27 7h1v1h-1zM32 7h3v1h-3zM36 7h1v1h-1zM42 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM30 8h1v1h-1zM32 8h1v1h-1zM34 8h1v1h-1zM36 8h7v1h-7zM10 9h3v1h-3zM14 9h2v1h-2zM18 9h2v1h-2zM22 9h1v1h-1zM29 9h1v1h-1zM31 9h3v1h-3zM2 10h1v1h-1zM4 10h2v1h-2zM7 10h3v1h-3zM11 10h1v1h-1zM13 10h1v1h-1zM15 10h1v1h-1zM19 10h5v1h-5zM26 10h1v1h-1zM28 10h1v1h-1zM30 10h4v1h-4zM36 10h1v1h-1zM39 10h1v1h-1zM41 10h2v1h-2zM3 11h1v1h-1zM6 11h2v1h-2zM14 11h1v1h-1zM16 11h1v1h-1zM19 11h5v1h-5zM25 11h1v1h-1zM27 11h1v1h-1zM30 11h1v1h-1zM32 11h3v1h-3zM36 11h3v1h-3zM40 11h3v1h-3zM2 12h4v1h-4zM8 12h3v1h-3zM12 12h2v1h-2zM16 12h5v1h-5zM25 12h2v1h-2zM28 12h1v1h-1zM30 12h1v1h-1zM35 12h2v1h-2zM38 12h1v1h-1zM40 12h1v1h-1zM3 13h4v1h-4zM12 13h1v1h-1zM14 13h2v1h-2zM17 13h1v1h-1zM20 13h2v1h-2zM26 13h5v1h-5zM34 13h3v1h-3zM41 13h1v1h-1zM2 14h2v1h-2zM8 14h2v1h-2zM12 14h1v1h-1zM16 14h2v1h-2zM19 14h1v1h-1zM21 14h1v1h-1zM24 14h1v1h-1zM27 14h3v1h-3zM31 14h1v1h-1zM33 14h2v1h-2zM37 14h1v1h-1zM39 14h3v1h-3zM2 15h1v1h-1zM4 15h2v1h-2zM7 15h1v1h-1zM9 15h1v1h-1zM16 15h2v1h-2zM19 15h1v1h-1zM24 15h2v1h-2zM28 15h1v1h-1zM30 15h2v1h-2zM34 15h1v1h-1zM36 15h1v1h-1zM39 15h1v1h-1zM42 15h1v1h-1zM3 16h1v1h-1zM8 16h1v1h-1zM10 16h5v1h-5zM18 16h1v1h-1zM23 16h2v1h-2zM26 16h2v1h-2zM29 16h3v1h-3zM33 16h2v1h-2zM36 16h7v1h-7zM11 17h2v1h-2zM14 17h1v1h-1zM16 17h1v1h-1zM21 17h3v1h-3zM26 17h1v1h-1zM28 17h1v1h-1zM30 17h1v1h-1zM36 17h2v1h-2zM39 17h1v1h-1zM41 17h1v1h-1zM3 18h1v1h-1zM7 18h3v1h-3zM11 18h1v1h-1zM13 18h3v1h-3zM17 18h2v1h-2zM20 18h4v1h-4zM25 18h3v1h-3zM29 18h1v1h-1zM34 18h1v1h-1zM38 18h1v1h-1zM41 18h1v1h-1zM2 19h1v1h-1zM7 19h1v1h-1zM9 19h1v1h-1zM12 19h2v1h-2zM17 19h1v1h-1zM19 19h2v1h-2zM22 19h1v1h-1zM24 19h2v1h-2zM29 19h1v1h-1zM34 19h2v1h-2zM37 19h1v1h-1zM2 20h2v1h-2zM5 20h1v1h-1zM7 20h2v1h-2zM10 20h1v1h-1zM14 20h2v1h-2zM19 20h1v1h-1zM23 20h1v1h-1zM27 20h4v1h-4zM32 20h1v1h-1zM35 20h1v1h-1zM38 20h2v1h-2zM41 20h1v1h-1zM2 21h1v1h-1zM4 21h2v1h-2zM7 21h1v1h-1zM9 21h5v1h-5zM16 21h3v1h-3zM24 21h5v1h-5zM30 21h4v1h-4zM37 21h1v1h-1zM39 21h2v1h-2zM42 21h1v1h-1zM2 22h1v1h-1zM4 22h1v1h-1zM6 22h4v1h-4zM11 22h1v1h-1zM13 22h2v1h-2zM20 22h1v1h-1zM24 22h2v1h-2zM27 22h2v1h-2zM30 22h1v1h-1zM33 22h1v1h-1zM35 22h2v1h-2zM38 22h1v1h-1zM40 22h1v1h-1zM42 22h1v1h-1zM2 23h2v1h-2zM6 23h1v1h-1zM14 23h1v1h-1zM17 23h9v1h-9zM27 23h1v1h-1zM30 23h1v1h-1zM33 23h2v1h-2zM36 23h7v1h-7zM2 24h2v1h-2zM6 24h1v1h-1zM8 24h1v1h-1zM11 24h2v1h-2zM14 24h1v1h-1zM18 24h2v1h-2zM23 24h5v1h-5zM30 24h3v1h-3zM35 24h1v1h-1zM37 24h1v1h-1zM41 24h1v1h-1zM5 25h1v1h-1zM7 25h1v1h-1zM9 25h1v1h-1zM12 25h6v1h-6zM26 25h2v1h-2zM30 25h1v1h-1zM32 25h1v1h-1zM34 25h1v1h-1zM36 25h2v1h-2zM2 26h1v1h-1zM4 26h2v1h-2zM7 26h4v1h-4zM14 26h3v1h-3zM19 26h1v1h-1zM25 26h7v1h-7zM33 26h1v1h-1zM40 26h1v1h-1zM5 27h1v1h-1zM10 27h4v1h-4zM15 27h1v1h-1zM17 27h2v1h-2zM20 27h2v1h-2zM26 27h6v1h-6zM33 27h2v1h-2zM36 27h1v1h-1zM39 27h4v1h-4zM3 28h1v1h-1zM6 28h3v1h-3zM10 28h3v1h-3zM14 28h4v1h-4zM21 28h4v1h-4zM28 28h1v1h-1zM33 28h3v1h-3zM37 28h1v1h-1zM39 28h1v1h-1zM41 28h2v1h-2zM2 29h1v1h-1zM4 29h2v1h-2zM9 29h1v1h-1zM12 29h1v1h-1zM15 29h4v1h-4zM21 29h4v1h-4zM26 29h1v1h-1zM28 29h1v1h-1zM30 29h1v1h-1zM33 29h3v1h-3zM38 29h2v1h-2zM2 30h3v1h-3zM6 30h1v1h-1zM8 30h1v1h-1zM10 30h1v1h-1zM13 30h6v1h-6zM20 30h1v1h-1zM23 30h2v1h-2zM27 30h1v1h-1zM29 30h2v1h-2zM32 30h3v1h-3zM37 30h3v1h-3zM41 30h1v1h-1zM3 31h1v1h-1zM5 31h1v1h-1zM7 31h1v1h-1zM9 31h1v1h-1zM14 31h1v1h-1zM16 31h2v1h-2zM21 31h1v1h-1zM23 31h2v1h-2zM26 31h1v1h-1zM30 31h2v1h-2zM33 31h2v1h-2zM36 31h1v1h-1zM39 31h3v1h-3zM2 32h1v1h-1zM4 32h1v1h-1zM6 32h1v1h-1zM8 32h3v1h-3zM13 32h2v1h-2zM16 32h2v1h-2zM22 32h10v1h-10zM33 32h1v1h-1zM35 32h3v1h-3zM39 32h1v1h-1zM11 33h1v1h-1zM13 33h1v1h-1zM15 33h3v1h-3zM19 33h2v1h-2zM22 33h1v1h-1zM24 33h1v1h-1zM26 33h1v1h-1zM28 33h1v1h-1zM31 33h3v1h-3zM36 33h1v1h-1zM38 33h3v1h-3zM42 33h1v1h-1zM3 34h1v1h-1zM5 34h1v1h-1zM8 34h2v1h-2zM12 34h1v1h-1zM14 34h2v1h-2zM19 34h3v1h-3zM23 34h1v1h-1zM25 34h1v1h-1zM28 34h1v1h-1zM30 34h3v1h-3zM34 34h8v1h-8zM10 35h1v1h-1zM12 35h1v1h-1zM14 35h1v1h-1zM20 35h3v1h-3zM25 35h2v1h-2zM30 35h2v1h-2zM33 35h2v1h-2zM38 35h1v1h-1zM41 35h2v1h-2zM2 36h7v1h-7zM10 36h3v1h-3zM15 36h3v1h-3zM19 36h1v1h-1zM22 36h5v1h-5zM28 36h1v1h-1zM30 36h1v1h-1zM32 36h3v1h-3zM36 36h1v1h-1zM38 36h1v1h-1zM41 36h1v1h-1zM2 37h1v1h-1zM8 37h1v1h-1zM10 37h2v1h-2zM14 37h4v1h-4zM20 37h1v1h-1zM23 37h2v1h-2zM27 37h5v1h-5zM34 37h1v1h-1zM38 37h1v1h-1zM41 37h2v1h-2zM2 38h1v1h-1zM4 38h3v1h-3zM8 38h1v1h-1zM13 38h4v1h-4zM18 38h1v1h-1zM20 38h1v1h-1zM23 38h2v1h-2zM26 38h1v1h-1zM29 38h1v1h-1zM34 38h5v1h-5zM40 38h1v1h-1zM2 39h1v1h-1zM4 39h3v1h-3zM8 39h1v1h-1zM10 39h1v1h-1zM13 39h3v1h-3zM17 39h5v1h-5zM23 39h1v1h-1zM29 39h2v1h-2zM33 39h2v1h-2zM38 39h1v1h-1zM41 39h1v1h-1zM2 40h1v1h-1zM4 40h3v1h-3zM8 40h1v1h-1zM10 40h2v1h-2zM16 40h1v1h-1zM19 40h5v1h-5zM32 40h3v1h-3zM37 40h1v1h-1zM39 40h1v1h-1zM41 40h2v1h-2zM2 41h1v1h-1zM8 41h1v1h-1zM11 41h3v1h-3zM17 41h1v1h-1zM19 41h1v1h-1zM23 41h1v1h-1zM25 41h1v1h-1zM28 41h3v1h-3zM34 41h2v1h-2zM38 41h2v1h-2zM41 41h1v1h-1zM2 42h7v1h-7zM10 42h1v1h-1zM12 42h3v1h-3zM16 42h1v1h-1zM18 42h2v1h-2zM21 42h4v1h-4zM27 42h1v1h-1zM29 42h1v1h-1zM32 42h3v1h-3zM36 42h1v1h-1zM39 42h1v1h-1zM41 42h1v1h-1z"/></svg>
+    <p class="qr-texto">Escanea con la cámara del celular para abrir esta página</p>
+    <p class="qr-url">https://memosanchezg.github.io/programacion-basica-interactivos/semana-02-bloques.html</p>
+    <button type="button" class="qr-cerrar">Cerrar</button>
+  </div>
+</div>
+<style>
+  .qr-capa { position:fixed; top:0; right:0; bottom:0; left:0; z-index:10000; display:flex; align-items:center;
+             justify-content:center; padding:16px; background:#fff; }
+  .qr-capa[hidden] { display:none; }
+  .qr-caja { max-width:100%; text-align:center; color:#0A2A57; font:16px/1.4 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .qr-caja svg { display:block; width:min(62vh, 84vw); height:auto; margin:0 auto; }
+  .qr-texto { margin:12px 0 2px; font-size:1.15rem; font-weight:bold; }
+  .qr-url { margin:0 0 12px; color:#5B6472; word-break:break-all; }
+  .qr-cerrar { font:inherit; padding:6px 20px; border:2px solid #00408F; border-radius:4px; background:#fff;
+               color:#00408F; cursor:pointer; }
+</style>
+<script>
+  (function () {
+    var capa = document.getElementById("qr-sitio");
+    document.querySelectorAll("a.qr-abrir").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        capa.hidden = false;
+        capa.querySelector(".qr-cerrar").focus();
+      });
+    });
+    capa.addEventListener("click", function (e) {
+      if (e.target === capa || e.target.classList.contains("qr-cerrar")) capa.hidden = true;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !capa.hidden) capa.hidden = true;
+    });
+  })();
+</script>
+</body>
+</html>

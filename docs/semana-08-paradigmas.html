@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="tipo" content="simulador">
+<title>Cuatro paradigmas</title>
+
+<style>
+  :root {
+    --azul:#00408F; --azul-oscuro:#0A2A57; --guinda:#8C1D35; --oro:#B8975A; --oro-texto:#8A6A2E;
+    --azul-claro:#E8EEF7; --oro-claro:#F7F1E6; --guinda-claro:#F5E6EA; --verde:#2F7D5B;
+    --tinta:#1B1F2A; --gris:#5B6472; --gris-claro:#E9ECF1; --borde:#D9DEE6; --fondo:#FFFFFF;
+    --cmd-fondo:#0C0C0C; --cmd-texto:#E6E6E6;
+    --r-d:#8A6A2E; --r-e:#8C1D35; --r-p:#2F7D5B; --r-s:#00408F; --r-o:#5B6472; --r-a:#6B3FA0; --r-g:#B4531E;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--fondo); color:var(--tinta);
+         font:16px/1.45 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .franja { height:8px; background:var(--azul); border-bottom:3px solid var(--oro); }
+  header { max-width:1280px; margin:0 auto; padding:12px 18px 4px; }
+  .semana { color:var(--guinda); font-weight:bold; letter-spacing:.04em; font-size:.85rem; text-transform:uppercase; }
+  h1 { font-family:Cambria,Georgia,serif; color:var(--azul-oscuro); font-size:1.7rem; margin:2px 0 2px; }
+  .sub { color:var(--gris); margin:0; }
+  main { max-width:1280px; margin:0 auto; padding:8px 18px 24px; }
+  nav.pestanas { display:flex; gap:4px; flex-wrap:wrap; border-bottom:2px solid var(--gris-claro); margin:6px 0 12px; }
+  nav.pestanas button { font:inherit; font-weight:bold; border:none; background:none; color:var(--gris);
+                        padding:8px 14px; cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; }
+  nav.pestanas button.activo { color:var(--azul-oscuro); border-bottom-color:var(--azul); }
+  nav.pestanas button:focus-visible { outline:2px solid var(--azul); }
+  .fila { display:grid; grid-template-columns:minmax(260px,360px) minmax(0,1fr); gap:16px; align-items:start; }
+  .fila > * { min-width:0; }
+  .panel { background:#fff; border:1px solid var(--borde); border-radius:10px; padding:12px 14px; min-width:0; }
+  .panel h2 { font-size:1.02rem; color:var(--azul-oscuro); margin:0 0 8px; }
+  label { font-weight:bold; color:var(--azul-oscuro); }
+  .lectura { background:var(--oro-claro); border-left:4px solid var(--oro); border-radius:8px; padding:10px 12px;
+             margin-top:12px; line-height:1.55; }
+  .lectura b { color:var(--azul-oscuro); }
+  .preguntas { background:var(--azul-claro); border-radius:8px; padding:10px 14px; margin-top:12px; }
+  .preguntas h3 { margin:0 0 4px; font-size:.95rem; color:var(--azul-oscuro); }
+  .preguntas ol { margin:0; padding-left:20px; }
+  .preguntas li { margin:4px 0; }
+  /* Código Python con los colores del curso (minted, estilo borland) y salida de consola (cmd). */
+  .codigo { border:1px solid var(--tinta); background:#fff; font:15px/1.5 Consolas,"Courier New",monospace;
+            overflow-x:auto; margin:8px 0; }
+  .codigo ol { margin:0; padding:8px 12px 8px 3.4em; }
+  .codigo li { white-space:pre; }
+  .codigo li::marker { color:var(--gris); font:11px Cambria,Georgia,serif; }
+  .codigo .kw { color:#000080; font-weight:bold; }
+  .codigo .str, .codigo .num { color:#0000FF; }
+  .codigo .com { color:#008800; font-style:italic; }
+  .consola { background:var(--cmd-fondo); color:var(--cmd-texto); font:15px/1.45 Consolas,"Courier New",monospace;
+             white-space:pre-wrap; word-break:break-word; padding:8px 12px; border-radius:4px; margin:8px 0; min-height:2.2em; }
+  footer { max-width:1280px; margin:0 auto; padding:6px 18px 18px; color:var(--gris); font-size:.85rem; }
+  footer a { color:var(--azul); }
+  @media (max-width: 820px) { .fila { grid-template-columns:1fr; } }
+
+  /* Propios de esta página */
+  code { font-family:Consolas,"Courier New",monospace; color:var(--azul-oscuro); }
+  fieldset { border:1px solid var(--borde); border-radius:8px; margin:0 0 10px; padding:6px 10px 8px; }
+  legend { font-weight:bold; color:var(--azul-oscuro); padding:0 4px; }
+  .casilla { display:flex; gap:8px; align-items:flex-start; margin:6px 0; font-weight:normal; color:var(--tinta); cursor:pointer; }
+  .casilla input { margin-top:4px; }
+  .leyenda { list-style:none; margin:4px 0 0; padding:0; display:grid; grid-template-columns:1fr; gap:3px; font-size:.95rem; }
+  .leyenda li { display:flex; align-items:center; gap:8px; }
+  .leyenda .muestra { width:14px; height:14px; border-radius:2px; flex:none; }
+  .leyenda .cambia { width:14px; height:14px; border:1px solid var(--oro); background:#FCE9B8; flex:none; }
+  .codigo.roles li { box-shadow:inset 4px 0 0 var(--rol, transparent); padding-left:10px; }
+  .codigo li.cambio { background:#FCE9B8; }
+  .codigo li.r-d { --rol:var(--r-d); } .codigo li.r-e { --rol:var(--r-e); } .codigo li.r-p { --rol:var(--r-p); }
+  .codigo li.r-s { --rol:var(--r-s); } .codigo li.r-o { --rol:var(--r-o); } .codigo li.r-a { --rol:var(--r-a); }
+  .codigo li.r-g { --rol:var(--r-g); }
+  .codigo.alto { max-height:520px; overflow-y:auto; }
+  .archivo-cab { font:bold 14px Consolas,"Courier New",monospace; color:var(--azul-oscuro); margin-top:10px; }
+  .estilo-cab { display:flex; flex-wrap:wrap; justify-content:space-between; gap:4px 12px; align-items:baseline; }
+  .estilo-cab h2 { margin:0; font-family:Cambria,Georgia,serif; font-size:1.25rem !important; }
+  .cuenta { color:var(--gris); font-size:.92rem; }
+  .cuenta b { color:var(--tinta); }
+  .desc { margin:4px 0 0; }
+  .vistas { display:flex; flex-wrap:wrap; gap:6px 14px; align-items:center; margin:0 0 8px; }
+  .vistas select { font:inherit; padding:4px 6px; border:1px solid var(--borde); border-radius:6px; }
+  .dos { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .dos > * { min-width:0; }
+  @media (max-width: 1100px) { .dos { grid-template-columns:1fr; } }
+  table.resumen { width:100%; border-collapse:collapse; font-size:.95rem; margin-top:4px; }
+  table.resumen th, table.resumen td { border:1px solid var(--borde); padding:3px 8px; text-align:left; }
+  table.resumen thead th { background:var(--gris-claro); color:var(--azul-oscuro); }
+  table.resumen td.n { text-align:right; }
+  [hidden] { display:none !important; }
+  @media (max-width: 480px) {
+    header { padding:10px 12px 4px; } main { padding:8px 10px 20px; } footer { padding:6px 12px 16px; }
+    .panel { padding:10px; } h1 { font-size:1.45rem; } .codigo, .consola { font-size:13.5px; }
+    .codigo ol { padding-left:2.9em; } nav.pestanas button { padding:8px 9px; }
+  }
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header>
+  <div class="semana">Semana 8 · Paradigmas de programación</div>
+  <h1>Un problema, cuatro paradigmas</h1>
+  <p class="sub">El reporte de calificaciones de un grupo escrito en estilo imperativo, estructurado, modular y orientado a objetos: misma salida, distinta organización. Cambia el requerimiento y mira qué tiene que cambiar en cada uno.</p>
+</header>
+<main>
+  <div class="fila">
+    <div class="panel">
+      <fieldset>
+        <legend>Requerimiento</legend>
+        <p class="sub" style="margin:2px 0 4px">El reporte del grupo 031: cada alumno con su estado y el promedio.</p>
+        <label class="casilla"><input type="checkbox" id="req-aprobados"> <span>Agregar otra estadística: cuántos aprobaron</span></label>
+        <label class="casilla"><input type="checkbox" id="req-otro"> <span>Hacer también el reporte de otro grupo (el 032)</span></label>
+      </fieldset>
+      <fieldset>
+        <legend>Colores</legend>
+        <label class="casilla"><input type="checkbox" id="ver-roles" checked> <span>Colorear cada línea según su papel</span></label>
+        <ul class="leyenda" aria-label="Qué significa cada color">
+          <li><span class="muestra" style="background:var(--r-d)"></span>datos (los alumnos y sus calificaciones)</li>
+          <li><span class="muestra" style="background:var(--r-e)"></span>decisión: aprobado o reprobado</li>
+          <li><span class="muestra" style="background:var(--r-p)"></span>promedio</li>
+          <li><span class="muestra" style="background:var(--r-s)"></span>salida (lo que se imprime)</li>
+          <li><span class="muestra" style="background:var(--r-o)"></span>organización (def, class, for, import, llamadas)</li>
+          <li><span class="muestra" style="background:var(--r-a)"></span>cuántos aprobaron</li>
+          <li><span class="muestra" style="background:var(--r-g)"></span>otro grupo</li>
+          <li><span class="cambia"></span>línea nueva o cambiada por el requerimiento</li>
+        </ul>
+      </fieldset>
+      <h2>Tamaño de cada versión</h2>
+      <table class="resumen" id="resumen"></table>
+      <h2 style="margin-top:12px">Lo que imprime</h2>
+      <div class="consola" id="salida" aria-live="polite"></div>
+      <p class="sub" style="font-size:.9rem">Los cuatro estilos imprimen exactamente esto.</p>
+    </div>
+    <div class="panel">
+      <div class="vistas">
+        <label for="vista">Ver</label>
+        <select id="vista">
+          <option value="uno">un estilo a la vez</option>
+          <option value="dos">dos estilos lado a lado</option>
+        </select>
+      </div>
+      <div id="vista-uno">
+        <nav class="pestanas" role="tablist" aria-label="Estilos" id="tabs"></nav>
+        <div id="panel-uno" role="tabpanel"></div>
+      </div>
+      <div id="vista-dos" hidden>
+        <div class="dos">
+          <div><label for="izq">Izquierda</label> <select id="izq"></select><div id="panel-izq"></div></div>
+          <div><label for="der">Derecha</label> <select id="der"></select><div id="panel-der"></div></div>
+        </div>
+      </div>
+      <div class="preguntas">
+        <h3>Para explorar</h3>
+        <ol>
+          <li>Activa "cuántos aprobaron". ¿En qué estilo cambian más líneas? ¿Por qué? ¿Dónde quedaron las líneas nuevas en cada estilo?</li>
+          <li>Activa "otro grupo". ¿Qué hubo que hacer en el imperativo y en el estructurado? ¿Y en el modular y en el orientado a objetos?</li>
+          <li>Sigue el color del promedio en los cuatro estilos. ¿En cuáles está en un solo lugar y tiene nombre?</li>
+          <li>En el modular, ¿qué función de calificaciones.py podrías usar en otro programa sin copiar nada? ¿Qué escribirías para usarla?</li>
+          <li>En el orientado a objetos, ¿qué datos guarda cada objeto <code>Grupo</code>? ¿Qué cambia entre <code>grupo</code> y <code>grupo_032</code>, y qué comparten?</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</main>
+<footer>
+  Programación Básica · FCFM-UANL · funciona sin internet. Los programas se corrieron con Python 3.12.
+  <a href="index.html">Índice de simuladores</a> · <a href="#qr-sitio" class="qr-abrir">Abrir en el celular (QR)</a>
+</footer>
+
+<script type="application/json" id="datos">[{"imperativo":{"base":{"archivos":[{"nombre":"main.py","lineas":[["# Una instrucción tras otra: cada alumno, a mano","o",0],["print(\"Reporte del grupo 031\")","s",0],["suma = 0","p",0],["","",0],["nombre, calif = \"Ana\", 95","d",0],["if calif >= 70:","e",0],["    estado = \"aprobado\"","e",0],["else:","e",0],["    estado = \"reprobado\"","e",0],["print(f\"{nombre:<8}{calif:>3}  {estado}\")","s",0],["suma = suma + calif","p",0],["","",0],["nombre, calif = \"Luis\", 80","d",0],["if calif >= 70:","e",0],["    estado = \"aprobado\"","e",0],["else:","e",0],["    estado = \"reprobado\"","e",0],["print(f\"{nombre:<8}{calif:>3}  {estado}\")","s",0],["suma = suma + calif","p",0],["","",0],["nombre, calif = \"Eva\", 60","d",0],["if calif >= 70:","e",0],["    estado = \"aprobado\"","e",0],["else:","e",0],["    estado = \"reprobado\"","e",0],["print(f\"{nombre:<8}{calif:>3}  {estado}\")","s",0],["suma = suma + calif","p",0],["","",0],["nombre, calif = \"Sofía\", 88","d",0],["if calif >= 70:","e",0],["    estado = \"aprobado\"","e",0],["else:","e",0],["    estado = \"reprobado\"","e",0],["print(f\"{nombre:<8}{calif:>3}  {estado}\")","s",0],["suma = suma + calif","p",0],["","",0],["nombre, calif = \"Diego\", 69","d",0],["if calif >= 70:","e",0],["    estado = \"aprobado\"","e",0],["else:","e",0],["    estado = \"reprobado\"","e",0],["print(f\"{nombre:<8}{calif:>3}  {estado}\")","s",0],["suma = suma + calif","p",0],["","",0],["print(\"Promedio del grupo:\", suma / 5)","p",0]]}],"salida":"Reporte del grupo 031\nAna      95  aprobado\nLuis     80  aprobado\nEva      60  reprobado\nSofía    88  aprobado\nDiego    69  reprobado\nPromedio del grupo: 78.4\n"},"aprobados":{"archivos":[{"nombre":"main.py","lineas":[["# Una instrucción tras otra: cada alumno, a mano","o",0],["print(\"Reporte del grupo 031\")","s",0],["suma = 0","p",0],["aprobados = 0","a",1],["","",0],["nombre, calif = \"Ana\", 95","d",0],["if calif >= 70:","e",0],["    estado = \"aprobado\"","e",0],["    aprobados = aprobados + 1","a",1],["else:","e",0],["    estado = \"reprobado\"","e",0],["print(f\"{nombre:<8}{calif:>3}  {estado}\")","s",0],["suma = suma + calif","p",0],["","",0],["nombre, calif = \"Luis\", 80","d",0],["if calif >= 70:","e",0],["    estado = \"aprobado\"","e",0],["    aprobados = aprobados + 1","a",1],["else:","e",0],["    estado = \"reprobado\"","e",0],["print(f\"{nombre:<8}{calif:>3}  {estado}\")","s",0],["suma = suma + calif","p",0],["","",0],["nombre, calif = \"Eva\", 60","d",0],["if calif >= 70:","e",0],["    estado = \"aprobado\"","e",0],["    aprobados = aprobados + 1","a",1],["else:","e",0],["    estado = \"reprobado\"","e",0],["print(f\"{nombre:<8}{calif:>3}  {estado}\")","s",0],["suma = suma + calif","p",0],["","",0],["nombre, calif = \"Sofía\", 88","d",0],["if calif >= 70:","e",0],["    estado = \"aprobado\"","e",0],["    aprobados = aprobados + 1","a",1],["else:","e",0],["    estado = \"reprobado\"","e",0],["print(f\"{nombre:<8}{calif:>3}  {estado}\")","s",0],["suma = suma + calif","p",0],["","",0],["nombre, calif = \"Diego\", 69","d",0],["if calif >= 70:","e",0],["    estado = \"aprobado\"","e",0],["    aprobados = aprobados + 1","a",1],["else:","e",0],["    estado = \"reprobado\"","e",0],["print(f\"{nombre:<8}{calif:>3}  {estado}\")","s",0],["suma = suma + calif","p",0],["","",0],["print(\"Promedio del grupo:\", suma / 5)","p",0],["print(\"Aprobados:\", aprobados, \"de\", 5)","a",1]]}],"salida":"Reporte del grupo 031\nAna      95  aprobado\nLuis     80  aprobado\nEva      60  reprobado\nSofía    88  aprobado\nDiego    69  reprobado\nPromedio del grupo: 78.4\nAprobados: 3 de 5\n"},"otro":{"archivos":[{"nombre":"main.py","lineas":[["# Una instrucción tras otra: cada alumno, a mano","o",0],["print(\"Reporte del grupo 031\")","s",0],["suma = 0","p",0],["","",0],["nombre, calif = \"Ana\", 95","d",0],["if calif >= 70:","e",0],["    estado = \"aprobado\"","e",0],["else:","e",0],["    estado = \"reprobado\"","e",0],["print(f\"{nombre:<8}{calif:>3}  {estado}\")","s",0],["suma = suma + calif","p",0],["","",0],["nombre, calif = \"Luis\", 80","d",0],["if calif >= 70:","e",0],["    estado = \"aprobado\"","e",0],["else:","e",0],["    estado = \"reprobado\"","e",0],["print(f\"{nombre:<8}{calif:>3}  {estado}\")","s",0],["suma = suma + calif","p",0],["","",0],["nombre, calif = \"Eva\", 60","d",0],["if calif >= 70:","e",0],["    estado = \"aprobado\"","e",0],["else:","e",0],["    estado = \"reprobado\"","e",0],["print(f\"{nombre:<8}{calif:>3}  {estado}\")","s",0],["suma = suma + calif","p",0],["","",0],["nombre, calif = \"Sofía\", 88","d",0],["if calif >= 70:","e",0],["    estado = \"aprobado\"","e",0],["else:","e",0],["    estado = \"reprobado\"","e",0],["print(f\"{nombre:<8}{calif:>3}  {estado}\")","s",0],["suma = suma + calif","p",0],["","",0],["nombre, calif = \"Diego\", 69","d",0],["if calif >= 70:","e",0],["    estado = \"aprobado\"","e",0],["else:","e",0],["    estado = \"reprobado\"","e",0],["print(f\"{nombre:<8}{calif:>3}  {estado}\")","s",0],["suma = suma + calif","p",0],["","",0],["print(\"Promedio del grupo:\", suma / 5)","p",0],["","",0],["print()","g",1],["# Otro grupo: hay que repetir todo","g",1],["print(\"Reporte del grupo 032\")","g",1],["suma = 0","g",1],["","",0],["nombre, calif = \"Mario\", 75","g",1],["if calif >= 70:","g",1],["    estado = \"aprobado\"","g",1],["else:","g",1],["    estado = \"reprobado\"","g",1],["print(f\"{nombre:<8}{calif:>3}  {estado}\")","g",1],["suma = suma + calif","g",1],["","",0],["nombre, calif = \"Paty\", 91","g",1],["if calif >= 70:","g",1],["    estado = \"aprobado\"","g",1],["else:","g",1],["    estado = \"reprobado\"","g",1],["print(f\"{nombre:<8}{calif:>3}  {estado}\")","g",1],["suma = suma + calif","g",1],["","",0],["nombre, calif = \"Hugo\", 58","g",1],["if calif >= 70:","g",1],["    estado = \"aprobado\"","g",1],["else:","g",1],["    estado = \"reprobado\"","g",1],["print(f\"{nombre:<8}{calif:>3}  {estado}\")","g",1],["suma = suma + calif","g",1],["","",0],["nombre, calif = \"Lupita\", 84","g",1],["if calif >= 70:","g",1],["    estado = \"aprobado\"","g",1],["else:","g",1],["    estado = \"reprobado\"","g",1],["print(f\"{nombre:<8}{calif:>3}  {estado}\")","g",1],["suma = suma + calif","g",1],["","",0],["print(\"Promedio del grupo:\", suma / 4)","g",1]]}],"salida":"Reporte del grupo 031\nAna      95  aprobado\nLuis     80  aprobado\nEva      60  reprobado\nSofía    88  aprobado\nDiego    69  reprobado\nPromedio del grupo: 78.4\n\nReporte del grupo 032\nMario    75  aprobado\nPaty     91  aprobado\nHugo     58  reprobado\nLupita   84  aprobado\nPromedio del grupo: 77.0\n"},"ambos":{"archivos":[{"nombre":"main.py","lineas":[["# Una instrucción tras otra: cada alumno, a mano","o",0],["print(\"Reporte del grupo 031\")","s",0],["suma = 0","p",0],["aprobados = 0","a",1],["","",0],["nombre, calif = \"Ana\", 95","d",0],["if calif >= 70:","e",0],["    estado = \"aprobado\"","e",0],["    aprobados = aprobados + 1","a",1],["else:","e",0],["    estado = \"reprobado\"","e",0],["print(f\"{nombre:<8}{calif:>3}  {estado}\")","s",0],["suma = suma + calif","p",0],["","",0],["nombre, calif = \"Luis\", 80","d",0],["if calif >= 70:","e",0],["    estado = \"aprobado\"","e",0],["    aprobados = aprobados + 1","a",1],["else:","e",0],["    estado = \"reprobado\"","e",0],["print(f\"{nombre:<8}{calif:>3}  {estado}\")","s",0],["suma = suma + calif","p",0],["","",0],["nombre, calif = \"Eva\", 60","d",0],["if calif >= 70:","e",0],["    estado = \"aprobado\"","e",0],["    aprobados = aprobados + 1","a",1],["else:","e",0],["    estado = \"reprobado\"","e",0],["print(f\"{nombre:<8}{calif:>3}  {estado}\")","s",0],["suma = suma + calif","p",0],["","",0],["nombre, calif = \"Sofía\", 88","d",0],["if calif >= 70:","e",0],["    estado = \"aprobado\"","e",0],["    aprobados = aprobados + 1","a",1],["else:","e",0],["    estado = \"reprobado\"","e",0],["print(f\"{nombre:<8}{calif:>3}  {estado}\")","s",0],["suma = suma + calif","p",0],["","",0],["nombre, calif = \"Diego\", 69","d",0],["if calif >= 70:","e",0],["    estado = \"aprobado\"","e",0],["    aprobados = aprobados + 1","a",1],["else:","e",0],["    estado = \"reprobado\"","e",0],["print(f\"{nombre:<8}{calif:>3}  {estado}\")","s",0],["suma = suma + calif","p",0],["","",0],["print(\"Promedio del grupo:\", suma / 5)","p",0],["print(\"Aprobados:\", aprobados, \"de\", 5)","a",1],["","",0],["print()","g",1],["# Otro grupo: hay que repetir todo","g",1],["print(\"Reporte del grupo 032\")","g",1],["suma = 0","g",1],["aprobados = 0","g",1],["","",0],["nombre, calif = \"Mario\", 75","g",1],["if calif >= 70:","g",1],["    estado = \"aprobado\"","g",1],["    aprobados = aprobados + 1","g",1],["else:","g",1],["    estado = \"reprobado\"","g",1],["print(f\"{nombre:<8}{calif:>3}  {estado}\")","g",1],["suma = suma + calif","g",1],["","",0],["nombre, calif = \"Paty\", 91","g",1],["if calif >= 70:","g",1],["    estado = \"aprobado\"","g",1],["    aprobados = aprobados + 1","g",1],["else:","g",1],["    estado = \"reprobado\"","g",1],["print(f\"{nombre:<8}{calif:>3}  {estado}\")","g",1],["suma = suma + calif","g",1],["","",0],["nombre, calif = \"Hugo\", 58","g",1],["if calif >= 70:","g",1],["    estado = \"aprobado\"","g",1],["    aprobados = aprobados + 1","g",1],["else:","g",1],["    estado = \"reprobado\"","g",1],["print(f\"{nombre:<8}{calif:>3}  {estado}\")","g",1],["suma = suma + calif","g",1],["","",0],["nombre, calif = \"Lupita\", 84","g",1],["if calif >= 70:","g",1],["    estado = \"aprobado\"","g",1],["    aprobados = aprobados + 1","g",1],["else:","g",1],["    estado = \"reprobado\"","g",1],["print(f\"{nombre:<8}{calif:>3}  {estado}\")","g",1],["suma = suma + calif","g",1],["","",0],["print(\"Promedio del grupo:\", suma / 4)","g",1],["print(\"Aprobados:\", aprobados, \"de\", 4)","g",1]]}],"salida":"Reporte del grupo 031\nAna      95  aprobado\nLuis     80  aprobado\nEva      60  reprobado\nSofía    88  aprobado\nDiego    69  reprobado\nPromedio del grupo: 78.4\nAprobados: 3 de 5\n\nReporte del grupo 032\nMario    75  aprobado\nPaty     91  aprobado\nHugo     58  reprobado\nLupita   84  aprobado\nPromedio del grupo: 77.0\nAprobados: 3 de 4\n"}},"estructurado":{"base":{"archivos":[{"nombre":"main.py","lineas":[["alumnos = [(\"Ana\", 95), (\"Luis\", 80), (\"Eva\", 60), (\"Sofía\", 88), (\"Diego\", 69)]","d",0],["","",0],["print(\"Reporte del grupo 031\")","s",0],["suma = 0","p",0],["for nombre, calif in alumnos:","o",0],["    if calif >= 70:","e",0],["        estado = \"aprobado\"","e",0],["    else:","e",0],["        estado = \"reprobado\"","e",0],["    print(f\"{nombre:<8}{calif:>3}  {estado}\")","s",0],["    suma = suma + calif","p",0],["print(\"Promedio del grupo:\", suma / len(alumnos))","p",0]]}],"salida":"Reporte del grupo 031\nAna      95  aprobado\nLuis     80  aprobado\nEva      60  reprobado\nSofía    88  aprobado\nDiego    69  reprobado\nPromedio del grupo: 78.4\n"},"aprobados":{"archivos":[{"nombre":"main.py","lineas":[["alumnos = [(\"Ana\", 95), (\"Luis\", 80), (\"Eva\", 60), (\"Sofía\", 88), (\"Diego\", 69)]","d",0],["","",0],["print(\"Reporte del grupo 031\")","s",0],["suma = 0","p",0],["aprobados = 0","a",1],["for nombre, calif in alumnos:","o",0],["    if calif >= 70:","e",0],["        estado = \"aprobado\"","e",0],["        aprobados = aprobados + 1","a",1],["    else:","e",0],["        estado = \"reprobado\"","e",0],["    print(f\"{nombre:<8}{calif:>3}  {estado}\")","s",0],["    suma = suma + calif","p",0],["print(\"Promedio del grupo:\", suma / len(alumnos))","p",0],["print(\"Aprobados:\", aprobados, \"de\", len(alumnos))","a",1]]}],"salida":"Reporte del grupo 031\nAna      95  aprobado\nLuis     80  aprobado\nEva      60  reprobado\nSofía    88  aprobado\nDiego    69  reprobado\nPromedio del grupo: 78.4\nAprobados: 3 de 5\n"},"otro":{"archivos":[{"nombre":"main.py","lineas":[["alumnos = [(\"Ana\", 95), (\"Luis\", 80), (\"Eva\", 60), (\"Sofía\", 88), (\"Diego\", 69)]","d",0],["alumnos_032 = [(\"Mario\", 75), (\"Paty\", 91), (\"Hugo\", 58), (\"Lupita\", 84)]","g",1],["","",0],["print(\"Reporte del grupo 031\")","s",0],["suma = 0","p",0],["for nombre, calif in alumnos:","o",0],["    if calif >= 70:","e",0],["        estado = \"aprobado\"","e",0],["    else:","e",0],["        estado = \"reprobado\"","e",0],["    print(f\"{nombre:<8}{calif:>3}  {estado}\")","s",0],["    suma = suma + calif","p",0],["print(\"Promedio del grupo:\", suma / len(alumnos))","p",0],["","",0],["print()","g",1],["print(\"Reporte del grupo 032\")","g",1],["suma = 0","g",1],["for nombre, calif in alumnos_032:","g",1],["    if calif >= 70:","g",1],["        estado = \"aprobado\"","g",1],["    else:","g",1],["        estado = \"reprobado\"","g",1],["    print(f\"{nombre:<8}{calif:>3}  {estado}\")","g",1],["    suma = suma + calif","g",1],["print(\"Promedio del grupo:\", suma / len(alumnos_032))","g",1]]}],"salida":"Reporte del grupo 031\nAna      95  aprobado\nLuis     80  aprobado\nEva      60  reprobado\nSofía    88  aprobado\nDiego    69  reprobado\nPromedio del grupo: 78.4\n\nReporte del grupo 032\nMario    75  aprobado\nPaty     91  aprobado\nHugo     58  reprobado\nLupita   84  aprobado\nPromedio del grupo: 77.0\n"},"ambos":{"archivos":[{"nombre":"main.py","lineas":[["alumnos = [(\"Ana\", 95), (\"Luis\", 80), (\"Eva\", 60), (\"Sofía\", 88), (\"Diego\", 69)]","d",0],["alumnos_032 = [(\"Mario\", 75), (\"Paty\", 91), (\"Hugo\", 58), (\"Lupita\", 84)]","g",1],["","",0],["print(\"Reporte del grupo 031\")","s",0],["suma = 0","p",0],["aprobados = 0","a",1],["for nombre, calif in alumnos:","o",0],["    if calif >= 70:","e",0],["        estado = \"aprobado\"","e",0],["        aprobados = aprobados + 1","a",1],["    else:","e",0],["        estado = \"reprobado\"","e",0],["    print(f\"{nombre:<8}{calif:>3}  {estado}\")","s",0],["    suma = suma + calif","p",0],["print(\"Promedio del grupo:\", suma / len(alumnos))","p",0],["print(\"Aprobados:\", aprobados, \"de\", len(alumnos))","a",1],["","",0],["print()","g",1],["print(\"Reporte del grupo 032\")","g",1],["suma = 0","g",1],["aprobados = 0","g",1],["for nombre, calif in alumnos_032:","g",1],["    if calif >= 70:","g",1],["        estado = \"aprobado\"","g",1],["        aprobados = aprobados + 1","g",1],["    else:","g",1],["        estado = \"reprobado\"","g",1],["    print(f\"{nombre:<8}{calif:>3}  {estado}\")","g",1],["    suma = suma + calif","g",1],["print(\"Promedio del grupo:\", suma / len(alumnos_032))","g",1],["print(\"Aprobados:\", aprobados, \"de\", len(alumnos_032))","g",1]]}],"salida":"Reporte del grupo 031\nAna      95  aprobado\nLuis     80  aprobado\nEva      60  reprobado\nSofía    88  aprobado\nDiego    69  reprobado\nPromedio del grupo: 78.4\nAprobados: 3 de 5\n\nReporte del grupo 032\nMario    75  aprobado\nPaty     91  aprobado\nHugo     58  reprobado\nLupita   84  aprobado\nPromedio del grupo: 77.0\nAprobados: 3 de 4\n"}},"modular":{"base":{"archivos":[{"nombre":"calificaciones.py","lineas":[["def estado(calif):","o",0],["    if calif >= 70:","e",0],["        return \"aprobado\"","e",0],["    else:","e",0],["        return \"reprobado\"","e",0],["","",0],["","",0],["def promedio(califs):","o",0],["    return sum(califs) / len(califs)","p",0],["","",0],["","",0],["def imprimir_reporte(clave, alumnos):","o",0],["    print(\"Reporte del grupo\", clave)","s",0],["    for nombre, calif in alumnos:","o",0],["        print(f\"{nombre:<8}{calif:>3}  {estado(calif)}\")","s",0],["    califs = [calif for nombre, calif in alumnos]","d",0],["    print(\"Promedio del grupo:\", promedio(califs))","p",0]]},{"nombre":"main.py","lineas":[["import calificaciones","o",0],["","",0],["alumnos = [(\"Ana\", 95), (\"Luis\", 80), (\"Eva\", 60), (\"Sofía\", 88), (\"Diego\", 69)]","d",0],["","",0],["calificaciones.imprimir_reporte(\"031\", alumnos)","o",0]]}],"salida":"Reporte del grupo 031\nAna      95  aprobado\nLuis     80  aprobado\nEva      60  reprobado\nSofía    88  aprobado\nDiego    69  reprobado\nPromedio del grupo: 78.4\n"},"aprobados":{"archivos":[{"nombre":"calificaciones.py","lineas":[["def estado(calif):","o",0],["    if calif >= 70:","e",0],["        return \"aprobado\"","e",0],["    else:","e",0],["        return \"reprobado\"","e",0],["","",0],["","",0],["def promedio(califs):","o",0],["    return sum(califs) / len(califs)","p",0],["","",0],["","",0],["def contar_aprobados(califs):","a",1],["    aprobados = 0","a",1],["    for calif in califs:","a",1],["        if estado(calif) == \"aprobado\":","a",1],["            aprobados = aprobados + 1","a",1],["    return aprobados","a",1],["","",0],["","",0],["def imprimir_reporte(clave, alumnos):","o",0],["    print(\"Reporte del grupo\", clave)","s",0],["    for nombre, calif in alumnos:","o",0],["        print(f\"{nombre:<8}{calif:>3}  {estado(calif)}\")","s",0],["    califs = [calif for nombre, calif in alumnos]","d",0],["    print(\"Promedio del grupo:\", promedio(califs))","p",0],["    print(\"Aprobados:\", contar_aprobados(califs), \"de\", len(califs))","a",1]]},{"nombre":"main.py","lineas":[["import calificaciones","o",0],["","",0],["alumnos = [(\"Ana\", 95), (\"Luis\", 80), (\"Eva\", 60), (\"Sofía\", 88), (\"Diego\", 69)]","d",0],["","",0],["calificaciones.imprimir_reporte(\"031\", alumnos)","o",0]]}],"salida":"Reporte del grupo 031\nAna      95  aprobado\nLuis     80  aprobado\nEva      60  reprobado\nSofía    88  aprobado\nDiego    69  reprobado\nPromedio del grupo: 78.4\nAprobados: 3 de 5\n"},"otro":{"archivos":[{"nombre":"calificaciones.py","lineas":[["def estado(calif):","o",0],["    if calif >= 70:","e",0],["        return \"aprobado\"","e",0],["    else:","e",0],["        return \"reprobado\"","e",0],["","",0],["","",0],["def promedio(califs):","o",0],["    return sum(califs) / len(califs)","p",0],["","",0],["","",0],["def imprimir_reporte(clave, alumnos):","o",0],["    print(\"Reporte del grupo\", clave)","s",0],["    for nombre, calif in alumnos:","o",0],["        print(f\"{nombre:<8}{calif:>3}  {estado(calif)}\")","s",0],["    califs = [calif for nombre, calif in alumnos]","d",0],["    print(\"Promedio del grupo:\", promedio(califs))","p",0]]},{"nombre":"main.py","lineas":[["import calificaciones","o",0],["","",0],["alumnos = [(\"Ana\", 95), (\"Luis\", 80), (\"Eva\", 60), (\"Sofía\", 88), (\"Diego\", 69)]","d",0],["alumnos_032 = [(\"Mario\", 75), (\"Paty\", 91), (\"Hugo\", 58), (\"Lupita\", 84)]","g",1],["","",0],["calificaciones.imprimir_reporte(\"031\", alumnos)","o",0],["print()","g",1],["calificaciones.imprimir_reporte(\"032\", alumnos_032)","g",1]]}],"salida":"Reporte del grupo 031\nAna      95  aprobado\nLuis     80  aprobado\nEva      60  reprobado\nSofía    88  aprobado\nDiego    69  reprobado\nPromedio del grupo: 78.4\n\nReporte del grupo 032\nMario    75  aprobado\nPaty     91  aprobado\nHugo     58  reprobado\nLupita   84  aprobado\nPromedio del grupo: 77.0\n"},"ambos":{"archivos":[{"nombre":"calificaciones.py","lineas":[["def estado(calif):","o",0],["    if calif >= 70:","e",0],["        return \"aprobado\"","e",0],["    else:","e",0],["        return \"reprobado\"","e",0],["","",0],["","",0],["def promedio(califs):","o",0],["    return sum(califs) / len(califs)","p",0],["","",0],["","",0],["def contar_aprobados(califs):","a",1],["    aprobados = 0","a",1],["    for calif in califs:","a",1],["        if estado(calif) == \"aprobado\":","a",1],["            aprobados = aprobados + 1","a",1],["    return aprobados","a",1],["","",0],["","",0],["def imprimir_reporte(clave, alumnos):","o",0],["    print(\"Reporte del grupo\", clave)","s",0],["    for nombre, calif in alumnos:","o",0],["        print(f\"{nombre:<8}{calif:>3}  {estado(calif)}\")","s",0],["    califs = [calif for nombre, calif in alumnos]","d",0],["    print(\"Promedio del grupo:\", promedio(califs))","p",0],["    print(\"Aprobados:\", contar_aprobados(califs), \"de\", len(califs))","a",1]]},{"nombre":"main.py","lineas":[["import calificaciones","o",0],["","",0],["alumnos = [(\"Ana\", 95), (\"Luis\", 80), (\"Eva\", 60), (\"Sofía\", 88), (\"Diego\", 69)]","d",0],["alumnos_032 = [(\"Mario\", 75), (\"Paty\", 91), (\"Hugo\", 58), (\"Lupita\", 84)]","g",1],["","",0],["calificaciones.imprimir_reporte(\"031\", alumnos)","o",0],["print()","g",1],["calificaciones.imprimir_reporte(\"032\", alumnos_032)","g",1]]}],"salida":"Reporte del grupo 031\nAna      95  aprobado\nLuis     80  aprobado\nEva      60  reprobado\nSofía    88  aprobado\nDiego    69  reprobado\nPromedio del grupo: 78.4\nAprobados: 3 de 5\n\nReporte del grupo 032\nMario    75  aprobado\nPaty     91  aprobado\nHugo     58  reprobado\nLupita   84  aprobado\nPromedio del grupo: 77.0\nAprobados: 3 de 4\n"}},"objetos":{"base":{"archivos":[{"nombre":"main.py","lineas":[["class Grupo:","o",0],["    def __init__(self, clave, alumnos):","o",0],["        self.clave = clave","d",0],["        self.alumnos = alumnos","d",0],["","",0],["    def promedio(self):","o",0],["        suma = 0","p",0],["        for nombre, calif in self.alumnos:","p",0],["            suma = suma + calif","p",0],["        return suma / len(self.alumnos)","p",0],["","",0],["    def imprimir_reporte(self):","o",0],["        print(\"Reporte del grupo\", self.clave)","s",0],["        for nombre, calif in self.alumnos:","o",0],["            if calif >= 70:","e",0],["                estado = \"aprobado\"","e",0],["            else:","e",0],["                estado = \"reprobado\"","e",0],["            print(f\"{nombre:<8}{calif:>3}  {estado}\")","s",0],["        print(\"Promedio del grupo:\", self.promedio())","p",0],["","",0],["","",0],["grupo = Grupo(\"031\", [(\"Ana\", 95), (\"Luis\", 80), (\"Eva\", 60), (\"Sofía\", 88), (\"Diego\", 69)])","d",0],["grupo.imprimir_reporte()","o",0]]}],"salida":"Reporte del grupo 031\nAna      95  aprobado\nLuis     80  aprobado\nEva      60  reprobado\nSofía    88  aprobado\nDiego    69  reprobado\nPromedio del grupo: 78.4\n"},"aprobados":{"archivos":[{"nombre":"main.py","lineas":[["class Grupo:","o",0],["    def __init__(self, clave, alumnos):","o",0],["        self.clave = clave","d",0],["        self.alumnos = alumnos","d",0],["","",0],["    def promedio(self):","o",0],["        suma = 0","p",0],["        for nombre, calif in self.alumnos:","p",0],["            suma = suma + calif","p",0],["        return suma / len(self.alumnos)","p",0],["","",0],["    def aprobados(self):","a",1],["        cuantos = 0","a",1],["        for nombre, calif in self.alumnos:","a",1],["            if calif >= 70:","a",1],["                cuantos = cuantos + 1","a",1],["        return cuantos","a",1],["","",0],["    def imprimir_reporte(self):","o",0],["        print(\"Reporte del grupo\", self.clave)","s",0],["        for nombre, calif in self.alumnos:","o",0],["            if calif >= 70:","e",0],["                estado = \"aprobado\"","e",0],["            else:","e",0],["                estado = \"reprobado\"","e",0],["            print(f\"{nombre:<8}{calif:>3}  {estado}\")","s",0],["        print(\"Promedio del grupo:\", self.promedio())","p",0],["        print(\"Aprobados:\", self.aprobados(), \"de\", len(self.alumnos))","a",1],["","",0],["","",0],["grupo = Grupo(\"031\", [(\"Ana\", 95), (\"Luis\", 80), (\"Eva\", 60), (\"Sofía\", 88), (\"Diego\", 69)])","d",0],["grupo.imprimir_reporte()","o",0]]}],"salida":"Reporte del grupo 031\nAna      95  aprobado\nLuis     80  aprobado\nEva      60  reprobado\nSofía    88  aprobado\nDiego    69  reprobado\nPromedio del grupo: 78.4\nAprobados: 3 de 5\n"},"otro":{"archivos":[{"nombre":"main.py","lineas":[["class Grupo:","o",0],["    def __init__(self, clave, alumnos):","o",0],["        self.clave = clave","d",0],["        self.alumnos = alumnos","d",0],["","",0],["    def promedio(self):","o",0],["        suma = 0","p",0],["        for nombre, calif in self.alumnos:","p",0],["            suma = suma + calif","p",0],["        return suma / len(self.alumnos)","p",0],["","",0],["    def imprimir_reporte(self):","o",0],["        print(\"Reporte del grupo\", self.clave)","s",0],["        for nombre, calif in self.alumnos:","o",0],["            if calif >= 70:","e",0],["                estado = \"aprobado\"","e",0],["            else:","e",0],["                estado = \"reprobado\"","e",0],["            print(f\"{nombre:<8}{calif:>3}  {estado}\")","s",0],["        print(\"Promedio del grupo:\", self.promedio())","p",0],["","",0],["","",0],["grupo = Grupo(\"031\", [(\"Ana\", 95), (\"Luis\", 80), (\"Eva\", 60), (\"Sofía\", 88), (\"Diego\", 69)])","d",0],["grupo_032 = Grupo(\"032\", [(\"Mario\", 75), (\"Paty\", 91), (\"Hugo\", 58), (\"Lupita\", 84)])","g",1],["grupo.imprimir_reporte()","o",0],["print()","g",1],["grupo_032.imprimir_reporte()","g",1]]}],"salida":"Reporte del grupo 031\nAna      95  aprobado\nLuis     80  aprobado\nEva      60  reprobado\nSofía    88  aprobado\nDiego    69  reprobado\nPromedio del grupo: 78.4\n\nReporte del grupo 032\nMario    75  aprobado\nPaty     91  aprobado\nHugo     58  reprobado\nLupita   84  aprobado\nPromedio del grupo: 77.0\n"},"ambos":{"archivos":[{"nombre":"main.py","lineas":[["class Grupo:","o",0],["    def __init__(self, clave, alumnos):","o",0],["        self.clave = clave","d",0],["        self.alumnos = alumnos","d",0],["","",0],["    def promedio(self):","o",0],["        suma = 0","p",0],["        for nombre, calif in self.alumnos:","p",0],["            suma = suma + calif","p",0],["        return suma / len(self.alumnos)","p",0],["","",0],["    def aprobados(self):","a",1],["        cuantos = 0","a",1],["        for nombre, calif in self.alumnos:","a",1],["            if calif >= 70:","a",1],["                cuantos = cuantos + 1","a",1],["        return cuantos","a",1],["","",0],["    def imprimir_reporte(self):","o",0],["        print(\"Reporte del grupo\", self.clave)","s",0],["        for nombre, calif in self.alumnos:","o",0],["            if calif >= 70:","e",0],["                estado = \"aprobado\"","e",0],["            else:","e",0],["                estado = \"reprobado\"","e",0],["            print(f\"{nombre:<8}{calif:>3}  {estado}\")","s",0],["        print(\"Promedio del grupo:\", self.promedio())","p",0],["        print(\"Aprobados:\", self.aprobados(), \"de\", len(self.alumnos))","a",1],["","",0],["","",0],["grupo = Grupo(\"031\", [(\"Ana\", 95), (\"Luis\", 80), (\"Eva\", 60), (\"Sofía\", 88), (\"Diego\", 69)])","d",0],["grupo_032 = Grupo(\"032\", [(\"Mario\", 75), (\"Paty\", 91), (\"Hugo\", 58), (\"Lupita\", 84)])","g",1],["grupo.imprimir_reporte()","o",0],["print()","g",1],["grupo_032.imprimir_reporte()","g",1]]}],"salida":"Reporte del grupo 031\nAna      95  aprobado\nLuis     80  aprobado\nEva      60  reprobado\nSofía    88  aprobado\nDiego    69  reprobado\nPromedio del grupo: 78.4\nAprobados: 3 de 5\n\nReporte del grupo 032\nMario    75  aprobado\nPaty     91  aprobado\nHugo     58  reprobado\nLupita   84  aprobado\nPromedio del grupo: 77.0\nAprobados: 3 de 4\n"}}}]</script>
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(t) {
+    return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  // ---------- Código Python con los colores del curso ----------
+  var PY_KW = /^(False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)$/;
+  function pyResaltar(linea) {
+    var html = "", i = 0, m, resto;
+    while (i < linea.length) {
+      resto = linea.slice(i);
+      if ((m = /^#.*/.exec(resto))) { html += '<span class="com">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[rRbBfFuU]{0,2}("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/.exec(resto))) { html += '<span class="str">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[A-Za-z_\u00C0-\u024F][\w\u00C0-\u024F]*/.exec(resto))) { html += PY_KW.test(m[0]) ? '<span class="kw">' + m[0] + "</span>" : esc(m[0]); }
+      else if ((m = /^(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?j?/.exec(resto))) { html += '<span class="num">' + m[0] + "</span>"; }
+      else { m = [resto[0]]; html += esc(m[0]); }
+      i += m[0].length;
+    }
+    return html;
+  }
+
+  var DATOS = JSON.parse($("datos").textContent)[0];
+  var ESTILOS = [
+    { id: "imperativo", nombre: "Imperativo",
+      desc: "Una instrucción tras otra, que va cambiando el estado (suma). Cada alumno se escribe a mano: sin ciclos ni funciones." },
+    { id: "estructurado", nombre: "Estructurado",
+      desc: "Los mismos pasos, ordenados en bloques: secuencia, selección (if/else) e iteración (un for sobre la lista de alumnos)." },
+    { id: "modular", nombre: "Modular",
+      desc: "Funciones con una sola responsabilidad, en un módulo aparte (calificaciones.py); main.py solo tiene los datos y coordina." },
+    { id: "objetos", nombre: "Orientado a objetos",
+      desc: "Una clase Grupo junta los datos del grupo (atributos clave y alumnos) con lo que se hace con ellos (métodos promedio e imprimir_reporte)." }
+  ];
+  var ROLES = { d: "datos", e: "decisión", p: "promedio", s: "salida", o: "organización", a: "cuántos aprobaron", g: "otro grupo" };
+
+  var estado = { estilo: "imperativo", izq: "imperativo", der: "objetos", vista: "uno" };
+  try {
+    var g = JSON.parse(localStorage.getItem("pb-s08-paradigmas") || "null");
+    if (g) {
+      ["estilo", "izq", "der"].forEach(function (k) { if (ESTILOS.some(function (e) { return e.id === g[k]; })) estado[k] = g[k]; });
+      if (g.vista === "dos") estado.vista = "dos";
+      $("req-aprobados").checked = !!g.aprobados;
+      $("req-otro").checked = !!g.otro;
+      $("ver-roles").checked = g.roles !== false;
+    }
+  } catch (e) { /* sin almacenamiento */ }
+  function guardar() {
+    try {
+      localStorage.setItem("pb-s08-paradigmas", JSON.stringify({ estilo: estado.estilo, izq: estado.izq, der: estado.der, vista: estado.vista,
+        aprobados: $("req-aprobados").checked, otro: $("req-otro").checked, roles: $("ver-roles").checked }));
+    } catch (e) { /* sin almacenamiento */ }
+  }
+  function variante() {
+    var a = $("req-aprobados").checked, o = $("req-otro").checked;
+    return a && o ? "ambos" : a ? "aprobados" : o ? "otro" : "base";
+  }
+  function esCodigo(t) { var s = t.trim(); return s !== "" && s[0] !== "#"; }
+  function cuentas(estilo, v) {
+    var lineas = 0, cambian = 0;
+    DATOS[estilo][v].archivos.forEach(function (a) {
+      a.lineas.forEach(function (l) {
+        if (esCodigo(l[0])) { lineas++; if (l[2]) cambian++; }
+      });
+    });
+    return { lineas: lineas, cambian: cambian };
+  }
+  function htmlEstilo(id, conTitulo) {
+    var e = ESTILOS.filter(function (x) { return x.id === id; })[0], v = variante(), d = DATOS[id][v], c = cuentas(id, v);
+    var roles = $("ver-roles").checked;
+    var h = '<div class="estilo-cab">' + (conTitulo ? "<h2>" + esc(e.nombre) + "</h2>" : "") +
+            '<span class="cuenta"><b>' + c.lineas + "</b> líneas de código" + (v !== "base" ? " · <b>" + c.cambian + "</b> nuevas o cambiadas" : "") + "</span></div>" +
+            '<p class="desc">' + esc(e.desc) + "</p>";
+    d.archivos.forEach(function (a) {
+      if (d.archivos.length > 1) h += '<div class="archivo-cab">' + esc(a.nombre) + "</div>";
+      h += '<div class="codigo alto' + (roles ? " roles" : "") + '" role="region" tabindex="0" aria-label="' + esc(e.nombre + ": " + a.nombre) + '"><ol>' +
+        a.lineas.map(function (l) {
+          var cl = [];
+          if (l[1]) cl.push("r-" + l[1]);
+          if (l[2] && esCodigo(l[0])) cl.push("cambio");
+          var titulo = l[1] ? ROLES[l[1]] + (l[2] ? ", nueva o cambiada" : "") : "";
+          return "<li" + (cl.length ? ' class="' + cl.join(" ") + '"' : "") + (titulo ? ' title="' + esc(titulo) + '"' : "") + ">" + (pyResaltar(l[0]) || " ") + "</li>";
+        }).join("") + "</ol></div>";
+    });
+    return h;
+  }
+  // Pestañas de los estilos
+  $("tabs").innerHTML = ESTILOS.map(function (e) {
+    return '<button type="button" role="tab" data-estilo="' + e.id + '" id="tab-' + e.id + '" aria-controls="panel-uno">' + esc(e.nombre) + "</button>";
+  }).join("");
+  var botones = Array.prototype.slice.call(document.querySelectorAll("#tabs button"));
+  botones.forEach(function (b, i) {
+    b.addEventListener("click", function () { estado.estilo = b.dataset.estilo; pintar(); });
+    b.addEventListener("keydown", function (ev) {
+      if (ev.key !== "ArrowRight" && ev.key !== "ArrowLeft") return;
+      ev.preventDefault();
+      var otro = botones[(i + (ev.key === "ArrowRight" ? 1 : botones.length - 1)) % botones.length];
+      estado.estilo = otro.dataset.estilo;
+      pintar();
+      otro.focus();
+    });
+  });
+  ["izq", "der"].forEach(function (lado) {
+    $(lado).innerHTML = ESTILOS.map(function (e) { return '<option value="' + e.id + '">' + esc(e.nombre) + "</option>"; }).join("");
+    $(lado).addEventListener("change", function () { estado[lado] = $(lado).value; pintar(); });
+  });
+  $("vista").addEventListener("change", function () { estado.vista = $("vista").value; pintar(); });
+  ["req-aprobados", "req-otro", "ver-roles"].forEach(function (id) { $(id).addEventListener("change", pintar); });
+
+  function pintar() {
+    var v = variante();
+    botones.forEach(function (b) {
+      var si = b.dataset.estilo === estado.estilo;
+      b.classList.toggle("activo", si);
+      b.setAttribute("aria-selected", si ? "true" : "false");
+      b.tabIndex = si ? 0 : -1;
+    });
+    $("panel-uno").setAttribute("aria-labelledby", "tab-" + estado.estilo);
+    $("vista").value = estado.vista;
+    $("vista-uno").hidden = estado.vista !== "uno";
+    $("vista-dos").hidden = estado.vista !== "dos";
+    if (estado.vista === "uno") {
+      $("panel-uno").innerHTML = htmlEstilo(estado.estilo, true);
+    } else {
+      $("izq").value = estado.izq; $("der").value = estado.der;
+      $("panel-izq").innerHTML = htmlEstilo(estado.izq, false);
+      $("panel-der").innerHTML = htmlEstilo(estado.der, false);
+    }
+    $("resumen").innerHTML = '<thead><tr><th scope="col">Estilo</th><th scope="col">Líneas</th>' + (v !== "base" ? '<th scope="col">Nuevas o cambiadas</th>' : "") + "</tr></thead><tbody>" +
+      ESTILOS.map(function (e) {
+        var c = cuentas(e.id, v);
+        return "<tr><td>" + esc(e.nombre) + '</td><td class="n">' + c.lineas + "</td>" + (v !== "base" ? '<td class="n">' + c.cambian + "</td>" : "") + "</tr>";
+      }).join("") + "</tbody>";
+    $("salida").textContent = DATOS[estado.vista === "uno" ? estado.estilo : estado.izq][v].salida;
+    guardar();
+  }
+  pintar();
+})();
+</script>
+<div id="qr-sitio" class="qr-capa" hidden>
+  <div class="qr-caja" role="dialog" aria-modal="true" aria-label="Código QR de esta página">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 45" role="img" aria-label="Código QR de https://memosanchezg.github.io/programacion-basica-interactivos/semana-08-paradigmas.html" shape-rendering="crispEdges"><rect width="45" height="45" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM12 2h16v1h-16zM30 2h2v1h-2zM33 2h2v1h-2zM36 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM12 3h3v1h-3zM16 3h1v1h-1zM19 3h1v1h-1zM23 3h1v1h-1zM26 3h5v1h-5zM34 3h1v1h-1zM36 3h1v1h-1zM42 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM10 4h3v1h-3zM19 4h3v1h-3zM23 4h2v1h-2zM26 4h2v1h-2zM29 4h2v1h-2zM32 4h3v1h-3zM36 4h1v1h-1zM38 4h3v1h-3zM42 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h2v1h-2zM13 5h2v1h-2zM17 5h2v1h-2zM23 5h1v1h-1zM26 5h1v1h-1zM28 5h1v1h-1zM32 5h3v1h-3zM36 5h1v1h-1zM38 5h3v1h-3zM42 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h3v1h-3zM16 6h2v1h-2zM20 6h2v1h-2zM24 6h2v1h-2zM30 6h5v1h-5zM36 6h1v1h-1zM38 6h3v1h-3zM42 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h2v1h-2zM13 7h2v1h-2zM16 7h2v1h-2zM22 7h1v1h-1zM26 7h1v1h-1zM29 7h2v1h-2zM34 7h1v1h-1zM36 7h1v1h-1zM42 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM30 8h1v1h-1zM32 8h1v1h-1zM34 8h1v1h-1zM36 8h7v1h-7zM10 9h1v1h-1zM13 9h1v1h-1zM15 9h1v1h-1zM17 9h2v1h-2zM20 9h1v1h-1zM23 9h1v1h-1zM25 9h2v1h-2zM28 9h1v1h-1zM33 9h2v1h-2zM2 10h1v1h-1zM4 10h5v1h-5zM13 10h1v1h-1zM15 10h5v1h-5zM22 10h1v1h-1zM24 10h1v1h-1zM27 10h3v1h-3zM31 10h1v1h-1zM36 10h5v1h-5zM2 11h1v1h-1zM4 11h1v1h-1zM7 11h1v1h-1zM10 11h1v1h-1zM14 11h1v1h-1zM16 11h1v1h-1zM19 11h5v1h-5zM25 11h1v1h-1zM27 11h1v1h-1zM30 11h1v1h-1zM32 11h3v1h-3zM36 11h3v1h-3zM40 11h3v1h-3zM4 12h2v1h-2zM8 12h1v1h-1zM11 12h3v1h-3zM17 12h2v1h-2zM22 12h2v1h-2zM29 12h4v1h-4zM34 12h1v1h-1zM36 12h2v1h-2zM2 13h1v1h-1zM4 13h2v1h-2zM7 13h1v1h-1zM11 13h1v1h-1zM13 13h1v1h-1zM18 13h1v1h-1zM23 13h2v1h-2zM28 13h1v1h-1zM32 13h5v1h-5zM38 13h2v1h-2zM42 13h1v1h-1zM2 14h1v1h-1zM7 14h3v1h-3zM12 14h1v1h-1zM14 14h1v1h-1zM16 14h1v1h-1zM18 14h2v1h-2zM21 14h2v1h-2zM24 14h1v1h-1zM26 14h6v1h-6zM33 14h1v1h-1zM37 14h1v1h-1zM39 14h2v1h-2zM2 15h1v1h-1zM6 15h1v1h-1zM9 15h3v1h-3zM17 15h1v1h-1zM20 15h1v1h-1zM24 15h1v1h-1zM29 15h1v1h-1zM32 15h11v1h-11zM2 16h1v1h-1zM5 16h1v1h-1zM8 16h4v1h-4zM13 16h1v1h-1zM15 16h4v1h-4zM20 16h1v1h-1zM22 16h2v1h-2zM25 16h2v1h-2zM29 16h4v1h-4zM34 16h2v1h-2zM37 16h1v1h-1zM40 16h1v1h-1zM2 17h1v1h-1zM12 17h1v1h-1zM16 17h1v1h-1zM23 17h1v1h-1zM25 17h1v1h-1zM28 17h2v1h-2zM34 17h1v1h-1zM36 17h2v1h-2zM39 17h1v1h-1zM41 17h1v1h-1zM2 18h4v1h-4zM8 18h2v1h-2zM11 18h2v1h-2zM14 18h1v1h-1zM19 18h1v1h-1zM22 18h1v1h-1zM25 18h1v1h-1zM27 18h3v1h-3zM31 18h3v1h-3zM35 18h1v1h-1zM37 18h1v1h-1zM40 18h1v1h-1zM6 19h1v1h-1zM9 19h1v1h-1zM11 19h3v1h-3zM15 19h2v1h-2zM18 19h1v1h-1zM20 19h3v1h-3zM25 19h2v1h-2zM30 19h5v1h-5zM36 19h4v1h-4zM41 19h2v1h-2zM2 20h2v1h-2zM5 20h1v1h-1zM7 20h3v1h-3zM13 20h1v1h-1zM18 20h1v1h-1zM20 20h1v1h-1zM22 20h1v1h-1zM24 20h1v1h-1zM29 20h3v1h-3zM35 20h1v1h-1zM38 20h2v1h-2zM41 20h1v1h-1zM11 21h1v1h-1zM14 21h1v1h-1zM18 21h1v1h-1zM28 21h8v1h-8zM38 21h2v1h-2zM41 21h2v1h-2zM3 22h1v1h-1zM7 22h5v1h-5zM13 22h1v1h-1zM17 22h2v1h-2zM20 22h1v1h-1zM23 22h4v1h-4zM29 22h1v1h-1zM39 22h3v1h-3zM3 23h2v1h-2zM6 23h1v1h-1zM10 23h3v1h-3zM14 23h2v1h-2zM17 23h3v1h-3zM21 23h3v1h-3zM25 23h1v1h-1zM27 23h2v1h-2zM30 23h1v1h-1zM32 23h3v1h-3zM36 23h1v1h-1zM38 23h5v1h-5zM2 24h2v1h-2zM5 24h2v1h-2zM8 24h1v1h-1zM12 24h2v1h-2zM16 24h3v1h-3zM20 24h1v1h-1zM22 24h1v1h-1zM24 24h1v1h-1zM27 24h4v1h-4zM34 24h1v1h-1zM37 24h1v1h-1zM39 24h1v1h-1zM2 25h4v1h-4zM7 25h1v1h-1zM9 25h1v1h-1zM12 25h2v1h-2zM16 25h1v1h-1zM18 25h1v1h-1zM20 25h2v1h-2zM23 25h2v1h-2zM29 25h1v1h-1zM33 25h3v1h-3zM38 25h2v1h-2zM3 26h2v1h-2zM6 26h3v1h-3zM10 26h2v1h-2zM15 26h1v1h-1zM19 26h1v1h-1zM25 26h7v1h-7zM33 26h1v1h-1zM40 26h3v1h-3zM2 27h1v1h-1zM12 27h5v1h-5zM19 27h1v1h-1zM21 27h3v1h-3zM25 27h1v1h-1zM27 27h1v1h-1zM30 27h1v1h-1zM32 27h2v1h-2zM35 27h5v1h-5zM41 27h2v1h-2zM5 28h2v1h-2zM8 28h3v1h-3zM14 28h1v1h-1zM16 28h3v1h-3zM20 28h1v1h-1zM22 28h1v1h-1zM26 28h5v1h-5zM32 28h1v1h-1zM34 28h5v1h-5zM4 29h1v1h-1zM6 29h2v1h-2zM12 29h1v1h-1zM15 29h3v1h-3zM21 29h4v1h-4zM26 29h1v1h-1zM28 29h1v1h-1zM30 29h1v1h-1zM33 29h3v1h-3zM38 29h2v1h-2zM4 30h2v1h-2zM8 30h1v1h-1zM11 30h1v1h-1zM13 30h3v1h-3zM19 30h1v1h-1zM24 30h2v1h-2zM27 30h2v1h-2zM31 30h1v1h-1zM33 30h1v1h-1zM39 30h4v1h-4zM2 31h2v1h-2zM7 31h1v1h-1zM11 31h2v1h-2zM16 31h1v1h-1zM18 31h1v1h-1zM20 31h1v1h-1zM22 31h1v1h-1zM26 31h2v1h-2zM29 31h6v1h-6zM36 31h1v1h-1zM38 31h1v1h-1zM40 31h1v1h-1zM42 31h1v1h-1zM2 32h1v1h-1zM4 32h1v1h-1zM6 32h5v1h-5zM13 32h1v1h-1zM18 32h1v1h-1zM21 32h1v1h-1zM23 32h2v1h-2zM27 32h2v1h-2zM31 32h1v1h-1zM35 32h3v1h-3zM39 32h1v1h-1zM2 33h1v1h-1zM4 33h4v1h-4zM10 33h2v1h-2zM13 33h1v1h-1zM16 33h1v1h-1zM20 33h5v1h-5zM26 33h1v1h-1zM30 33h1v1h-1zM34 33h4v1h-4zM39 33h1v1h-1zM41 33h2v1h-2zM2 34h1v1h-1zM5 34h2v1h-2zM8 34h1v1h-1zM10 34h1v1h-1zM12 34h1v1h-1zM16 34h2v1h-2zM19 34h1v1h-1zM21 34h1v1h-1zM24 34h1v1h-1zM26 34h3v1h-3zM31 34h1v1h-1zM34 34h5v1h-5zM40 34h1v1h-1zM42 34h1v1h-1zM10 35h1v1h-1zM13 35h1v1h-1zM15 35h1v1h-1zM19 35h9v1h-9zM30 35h1v1h-1zM33 35h2v1h-2zM38 35h1v1h-1zM41 35h2v1h-2zM2 36h7v1h-7zM11 36h3v1h-3zM17 36h3v1h-3zM23 36h1v1h-1zM27 36h4v1h-4zM32 36h3v1h-3zM36 36h1v1h-1zM38 36h1v1h-1zM40 36h1v1h-1zM2 37h1v1h-1zM8 37h1v1h-1zM10 37h2v1h-2zM14 37h1v1h-1zM16 37h1v1h-1zM19 37h2v1h-2zM23 37h2v1h-2zM26 37h2v1h-2zM33 37h2v1h-2zM38 37h2v1h-2zM2 38h1v1h-1zM4 38h3v1h-3zM8 38h1v1h-1zM10 38h5v1h-5zM17 38h2v1h-2zM23 38h1v1h-1zM26 38h1v1h-1zM28 38h2v1h-2zM32 38h1v1h-1zM34 38h5v1h-5zM40 38h1v1h-1zM2 39h1v1h-1zM4 39h3v1h-3zM8 39h1v1h-1zM10 39h3v1h-3zM15 39h2v1h-2zM18 39h5v1h-5zM24 39h3v1h-3zM30 39h2v1h-2zM33 39h1v1h-1zM35 39h1v1h-1zM37 39h1v1h-1zM2 40h1v1h-1zM4 40h3v1h-3zM8 40h1v1h-1zM10 40h2v1h-2zM14 40h1v1h-1zM16 40h3v1h-3zM20 40h1v1h-1zM22 40h1v1h-1zM24 40h1v1h-1zM26 40h2v1h-2zM29 40h2v1h-2zM34 40h6v1h-6zM2 41h1v1h-1zM8 41h1v1h-1zM12 41h2v1h-2zM15 41h1v1h-1zM17 41h1v1h-1zM20 41h1v1h-1zM23 41h1v1h-1zM25 41h1v1h-1zM28 41h3v1h-3zM34 41h2v1h-2zM38 41h2v1h-2zM41 41h1v1h-1zM2 42h7v1h-7zM10 42h2v1h-2zM14 42h1v1h-1zM16 42h3v1h-3zM21 42h1v1h-1zM24 42h5v1h-5zM31 42h1v1h-1zM33 42h1v1h-1zM35 42h6v1h-6z"/></svg>
+    <p class="qr-texto">Escanea con la cámara del celular para abrir esta página</p>
+    <p class="qr-url">https://memosanchezg.github.io/programacion-basica-interactivos/semana-08-paradigmas.html</p>
+    <button type="button" class="qr-cerrar">Cerrar</button>
+  </div>
+</div>
+<style>
+  .qr-capa { position:fixed; top:0; right:0; bottom:0; left:0; z-index:10000; display:flex; align-items:center;
+             justify-content:center; padding:16px; background:#fff; }
+  .qr-capa[hidden] { display:none; }
+  .qr-caja { max-width:100%; text-align:center; color:#0A2A57; font:16px/1.4 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .qr-caja svg { display:block; width:min(62vh, 84vw); height:auto; margin:0 auto; }
+  .qr-texto { margin:12px 0 2px; font-size:1.15rem; font-weight:bold; }
+  .qr-url { margin:0 0 12px; color:#5B6472; word-break:break-all; }
+  .qr-cerrar { font:inherit; padding:6px 20px; border:2px solid #00408F; border-radius:4px; background:#fff;
+               color:#00408F; cursor:pointer; }
+</style>
+<script>
+  (function () {
+    var capa = document.getElementById("qr-sitio");
+    document.querySelectorAll("a.qr-abrir").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        capa.hidden = false;
+        capa.querySelector(".qr-cerrar").focus();
+      });
+    });
+    capa.addEventListener("click", function (e) {
+      if (e.target === capa || e.target.classList.contains("qr-cerrar")) capa.hidden = true;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !capa.hidden) capa.hidden = true;
+    });
+  })();
+</script>
+</body>
+</html>

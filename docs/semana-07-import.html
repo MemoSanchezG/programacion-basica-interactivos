@@ -1,0 +1,1917 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="tipo" content="simulador">
+<title>¿Funciona este import?</title>
+
+<style>
+  :root {
+    --azul:#00408F; --azul-oscuro:#0A2A57; --guinda:#8C1D35; --oro:#B8975A; --oro-texto:#8A6A2E;
+    --azul-claro:#E8EEF7; --oro-claro:#F7F1E6; --guinda-claro:#F5E6EA; --verde:#2F7D5B;
+    --tinta:#1B1F2A; --gris:#5B6472; --gris-claro:#E9ECF1; --borde:#D9DEE6; --fondo:#FFFFFF;
+    --cmd-fondo:#0C0C0C; --cmd-texto:#E6E6E6;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--fondo); color:var(--tinta);
+         font:16px/1.45 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .franja { height:8px; background:var(--azul); border-bottom:3px solid var(--oro); }
+  header { max-width:1280px; margin:0 auto; padding:12px 18px 4px; }
+  .semana { color:var(--guinda); font-weight:bold; letter-spacing:.04em; font-size:.85rem; text-transform:uppercase; }
+  h1 { font-family:Cambria,Georgia,serif; color:var(--azul-oscuro); font-size:1.7rem; margin:2px 0 2px; }
+  .sub { color:var(--gris); margin:0; }
+  main { max-width:1280px; margin:0 auto; padding:8px 18px 24px; }
+  nav.pestanas { display:flex; gap:4px; flex-wrap:wrap; border-bottom:2px solid var(--gris-claro); margin:6px 0 12px; }
+  nav.pestanas button { font:inherit; font-weight:bold; border:none; background:none; color:var(--gris);
+                        padding:8px 14px; cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; }
+  nav.pestanas button.activo { color:var(--azul-oscuro); border-bottom-color:var(--azul); }
+  nav.pestanas button:focus-visible { outline:2px solid var(--azul); }
+  section.vista { display:none; }
+  section.vista.activo { display:block; }
+  .fila { display:grid; grid-template-columns:minmax(260px,400px) minmax(0,1fr); gap:16px; align-items:start; }
+  .fila > * { min-width:0; }
+  .panel { background:#fff; border:1px solid var(--borde); border-radius:10px; padding:12px 14px; min-width:0; }
+  .panel h2 { font-size:1.02rem; color:var(--azul-oscuro); margin:0 0 8px; }
+  .panel h3 { font-size:.95rem; color:var(--azul-oscuro); margin:14px 0 4px; }
+  label { display:block; font-weight:bold; color:var(--azul-oscuro); margin-top:10px; }
+  label small { font-weight:normal; color:var(--gris); }
+  input[type=text], select { font:inherit; padding:4px 6px; border:1px solid var(--borde); border-radius:6px; max-width:100%; }
+  select { width:100%; }
+  button.accion { font:inherit; font-weight:bold; border-radius:8px; padding:7px 12px; margin:8px 6px 0 0;
+                  border:1px solid var(--azul); background:#fff; color:var(--azul); cursor:pointer; }
+  button.accion:hover:not(:disabled), button.accion:focus-visible { background:var(--azul); color:#fff; outline:none; }
+  button.accion.primaria { background:var(--azul); color:#fff; }
+  button.accion.primaria:hover:not(:disabled), button.accion.primaria:focus-visible { background:var(--azul-oscuro); }
+  button.accion:disabled { opacity:.45; cursor:not-allowed; }
+  .lectura { background:var(--oro-claro); border-left:4px solid var(--oro); border-radius:8px; padding:10px 12px;
+             margin-top:12px; line-height:1.55; overflow-wrap:anywhere; }
+  .lectura b { color:var(--azul-oscuro); }
+  .lectura.bien { background:#EAF4EF; border-left-color:var(--verde); }
+  .lectura.mal { background:var(--guinda-claro); border-left-color:var(--guinda); }
+  .ok { color:var(--verde); font-weight:bold; }
+  .mal { color:var(--guinda); font-weight:bold; }
+  .preguntas { background:var(--azul-claro); border-radius:8px; padding:10px 14px; margin-top:12px; }
+  .preguntas h3 { margin:0 0 4px; font-size:.95rem; color:var(--azul-oscuro); }
+  .preguntas ol { margin:0; padding-left:20px; }
+  .preguntas li { margin:4px 0; }
+  /* Código Python con los colores del curso (minted, estilo borland) y salida de consola (cmd). */
+  .codigo { border:1px solid var(--tinta); background:#fff; font:15px/1.5 Consolas,"Courier New",monospace;
+            overflow-x:auto; margin:8px 0; }
+  .codigo ol { margin:0; padding:8px 12px 8px 3.4em; }
+  .codigo li { white-space:pre; }
+  .codigo li::marker { color:var(--gris); font:11px Cambria,Georgia,serif; }
+  .codigo .kw { color:#000080; font-weight:bold; }
+  .codigo .str, .codigo .num { color:#0000FF; }
+  .codigo .com { color:#008800; font-style:italic; }
+  .codigo .marca { background:var(--oro-claro); outline:1px solid var(--oro); }
+  .codigo .siguiente { box-shadow:inset 3px 0 0 var(--guinda); }
+  .consola { background:var(--cmd-fondo); color:var(--cmd-texto); font:15px/1.45 Consolas,"Courier New",monospace;
+             white-space:pre-wrap; word-break:break-word; padding:8px 12px; border-radius:4px; margin:8px 0; min-height:2.2em; }
+  .consola .prompt { color:#9AA0A6; }
+  .consola .error { color:#FF8A80; }
+  footer { max-width:1280px; margin:0 auto; padding:6px 18px 18px; color:var(--gris); font-size:.85rem; }
+  footer a { color:var(--azul); }
+  @media (max-width: 820px) { .fila { grid-template-columns:1fr; } }
+
+  /* Propios de esta página */
+  [hidden] { display:none !important; }
+  code, .mono { font-family:Consolas,"Courier New",monospace; }
+  code { color:var(--azul-oscuro); }
+  input.mono { font:16px Consolas,"Courier New",monospace; width:100%; padding:7px 8px; border:1px solid var(--tinta); }
+  input.mono:focus-visible { outline:2px solid var(--azul); }
+  .ruta { font:13px Consolas,"Courier New",monospace; color:var(--gris); overflow-wrap:anywhere; }
+  /* Árbol de archivos */
+  ul.arbol, ul.arbol ul { list-style:none; margin:0; padding:0; }
+  ul.arbol ul { padding-left:20px; border-left:1px dotted var(--borde); margin-left:9px; }
+  ul.arbol li { margin:1px 0; }
+  .nodo { display:inline-flex; align-items:center; gap:6px; padding:2px 6px; border-radius:6px; border:1px solid transparent;
+          font:15px Consolas,"Courier New",monospace; color:var(--tinta); background:none; cursor:default; max-width:100%; }
+  button.nodo { cursor:pointer; }
+  button.nodo:hover { border-color:var(--borde); }
+  button.nodo:focus-visible { outline:2px solid var(--azul); }
+  .nodo.elegido { background:var(--azul-claro); border-color:var(--azul); }
+  .nodo.sp0 { background:var(--oro-claro); border-color:var(--oro); }
+  .nodo.corre { font-weight:bold; }
+  .ico { display:inline-block; min-width:2.4em; text-align:center; font:bold 10px/1.6 Calibri,"Segoe UI",sans-serif; border-radius:3px;
+         color:#fff; padding:0 3px; }
+  .ico.carpeta { background:var(--oro-texto); }
+  .ico.paquete { background:var(--guinda); }
+  .ico.py { background:var(--azul); }
+  .ico.otro { background:var(--gris); }
+  .etq { font:bold 12px Calibri,"Segoe UI",sans-serif; border-radius:9px; padding:0 7px; white-space:nowrap; }
+  .etq.sp0 { color:var(--oro-texto); border:1px solid var(--oro); }
+  .etq.corre { color:var(--guinda); border:1px solid var(--guinda); }
+  .etq.nuevo { color:var(--verde); border:1px solid var(--verde); }
+  .terminal { font:14px Consolas,"Courier New",monospace; background:var(--cmd-fondo); color:var(--cmd-texto); border-radius:4px;
+              padding:6px 10px; margin-top:6px; overflow-wrap:anywhere; }
+  table.tabla { width:100%; border-collapse:collapse; font-size:.95rem; margin-top:4px; }
+  table.tabla th, table.tabla td { border:1px solid var(--borde); padding:4px 8px; text-align:left; vertical-align:top; }
+  table.tabla thead th { background:var(--gris-claro); color:var(--azul-oscuro); }
+  table.tabla td:first-child { font-family:Consolas,"Courier New",monospace; color:var(--azul-oscuro); white-space:nowrap; }
+  table.tabla code { overflow-wrap:anywhere; }
+  .tabla-scroll { overflow-x:auto; }
+  ol.ejecutados { margin:4px 0; padding-left:22px; }
+  ol.ejecutados li { margin:2px 0; overflow-wrap:anywhere; }
+  .nota { color:var(--gris); font-size:.92rem; margin:6px 0 0; }
+  .fila-botones { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+  .fila-botones button.accion { margin:0; }
+  /* Paso a paso */
+  .selector { display:flex; flex-wrap:wrap; gap:6px 12px; align-items:center; margin:0 0 10px; }
+  .selector label { margin:0; }
+  .selector select { width:auto; }
+  .controles { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:4px; }
+  .controles button.accion { margin:0; min-width:46px; padding:6px 10px; }
+  .controles .barra { flex:1 1 180px; display:flex; flex-direction:column; min-width:150px; }
+  .controles .barra label { margin:0 0 2px; font-size:.95rem; }
+  input[type=range] { width:100%; }
+  .archivo-cab { display:flex; justify-content:space-between; gap:8px; font:bold 14px Consolas,"Courier New",monospace;
+                 color:var(--azul-oscuro); margin-top:10px; }
+  .archivo-cab .estado { font:12px Calibri,"Segoe UI",sans-serif; color:var(--gris); }
+  .archivo.activo .codigo { border-color:var(--oro); box-shadow:0 0 0 2px var(--oro-claro); }
+  .archivo.apagado { opacity:.55; }
+  .modulos { display:flex; flex-wrap:wrap; gap:6px; margin:4px 0; padding:0; list-style:none; }
+  .modulos li { font:14px Consolas,"Courier New",monospace; border:1px solid var(--azul); color:var(--azul-oscuro);
+                border-radius:6px; padding:1px 8px; }
+  .modulos li.inicia { border-style:dashed; color:var(--gris); }
+  .modulos li.vacio { border:none; color:var(--gris); font-family:Calibri,"Segoe UI",sans-serif; }
+  table.vars { width:100%; border-collapse:collapse; font-size:.95rem; margin-top:4px; }
+  table.vars th, table.vars td { border:1px solid var(--borde); padding:3px 8px; text-align:left; vertical-align:top; }
+  table.vars thead th { background:var(--gris-claro); color:var(--azul-oscuro); }
+  table.vars tr.grupo th { background:#fff; color:var(--gris); font-weight:normal; font-size:.85rem; }
+  table.vars td { font-family:Consolas,"Courier New",monospace; overflow-wrap:anywhere; }
+  table.vars td:first-child { color:var(--azul-oscuro); white-space:nowrap; }
+  table.vars tr.cambio td { background:var(--oro-claro); }
+  table.vars tr.marco th { background:var(--guinda-claro); color:var(--guinda); }
+  /* Retos */
+  nav.niveles { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:4px 0 12px; }
+  nav.niveles button { font:bold 15px Calibri,"Segoe UI",sans-serif; min-width:2.6em; height:2.4em; border-radius:8px;
+                       border:1px solid var(--borde); background:#fff; color:var(--azul-oscuro); cursor:pointer; padding:0 8px; }
+  nav.niveles button.hecho { border-color:var(--verde); color:var(--verde); }
+  nav.niveles button.actual { border:2px solid var(--azul); color:#fff; background:var(--azul); }
+  nav.niveles button:disabled { color:var(--gris); background:var(--gris-claro); cursor:not-allowed; }
+  nav.niveles button:focus-visible { outline:2px solid var(--oro); outline-offset:2px; }
+  #avanceTxt { color:var(--gris); margin-left:6px; }
+  .etiquetas { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 6px; }
+  .etiquetas span { font-size:.85rem; font-weight:bold; border-radius:999px; padding:1px 10px; border:1px solid var(--borde); color:var(--gris); }
+  h2.nivel { font-family:Cambria,Georgia,serif; font-size:1.3rem !important; color:var(--azul-oscuro); margin:2px 0 4px !important; }
+  .objetivo { font-size:1.05rem; margin:4px 0; }
+  .opciones { display:flex; flex-direction:column; gap:6px; margin-top:8px; }
+  .opciones button { font:inherit; text-align:left; border:1px solid var(--borde); border-radius:8px; background:#fff; padding:8px 10px;
+                     cursor:pointer; color:var(--tinta); }
+  .opciones button:hover, .opciones button:focus-visible { border-color:var(--azul); outline:none; background:var(--azul-claro); }
+  .opciones button.correcta { border-color:var(--verde); background:#EAF4EF; }
+  .opciones button.incorrecta { border-color:var(--guinda); background:var(--guinda-claro); }
+  .pista { background:var(--oro-claro); border-left:4px solid var(--oro); border-radius:8px; padding:8px 12px; margin-top:8px; }
+  @media (max-width: 480px) {
+    header { padding:10px 12px 4px; }
+    main { padding:8px 10px 20px; }
+    footer { padding:6px 12px 16px; }
+    .panel { padding:10px; }
+    h1 { font-size:1.45rem; }
+    .codigo, .consola { font-size:13.5px; }
+    .codigo ol { padding-left:2.9em; }
+    .nodo { font-size:14px; }
+    nav.pestanas button { padding:8px 10px; }
+  }
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header>
+  <div class="semana">Semana 7 · Módulos y paquetes</div>
+  <h1>¿Funciona este import?</h1>
+  <p class="sub">Un proyecto con módulos, un paquete y varias carpetas: elige cómo lo corres, escribe un import y mira lo que haría Python 3.12: los nombres que quedan disponibles, qué se ejecuta y el error exacto cuando falla.</p>
+</header>
+<main>
+  <nav class="pestanas" role="tablist" aria-label="Partes de la página">
+    <button type="button" class="activo" data-vista="v-explorar" role="tab" id="tab-explorar" aria-selected="true" aria-controls="v-explorar">Explorar</button>
+    <button type="button" data-vista="v-ejecuta" role="tab" id="tab-ejecuta" aria-selected="false" aria-controls="v-ejecuta" tabindex="-1">Qué se ejecuta al importar</button>
+    <button type="button" data-vista="v-retos" role="tab" id="tab-retos" aria-selected="false" aria-controls="v-retos" tabindex="-1">Retos</button>
+  </nav>
+
+  
+  <section class="vista activo" id="v-explorar" role="tabpanel" aria-labelledby="tab-explorar">
+    <div class="fila">
+      <div class="panel">
+        <h2>El proyecto</h2>
+        <p class="ruta">C:\Users\alumno\Documents\clima</p>
+        <div id="arbol-explorar" aria-label="Archivos del proyecto"></div>
+        <label for="modo">Cómo lo corres</label>
+        <select id="modo"></select>
+        <div class="terminal" id="terminal" aria-hidden="true"></div>
+        <div class="lectura" id="lectura-modo" aria-live="polite"></div>
+        <h3 id="titulo-archivo">Contenido de un archivo</h3>
+        <p class="nota" id="nota-archivo">Toca un archivo .py del árbol para ver su código.</p>
+        <div id="ver-archivo"></div>
+      </div>
+      <div class="panel">
+        <h2>Tu programa: <code id="nombre-script">main.py</code></h2>
+        <label for="ejemplo">Ejemplos <small>(o escribe tus propias líneas abajo)</small></label>
+        <select id="ejemplo"></select>
+        <label for="linea1">Línea 1 <small>(un import)</small></label>
+        <input id="linea1" class="mono" type="text" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" value="import conversiones">
+        <label for="linea2">Línea 2 <small>(opcional: otro import o print(nombre); Enter corre el programa)</small></label>
+        <input id="linea2" class="mono" type="text" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" placeholder="print(conversiones.CERO_ABSOLUTO)">
+        <div class="fila-botones"><button type="button" class="accion primaria" id="correr">▶ Correr</button></div>
+        <div id="codigo-programa"></div>
+        <div class="consola" id="consola" aria-live="polite" aria-label="Lo que muestra la terminal"></div>
+        <div class="lectura" id="explicacion" aria-live="polite"></div>
+        <h3>Nombres nuevos en <span id="nombre-script2">main.py</span></h3>
+        <div class="tabla-scroll"><table class="tabla" id="nombres"></table></div>
+        <h3>Qué se ejecutó al importar</h3>
+        <ol class="ejecutados" id="ejecutados"></ol>
+        <div class="preguntas">
+          <h3>Para explorar</h3>
+          <ol>
+            <li>Con <code>python main.py</code>, escribe <code>import conversiones</code> y en la línea 2 <code>print(c_a_f)</code>. Después cambia la línea 1 a <code>from conversiones import c_a_f</code>. ¿Qué nombre crea cada forma en main.py?</li>
+            <li>Con <code>import conversiones</code>, elige <code>python scripts\grafica.py</code> y después <code>python clima\main.py</code> (desde Documents). ¿De qué depende que Python encuentre conversiones.py: de la carpeta donde estás o de la carpeta del archivo que corres? ¿Cuánto vale sys.path[0] en cada caso?</li>
+            <li>Con <code>from herramientas.estadistica import promedio</code>, ¿qué archivos se ejecutan y en qué orden? ¿Por qué aparece "Cargando el paquete herramientas..." si no escribiste <code>import herramientas</code>?</li>
+            <li>Escribe <code>from conversiones import *</code> y en la línea 2 <code>print(_redondear)</code>. ¿Por qué no llegó <code>_redondear</code>?</li>
+            <li>Prueba <code>import datos</code> (la carpeta de datos no tiene __init__.py) y luego <code>import datos.septiembre</code>. ¿Qué pasa en cada caso y por qué?</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  
+  <section class="vista" id="v-ejecuta" role="tabpanel" aria-labelledby="tab-ejecuta">
+    <div class="selector">
+      <label for="escenario">Comando</label>
+      <select id="escenario">
+        <option value="0">python main.py (main importa conversiones y reporte)</option>
+        <option value="1">python conversiones.py (corres el módulo directamente)</option>
+      </select>
+    </div>
+    <div class="fila">
+      <div class="panel">
+        <h2>El código, línea por línea</h2>
+        <div class="controles">
+          <button type="button" class="accion" id="p-inicio" aria-label="Ir al inicio" title="Ir al inicio">⏮</button>
+          <button type="button" class="accion" id="p-atras" aria-label="Paso anterior" title="Paso anterior">◀</button>
+          <button type="button" class="accion" id="p-adelante" aria-label="Paso siguiente" title="Paso siguiente">▶</button>
+          <button type="button" class="accion" id="p-fin" aria-label="Ir al final" title="Ir al final">⏭</button>
+          <div class="barra">
+            <label for="p-paso">Paso <span id="p-txt"></span></label>
+            <input type="range" id="p-paso" min="0" max="1" step="1" value="0">
+          </div>
+        </div>
+        <div class="lectura" id="p-explica" aria-live="polite"></div>
+        <div id="p-archivos"></div>
+      </div>
+      <div class="panel">
+        <h2>sys.modules <small class="nota">(los módulos del proyecto que ya se cargaron)</small></h2>
+        <ul class="modulos" id="p-modulos"></ul>
+        <h2 style="margin-top:14px">Variables</h2>
+        <div class="tabla-scroll"><table class="vars" id="p-vars"></table></div>
+        <h2 style="margin-top:14px">Consola</h2>
+        <div class="consola" id="p-consola" aria-live="polite"></div>
+        <div class="preguntas">
+          <h3>Para explorar</h3>
+          <ol>
+            <li>Con <code>python main.py</code>, ¿cuántas veces se ejecuta conversiones.py si main.py y reporte.py la importan? ¿Cómo lo sabe Python?</li>
+            <li>Cuando llega a la línea 20 de conversiones.py (<code>if __name__ == "__main__":</code>), ¿cuánto vale <code>__name__</code> con cada comando? ¿Qué cambia en lo que se imprime?</li>
+            <li>¿Qué le pasa a <code>f</code> cuando termina <code>c_a_f</code>? ¿Por qué main.py puede usar <code>conversiones.CERO_ABSOLUTO</code> pero no <code>f</code>?</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  
+  <section class="vista" id="v-retos" role="tabpanel" aria-labelledby="tab-retos">
+    <nav class="niveles" id="niveles" aria-label="Niveles de los retos"></nav>
+    <div class="fila">
+      <div class="panel">
+        <h2>El proyecto</h2>
+        <div id="arbol-retos" aria-label="Archivos del proyecto del reto"></div>
+        <div class="terminal" id="terminal-reto" aria-hidden="true"></div>
+        <h3 id="titulo-archivo-reto">Contenido de un archivo</h3>
+        <p class="nota" id="nota-archivo-reto">Toca un archivo .py del árbol para ver su código.</p>
+        <div id="ver-archivo-reto"></div>
+      </div>
+      <div class="panel" aria-labelledby="titulo-nivel">
+        <div class="etiquetas" id="etiquetas"></div>
+        <h2 class="nivel" id="titulo-nivel"></h2>
+        <p class="objetivo" id="objetivo"></p>
+        <div id="zona-reto"></div>
+        <div class="lectura" id="retro" aria-live="polite" hidden></div>
+        <div class="consola" id="consola-reto" aria-label="Lo que muestra la terminal" hidden></div>
+        <div id="pistas"></div>
+        <div>
+          <button type="button" class="accion" id="anterior">◀ Reto anterior</button>
+          <button type="button" class="accion" id="siguiente">Siguiente reto ▶</button>
+        </div>
+        <p class="nota">Tu avance se guarda en este navegador. <button type="button" class="accion" id="reiniciar">Borrar mi avance</button></p>
+      </div>
+    </div>
+  </section>
+</main>
+<footer>
+  Programación Básica · FCFM-UANL · funciona sin internet. La página reproduce lo que hace Python 3.12 en Windows con este proyecto (Python recién instalado, sin paquetes de pip).
+  <a href="index.html">Índice de simuladores</a> · <a href="#qr-sitio" class="qr-abrir">Abrir en el celular (QR)</a>
+</footer>
+
+<script type="application/json" id="datos-proyecto">[{"archivos": {"conversiones.py": "# conversiones.py: conversiones de temperatura\nprint(\"Cargando conversiones...\")\n\nCERO_ABSOLUTO = -273.15\n\n\ndef c_a_f(celsius):\n    f = celsius * 9 / 5 + 32\n    return f\n\n\ndef f_a_c(fahrenheit):\n    return _redondear((fahrenheit - 32) * 5 / 9)\n\n\ndef _redondear(x):\n    return round(x, 1)\n\n\nif __name__ == \"__main__\":\n    print(\"Prueba:\", c_a_f(30))\n", "reporte.py": "# reporte.py: formato del reporte\nfrom conversiones import c_a_f\n\n\ndef linea(dia, tmax):\n    return f\"{dia}: {tmax} °C = {c_a_f(tmax)} °F\"\n", "herramientas/__init__.py": "# herramientas: paquete de apoyo\nprint(\"Cargando el paquete herramientas...\")\nVERSION = \"1.0\"\n", "herramientas/estadistica.py": "# estadistica.py: estadística básica\ndef promedio(datos):\n    return sum(datos) / len(datos)\n\n\ndef rango(datos):\n    return max(datos) - min(datos)\n\n\nif __name__ == \"__main__\":\n    print(promedio([35.0, 36.5, 38.0]))\n", "herramientas/texto.py": "# texto.py: formato de texto\ndef titulo(texto):\n    return texto.upper().center(30, \"=\")\n", "scripts/grafica.py": "# grafica.py\n", "datos/septiembre.csv": "fecha,tmax\n2026-09-01,35.0\n", "README.md": "# Clima\n", "main.py": "# main.py\n"}, "variantes": {"base": {}, "random": {"random.py": "# random.py: dados para un juego\ndef tirar_dado():\n    return 4\n"}, "texto_mal": {"herramientas/texto.py": "# texto.py: formato de texto\nfrom estadistica import promedio\n\n\ndef titulo(texto):\n    return texto.upper().center(30, \"=\")\n"}}}]</script>
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(t) {
+    return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  function guardarLS(clave, valor) { try { localStorage.setItem(clave, valor); } catch (e) { /* sin almacenamiento */ } }
+  function leerLS(clave) { try { return localStorage.getItem(clave); } catch (e) { return null; } }
+
+  // ---------- Código Python con los colores del curso ----------
+  var PY_KW = /^(False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)$/;
+  function pyResaltar(linea) {
+    var html = "", i = 0, m, resto;
+    while (i < linea.length) {
+      resto = linea.slice(i);
+      if ((m = /^#.*/.exec(resto))) { html += '<span class="com">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[rRbBfFuU]{0,2}("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/.exec(resto))) { html += '<span class="str">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[A-Za-z_\u00C0-\u024F][\w\u00C0-\u024F]*/.exec(resto))) { html += PY_KW.test(m[0]) ? '<span class="kw">' + m[0] + "</span>" : esc(m[0]); }
+      else if ((m = /^(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?j?/.exec(resto))) { html += '<span class="num">' + m[0] + "</span>"; }
+      else { m = [resto[0]]; html += esc(m[0]); }
+      i += m[0].length;
+    }
+    return html;
+  }
+  // Código con números de línea; marca = línea resaltada, siguiente = la que sigue.
+  function htmlCodigo(lineas, marca, siguiente, etiqueta) {
+    return '<div class="codigo"' + (etiqueta ? ' role="region" tabindex="0" aria-label="' + esc(etiqueta) + '"' : "") + "><ol>" +
+      lineas.map(function (l, k) {
+        var cl = [];
+        if (marca === k + 1) cl.push("marca");
+        if (siguiente === k + 1) cl.push("siguiente");
+        return "<li" + (cl.length ? ' class="' + cl.join(" ") + '"' : "") + ">" + (pyResaltar(l) || " ") + "</li>";
+      }).join("") + "</ol></div>";
+  }
+
+  var DATOS_PY = {"integrados":["_abc","_ast","_bisect","_blake2","_codecs","_codecs_cn","_codecs_hk","_codecs_iso2022","_codecs_jp","_codecs_kr","_codecs_tw","_collections","_contextvars","_csv","_datetime","_functools","_heapq","_imp","_io","_json","_locale","_lsprof","_md5","_multibytecodec","_opcode","_operator","_pickle","_random","_sha1","_sha2","_sha3","_signal","_sre","_stat","_statistics","_string","_struct","_symtable","_thread","_tokenize","_tracemalloc","_typing","_warnings","_weakref","_winapi","_xxinterpchannels","_xxsubinterpreters","array","atexit","audioop","binascii","builtins","cmath","errno","faulthandler","gc","itertools","marshal","math","mmap","msvcrt","nt","sys","time","winreg","xxsubtype","zlib"],"stdlib":["__future__","_abc","_aix_support","_ast","_asyncio","_bisect","_blake2","_bz2","_codecs","_codecs_cn","_codecs_hk","_codecs_iso2022","_codecs_jp","_codecs_kr","_codecs_tw","_collections","_collections_abc","_compat_pickle","_compression","_contextvars","_crypt","_csv","_ctypes","_curses","_curses_panel","_datetime","_dbm","_decimal","_elementtree","_frozen_importlib","_frozen_importlib_external","_functools","_gdbm","_hashlib","_heapq","_imp","_io","_json","_locale","_lsprof","_lzma","_markupbase","_md5","_msi","_multibytecodec","_multiprocessing","_opcode","_operator","_osx_support","_overlapped","_pickle","_posixshmem","_posixsubprocess","_py_abc","_pydatetime","_pydecimal","_pyio","_pylong","_queue","_random","_scproxy","_sha1","_sha2","_sha3","_signal","_sitebuiltins","_socket","_sqlite3","_sre","_ssl","_stat","_statistics","_string","_strptime","_struct","_symtable","_thread","_threading_local","_tkinter","_tokenize","_tracemalloc","_typing","_uuid","_warnings","_weakref","_weakrefset","_winapi","_wmi","_zoneinfo","abc","aifc","antigravity","argparse","array","ast","asyncio","atexit","audioop","base64","bdb","binascii","bisect","builtins","bz2","cProfile","calendar","cgi","cgitb","chunk","cmath","cmd","code","codecs","codeop","collections","colorsys","compileall","concurrent","configparser","contextlib","contextvars","copy","copyreg","crypt","csv","ctypes","curses","dataclasses","datetime","dbm","decimal","difflib","dis","doctest","email","encodings","ensurepip","enum","errno","faulthandler","fcntl","filecmp","fileinput","fnmatch","fractions","ftplib","functools","gc","genericpath","getopt","getpass","gettext","glob","graphlib","grp","gzip","hashlib","heapq","hmac","html","http","idlelib","imaplib","imghdr","importlib","inspect","io","ipaddress","itertools","json","keyword","lib2to3","linecache","locale","logging","lzma","mailbox","mailcap","marshal","math","mimetypes","mmap","modulefinder","msilib","msvcrt","multiprocessing","netrc","nis","nntplib","nt","ntpath","nturl2path","numbers","opcode","operator","optparse","os","ossaudiodev","pathlib","pdb","pickle","pickletools","pipes","pkgutil","platform","plistlib","poplib","posix","posixpath","pprint","profile","pstats","pty","pwd","py_compile","pyclbr","pydoc","pydoc_data","pyexpat","queue","quopri","random","re","readline","reprlib","resource","rlcompleter","runpy","sched","secrets","select","selectors","shelve","shlex","shutil","signal","site","smtplib","sndhdr","socket","socketserver","spwd","sqlite3","sre_compile","sre_constants","sre_parse","ssl","stat","statistics","string","stringprep","struct","subprocess","sunau","symtable","sys","sysconfig","syslog","tabnanny","tarfile","telnetlib","tempfile","termios","textwrap","this","threading","time","timeit","tkinter","token","tokenize","tomllib","trace","traceback","tracemalloc","tty","turtle","turtledemo","types","typing","unicodedata","unittest","urllib","uu","uuid","venv","warnings","wave","weakref","webbrowser","winreg","winsound","wsgiref","xdrlib","xml","xmlrpc","zipapp","zipfile","zipimport","zlib","zoneinfo"],"tipos":{"__future__":"Lib\\__future__.py","_abc":"builtin","_aix_support":"Lib\\_aix_support.py","_ast":"builtin","_asyncio":"DLLs\\_asyncio.pyd","_bisect":"builtin","_blake2":"builtin","_bz2":"DLLs\\_bz2.pyd","_codecs":"builtin","_codecs_cn":"builtin","_codecs_hk":"builtin","_codecs_iso2022":"builtin","_codecs_jp":"builtin","_codecs_kr":"builtin","_codecs_tw":"builtin","_collections":"builtin","_collections_abc":"frozen","_compat_pickle":"Lib\\_compat_pickle.py","_compression":"Lib\\_compression.py","_contextvars":"builtin","_csv":"builtin","_ctypes":"DLLs\\_ctypes.pyd","_datetime":"builtin","_decimal":"DLLs\\_decimal.pyd","_elementtree":"DLLs\\_elementtree.pyd","_frozen_importlib":"frozen","_frozen_importlib_external":"frozen","_functools":"builtin","_hashlib":"DLLs\\_hashlib.pyd","_heapq":"builtin","_imp":"builtin","_io":"builtin","_json":"builtin","_locale":"builtin","_lsprof":"builtin","_lzma":"DLLs\\_lzma.pyd","_markupbase":"Lib\\_markupbase.py","_md5":"builtin","_msi":"DLLs\\_msi.pyd","_multibytecodec":"builtin","_multiprocessing":"DLLs\\_multiprocessing.pyd","_opcode":"builtin","_operator":"builtin","_osx_support":"Lib\\_osx_support.py","_overlapped":"DLLs\\_overlapped.pyd","_pickle":"builtin","_py_abc":"Lib\\_py_abc.py","_pydatetime":"Lib\\_pydatetime.py","_pydecimal":"Lib\\_pydecimal.py","_pyio":"Lib\\_pyio.py","_pylong":"Lib\\_pylong.py","_queue":"DLLs\\_queue.pyd","_random":"builtin","_sha1":"builtin","_sha2":"builtin","_sha3":"builtin","_signal":"builtin","_sitebuiltins":"frozen","_socket":"DLLs\\_socket.pyd","_sqlite3":"DLLs\\_sqlite3.pyd","_sre":"builtin","_ssl":"DLLs\\_ssl.pyd","_stat":"builtin","_statistics":"builtin","_string":"builtin","_strptime":"Lib\\_strptime.py","_struct":"builtin","_symtable":"builtin","_thread":"builtin","_threading_local":"Lib\\_threading_local.py","_tkinter":"DLLs\\_tkinter.pyd","_tokenize":"builtin","_tracemalloc":"builtin","_typing":"builtin","_uuid":"DLLs\\_uuid.pyd","_warnings":"builtin","_weakref":"builtin","_weakrefset":"Lib\\_weakrefset.py","_winapi":"builtin","_wmi":"DLLs\\_wmi.pyd","_zoneinfo":"DLLs\\_zoneinfo.pyd","abc":"frozen","aifc":"Lib\\aifc.py","antigravity":"Lib\\antigravity.py","argparse":"Lib\\argparse.py","array":"builtin","ast":"Lib\\ast.py","asyncio":"Lib\\asyncio\\__init__.py","atexit":"builtin","audioop":"builtin","base64":"Lib\\base64.py","bdb":"Lib\\bdb.py","binascii":"builtin","bisect":"Lib\\bisect.py","builtins":"builtin","bz2":"Lib\\bz2.py","cProfile":"Lib\\cProfile.py","calendar":"Lib\\calendar.py","cgi":"Lib\\cgi.py","cgitb":"Lib\\cgitb.py","chunk":"Lib\\chunk.py","cmath":"builtin","cmd":"Lib\\cmd.py","code":"Lib\\code.py","codecs":"frozen","codeop":"Lib\\codeop.py","collections":"Lib\\collections\\__init__.py","colorsys":"Lib\\colorsys.py","compileall":"Lib\\compileall.py","concurrent":"Lib\\concurrent\\__init__.py","configparser":"Lib\\configparser.py","contextlib":"Lib\\contextlib.py","contextvars":"Lib\\contextvars.py","copy":"Lib\\copy.py","copyreg":"Lib\\copyreg.py","crypt":"Lib\\crypt.py","csv":"Lib\\csv.py","ctypes":"Lib\\ctypes\\__init__.py","curses":"Lib\\curses\\__init__.py","dataclasses":"Lib\\dataclasses.py","datetime":"Lib\\datetime.py","dbm":"Lib\\dbm\\__init__.py","decimal":"Lib\\decimal.py","difflib":"Lib\\difflib.py","dis":"Lib\\dis.py","doctest":"Lib\\doctest.py","email":"Lib\\email\\__init__.py","encodings":"Lib\\encodings\\__init__.py","ensurepip":"Lib\\ensurepip\\__init__.py","enum":"Lib\\enum.py","errno":"builtin","faulthandler":"builtin","filecmp":"Lib\\filecmp.py","fileinput":"Lib\\fileinput.py","fnmatch":"Lib\\fnmatch.py","fractions":"Lib\\fractions.py","ftplib":"Lib\\ftplib.py","functools":"Lib\\functools.py","gc":"builtin","genericpath":"frozen","getopt":"Lib\\getopt.py","getpass":"Lib\\getpass.py","gettext":"Lib\\gettext.py","glob":"Lib\\glob.py","graphlib":"Lib\\graphlib.py","gzip":"Lib\\gzip.py","hashlib":"Lib\\hashlib.py","heapq":"Lib\\heapq.py","hmac":"Lib\\hmac.py","html":"Lib\\html\\__init__.py","http":"Lib\\http\\__init__.py","idlelib":"Lib\\idlelib\\__init__.py","imaplib":"Lib\\imaplib.py","imghdr":"Lib\\imghdr.py","importlib":"Lib\\importlib\\__init__.py","inspect":"Lib\\inspect.py","io":"frozen","ipaddress":"Lib\\ipaddress.py","itertools":"builtin","json":"Lib\\json\\__init__.py","keyword":"Lib\\keyword.py","lib2to3":"Lib\\lib2to3\\__init__.py","linecache":"Lib\\linecache.py","locale":"Lib\\locale.py","logging":"Lib\\logging\\__init__.py","lzma":"Lib\\lzma.py","mailbox":"Lib\\mailbox.py","mailcap":"Lib\\mailcap.py","marshal":"builtin","math":"builtin","mimetypes":"Lib\\mimetypes.py","mmap":"builtin","modulefinder":"Lib\\modulefinder.py","msilib":"Lib\\msilib\\__init__.py","msvcrt":"builtin","multiprocessing":"Lib\\multiprocessing\\__init__.py","netrc":"Lib\\netrc.py","nntplib":"Lib\\nntplib.py","nt":"builtin","ntpath":"frozen","nturl2path":"Lib\\nturl2path.py","numbers":"Lib\\numbers.py","opcode":"Lib\\opcode.py","operator":"Lib\\operator.py","optparse":"Lib\\optparse.py","os":"frozen","pathlib":"Lib\\pathlib.py","pdb":"Lib\\pdb.py","pickle":"Lib\\pickle.py","pickletools":"Lib\\pickletools.py","pipes":"Lib\\pipes.py","pkgutil":"Lib\\pkgutil.py","platform":"Lib\\platform.py","plistlib":"Lib\\plistlib.py","poplib":"Lib\\poplib.py","posixpath":"frozen","pprint":"Lib\\pprint.py","profile":"Lib\\profile.py","pstats":"Lib\\pstats.py","pty":"Lib\\pty.py","py_compile":"Lib\\py_compile.py","pyclbr":"Lib\\pyclbr.py","pydoc":"Lib\\pydoc.py","pydoc_data":"Lib\\pydoc_data\\__init__.py","pyexpat":"DLLs\\pyexpat.pyd","queue":"Lib\\queue.py","quopri":"Lib\\quopri.py","random":"Lib\\random.py","re":"Lib\\re\\__init__.py","reprlib":"Lib\\reprlib.py","rlcompleter":"Lib\\rlcompleter.py","runpy":"frozen","sched":"Lib\\sched.py","secrets":"Lib\\secrets.py","select":"DLLs\\select.pyd","selectors":"Lib\\selectors.py","shelve":"Lib\\shelve.py","shlex":"Lib\\shlex.py","shutil":"Lib\\shutil.py","signal":"Lib\\signal.py","site":"frozen","smtplib":"Lib\\smtplib.py","sndhdr":"Lib\\sndhdr.py","socket":"Lib\\socket.py","socketserver":"Lib\\socketserver.py","sqlite3":"Lib\\sqlite3\\__init__.py","sre_compile":"Lib\\sre_compile.py","sre_constants":"Lib\\sre_constants.py","sre_parse":"Lib\\sre_parse.py","ssl":"Lib\\ssl.py","stat":"frozen","statistics":"Lib\\statistics.py","string":"Lib\\string.py","stringprep":"Lib\\stringprep.py","struct":"Lib\\struct.py","subprocess":"Lib\\subprocess.py","sunau":"Lib\\sunau.py","symtable":"Lib\\symtable.py","sys":"builtin","sysconfig":"Lib\\sysconfig.py","tabnanny":"Lib\\tabnanny.py","tarfile":"Lib\\tarfile.py","telnetlib":"Lib\\telnetlib.py","tempfile":"Lib\\tempfile.py","textwrap":"Lib\\textwrap.py","this":"Lib\\this.py","threading":"Lib\\threading.py","time":"builtin","timeit":"Lib\\timeit.py","tkinter":"Lib\\tkinter\\__init__.py","token":"Lib\\token.py","tokenize":"Lib\\tokenize.py","tomllib":"Lib\\tomllib\\__init__.py","trace":"Lib\\trace.py","traceback":"Lib\\traceback.py","tracemalloc":"Lib\\tracemalloc.py","tty":"Lib\\tty.py","turtle":"Lib\\turtle.py","turtledemo":"Lib\\turtledemo\\__init__.py","types":"Lib\\types.py","typing":"Lib\\typing.py","unicodedata":"DLLs\\unicodedata.pyd","unittest":"Lib\\unittest\\__init__.py","urllib":"Lib\\urllib\\__init__.py","uu":"Lib\\uu.py","uuid":"Lib\\uuid.py","venv":"Lib\\venv\\__init__.py","warnings":"Lib\\warnings.py","wave":"Lib\\wave.py","weakref":"Lib\\weakref.py","webbrowser":"Lib\\webbrowser.py","winreg":"builtin","winsound":"DLLs\\winsound.pyd","wsgiref":"Lib\\wsgiref\\__init__.py","xdrlib":"Lib\\xdrlib.py","xml":"Lib\\xml\\__init__.py","xmlrpc":"Lib\\xmlrpc\\__init__.py","zipapp":"Lib\\zipapp.py","zipfile":"Lib\\zipfile\\__init__.py","zipimport":"frozen","zlib":"builtin","zoneinfo":"Lib\\zoneinfo\\__init__.py"},"orden":{"math":["__name__","__doc__","__package__","__loader__","__spec__","acos","acosh","asin","asinh","atan","atan2","atanh","cbrt","ceil","copysign","cos","cosh","degrees","dist","erf","erfc","exp","exp2","expm1","fabs","factorial","floor","fmod","frexp","fsum","gamma","gcd","hypot","isclose","isfinite","isinf","isnan","isqrt","lcm","ldexp","lgamma","log","log1p","log10","log2","modf","pow","radians","remainder","sin","sinh","sqrt","tan","tanh","sumprod","trunc","prod","perm","comb","nextafter","ulp","pi","e","tau","inf","nan"],"random":["__name__","__doc__","__package__","__loader__","__spec__","__file__","__cached__","__builtins__","_warn","_log","_exp","_pi","_e","_ceil","_sqrt","_acos","_cos","_sin","TWOPI","_floor","_isfinite","_lgamma","_fabs","_log2","_urandom","_Sequence","_index","_accumulate","_repeat","_bisect","_os","_random","_sha512","__all__","NV_MAGICCONST","LOG4","SG_MAGICCONST","BPF","RECIP_BPF","_ONE","Random","SystemRandom","_inst","seed","random","uniform","triangular","randint","choice","randrange","sample","shuffle","choices","normalvariate","lognormvariate","expovariate","vonmisesvariate","gammavariate","gauss","betavariate","binomialvariate","paretovariate","weibullvariate","getstate","setstate","getrandbits","randbytes","_test_generator","_test"],"statistics":["__name__","__doc__","__package__","__loader__","__spec__","__file__","__cached__","__builtins__","__annotations__","__all__","math","numbers","random","sys","Fraction","Decimal","count","groupby","repeat","bisect_left","bisect_right","hypot","sqrt","fabs","exp","erf","tau","log","fsum","sumprod","reduce","itemgetter","Counter","namedtuple","defaultdict","_SQRT2","StatisticsError","_sum","_ss","_isfinite","_coerce","_exact_ratio","_convert","_fail_neg","_rank","_integer_sqrt_of_frac_rto","_sqrt_bit_width","_float_sqrt_of_frac","_decimal_sqrt_of_frac","mean","fmean","geometric_mean","harmonic_mean","median","median_low","median_high","median_grouped","mode","multimode","quantiles","variance","pvariance","stdev","pstdev","_mean_stdev","covariance","correlation","LinearRegression","linear_regression","_normal_dist_inv_cdf","NormalDist"],"datetime":["__name__","__doc__","__package__","__loader__","__spec__","__file__","__cached__","__builtins__","date","datetime","time","timedelta","tzinfo","timezone","MINYEAR","MAXYEAR","datetime_CAPI","UTC","__all__"],"csv":["__name__","__doc__","__package__","__loader__","__spec__","__file__","__cached__","__builtins__","re","types","Error","__version__","writer","reader","register_dialect","unregister_dialect","get_dialect","list_dialects","field_size_limit","QUOTE_MINIMAL","QUOTE_ALL","QUOTE_NONNUMERIC","QUOTE_NONE","QUOTE_STRINGS","QUOTE_NOTNULL","_Dialect","StringIO","__all__","Dialect","excel","excel_tab","unix_dialect","DictReader","DictWriter","Sniffer"],"os":["__name__","__doc__","__package__","__loader__","__spec__","__file__","__builtins__","abc","sys","st","_check_methods","GenericAlias","__all__","_exists","_get_exports_list","name","linesep","stat","access","chdir","chmod","getcwd","getcwdb","link","listdir","listdrives","listmounts","listvolumes","lstat","mkdir","readlink","rename","replace","rmdir","symlink","system","umask","unlink","remove","utime","times","execv","execve","spawnv","spawnve","getpid","getppid","getlogin","kill","startfile","waitpid","open","close","closerange","device_encoding","dup","dup2","lseek","read","write","fstat","isatty","pipe","ftruncate","truncate","putenv","unsetenv","strerror","fsync","abort","urandom","get_terminal_size","cpu_count","get_inheritable","set_inheritable","get_handle_inheritable","set_handle_inheritable","get_blocking","set_blocking","scandir","fspath","waitstatus_to_exitcode","environ","F_OK","R_OK","W_OK","X_OK","TMP_MAX","O_RDONLY","O_WRONLY","O_RDWR","O_APPEND","O_CREAT","O_EXCL","O_TRUNC","O_BINARY","O_TEXT","O_NOINHERIT","O_SHORT_LIVED","O_TEMPORARY","O_RANDOM","O_SEQUENTIAL","EX_OK","P_WAIT","P_NOWAIT","P_NOWAITO","P_OVERLAY","P_DETACH","error","stat_result","statvfs_result","terminal_size","DirEntry","times_result","uname_result","_exit","path","curdir","pardir","sep","pathsep","defpath","extsep","altsep","devnull","supports_dir_fd","supports_effective_ids","supports_fd","supports_follow_symlinks","SEEK_SET","SEEK_CUR","SEEK_END","makedirs","removedirs","renames","_walk_symlinks_as_files","walk","execl","execle","execlp","execlpe","execvp","execvpe","_execvpe","get_exec_path","MutableMapping","Mapping","_Environ","getenv","supports_bytes_environ","fsencode","fsdecode","spawnl","spawnle","popen","_wrap_close","fdopen","_fspath","PathLike","_AddedDllDirectory","add_dll_directory"],"sys":["__name__","__doc__","__package__","__loader__","__spec__","addaudithook","audit","breakpointhook","_clear_type_cache","_current_frames","_current_exceptions","displayhook","exception","exc_info","excepthook","exit","getdefaultencoding","getallocatedblocks","getunicodeinternedsize","getfilesystemencoding","getfilesystemencodeerrors","getrefcount","getrecursionlimit","getsizeof","_getframe","_getframemodulename","getwindowsversion","_enablelegacywindowsfsencoding","intern","is_finalizing","setswitchinterval","getswitchinterval","setprofile","_setprofileallthreads","getprofile","setrecursionlimit","settrace","_settraceallthreads","gettrace","call_tracing","_debugmallocstats","set_coroutine_origin_tracking_depth","get_coroutine_origin_tracking_depth","set_asyncgen_hooks","get_asyncgen_hooks","activate_stack_trampoline","deactivate_stack_trampoline","is_stack_trampoline_active","unraisablehook","get_int_max_str_digits","set_int_max_str_digits","modules","stderr","__stderr__","__displayhook__","__excepthook__","__breakpointhook__","__unraisablehook__","version","hexversion","_git","_framework","api_version","copyright","platform","maxsize","float_info","int_info","hash_info","maxunicode","builtin_module_names","stdlib_module_names","byteorder","dllhandle","winver","version_info","implementation","flags","_vpath","float_repr_style","thread_info","meta_path","path_importer_cache","path_hooks","monitoring","path","executable","_base_executable","prefix","base_prefix","exec_prefix","base_exec_prefix","platlibdir","pycache_prefix","argv","orig_argv","warnoptions","_xoptions","_stdlib_dir","dont_write_bytecode","__stdin__","stdin","__stdout__","stdout","_home","__interactivehook__"],"time":["__name__","__doc__","__package__","__loader__","__spec__","time","time_ns","sleep","gmtime","localtime","asctime","ctime","mktime","strftime","strptime","monotonic","monotonic_ns","process_time","process_time_ns","thread_time","thread_time_ns","perf_counter","perf_counter_ns","get_clock_info","timezone","altzone","daylight","tzname","_STRUCT_TM_ITEMS","struct_time"],"string":["__name__","__doc__","__package__","__loader__","__spec__","__file__","__cached__","__builtins__","__all__","_string","whitespace","ascii_lowercase","ascii_uppercase","ascii_letters","digits","hexdigits","octdigits","punctuation","printable","capwords","_re","_ChainMap","_sentinel_dict","Template","Formatter"],"collections":["__name__","__doc__","__package__","__loader__","__spec__","__path__","__file__","__cached__","__builtins__","__all__","_collections_abc","_sys","_chain","_repeat","_starmap","_iskeyword","_eq","_itemgetter","_recursive_repr","_proxy","deque","_deque_iterator","defaultdict","_OrderedDictKeysView","_OrderedDictItemsView","_OrderedDictValuesView","_Link","OrderedDict","_tuplegetter","namedtuple","_count_elements","Counter","ChainMap","UserDict","UserList","UserString","abc"],"json":["__name__","__doc__","__package__","__loader__","__spec__","__path__","__file__","__cached__","__builtins__","__version__","__all__","__author__","scanner","decoder","JSONDecoder","JSONDecodeError","encoder","JSONEncoder","codecs","_default_encoder","dump","dumps","_default_decoder","detect_encoding","load","loads"],"pathlib":["__name__","__doc__","__package__","__loader__","__spec__","__file__","__cached__","__builtins__","fnmatch","functools","io","ntpath","os","posixpath","re","sys","warnings","Sequence","ENOENT","ENOTDIR","EBADF","ELOOP","S_ISDIR","S_ISLNK","S_ISREG","S_ISSOCK","S_ISBLK","S_ISCHR","S_ISFIFO","urlquote_from_bytes","__all__","_WIN_RESERVED_NAMES","_WINERROR_NOT_READY","_WINERROR_INVALID_NAME","_WINERROR_CANT_RESOLVE_FILENAME","_IGNORED_ERRNOS","_IGNORED_WINERRORS","_ignore_error","_is_case_sensitive","_FNMATCH_PREFIX","_FNMATCH_SUFFIX","_FNMATCH_SLICE","_SWAP_SEP_AND_NEWLINE","_make_selector","_compile_pattern","_compile_pattern_lines","_Selector","_TerminatingSelector","_ParentSelector","_WildcardSelector","_RecursiveWildcardSelector","_DoubleRecursiveWildcardSelector","_PathParents","PurePath","PurePosixPath","PureWindowsPath","Path","PosixPath","WindowsPath"]},"alls":{"random":["Random","SystemRandom","betavariate","binomialvariate","choice","choices","expovariate","gammavariate","gauss","getrandbits","getstate","lognormvariate","normalvariate","paretovariate","randbytes","randint","random","randrange","sample","seed","setstate","shuffle","triangular","uniform","vonmisesvariate","weibullvariate"],"statistics":["NormalDist","StatisticsError","correlation","covariance","fmean","geometric_mean","harmonic_mean","linear_regression","mean","median","median_grouped","median_high","median_low","mode","multimode","pstdev","pvariance","quantiles","stdev","variance"],"datetime":["date","datetime","time","timedelta","timezone","tzinfo","MINYEAR","MAXYEAR","UTC"],"csv":["QUOTE_MINIMAL","QUOTE_ALL","QUOTE_NONNUMERIC","QUOTE_NONE","QUOTE_STRINGS","QUOTE_NOTNULL","Error","Dialect","__doc__","excel","excel_tab","field_size_limit","reader","writer","register_dialect","get_dialect","list_dialects","Sniffer","unregister_dialect","__version__","DictReader","DictWriter","unix_dialect"],"os":["altsep","curdir","pardir","sep","pathsep","linesep","defpath","name","path","devnull","SEEK_SET","SEEK_CUR","SEEK_END","fsencode","fsdecode","get_exec_path","fdopen","extsep","_exit","DirEntry","EX_OK","F_OK","O_APPEND","O_BINARY","O_CREAT","O_EXCL","O_NOINHERIT","O_RANDOM","O_RDONLY","O_RDWR","O_SEQUENTIAL","O_SHORT_LIVED","O_TEMPORARY","O_TEXT","O_TRUNC","O_WRONLY","P_DETACH","P_NOWAIT","P_NOWAITO","P_OVERLAY","P_WAIT","R_OK","TMP_MAX","W_OK","X_OK","abort","access","chdir","chmod","close","closerange","cpu_count","device_encoding","dup","dup2","environ","error","execv","execve","fspath","fstat","fsync","ftruncate","get_blocking","get_handle_inheritable","get_inheritable","get_terminal_size","getcwd","getcwdb","getlogin","getpid","getppid","isatty","kill","link","listdir","listdrives","listmounts","listvolumes","lseek","lstat","mkdir","open","pipe","putenv","read","readlink","remove","rename","replace","rmdir","scandir","set_blocking","set_handle_inheritable","set_inheritable","spawnv","spawnve","startfile","stat","stat_result","statvfs_result","strerror","symlink","system","terminal_size","times","times_result","truncate","umask","uname_result","unlink","unsetenv","urandom","utime","waitpid","waitstatus_to_exitcode","write","makedirs","removedirs","renames","walk","execl","execle","execlp","execlpe","execvp","execvpe","getenv","supports_bytes_environ","spawnl","spawnle","popen"],"string":["ascii_letters","ascii_lowercase","ascii_uppercase","capwords","digits","hexdigits","octdigits","printable","punctuation","whitespace","Formatter","Template"],"collections":["ChainMap","Counter","OrderedDict","UserDict","UserList","UserString","defaultdict","deque","namedtuple"],"json":["dump","dumps","load","loads","JSONDecoder","JSONDecodeError","JSONEncoder"],"pathlib":["PurePath","PurePosixPath","PureWindowsPath","Path","PosixPath","WindowsPath"]},"math":{"acos":"<built-in function acos>","acosh":"<built-in function acosh>","asin":"<built-in function asin>","asinh":"<built-in function asinh>","atan":"<built-in function atan>","atan2":"<built-in function atan2>","atanh":"<built-in function atanh>","cbrt":"<built-in function cbrt>","ceil":"<built-in function ceil>","comb":"<built-in function comb>","copysign":"<built-in function copysign>","cos":"<built-in function cos>","cosh":"<built-in function cosh>","degrees":"<built-in function degrees>","dist":"<built-in function dist>","e":"2.718281828459045","erf":"<built-in function erf>","erfc":"<built-in function erfc>","exp":"<built-in function exp>","exp2":"<built-in function exp2>","expm1":"<built-in function expm1>","fabs":"<built-in function fabs>","factorial":"<built-in function factorial>","floor":"<built-in function floor>","fmod":"<built-in function fmod>","frexp":"<built-in function frexp>","fsum":"<built-in function fsum>","gamma":"<built-in function gamma>","gcd":"<built-in function gcd>","hypot":"<built-in function hypot>","inf":"inf","isclose":"<built-in function isclose>","isfinite":"<built-in function isfinite>","isinf":"<built-in function isinf>","isnan":"<built-in function isnan>","isqrt":"<built-in function isqrt>","lcm":"<built-in function lcm>","ldexp":"<built-in function ldexp>","lgamma":"<built-in function lgamma>","log":"<built-in function log>","log10":"<built-in function log10>","log1p":"<built-in function log1p>","log2":"<built-in function log2>","modf":"<built-in function modf>","nan":"nan","nextafter":"<built-in function nextafter>","perm":"<built-in function perm>","pi":"3.141592653589793","pow":"<built-in function pow>","prod":"<built-in function prod>","radians":"<built-in function radians>","remainder":"<built-in function remainder>","sin":"<built-in function sin>","sinh":"<built-in function sinh>","sqrt":"<built-in function sqrt>","sumprod":"<built-in function sumprod>","tan":"<built-in function tan>","tanh":"<built-in function tanh>","tau":"6.283185307179586","trunc":"<built-in function trunc>","ulp":"<built-in function ulp>"},"builtins":["__name__","__doc__","__package__","__loader__","__spec__","__build_class__","__import__","abs","all","any","ascii","bin","breakpoint","callable","chr","compile","delattr","dir","divmod","eval","exec","format","getattr","globals","hasattr","hash","hex","id","input","isinstance","issubclass","iter","aiter","len","locals","max","min","next","anext","oct","ord","pow","print","repr","round","setattr","sorted","sum","vars","None","Ellipsis","NotImplemented","False","True","bool","memoryview","bytearray","bytes","classmethod","complex","dict","enumerate","filter","float","frozenset","property","int","list","map","object","range","reversed","set","slice","staticmethod","str","super","tuple","type","zip","__debug__","BaseException","BaseExceptionGroup","Exception","GeneratorExit","KeyboardInterrupt","SystemExit","ArithmeticError","AssertionError","AttributeError","BufferError","EOFError","ImportError","LookupError","MemoryError","NameError","OSError","ReferenceError","RuntimeError","StopAsyncIteration","StopIteration","SyntaxError","SystemError","TypeError","ValueError","Warning","FloatingPointError","OverflowError","ZeroDivisionError","BytesWarning","DeprecationWarning","EncodingWarning","FutureWarning","ImportWarning","PendingDeprecationWarning","ResourceWarning","RuntimeWarning","SyntaxWarning","UnicodeWarning","UserWarning","BlockingIOError","ChildProcessError","ConnectionError","FileExistsError","FileNotFoundError","InterruptedError","IsADirectoryError","NotADirectoryError","PermissionError","ProcessLookupError","TimeoutError","IndentationError","IndexError","KeyError","ModuleNotFoundError","NotImplementedError","RecursionError","UnboundLocalError","UnicodeError","BrokenPipeError","ConnectionAbortedError","ConnectionRefusedError","ConnectionResetError","TabError","UnicodeDecodeError","UnicodeEncodeError","UnicodeTranslateError","ExceptionGroup","EnvironmentError","IOError","WindowsError","open","quit","exit","copyright","credits","license","help"],"builtinsTexto":{"__name__":"builtins","__package__":"","__loader__":"<class '_frozen_importlib.BuiltinImporter'>","__build_class__":"<built-in function __build_class__>","__import__":"<built-in function __import__>","abs":"<built-in function abs>","all":"<built-in function all>","any":"<built-in function any>","ascii":"<built-in function ascii>","bin":"<built-in function bin>","breakpoint":"<built-in function breakpoint>","callable":"<built-in function callable>","chr":"<built-in function chr>","compile":"<built-in function compile>","delattr":"<built-in function delattr>","dir":"<built-in function dir>","divmod":"<built-in function divmod>","eval":"<built-in function eval>","exec":"<built-in function exec>","format":"<built-in function format>","getattr":"<built-in function getattr>","globals":"<built-in function globals>","hasattr":"<built-in function hasattr>","hash":"<built-in function hash>","hex":"<built-in function hex>","id":"<built-in function id>","input":"<built-in function input>","isinstance":"<built-in function isinstance>","issubclass":"<built-in function issubclass>","iter":"<built-in function iter>","aiter":"<built-in function aiter>","len":"<built-in function len>","locals":"<built-in function locals>","max":"<built-in function max>","min":"<built-in function min>","next":"<built-in function next>","anext":"<built-in function anext>","oct":"<built-in function oct>","ord":"<built-in function ord>","pow":"<built-in function pow>","print":"<built-in function print>","repr":"<built-in function repr>","round":"<built-in function round>","setattr":"<built-in function setattr>","sorted":"<built-in function sorted>","sum":"<built-in function sum>","vars":"<built-in function vars>","None":"None","Ellipsis":"Ellipsis","NotImplemented":"NotImplemented","False":"False","True":"True","bool":"<class 'bool'>","memoryview":"<class 'memoryview'>","bytearray":"<class 'bytearray'>","bytes":"<class 'bytes'>","classmethod":"<class 'classmethod'>","complex":"<class 'complex'>","dict":"<class 'dict'>","enumerate":"<class 'enumerate'>","filter":"<class 'filter'>","float":"<class 'float'>","frozenset":"<class 'frozenset'>","property":"<class 'property'>","int":"<class 'int'>","list":"<class 'list'>","map":"<class 'map'>","object":"<class 'object'>","range":"<class 'range'>","reversed":"<class 'reversed'>","set":"<class 'set'>","slice":"<class 'slice'>","staticmethod":"<class 'staticmethod'>","str":"<class 'str'>","super":"<class 'super'>","tuple":"<class 'tuple'>","type":"<class 'type'>","zip":"<class 'zip'>","__debug__":"True","BaseException":"<class 'BaseException'>","BaseExceptionGroup":"<class 'BaseExceptionGroup'>","Exception":"<class 'Exception'>","GeneratorExit":"<class 'GeneratorExit'>","KeyboardInterrupt":"<class 'KeyboardInterrupt'>","SystemExit":"<class 'SystemExit'>","ArithmeticError":"<class 'ArithmeticError'>","AssertionError":"<class 'AssertionError'>","AttributeError":"<class 'AttributeError'>","BufferError":"<class 'BufferError'>","EOFError":"<class 'EOFError'>","ImportError":"<class 'ImportError'>","LookupError":"<class 'LookupError'>","MemoryError":"<class 'MemoryError'>","NameError":"<class 'NameError'>","OSError":"<class 'OSError'>","ReferenceError":"<class 'ReferenceError'>","RuntimeError":"<class 'RuntimeError'>","StopAsyncIteration":"<class 'StopAsyncIteration'>","StopIteration":"<class 'StopIteration'>","SyntaxError":"<class 'SyntaxError'>","SystemError":"<class 'SystemError'>","TypeError":"<class 'TypeError'>","ValueError":"<class 'ValueError'>","Warning":"<class 'Warning'>","FloatingPointError":"<class 'FloatingPointError'>","OverflowError":"<class 'OverflowError'>","ZeroDivisionError":"<class 'ZeroDivisionError'>","BytesWarning":"<class 'BytesWarning'>","DeprecationWarning":"<class 'DeprecationWarning'>","EncodingWarning":"<class 'EncodingWarning'>","FutureWarning":"<class 'FutureWarning'>","ImportWarning":"<class 'ImportWarning'>","PendingDeprecationWarning":"<class 'PendingDeprecationWarning'>","ResourceWarning":"<class 'ResourceWarning'>","RuntimeWarning":"<class 'RuntimeWarning'>","SyntaxWarning":"<class 'SyntaxWarning'>","UnicodeWarning":"<class 'UnicodeWarning'>","UserWarning":"<class 'UserWarning'>","BlockingIOError":"<class 'BlockingIOError'>","ChildProcessError":"<class 'ChildProcessError'>","ConnectionError":"<class 'ConnectionError'>","FileExistsError":"<class 'FileExistsError'>","FileNotFoundError":"<class 'FileNotFoundError'>","InterruptedError":"<class 'InterruptedError'>","IsADirectoryError":"<class 'IsADirectoryError'>","NotADirectoryError":"<class 'NotADirectoryError'>","PermissionError":"<class 'PermissionError'>","ProcessLookupError":"<class 'ProcessLookupError'>","TimeoutError":"<class 'TimeoutError'>","IndentationError":"<class 'IndentationError'>","IndexError":"<class 'IndexError'>","KeyError":"<class 'KeyError'>","ModuleNotFoundError":"<class 'ModuleNotFoundError'>","NotImplementedError":"<class 'NotImplementedError'>","RecursionError":"<class 'RecursionError'>","UnboundLocalError":"<class 'UnboundLocalError'>","UnicodeError":"<class 'UnicodeError'>","BrokenPipeError":"<class 'BrokenPipeError'>","ConnectionAbortedError":"<class 'ConnectionAbortedError'>","ConnectionRefusedError":"<class 'ConnectionRefusedError'>","ConnectionResetError":"<class 'ConnectionResetError'>","TabError":"<class 'TabError'>","UnicodeDecodeError":"<class 'UnicodeDecodeError'>","UnicodeEncodeError":"<class 'UnicodeEncodeError'>","UnicodeTranslateError":"<class 'UnicodeTranslateError'>","ExceptionGroup":"<class 'ExceptionGroup'>","EnvironmentError":"<class 'OSError'>","IOError":"<class 'OSError'>","WindowsError":"<class 'OSError'>","open":"<built-in function open>","quit":"Use quit() or Ctrl-Z plus Return to exit","exit":"Use exit() or Ctrl-Z plus Return to exit","license":"See https://www.python.org/psf/license/","help":"Type help() for interactive help, or help(object) for help about object."},"dirFuncion":["__annotations__","__builtins__","__call__","__class__","__closure__","__code__","__defaults__","__delattr__","__dict__","__dir__","__doc__","__eq__","__format__","__ge__","__get__","__getattribute__","__getstate__","__globals__","__gt__","__hash__","__init__","__init_subclass__","__kwdefaults__","__le__","__lt__","__module__","__name__","__ne__","__new__","__qualname__","__reduce__","__reduce_ex__","__repr__","__setattr__","__sizeof__","__str__","__subclasshook__","__type_params__"],"archivosCongelados":{"_collections_abc":"Lib\\_collections_abc.py","_frozen_importlib":"Lib\\importlib\\_bootstrap.py","_frozen_importlib_external":"Lib\\importlib\\_bootstrap_external.py","_sitebuiltins":"Lib\\_sitebuiltins.py","abc":"Lib\\abc.py","codecs":"Lib\\codecs.py","genericpath":"Lib\\genericpath.py","io":"Lib\\io.py","ntpath":"Lib\\ntpath.py","os":"Lib\\os.py","posixpath":"Lib\\posixpath.py","runpy":"Lib\\runpy.py","site":"Lib\\site.py","stat":"Lib\\stat.py","zipimport":"Lib\\zipimport.py"},"submodulos":{"json.decoder":"Lib\\json\\decoder.py","json.encoder":"Lib\\json\\encoder.py","json.scanner":"Lib\\json\\scanner.py","urllib.parse":"Lib\\urllib\\parse.py","urllib.request":"Lib\\urllib\\request.py"}};
+  // ===================== Motor: el sistema de imports de Python 3.12 =====================
+  // Reproduce lo que hace "python main.py" (o python -m ...) en Windows con un proyecto pequeño:
+  // sys.path[0], la búsqueda de módulos (módulos integrados, congelados, la carpeta del script, la
+  // biblioteca estándar y site-packages), paquetes con __init__.py y paquetes de espacio de nombres,
+  // sys.modules (cada módulo se ejecuta una sola vez), from ... import, import *, imports relativos,
+  // y los mensajes de error con el traceback y las sugerencias "Did you mean" del intérprete
+  // (Python/suggestions.c, que mide en bytes UTF-8). D trae los datos de Python 3.12 (nombres de la
+  // biblioteca estándar, dir() de algunos módulos y el orden de builtins).
+  function crearMotor(D) {
+    "use strict";
+    var PY = "C:\\Users\\alumno\\AppData\\Local\\Programs\\Python\\Python312";
+    function conj(lista) { var o = Object.create(null); lista.forEach(function (x) { o[x] = true; }); return o; }
+    function tiene(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
+    var MOD_INTEGRADOS = conj(D.integrados), STDLIB = conj(D.stdlib);
+    var CONGELADOS = conj(Object.keys(D.tipos).filter(function (k) { return D.tipos[k] === "frozen"; }));
+    var CLAVES = conj(("False None True and as assert async await break class continue def del elif else except " +
+                       "finally for from global if import in is lambda nonlocal not or pass raise return try while " +
+                       "with yield").split(" "));
+    var ESPECIALES = conj(["this", "antigravity", "__hello__", "__phello__", "idlelib", "turtledemo", "tkinter", "turtle"]);
+
+    function ErrorPy(tipo, msg, extra) {
+      this.tipo = tipo; this.msg = msg; this.marcos = [];
+      for (var k in extra || {}) this[k] = extra[k];
+    }
+    function Aviso(texto) { this.texto = texto; }
+
+    // ---------- repr() de un texto ----------
+    function pyStr(s) {
+      var q = (s.indexOf("'") >= 0 && s.indexOf('"') < 0) ? '"' : "'";
+      var r = "";
+      for (var i = 0; i < s.length; i++) {
+        var c = s[i];
+        if (c === "\\") r += "\\\\"; else if (c === q) r += "\\" + q; else r += c;
+      }
+      return q + r + q;
+    }
+    function pyFloat(x) {
+      if (x === Infinity) return "inf";
+      if (x === -Infinity) return "-inf";
+      if (x === 0) return Object.is(x, -0) ? "-0.0" : "0.0";
+      var partes = Math.abs(x).toExponential().split("e");
+      var digitos = partes[0].replace(".", ""), exp = parseInt(partes[1], 10);
+      var decpt = exp + 1, signo = x < 0 ? "-" : "";
+      if (decpt > 16 || decpt < -3) {
+        var mant = digitos.length > 1 ? digitos[0] + "." + digitos.slice(1) : digitos[0];
+        return signo + mant + "e" + (exp < 0 ? "-" : "+") + (Math.abs(exp) < 10 ? "0" : "") + Math.abs(exp);
+      }
+      if (decpt <= 0) return signo + "0." + "0".repeat(-decpt) + digitos;
+      if (decpt >= digitos.length) return signo + digitos + "0".repeat(decpt - digitos.length) + ".0";
+      return signo + digitos.slice(0, decpt) + "." + digitos.slice(decpt);
+    }
+
+    // ---------- Sugerencias "Did you mean" (Python/suggestions.c de 3.12) ----------
+    function utf8(s) {
+      var b = [];
+      for (var ch of s) {
+        var c = ch.codePointAt(0);
+        if (c < 0x80) b.push(c);
+        else if (c < 0x800) b.push(0xC0 | (c >> 6), 0x80 | (c & 63));
+        else if (c < 0x10000) b.push(0xE0 | (c >> 12), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63));
+        else b.push(0xF0 | (c >> 18), 0x80 | ((c >> 12) & 63), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63));
+      }
+      return b;
+    }
+    function costoSustitucion(a, b) {
+      if ((a & 31) !== (b & 31)) return 2;
+      if (a === b) return 0;
+      if (a >= 65 && a <= 90) a += 32;
+      if (b >= 65 && b <= 90) b += 32;
+      return a === b ? 1 : 2;
+    }
+    function levenshtein(a, b, maxCosto) {
+      var ia = 0, ib = 0, na = a.length, nb = b.length;
+      while (na && nb && a[ia] === b[ib]) { ia++; ib++; na--; nb--; }
+      while (na && nb && a[ia + na - 1] === b[ib + nb - 1]) { na--; nb--; }
+      if (na === 0 || nb === 0) return (na + nb) * 2;
+      if (na > 40 || nb > 40) return maxCosto + 1;
+      if (nb < na) { var t = a; a = b; b = t; t = ia; ia = ib; ib = t; t = na; na = nb; nb = t; }
+      if ((nb - na) * 2 > maxCosto) return maxCosto + 1;
+      var fila = [];
+      for (var i = 0; i < na; i++) fila.push((i + 1) * 2);
+      var resultado = 0;
+      for (var j = 0; j < nb; j++) {
+        var codigo = b[ib + j], distancia = resultado = j * 2, minimo = Infinity;
+        for (var k = 0; k < na; k++) {
+          var sustituir = distancia + costoSustitucion(codigo, a[ia + k]);
+          distancia = fila[k];
+          resultado = Math.min(Math.min(resultado, distancia) + 2, sustituir);
+          fila[k] = resultado;
+          if (resultado < minimo) minimo = resultado;
+        }
+        if (minimo > maxCosto) return maxCosto + 1;
+      }
+      return resultado;
+    }
+    function sugerir(lista, nombre) {
+      if (!lista || lista.length >= 750) return null;
+      var nb = utf8(nombre), mejor = null, dist = Infinity;
+      for (var i = 0; i < lista.length; i++) {
+        if (lista[i] === nombre) continue;
+        var ib = utf8(lista[i]);
+        var maxd = Math.min(Math.floor((nb.length + ib.length + 3) * 2 / 6), dist - 1);
+        var d = levenshtein(nb, ib, maxd);
+        if (d > maxd) continue;
+        if (mejor === null || d < dist) { mejor = lista[i]; dist = d; }
+      }
+      return mejor;
+    }
+
+    // ---------- Análisis de una línea: import, from ... import, print(nombre) ----------
+    var RX_NOMBRE = /^[\p{L}\p{Nl}_][\p{L}\p{Nl}\p{Mn}\p{Mc}\p{Nd}\p{Pc}]*/u;
+    function fichas(s) {
+      var t = [], i = 0, m;
+      while (i < s.length) {
+        var c = s[i];
+        if (c === " " || c === "\t" || c === "\f") { i++; continue; }
+        if (c === "#") break;
+        if ((m = RX_NOMBRE.exec(s.slice(i)))) { t.push({ t: "n", v: m[0], ini: i, fin: i + m[0].length }); i += m[0].length; continue; }
+        if (s.substr(i, 3) === "...") { t.push({ t: ".", v: "...", ini: i, fin: i + 3, puntos: 3 }); i += 3; continue; }
+        if (c === ".") { t.push({ t: ".", v: ".", ini: i, fin: i + 1, puntos: 1 }); i++; continue; }
+        if (",()*;".indexOf(c) >= 0) { t.push({ t: c, v: c, ini: i, fin: i + 1 }); i++; continue; }
+        if (c === '"' || c === "'") { t.push({ t: "texto", v: c, ini: i, fin: i + 1 }); i++; continue; }
+        t.push({ t: "otro", v: c, ini: i, fin: i + 1 }); i++;
+      }
+      return t;
+    }
+    var MSJ = {
+      vacia: "",
+      sangria: "Quita los espacios del principio: una línea con sangría fuera de un bloque es un error de Python (IndentationError: unexpected indent).",
+      puntoycoma: "Escribe una sola instrucción en cada línea (sin ;).",
+      comillas: "El nombre de un módulo va sin comillas: import conversiones, no import \"conversiones\".",
+      clave: function (p) { return "\"" + p + "\" es una palabra reservada de Python: no puede ser el nombre de un módulo ni de una variable (sería SyntaxError)."; },
+      llamada: "Esta página no ejecuta funciones: en la línea escribe print(nombre) o print(modulo.nombre) para ver qué es ese nombre.",
+      general: "Esta página solo entiende import ..., from ... import ... y print(nombre). Revisa la línea: así Python daría SyntaxError."
+    };
+    // Regresa la sentencia analizada o lanza Aviso. n = número de línea.
+    function analizarLinea(texto, n) {
+      if (/^\s*$/.test(texto) || /^\s*#/.test(texto)) return { linea: n, tipo: "vacia" };
+      if (/^\s/.test(texto)) throw new Aviso(MSJ.sangria);
+      var t = fichas(texto), k = 0;
+      if (t.some(function (x) { return x.t === ";"; })) throw new Aviso(MSJ.puntoycoma);
+      if (t.some(function (x) { return x.t === "texto"; })) {
+        if (t[0] && t[0].v === "print") throw new Aviso("Esta página no imprime textos: dentro de print( ) escribe un nombre, sin comillas.");
+        throw new Aviso(MSJ.comillas);
+      }
+      function ver() { return t[k]; }
+      function es(tipo, valor) { var x = t[k]; return x && x.t === tipo && (valor === undefined || x.v === valor); }
+      function nombre() {
+        var x = t[k];
+        if (!x || x.t !== "n") throw new Aviso(MSJ.general);
+        if (tiene(CLAVES, x.v)) throw new Aviso(MSJ.clave(x.v));
+        k++;
+        return x;
+      }
+      function punteado() {
+        var partes = [nombre()];
+        while (es(".") && t[k].puntos === 1) { k++; partes.push(nombre()); }
+        return partes;
+      }
+      function fin() { if (k < t.length) throw new Aviso(MSJ.general); }
+      var primero = t[0], ini = primero ? primero.ini : 0, ultimo = t[t.length - 1], fin_ = ultimo ? ultimo.fin : 0;
+      if (es("n", "import")) {
+        k++;
+        var alias = [];
+        for (;;) {
+          var p = punteado(), como = null;
+          if (es("n", "as")) { k++; como = nombre(); }
+          alias.push({ partes: p.map(function (x) { return x.v; }), como: como ? como.v : null });
+          if (es(",")) { k++; continue; }
+          break;
+        }
+        // import c_a_f from conversiones: 3.12 tiene un mensaje especial
+        if (alias.length === 1 && !alias[0].como && es("n", "from")) {
+          var guardado = k;
+          k++;
+          try { punteado(); } catch (e) { k = guardado; }
+          if (k > guardado + 1 && k === t.length) return { linea: n, tipo: "sintaxis", ini: ini, fin: t[k - 1].fin,
+            msg: "Did you mean to use 'from ... import ...' instead?" };
+          k = guardado;
+        }
+        fin();
+        return { linea: n, tipo: "import", alias: alias, ini: ini, fin: fin_ };
+      }
+      if (es("n", "from")) {
+        k++;
+        var nivel = 0, modulo = [];
+        while (es(".")) { nivel += t[k].puntos; k++; }
+        if (!es("n", "import")) modulo = punteado().map(function (x) { return x.v; });
+        if (!nivel && !modulo.length) throw new Aviso(MSJ.general);
+        if (!es("n", "import")) throw new Aviso(MSJ.general);
+        k++;
+        if (es("*")) { k++; fin(); return { linea: n, tipo: "from", nivel: nivel, modulo: modulo, estrella: true, ini: ini, fin: fin_ }; }
+        var parentesis = false, nombres = [];
+        if (es("(")) { parentesis = true; k++; }
+        for (;;) {
+          var x = nombre(), c = null;
+          if (es("n", "as")) { k++; c = nombre(); }
+          nombres.push({ nombre: x.v, como: c ? c.v : null });
+          if (es(",")) {
+            k++;
+            if (parentesis && es(")")) break;
+            if (!parentesis && k >= t.length) throw new Aviso("Sobra la coma al final (Python diría SyntaxError: trailing comma not allowed without surrounding parentheses).");
+            continue;
+          }
+          break;
+        }
+        if (parentesis) { if (!es(")")) throw new Aviso(MSJ.general); k++; }
+        fin();
+        return { linea: n, tipo: "from", nivel: nivel, modulo: modulo, nombres: nombres, ini: ini, fin: fin_ };
+      }
+      if (es("n", "print")) {
+        k++;
+        if (!es("(")) throw new Aviso(MSJ.general);
+        k++;
+        var expr = null;
+        if (!es(")")) {
+          expr = punteado();
+          if (es("(")) throw new Aviso(MSJ.llamada);
+          if (es("[")) throw new Aviso(MSJ.general);
+        }
+        if (!es(")")) throw new Aviso(es(",") ? "Escribe un solo nombre dentro de print( )." : MSJ.general);
+        k++;
+        fin();
+        return { linea: n, tipo: "print", expr: expr, ini: ini, fin: fin_ };
+      }
+      if (primero && primero.t === "n") {
+        if (es("n", "Import") || es("n", "From") || es("n", "IMPORT")) throw new Aviso("Python distingue mayúsculas: import y from se escriben en minúsculas.");
+        var resto = t.slice(1);
+        if (resto.some(function (x) { return x.t === "("; })) throw new Aviso(MSJ.llamada);
+      }
+      throw new Aviso(MSJ.general);
+    }
+
+    // Código de los archivos del proyecto (sentencias que sabe ejecutar el motor)
+    function literal(texto) {
+      var m;
+      if ((m = /^"([^"\\]*)"$/.exec(texto)) || (m = /^'([^'\\]*)'$/.exec(texto))) return { k: "str", v: m[1] };
+      if (/^-?\d+$/.test(texto)) return { k: "int", v: Number(texto) };
+      if (/^-?\d*\.\d+$/.test(texto)) return { k: "float", v: Number(texto) };
+      throw new Error("literal: " + texto);
+    }
+    function analizarModulo(texto) {
+      var lineas = texto.replace(/\n$/, "").split("\n"), res = [];
+      lineas.forEach(function (l, i) {
+        var n = i + 1, m;
+        if (!l.trim() || /^\s*#/.test(l) || /^\s/.test(l)) return;
+        if ((m = /^def\s+([A-Za-z_]\w*)\s*\(/.exec(l))) { res.push({ linea: n, tipo: "def", nombre: m[1] }); return; }
+        if (/^if __name__ == ["']__main__["']:/.test(l)) { res.push({ linea: n, tipo: "si_main" }); return; }
+        if ((m = /^print\("([^"]*)"\)$/.exec(l))) { res.push({ linea: n, tipo: "print_lit", texto: m[1] }); return; }
+        if ((m = /^([A-Za-z_]\w*) = (.+)$/.exec(l))) { res.push({ linea: n, tipo: "asigna", nombre: m[1], valor: literal(m[2]) }); return; }
+        res.push(analizarLinea(l, n));
+      });
+      return res;
+    }
+
+    // ---------- Una corrida ----------
+    // proyecto = {raiz: "C:\\...\\clima", archivos: {"conversiones.py": "...", ...}}
+    // modo = {cwd, comando, script (ruta relativa con /), sp0 (carpeta relativa), m (nombre con -m o null)}
+    function correr(proyecto, modo, lineas, opciones) {
+      opciones = opciones || {};
+      var RAIZ = proyecto.raiz, ARCH = Object.assign({}, proyecto.archivos);
+      ARCH[modo.script] = lineas.join("\n") + "\n";      // el archivo que se corre tiene las líneas del alumno
+      var salida = "", eventos = [], modulos = new Map(), direcciones = 0;
+      var semilla = opciones.semilla || 0x1E0C2F5;
+      function win(rel) { return rel ? RAIZ + "\\" + rel.replace(/\//g, "\\") : RAIZ; }
+      function esArchivo(rel) { return tiene(ARCH, rel); }
+      function esCarpeta(rel) {
+        var pre = rel + "/";
+        return Object.keys(ARCH).some(function (k) { return k.slice(0, pre.length) === pre; });
+      }
+      function direccion() {
+        direcciones++;
+        var n = (semilla * 4096 + direcciones * 0x2C0 + 0x7240).toString(16).toUpperCase();
+        while (n.length < 16) n = "0" + n;
+        return "0x" + n;
+      }
+
+      // Módulos: ns (Map) con el espacio de nombres en orden de inserción
+      function Modulo(nombre, clase, archivo, ruta) {
+        this.nombre = nombre; this.clase = clase; this.archivo = archivo; this.ruta = ruta || null;
+        this.ns = new Map(); this.inicializando = false; this.pendientes = []; this.conocido = true; this.rel = null;
+      }
+      var BUILTINS = new Modulo("builtins", "integrado", null);
+      function valorTexto(v) { return { k: "otro", texto: v }; }
+      function nuevoModulo(nombre, clase, archivo, ruta, extra) {
+        var m = new Modulo(nombre, clase, archivo, ruta);
+        var paquete = ruta ? nombre : nombre.split(".").slice(0, -1).join(".");
+        m.ns.set("__name__", { k: "str", v: nombre });
+        m.ns.set("__doc__", { k: "none" });
+        m.ns.set("__package__", { k: "str", v: paquete });
+        m.ns.set("__loader__", { k: "otro" });
+        m.ns.set("__spec__", { k: "otro" });
+        if (clase === "namespace") {
+          m.ns.set("__file__", { k: "none" });
+          m.ns.set("__path__", { k: "otro" });
+          return m;
+        }
+        if (ruta) m.ns.set("__path__", { k: "lista", items: ruta.map(function (r) { return { k: "str", v: r }; }) });
+        m.ns.set("__file__", { k: "str", v: archivo });
+        var carpeta = archivo.slice(0, archivo.lastIndexOf("\\")), base = archivo.slice(archivo.lastIndexOf("\\") + 1).replace(/\.py$/, "");
+        m.ns.set("__cached__", { k: "str", v: carpeta + "\\__pycache__\\" + base + ".cpython-312.pyc" });
+        m.ns.set("__builtins__", { k: "otro" });
+        return m;
+      }
+      function moduloStdlib(nombre, clase, archivo) {
+        var m = new Modulo(nombre, clase, archivo, null);
+        var orden = D.orden[nombre];
+        if (/__init__\.py$/.test(archivo || "")) m.ruta = [archivo.slice(0, archivo.lastIndexOf("\\"))];
+        if (nombre === "os") {
+          // os.path ya está en sys.modules desde que arranca Python: es el módulo ntpath
+          var ntpath = new Modulo("ntpath", "congelado", PY + "\\Lib\\ntpath.py", null);
+          ntpath.conocido = false;
+          modulos.set("ntpath", ntpath);
+          modulos.set("os.path", ntpath);
+        }
+        if (!orden) { m.conocido = false; return m; }
+        orden.forEach(function (k) {
+          var v = { k: "otro" };
+          if (k === "__name__") v = { k: "str", v: nombre };
+          else if (k === "__file__" && archivo) v = { k: "str", v: archivo };
+          else if (nombre === "math" && tiene(D.math, k)) v = valorTexto(D.math[k]);
+          else if (nombre === "os" && k === "path") v = { k: "modulo", m: modulos.get("os.path") };
+          m.ns.set(k, v);
+        });
+        if (D.alls[nombre]) m.todos = D.alls[nombre];
+        return m;
+      }
+      function reprModulo(m) {
+        if (m.clase === "integrado") return "<module '" + m.nombre + "' (built-in)>";
+        if (m.clase === "congelado") return "<module '" + m.nombre + "' (frozen)>";
+        if (m.clase === "namespace") return "<module '" + m.nombre + "' (namespace) from [" + m.ruta.map(pyStr).join(", ") + "]>";
+        return "<module '" + m.nombre + "' from " + pyStr(m.archivo) + ">";
+      }
+
+      // Busca un módulo de primer nivel o un submódulo (ruta = __path__ del paquete)
+      function buscarEnCarpeta(carpetaRel, cola) {
+        var base = carpetaRel ? carpetaRel + "/" + cola : cola, ns = null;
+        if (esCarpeta(base)) {
+          if (esArchivo(base + "/__init__.py")) return { clase: "paquete", rel: base + "/__init__.py", dir: base };
+          ns = base;
+        }
+        if (esArchivo(base + ".py")) return { clase: "archivo", rel: base + ".py" };
+        if (ns !== null) return { clase: "namespace", dir: ns };
+        return null;
+      }
+      function encontrar(nombre, rutaPadre) {
+        var cola = nombre.split(".").pop();
+        if (!rutaPadre) {
+          if (tiene(MOD_INTEGRADOS, nombre)) return { clase: "integrado" };
+          if (tiene(CONGELADOS, nombre)) return { clase: "congelado" };
+          var porciones = [], r = buscarEnCarpeta(modo.sp0, nombre);
+          eventos.push({ tipo: "busca", nombre: nombre, carpeta: win(modo.sp0), hallado: r ? r.clase : null });
+          if (r && r.clase !== "namespace") return r;
+          if (r) porciones.push(r.dir);
+          var t = D.tipos[nombre];
+          if (t && t !== "frozen" && t !== "builtin" && t !== "namespace") return { clase: "stdlib", archivo: PY + "\\" + t };
+          if (nombre === "pip") return { clase: "stdlib", archivo: PY + "\\Lib\\site-packages\\pip\\__init__.py", pip: true };
+          if (porciones.length) return { clase: "namespace", dir: porciones[0] };
+          return null;
+        }
+        // submódulo: se busca en el __path__ del paquete
+        var padre = rutaPadre;
+        if (padre.proyecto === undefined) return null;
+        var hallado = null, porcion = null;
+        for (var i = 0; i < padre.dirs.length; i++) {
+          var rr = buscarEnCarpeta(padre.dirs[i], cola);
+          if (rr && rr.clase !== "namespace") { hallado = rr; break; }
+          if (rr && porcion === null) porcion = rr.dir;
+        }
+        eventos.push({ tipo: "busca", nombre: nombre, carpeta: padre.dirs.map(win).join(", "), hallado: hallado ? hallado.clase : porcion ? "namespace" : null });
+        return hallado || (porcion !== null ? { clase: "namespace", dir: porcion } : null);
+      }
+
+      function rutaDe(m) {
+        // __path__ como carpetas relativas del proyecto (null si no es paquete del proyecto)
+        if (!m.ruta) return null;
+        if (m.clase === "paquete" || m.clase === "namespace") return { proyecto: true, dirs: m.dirsRel };
+        return { proyecto: undefined };
+      }
+
+      function cargarYEjecutar(nombre, hallado) {
+        var m;
+        if (hallado.clase === "integrado") {
+          m = moduloStdlib(nombre, "integrado", null);
+        } else if (hallado.clase === "congelado") {
+          m = moduloStdlib(nombre, "congelado", D.archivosCongelados[nombre] ? PY + "\\" + D.archivosCongelados[nombre] : null);
+        } else if (hallado.clase === "stdlib") {
+          if (tiene(ESPECIALES, nombre)) throw new Aviso("El módulo " + nombre + " hace algo especial al importarse (imprime, abre una ventana o el navegador): pruébalo en tu computadora.");
+          m = moduloStdlib(nombre, "stdlib", hallado.archivo);
+          if (hallado.pip) m.conocido = false;
+        } else if (hallado.clase === "namespace") {
+          m = nuevoModulo(nombre, "namespace", null, [win(hallado.dir)]);
+          m.dirsRel = [hallado.dir];
+        } else {
+          var esPaquete = hallado.clase === "paquete";
+          m = nuevoModulo(nombre, esPaquete ? "paquete" : "archivo", win(hallado.rel), esPaquete ? [win(hallado.dir)] : null);
+          if (esPaquete) m.dirsRel = [hallado.dir];
+          m.rel = hallado.rel;
+        }
+        m.inicializando = true;
+        modulos.set(nombre, m);
+        eventos.push({ tipo: "ejecuta", nombre: nombre, clase: m.clase, archivo: m.archivo, rel: m.rel });
+        try {
+          if (m.rel) ejecutarCodigo(m, analizarModulo(ARCH[m.rel]), ARCH[m.rel].split("\n"));
+        } catch (e) {
+          modulos.delete(nombre);
+          throw e;
+        } finally {
+          m.inicializando = false;
+        }
+        return m;
+      }
+
+      // importlib._bootstrap._find_and_load
+      function cargar(nombre) {
+        if (modulos.has(nombre)) {
+          eventos.push({ tipo: "reusa", nombre: nombre });
+          return modulos.get(nombre);
+        }
+        var partes = nombre.split("."), padreNombre = partes.slice(0, -1).join("."), ruta = null, padre = null;
+        if (padreNombre) {
+          if (!modulos.has(padreNombre)) cargar(padreNombre);
+          if (modulos.has(nombre)) return modulos.get(nombre);
+          padre = modulos.get(padreNombre);
+          if (!padre.ruta) throw new ErrorPy("ModuleNotFoundError", "No module named " + pyStr(nombre) + "; " + pyStr(padreNombre) + " is not a package", { name: nombre });
+          ruta = rutaDe(padre);
+          if (ruta.proyecto === undefined) {
+            var conocido = D.submodulos[nombre];
+            if (!conocido) throw new Aviso("Esta página no conoce los submódulos de " + padreNombre + " (de la biblioteca estándar): pruébalo en tu computadora.");
+          }
+        }
+        var hallado;
+        if (ruta && ruta.proyecto === undefined) hallado = { clase: "stdlib", archivo: PY + "\\" + D.submodulos[nombre] };
+        else hallado = encontrar(nombre, ruta);
+        if (!hallado) throw new ErrorPy("ModuleNotFoundError", "No module named " + pyStr(nombre), { name: nombre });
+        if (padre) padre.pendientes.push(partes[partes.length - 1]);
+        var m;
+        try { m = cargarYEjecutar(nombre, hallado); }
+        finally { if (padre) padre.pendientes.pop(); }
+        if (padre) modulos.get(padreNombre).ns.set(partes[partes.length - 1], { k: "modulo", m: m });
+        return m;
+      }
+
+      // getattr de un módulo (moduleobject.c); regresa el valor o lanza AttributeError
+      function atributo(obj, nombre) {
+        if (obj.k === "modulo") {
+          var m = obj.m;
+          if (!m.conocido) throw new Aviso("Esta página no conoce el contenido de " + m.nombre + ": pruébalo en tu computadora.");
+          if (m.ns.has(nombre)) return m.ns.get(nombre);
+          var msg;
+          if (m.inicializando && m.clase !== "main") msg = "partially initialized module " + pyStr(m.nombre) + " has no attribute " + pyStr(nombre) + " (most likely due to a circular import)";
+          else if (m.pendientes.indexOf(nombre) >= 0) msg = "cannot access submodule " + pyStr(nombre) + " of module " + pyStr(m.nombre) + " (most likely due to a circular import)";
+          else msg = "module " + pyStr(m.nombre) + " has no attribute " + pyStr(nombre);
+          throw new ErrorPy("AttributeError", msg, { name: nombre, obj: obj });
+        }
+        if (obj.k === "funcion") {
+          if (nombre === "__name__" || nombre === "__qualname__") return { k: "str", v: obj.nombre };
+          if (D.dirFuncion.indexOf(nombre) >= 0) throw new Aviso("Esta página no muestra los atributos internos de una función.");
+          throw new ErrorPy("AttributeError", "'function' object has no attribute " + pyStr(nombre), { name: nombre, obj: obj });
+        }
+        throw new Aviso("Esta página solo sigue los nombres de los módulos (modulo.nombre).");
+      }
+      function dirDe(obj) {
+        if (obj.k === "modulo") return obj.m.conocido ? Array.from(obj.m.ns.keys()).sort(cmp) : null;
+        if (obj.k === "funcion") return D.dirFuncion;
+        return null;
+      }
+      function cmp(a, b) { return a < b ? -1 : a > b ? 1 : 0; }
+
+      // IMPORT_FROM (ceval.c import_from)
+      function importarDe(obj, nombre) {
+        var m = obj.m;
+        if (!m.conocido) throw new Aviso("Esta página no conoce el contenido de " + m.nombre + ": pruébalo en tu computadora.");
+        if (m.ns.has(nombre)) return m.ns.get(nombre);
+        var completo = m.nombre + "." + nombre;
+        if (modulos.has(completo)) return { k: "modulo", m: modulos.get(completo) };
+        var archivo = m.ns.get("__file__"), msg;
+        if (!archivo || archivo.k !== "str") msg = "cannot import name " + pyStr(nombre) + " from " + pyStr(m.nombre) + " (unknown location)";
+        else if (m.inicializando && m.clase !== "main") msg = "cannot import name " + pyStr(nombre) + " from partially initialized module " + pyStr(m.nombre) + " (most likely due to a circular import) (" + archivo.v + ")";
+        else msg = "cannot import name " + pyStr(nombre) + " from " + pyStr(m.nombre) + " (" + archivo.v + ")";
+        throw new ErrorPy("ImportError", msg, { name: m.nombre, nameFrom: nombre });
+      }
+      // importlib._bootstrap._handle_fromlist (solo para paquetes)
+      function manejarFromlist(m, lista, recursivo) {
+        lista.forEach(function (x) {
+          if (x === "*") {
+            if (!recursivo && m.todos) manejarFromlist(m, m.todos, true);
+            return;
+          }
+          if (m.ns.has(x)) return;
+          var completo = m.nombre + "." + x;
+          try {
+            cargar(completo);
+          } catch (e) {
+            if (e instanceof ErrorPy && e.tipo === "ModuleNotFoundError" && e.name === completo) return;
+            throw e;
+          }
+        });
+      }
+
+      function paqueteActual(mod) {
+        var p = mod.ns.get("__package__");
+        if (p && p.k === "str") return p.v;
+        var nombre = mod.ns.get("__name__").v;
+        return mod.ns.has("__path__") ? nombre : nombre.split(".").slice(0, -1).join(".");
+      }
+      function resolver(nivel, partes, mod) {
+        var nombre = partes.join(".");
+        if (!nivel) return nombre;
+        var paquete = paqueteActual(mod);
+        if (!paquete) throw new ErrorPy("ImportError", "attempted relative import with no known parent package", {});
+        var trozos = paquete.split(".");
+        if (nivel - 1 >= trozos.length) throw new ErrorPy("ImportError", "attempted relative import beyond top-level package", {});
+        var base = trozos.slice(0, trozos.length - (nivel - 1)).join(".");
+        return nombre ? base + "." + nombre : base;
+      }
+
+      function nombreDe(ns, nombre, s, ficha) {
+        if (ns.has(nombre)) return ns.get(nombre);
+        if (tiene(D.builtinsTexto, nombre)) {
+          if (nombre === "__build_class__" || nombre === "__import__") return valorTexto("<built-in function " + nombre + ">");
+          return valorTexto(D.builtinsTexto[nombre]);
+        }
+        if (D.builtins.indexOf(nombre) >= 0) return { k: "otro" };
+        throw new ErrorPy("NameError", "name " + pyStr(nombre) + " is not defined", { name: nombre, globales: ns, rango: [ficha.ini, ficha.fin] });
+      }
+      function textoDe(v) {
+        if (v.k === "str") return v.v;
+        if (v.k === "int") return String(v.v);
+        if (v.k === "float") return pyFloat(v.v);
+        if (v.k === "none") return "None";
+        if (v.k === "lista") return "[" + v.items.map(function (x) { return pyStr(x.v); }).join(", ") + "]";
+        if (v.k === "modulo") return reprModulo(v.m);
+        if (v.k === "funcion") { if (!v.dir) v.dir = direccion(); return "<function " + v.nombre + " at " + v.dir + ">"; }
+        if (v.k === "otro" && v.texto !== undefined) return v.texto;
+        throw new Aviso("Ese nombre sí existe, pero esta página no sabe cómo lo imprime Python. Pruébalo en tu computadora.");
+      }
+
+      function ligar(mod, nombre, valor) { mod.ns.set(nombre, valor); }
+      function ejecutarSentencia(mod, s) {
+        if (s.tipo === "vacia" || s.tipo === "si_main") return;
+        if (s.tipo === "def") { ligar(mod, s.nombre, { k: "funcion", nombre: s.nombre, modulo: mod.nombre }); return; }
+        if (s.tipo === "asigna") { ligar(mod, s.nombre, s.valor); return; }
+        if (s.tipo === "print_lit") { salida += s.texto + "\n"; return; }
+        if (s.tipo === "print") {
+          if (!s.expr) { salida += "\n"; return; }
+          var v = nombreDe(mod.ns, s.expr[0].v, s, s.expr[0]);
+          for (var i = 1; i < s.expr.length; i++) {
+            try { v = atributo(v, s.expr[i].v); }
+            catch (e) { if (e instanceof ErrorPy) e.rango = [s.expr[0].ini, s.expr[i].fin]; throw e; }
+          }
+          salida += textoDe(v) + "\n";
+          return;
+        }
+        if (s.tipo === "import") {
+          s.alias.forEach(function (a) {
+            var nombre = a.partes.join(".");
+            cargar(nombre);
+            if (a.como) {
+              var v = { k: "modulo", m: modulos.get(a.partes[0]) };
+              for (var i = 1; i < a.partes.length; i++) v = importarDe(v, a.partes[i]);
+              ligar(mod, a.como, v);
+            } else {
+              ligar(mod, a.partes[0], { k: "modulo", m: modulos.get(a.partes[0]) });
+            }
+          });
+          return;
+        }
+        if (s.tipo === "from") {
+          var abs = resolver(s.nivel, s.modulo, mod);
+          var m = cargar(abs);
+          if (!m.conocido) throw new Aviso("Esta página no conoce el contenido de " + m.nombre + ": pruébalo en tu computadora.");
+          var lista = s.estrella ? ["*"] : s.nombres.map(function (x) { return x.nombre; });
+          if (m.ruta) manejarFromlist(m, lista, false);
+          if (s.estrella) {
+            var nombres = m.todos ? m.todos : Array.from(m.ns.keys()).filter(function (k) { return k[0] !== "_"; });
+            nombres.forEach(function (k) {
+              if (!m.ns.has(k)) throw new Aviso("Esta página no sigue ese import *.");
+              ligar(mod, k, m.ns.get(k));
+            });
+            return;
+          }
+          s.nombres.forEach(function (x) { ligar(mod, x.como || x.nombre, importarDe({ k: "modulo", m: m }, x.nombre)); });
+          return;
+        }
+        throw new Error("sentencia desconocida " + s.tipo);
+      }
+      function ejecutarCodigo(mod, sentencias, fuente) {
+        sentencias.forEach(function (s) {
+          try {
+            ejecutarSentencia(mod, s);
+          } catch (e) {
+            if (e instanceof ErrorPy) {
+              e.marcos.push({ archivo: mod.archivo, linea: s.linea, texto: fuente[s.linea - 1], rango: e.rango || [s.ini, s.fin] });
+              e.rango = null;
+            }
+            throw e;
+          }
+        });
+      }
+
+      // ---------- El programa principal ----------
+      var principal = new Modulo("__main__", "main", win(modo.script), null);
+      var ns = principal.ns;
+      ns.set("__name__", { k: "str", v: "__main__" });
+      ns.set("__doc__", { k: "none" });
+      ns.set("__package__", modo.m ? { k: "str", v: modo.m.split(".").slice(0, -1).join(".") } : { k: "none" });
+      ns.set("__loader__", { k: "otro" });
+      ns.set("__spec__", modo.m ? { k: "otro" } : { k: "none" });
+      ns.set("__annotations__", valorTexto("{}"));
+      ns.set("__builtins__", { k: "modulo", m: BUILTINS });
+      ns.set("__file__", { k: "str", v: win(modo.script) });
+      ns.set("__cached__", modo.m ? { k: "str", v: win(modo.script.replace(/[^/]+$/, "")) + "__pycache__\\" + modo.script.replace(/^.*\//, "").replace(/\.py$/, "") + ".cpython-312.pyc" } : { k: "none" });
+      modulos.set("__main__", principal);
+      var inicioNombres = ns.size;
+
+      var sentencias = [], fuente = lineas.slice();
+      var resultado = { consola: "", aviso: null, error: null, eventos: eventos, nombres: [], salida: "",
+                        modulo: function () { return null; }, publicos: function () { return []; } };
+      try {
+        lineas.forEach(function (l, i) { sentencias.push(analizarLinea(l, i + 1)); });
+      } catch (e) {
+        if (e instanceof Aviso) { resultado.aviso = e.texto; return resultado; }
+        throw e;
+      }
+      var sint = sentencias.filter(function (s) { return s.tipo === "sintaxis"; })[0];
+      if (sint) {
+        if (modo.m) { resultado.aviso = "Con python -m, Python reporta este error de otra forma: pruébalo con python main.py."; return resultado; }
+        var l = fuente[sint.linea - 1], quitados = l.length - l.replace(/^\s+/, "").length;
+        resultado.consola = '  File "' + win(modo.script) + '", line ' + sint.linea + "\n    " + l.trim() + "\n    " +
+          " ".repeat(sint.ini - quitados) + "^".repeat(sint.fin - sint.ini) + "\nSyntaxError: " + sint.msg + "\n";
+        resultado.error = { tipo: "SyntaxError", msg: sint.msg, linea: sint.linea };
+        return resultado;
+      }
+      try {
+        if (modo.m) cargar(modo.m.split(".").slice(0, -1).join("."));
+        ejecutarCodigo(principal, sentencias, fuente);
+      } catch (e) {
+        if (e instanceof Aviso) { resultado.aviso = e.texto; return resultado; }
+        if (!(e instanceof ErrorPy)) throw e;
+        var tb = "Traceback (most recent call last):\n";
+        if (modo.m) tb += '  File "<frozen runpy>", line 198, in _run_module_as_main\n  File "<frozen runpy>", line 88, in _run_code\n';
+        e.marcos.slice().reverse().forEach(function (f) {
+          tb += '  File "' + f.archivo + '", line ' + f.linea + ", in <module>\n";
+          var sin = f.texto.replace(/^\s+/, ""), quitados = f.texto.length - sin.length, limpia = sin.replace(/\s+$/, "");
+          tb += "    " + limpia + "\n";
+          var a = f.rango[0] - quitados, b = f.rango[1] - quitados;
+          if (b - a < limpia.length) tb += "    " + " ".repeat(a) + "^".repeat(b - a) + "\n";
+        });
+        var texto = e.tipo + ": " + e.msg, sug = null;
+        if (e.tipo === "ImportError" && e.nameFrom !== undefined) {
+          var mm = modulos.get(e.name);
+          if (mm) sug = sugerir(dirDe({ k: "modulo", m: mm }), e.nameFrom);
+        } else if (e.tipo === "AttributeError") {
+          sug = sugerir(dirDe(e.obj), e.name);
+        } else if (e.tipo === "NameError") {
+          sug = sugerir(Array.from(e.globales.keys()), e.name) || sugerir(D.builtins, e.name);
+        }
+        if (sug) texto += ". Did you mean: '" + sug + "'?";
+        if (e.tipo === "NameError" && tiene(STDLIB, e.name)) texto += sug ? " Or did you forget to import '" + e.name + "'?" : ". Did you forget to import '" + e.name + "'?";
+        resultado.error = { tipo: e.tipo, msg: e.msg, texto: texto, linea: e.marcos.length ? e.marcos[e.marcos.length - 1].linea : null,
+                            marcos: e.marcos.slice().reverse(), name: e.name, nameFrom: e.nameFrom, sugerencia: sug };
+        salida += tb + texto + "\n";
+      }
+      resultado.consola = salida;
+      resultado.salida = salida;
+      // Nombres que agregaron las líneas del alumno al espacio de main
+      var i = 0;
+      ns.forEach(function (v, k) {
+        if (i++ < inicioNombres) return;
+        resultado.nombres.push({ nombre: k, valor: v, texto: (function () { try { return textoDe(v); } catch (x) { return null; } })() });
+      });
+      resultado.modulos = Array.from(modulos.keys());
+      resultado.modulo = function (n) { return modulos.get(n) || null; };
+      resultado.publicos = function (m) {
+        return m && m.conocido ? Array.from(m.ns.keys()).filter(function (k) { return k[0] !== "_"; }) : [];
+      };
+      return resultado;
+    }
+
+    return { correr: correr, analizarLinea: analizarLinea, sugerir: sugerir, Aviso: Aviso, pyStr: pyStr, pyFloat: pyFloat };
+  }
+
+  var MOTOR = crearMotor(DATOS_PY);
+  var PROYECTO = JSON.parse($("datos-proyecto").textContent)[0];
+  var RAIZ = "C:\\Users\\alumno\\Documents\\clima";
+  function archivosDe(variante, cambios) {
+    var a = Object.assign({}, PROYECTO.archivos, PROYECTO.variantes[variante || "base"] || {});
+    return Object.assign(a, cambios || {});
+  }
+  // Cómo se corre: carpeta de la terminal, comando, archivo que se ejecuta, sys.path[0] y -m
+  var MODOS = {
+    A: { cwd: RAIZ, comando: "python main.py", script: "main.py", sp0: "", m: null,
+         texto: "Estás en la carpeta del proyecto y corres main.py. <b>sys.path[0]</b> es la carpeta del script: <code>clima</code>. Ahí Python busca primero tus módulos." },
+    B: { cwd: "C:\\Users\\alumno\\Documents", comando: "python clima\\main.py", script: "main.py", sp0: "", m: null,
+         texto: "Estás en Documents, pero el script está en clima: <b>sys.path[0]</b> es la carpeta del script, <code>clima</code>. Cuenta dónde está el archivo, no dónde estás tú." },
+    C: { cwd: RAIZ, comando: "python scripts\\grafica.py", script: "scripts/grafica.py", sp0: "scripts", m: null,
+         texto: "El script está en <code>clima\\scripts</code>: esa es <b>sys.path[0]</b>. Los módulos de clima ya no están \"al lado\" del script." },
+    D: { cwd: RAIZ, comando: "python -m scripts.grafica", script: "scripts/grafica.py", sp0: "", m: "scripts.grafica",
+         texto: "Con <code>python -m</code>, <b>sys.path[0]</b> es la carpeta donde estás (<code>clima</code>) y grafica.py se corre como el módulo <code>scripts.grafica</code>." },
+    E: { cwd: RAIZ, comando: "python herramientas\\estadistica.py", script: "herramientas/estadistica.py", sp0: "herramientas", m: null,
+         texto: "El script está dentro del paquete, en <code>clima\\herramientas</code>: esa es <b>sys.path[0]</b>." },
+    F: { cwd: RAIZ, comando: "python -m herramientas.estadistica", script: "herramientas/estadistica.py", sp0: "", m: "herramientas.estadistica",
+         texto: "Con <code>python -m</code>, <b>sys.path[0]</b> es la carpeta donde estás (<code>clima</code>). Antes de correr estadistica.py, Python importa el paquete herramientas (se ejecuta su __init__.py)." }
+  };
+  function rutaWin(rel) { return rel ? RAIZ + "\\" + rel.replace(/\//g, "\\") : RAIZ; }
+
+  // ---------- Árbol de archivos ----------
+  function arbolDe(archivos) {
+    var raiz = { carpetas: {}, archivos: [] };
+    Object.keys(archivos).forEach(function (ruta) {
+      var partes = ruta.split("/"), nodo = raiz;
+      for (var i = 0; i < partes.length - 1; i++) {
+        nodo.carpetas[partes[i]] = nodo.carpetas[partes[i]] || { carpetas: {}, archivos: [] };
+        nodo = nodo.carpetas[partes[i]];
+      }
+      nodo.archivos.push(partes[partes.length - 1]);
+    });
+    return raiz;
+  }
+  var ORDEN = ["main.py", "conversiones.py", "reporte.py", "random.py", "herramientas", "__init__.py", "estadistica.py", "texto.py", "scripts", "grafica.py", "datos", "septiembre.csv", "README.md"];
+  function ordenar(a, b) {
+    var ia = ORDEN.indexOf(a), ib = ORDEN.indexOf(b);
+    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || (a < b ? -1 : 1);
+  }
+  // opciones: {archivos, modo, elegido, nuevos: {ruta: true}, idPrefijo}
+  function pintarArbol(cont, op) {
+    var arbol = arbolDe(op.archivos), modo = op.modo;
+    function fila(rel, nombre, esCarpeta, paquete) {
+      var clases = ["nodo"], etqs = "";
+      if (esCarpeta && modo && rel === modo.sp0) { clases.push("sp0"); etqs += ' <span class="etq sp0">sys.path[0]</span>'; }
+      if (!esCarpeta && modo && rel === modo.script) { clases.push("corre"); etqs += ' <span class="etq corre">▶ se corre</span>'; }
+      if (op.nuevos && op.nuevos[rel]) etqs += ' <span class="etq nuevo">' + esc(op.nuevos[rel]) + "</span>";
+      if (rel === op.elegido) clases.push("elegido");
+      var ico = esCarpeta ? (paquete ? '<span class="ico paquete" aria-hidden="true">paquete</span>' : '<span class="ico carpeta" aria-hidden="true">carpeta</span>')
+                          : (/\.py$/.test(nombre) ? '<span class="ico py" aria-hidden="true">py</span>' : '<span class="ico otro" aria-hidden="true">' + esc(nombre.split(".").pop()) + "</span>");
+      var texto = esc(nombre) + (esCarpeta ? "\\" : "");
+      var desc = esCarpeta ? (paquete ? "paquete " : "carpeta ") + nombre : "archivo " + nombre;
+      if (!esCarpeta && /\.py$/.test(nombre)) {
+        return '<button type="button" class="' + clases.join(" ") + '" data-archivo="' + esc(rel) + '" aria-label="Ver ' + esc(desc) + '">' + ico + texto + "</button>" + etqs;
+      }
+      return '<span class="' + clases.join(" ") + '" aria-label="' + esc(desc) + '">' + ico + texto + "</span>" + etqs;
+    }
+    function lista(nodo, prefijo) {
+      var nombres = Object.keys(nodo.carpetas).concat(nodo.archivos).sort(ordenar);
+      return "<ul" + (prefijo ? "" : ' class="arbol"') + ">" + nombres.map(function (n) {
+        var rel = prefijo ? prefijo + "/" + n : n;
+        if (nodo.carpetas[n]) {
+          var paquete = nodo.carpetas[n].archivos.indexOf("__init__.py") >= 0;
+          return "<li>" + fila(rel, n, true, paquete) + lista(nodo.carpetas[n], rel) + "</li>";
+        }
+        return "<li>" + fila(rel, n, false) + "</li>";
+      }).join("") + "</ul>";
+    }
+    var raizSp0 = modo && modo.sp0 === "";
+    cont.innerHTML = '<ul class="arbol"><li><span class="nodo' + (raizSp0 ? " sp0" : "") + '" aria-label="carpeta clima, la del proyecto">' +
+      '<span class="ico carpeta" aria-hidden="true">carpeta</span>clima\\</span>' + (raizSp0 ? ' <span class="etq sp0">sys.path[0]</span>' : "") +
+      lista(arbol, "") + "</li></ul>";
+  }
+  function mostrarArchivo(op) {
+    // op: {titulo, nota, cont, archivos, rel, lineasAlumno, marca}
+    var t = op.archivos[op.rel];
+    op.titulo.textContent = "Contenido de " + op.rel.replace(/\//g, "\\");
+    if (op.lineasAlumno) {
+      op.nota.textContent = "Es el archivo que se corre: sus líneas son las de tu programa.";
+      op.cont.innerHTML = htmlCodigo(op.lineasAlumno, null, null, "Código de " + op.rel);
+      return;
+    }
+    op.nota.textContent = /__init__\.py$/.test(op.rel) ? "El __init__.py convierte la carpeta en paquete y se ejecuta al importar el paquete." : "";
+    op.cont.innerHTML = htmlCodigo(t.replace(/\n$/, "").split("\n"), op.marca || null, null, "Código de " + op.rel);
+  }
+
+  // ---------- Pestañas ----------
+  var botonesTab = Array.prototype.slice.call(document.querySelectorAll("nav.pestanas button"));
+  function activarTab(b) {
+    botonesTab.forEach(function (x) {
+      var si = x === b;
+      x.classList.toggle("activo", si);
+      x.setAttribute("aria-selected", si ? "true" : "false");
+      x.tabIndex = si ? 0 : -1;
+      $(x.dataset.vista).classList.toggle("activo", si);
+    });
+    guardarLS("pb-s07-import-tab", b.dataset.vista);
+  }
+  botonesTab.forEach(function (b, i) {
+    b.addEventListener("click", function () { activarTab(b); });
+    b.addEventListener("keydown", function (e) {
+      if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+      e.preventDefault();
+      var otro = botonesTab[(i + (e.key === "ArrowRight" ? 1 : botonesTab.length - 1)) % botonesTab.length];
+      activarTab(otro);
+      otro.focus();
+    });
+  });
+
+  // ===================== Explorar =====================
+  var EJEMPLOS = [
+    ["Formas de importar", [
+      ["import conversiones", "print(conversiones.CERO_ABSOLUTO)"],
+      ["from conversiones import c_a_f", "print(c_a_f)"],
+      ["import conversiones as conv", "print(conv)"],
+      ["from conversiones import *", ""],
+      ["import conversiones", "import reporte"]]],
+    ["El paquete herramientas", [
+      ["import herramientas", "print(herramientas.VERSION)"],
+      ["from herramientas import estadistica", ""],
+      ["from herramientas.estadistica import promedio", ""],
+      ["import herramientas.estadistica as est", "print(est)"]]],
+    ["Biblioteca estándar y pip", [
+      ["import math", "print(math.pi)"],
+      ["from random import randint", ""],
+      ["import numpy", ""]]],
+    ["Errores típicos", [
+      ["import conversiones.py", ""],
+      ["import Conversiones", ""],
+      ["from conversiones import c_a_k", ""],
+      ["import conversiones", "print(c_a_f)"],
+      ["import conversiones as conv", "print(conversiones)"],
+      ["from herramientas import estadistic", ""],
+      ["import c_a_f from conversiones", ""],
+      ["from . import conversiones", ""]]]
+  ];
+  $("ejemplo").innerHTML = '<option value="">(elige un ejemplo)</option>' + EJEMPLOS.map(function (g, i) {
+    return '<optgroup label="' + esc(g[0]) + '">' + g[1].map(function (e, j) {
+      return '<option value="' + i + "-" + j + '">' + esc(e[0] + (e[1] ? "  ·  " + e[1] : "")) + "</option>";
+    }).join("") + "</optgroup>";
+  }).join("");
+  $("modo").innerHTML = Object.keys(MODOS).map(function (k) {
+    return '<option value="' + k + '">' + esc(MODOS[k].cwd.replace(/^C:\\Users\\alumno\\/, "") + "> " + MODOS[k].comando) + "</option>";
+  }).join("");
+
+  var estadoExp = { modo: "A", elegido: "conversiones.py" };
+  try {
+    var g = JSON.parse(leerLS("pb-s07-import-exp") || "null");
+    if (g && MODOS[g.modo]) { estadoExp.modo = g.modo; $("linea1").value = g.l1 || ""; $("linea2").value = g.l2 || ""; }
+  } catch (e) { /* sin almacenamiento */ }
+  $("modo").value = estadoExp.modo;
+
+  function nombreCorto(rel) { return rel.replace(/\//g, "\\"); }
+  function describirValor(v, r) {
+    if (v.k === "modulo") {
+      var m = v.m, que;
+      if (m.clase === "archivo") que = "módulo <code>" + esc(m.nombre) + "</code> (el archivo " + esc(nombreCorto(m.rel)) + ")";
+      else if (m.clase === "paquete") que = "paquete <code>" + esc(m.nombre) + "</code> (la carpeta " + esc(nombreCorto(m.rel.replace(/\/__init__\.py$/, ""))) + ", con __init__.py)";
+      else if (m.clase === "namespace") que = "paquete <code>" + esc(m.nombre) + "</code> sin __init__.py (una carpeta)";
+      else if (m.clase === "integrado") que = "módulo integrado <code>" + esc(m.nombre) + "</code> (viene dentro de Python, no es un archivo)";
+      else if (m.clase === "main") que = "el programa que se está corriendo";
+      else que = "módulo <code>" + esc(m.nombre) + "</code> de " + (/site-packages/.test(m.archivo || "") ? "pip (site-packages)" : "la biblioteca estándar");
+      var pub = r.publicos(m).slice(0, 4);
+      return [que, pub.length ? pub.map(function (p) { return "<code>" + esc(v.nombreLocal + "." + p) + "</code>"; }).join(", ") + (r.publicos(m).length > 4 ? "…" : "") : "—"];
+    }
+    if (v.k === "funcion") return ["función <code>" + esc(v.nombre) + "</code>, definida en " + esc(v.modulo.replace(/\./g, "\\") + ".py"), "<code>" + esc(v.nombreLocal) + "(...)</code>"];
+    if (v.k === "str" || v.k === "int" || v.k === "float") {
+      var rep = v.k === "str" ? MOTOR.pyStr(v.v) : v.k === "float" ? MOTOR.pyFloat(v.v) : String(v.v);
+      return ["variable: <code>" + esc(rep) + "</code>", "<code>" + esc(v.nombreLocal) + "</code>"];
+    }
+    return ["un objeto de Python", "<code>" + esc(v.nombreLocal) + "</code>"];
+  }
+  function tablaNombres(r) {
+    if (r.aviso || (r.error && r.error.tipo === "SyntaxError")) return '<tbody><tr><td colspan="3" class="nota">—</td></tr></tbody>';
+    if (!r.nombres.length) return '<tbody><tr><td colspan="3">' + (r.error ? "Ninguno: el programa se detuvo antes." : "Ninguno.") + "</td></tr></tbody>";
+    return "<thead><tr><th scope=\"col\">Nombre</th><th scope=\"col\">Qué es</th><th scope=\"col\">Cómo se usa</th></tr></thead><tbody>" +
+      r.nombres.map(function (n) {
+        var v = Object.assign({ nombreLocal: n.nombre }, n.valor);
+        var d = describirValor(v, r);
+        return "<tr><td>" + esc(n.nombre) + "</td><td>" + d[0] + "</td><td>" + d[1] + "</td></tr>";
+      }).join("") + "</tbody>";
+  }
+  function listaEjecutados(r, modo) {
+    var items = [], reusa = {};
+    r.eventos.forEach(function (ev) {
+      if (ev.tipo === "ejecuta") {
+        if (ev.rel) items.push("<code>" + esc(nombreCorto(ev.rel)) + "</code> (módulo <code>" + esc(ev.nombre) + "</code>)");
+        else if (ev.clase === "namespace") items.push("<code>" + esc(ev.nombre) + "</code>: paquete sin __init__.py, no hay código que ejecutar");
+        else if (ev.clase === "integrado") items.push("<code>" + esc(ev.nombre) + "</code>: módulo integrado de Python");
+        else items.push("<code>" + esc(ev.nombre) + "</code>: biblioteca estándar");
+      } else if (ev.tipo === "reusa" && ev.nombre !== "__main__") {
+        reusa[ev.nombre] = true;
+      }
+    });
+    var h = items.length ? items.map(function (t) { return "<li>" + t + "</li>"; }).join("") : '<li class="nota">Ningún módulo nuevo.</li>';
+    var rs = Object.keys(reusa);
+    if (rs.length) h += '<li class="nota">Ya estaba en sys.modules (no se volvió a ejecutar): ' + rs.map(function (x) { return "<code>" + esc(x) + "</code>"; }).join(", ") + "</li>";
+    return h;
+  }
+
+  // Explicación en español de lo que pasó
+  function buscarParecidos(nombre, archivos) {
+    var cola = nombre.split(".").pop(), res = [];
+    Object.keys(archivos).forEach(function (rel) {
+      var base = rel.split("/").pop().replace(/\.py$/, ""), carpeta = rel.split("/").slice(0, -1).join("/");
+      if (/\.py$/.test(rel) && base.toLowerCase() === cola.toLowerCase()) res.push({ rel: rel, carpeta: carpeta, mismo: base === cola });
+      if (rel.split("/").length > 1 && rel.split("/")[0].toLowerCase() === cola.toLowerCase() && res.every(function (x) { return x.carpeta !== rel.split("/")[0]; }) && cola.indexOf(".") < 0) {
+        res.push({ rel: rel.split("/")[0], carpeta: "", mismo: rel.split("/")[0] === cola, esCarpeta: true });
+      }
+    });
+    return res;
+  }
+  function explicar(r, modo, archivos, lineas) {
+    if (r.aviso) return { clase: "", html: "<b>Esta página no lo corre:</b> " + esc(r.aviso) };
+    var e = r.error;
+    var sp0 = rutaWin(modo.sp0);
+    if (!e) {
+      var nuevos = r.nombres.map(function (n) { return "<code>" + esc(n.nombre) + "</code>"; });
+      return { clase: "bien", html: "<b>Funciona.</b> " + (nuevos.length ? "En el archivo que se corre quedaron estos nombres nuevos: " + nuevos.join(", ") + "." : "No se creó ningún nombre nuevo.") +
+        (r.salida ? " Lo que ves en la terminal lo imprimió el código suelto de los módulos al ejecutarse." : "") };
+    }
+    var h = "<b>" + esc(e.tipo) + ".</b> ";
+    if (e.tipo === "SyntaxError") {
+      h += "Python ni siquiera empieza a correr el programa: esa línea no es Python válido. Para traer un nombre de un módulo se escribe <code>from conversiones import c_a_f</code>.";
+      return { clase: "mal", html: h };
+    }
+    if (e.tipo === "ModuleNotFoundError") {
+      var m = /^No module named '(.+?)'(; '(.+)' is not a package)?$/.exec(e.msg) || [];
+      var buscado = m[1] || e.name, padre = m[3];
+      if (padre) {
+        h += "<code>" + esc(padre) + "</code> es un módulo (un archivo), no un paquete (una carpeta): no tiene módulos adentro. ";
+        if (/\.py$/.test(buscado)) h += "El nombre de un módulo se escribe sin <code>.py</code>: el punto se lee como \"el módulo py dentro de " + esc(padre) + "\". ";
+        else h += "Lo que va después del punto en un <code>import</code> debe ser un módulo; para traer una función usa <code>from " + esc(padre) + " import " + esc(buscado.split(".").pop()) + "</code>. ";
+        h += "Fíjate: antes de fallar, Python sí importó (y ejecutó) <code>" + esc(padre) + "</code>.";
+        return { clase: "mal", html: h };
+      }
+      if (buscado.indexOf(".") >= 0) {
+        var pk = buscado.split(".").slice(0, -1).join(".");
+        h += "El paquete <code>" + esc(pk) + "</code> sí existe, pero adentro no hay un módulo <code>" + esc(buscado.split(".").pop()) + ".py</code>" +
+             (pk === "datos" ? " (septiembre.csv es un archivo de datos, no un módulo de Python)." : ".");
+        return { clase: "mal", html: h };
+      }
+      h += "Python buscó <code>" + esc(buscado) + ".py</code> (o una carpeta <code>" + esc(buscado) + "</code>) en sys.path[0] = <code>" + esc(sp0) +
+           "</code>, en la biblioteca estándar y en site-packages, y no lo encontró. ";
+      var par = buscarParecidos(buscado, archivos);
+      par.forEach(function (p) {
+        if (!p.mismo) h += "Ojo: existe <code>" + esc(nombreCorto(p.rel)) + "</code>, pero Python distingue mayúsculas y minúsculas. ";
+        else if (p.esCarpeta) h += "";
+        else if (p.carpeta !== modo.sp0) {
+          h += "Sí existe <code>" + esc(nombreCorto(p.rel)) + "</code>, pero en otra carpeta" +
+               (p.carpeta && archivos[p.carpeta + "/__init__.py"] ? ": está dentro del paquete " + esc(p.carpeta) + ", así que se importa como <code>" + esc(p.carpeta + "." + buscado) + "</code>." : ": sys.path[0] es la carpeta del script que se corre, no la carpeta donde estás.") + " ";
+        }
+      });
+      if (["numpy", "matplotlib", "pandas", "requests", "openpyxl"].indexOf(buscado) >= 0) h += "Es un paquete que se instala con pip, y en esta computadora no está instalado.";
+      return { clase: "mal", html: h };
+    }
+    if (e.tipo === "ImportError") {
+      if (/no known parent package/.test(e.msg)) {
+        h += "Un import relativo (con punto) busca \"al lado\" dentro del paquete del archivo. Al correr un archivo directamente, no forma parte de ningún paquete (su __package__ es None). Escribe el import completo, sin punto.";
+      } else if (/beyond top-level/.test(e.msg)) {
+        h += "Cada punto sube un nivel de paquete. Con <code>..</code> te sales de herramientas, que ya es el paquete de más arriba.";
+      } else if (/partially initialized/.test(e.msg)) {
+        h += "El archivo se está importando a sí mismo: cuando llega a esa línea, el módulo todavía no termina de ejecutarse y el nombre aún no existe (un import circular).";
+      } else {
+        var mm = r.modulo(e.name), pub = mm ? r.publicos(mm) : [];
+        h += "El módulo <code>" + esc(e.name) + "</code> sí se encontró" + (mm && mm.rel ? " y se ejecutó" : "") + ", pero no tiene ningún nombre <code>" + esc(e.nameFrom) + "</code>. " +
+             (pub.length ? "Sus nombres públicos son: " + pub.map(function (p) { return "<code>" + esc(p) + "</code>"; }).join(", ") + "." : "");
+        if (mm && mm.clase === "archivo" && e.name === "random") h += " Ese <code>random</code> es el random.py del proyecto: está en sys.path[0], que se revisa antes que la biblioteca estándar, así que tapa al módulo random de Python. Cámbiale el nombre (por ejemplo, dados.py).";
+        if (e.sugerencia) h += " Python sugiere <code>" + esc(e.sugerencia) + "</code>: revisa cómo lo escribiste.";
+      }
+      return { clase: "mal", html: h };
+    }
+    if (e.tipo === "NameError") {
+      var nom = e.name, pub2 = r.nombres.map(function (n) { return n.nombre; });
+      h += "En el archivo que se corre no existe ningún nombre <code>" + esc(nom) + "</code>. ";
+      var dueño = null;
+      r.nombres.forEach(function (n) {
+        if (n.valor.k === "modulo" && r.publicos(n.valor.m).indexOf(nom) >= 0) dueño = n.nombre;
+      });
+      if (dueño) h += "Está dentro del módulo: escríbelo como <code>" + esc(dueño + "." + nom) + "</code>, o tráelo con <code>from ... import " + esc(nom) + "</code>.";
+      else if (lineas.some(function (l) { return new RegExp("import\\s+.*\\b" + nom + "\\s+as\\b").test(l); })) h += "Lo importaste con <code>as</code>: en este archivo se llama con el otro nombre.";
+      else if (pub2.length) h += "Los nombres que sí creaste son: " + pub2.map(function (p) { return "<code>" + esc(p) + "</code>"; }).join(", ") + ".";
+      if (nom === "f") h += " (<code>f</code> es una variable local de <code>c_a_f</code>: solo existe mientras la función se ejecuta.)";
+      return { clase: "mal", html: h };
+    }
+    if (e.tipo === "AttributeError") {
+      if (/cannot access submodule|partially initialized/.test(e.msg)) {
+        h += "El módulo todavía se está ejecutando (se importó a sí mismo): ese nombre aún no existe.";
+      } else {
+        var mod = /^module '(.+?)' has no attribute '(.+)'$/.exec(e.msg);
+        if (mod) {
+          var mo = r.modulo(mod[1]);
+          if (mo && mo.ruta && archivos[(mo.rel || "").replace(/__init__\.py$/, "") + mod[2] + ".py"]) {
+            h += "<code>" + esc(mod[1] + "." + mod[2]) + "</code> es un módulo del paquete que todavía no se ha importado: un paquete no importa sus módulos solo. Usa <code>import " + esc(mod[1] + "." + mod[2]) + "</code>.";
+          } else {
+            h += "El módulo <code>" + esc(mod[1]) + "</code> no tiene ningún nombre <code>" + esc(mod[2]) + "</code>. " +
+                 (mo ? "Sus nombres públicos son: " + r.publicos(mo).map(function (p) { return "<code>" + esc(p) + "</code>"; }).join(", ") + "." : "");
+            if (mod[2] === "f") h += " <code>f</code> es una variable local de <code>c_a_f</code>: no es parte del módulo.";
+            if (mo && mo.clase === "archivo" && mod[1] === "random") h += " Ese es el random.py del proyecto, que tapa al módulo random de Python.";
+          }
+        } else {
+          h += "Ese objeto no tiene ese nombre.";
+        }
+      }
+      return { clase: "mal", html: h };
+    }
+    return { clase: "mal", html: h };
+  }
+
+  function consolaHTML(modo, salida) {
+    var prompt = '<span class="prompt">' + esc(modo.cwd) + "&gt;</span>" + esc(modo.comando) + "\n";
+    var i = salida.search(/(^|\n)(Traceback \(most recent call last\):|  File ")/);
+    if (i < 0) return prompt + esc(salida);
+    if (salida[i] === "\n") i++;
+    return prompt + esc(salida.slice(0, i)) + '<span class="error">' + esc(salida.slice(i)) + "</span>";
+  }
+
+  function correrExplorar() {
+    var modo = MODOS[estadoExp.modo], l1 = $("linea1").value.replace(/\s+$/, ""), l2 = $("linea2").value.replace(/\s+$/, "");
+    var lineas = l2 ? [l1, l2] : [l1];
+    var archivos = archivosDe("base");
+    var r = MOTOR.correr({ raiz: RAIZ, archivos: archivos }, modo, lineas);
+    guardarLS("pb-s07-import-exp", JSON.stringify({ modo: estadoExp.modo, l1: l1, l2: l2 }));
+    var nombre = modo.script.split("/").pop();
+    $("nombre-script").textContent = nombreCorto(modo.script);
+    $("nombre-script2").textContent = nombre;
+    $("codigo-programa").innerHTML = htmlCodigo(lineas, null, null, "Tu programa");
+    if (r.aviso) {
+      $("consola").innerHTML = '<span class="prompt">' + esc(modo.cwd) + "&gt;</span>" + esc(modo.comando);
+    } else {
+      $("consola").innerHTML = consolaHTML(modo, r.consola);
+    }
+    var ex = explicar(r, modo, archivos, lineas);
+    $("explicacion").className = "lectura " + ex.clase;
+    $("explicacion").innerHTML = ex.html;
+    $("nombres").innerHTML = tablaNombres(r);
+    $("ejecutados").innerHTML = r.aviso ? '<li class="nota">—</li>' : listaEjecutados(r, modo);
+    if (estadoExp.elegido === modo.script) verArchivoExplorar(modo.script);
+  }
+  function pintarModo() {
+    var modo = MODOS[estadoExp.modo];
+    $("terminal").textContent = modo.cwd + "> " + modo.comando;
+    $("lectura-modo").innerHTML = modo.texto + '<br><span class="ruta">sys.path[0] = ' + esc(rutaWin(modo.sp0)) + "</span>" +
+      '<br><span class="nota">Python busca un import en este orden: los módulos integrados (como math y sys), sys.path[0], la biblioteca estándar y los paquetes de pip (site-packages; aquí solo está pip).</span>';
+    pintarArbol($("arbol-explorar"), { archivos: archivosDe("base"), modo: modo, elegido: estadoExp.elegido });
+  }
+  function verArchivoExplorar(rel) {
+    estadoExp.elegido = rel;
+    var modo = MODOS[estadoExp.modo], l1 = $("linea1").value, l2 = $("linea2").value;
+    mostrarArchivo({ titulo: $("titulo-archivo"), nota: $("nota-archivo"), cont: $("ver-archivo"), archivos: archivosDe("base"), rel: rel,
+                     lineasAlumno: rel === modo.script ? (l2 ? [l1, l2] : [l1]) : null });
+    pintarArbol($("arbol-explorar"), { archivos: archivosDe("base"), modo: modo, elegido: rel });
+  }
+  $("arbol-explorar").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-archivo]");
+    if (!b) return;
+    verArchivoExplorar(b.dataset.archivo);
+    var otro = $("arbol-explorar").querySelector('button[data-archivo="' + b.dataset.archivo + '"]');
+    if (otro) otro.focus();
+  });
+  $("modo").addEventListener("change", function () {
+    estadoExp.modo = $("modo").value;
+    pintarModo();
+    correrExplorar();
+  });
+  $("ejemplo").addEventListener("change", function () {
+    var v = $("ejemplo").value;
+    if (!v) return;
+    var p = v.split("-"), ej = EJEMPLOS[Number(p[0])][1][Number(p[1])];
+    $("linea1").value = ej[0];
+    $("linea2").value = ej[1];
+    correrExplorar();
+  });
+  $("correr").addEventListener("click", correrExplorar);
+  ["linea1", "linea2"].forEach(function (id) {
+    $(id).addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); correrExplorar(); } });
+    $(id).addEventListener("input", function () { $("ejemplo").value = ""; });
+  });
+
+  // ===================== Qué se ejecuta al importar (paso a paso) =====================
+  var MAIN_ESC = ["# main.py: punto de entrada", "import conversiones", "import reporte", "", "print(reporte.linea(\"01/09\", 35.0))", "print(conversiones.CERO_ABSOLUTO)"];
+  var CONV = PROYECTO.archivos["conversiones.py"].replace(/\n$/, "").split("\n");
+  var REP = PROYECTO.archivos["reporte.py"].replace(/\n$/, "").split("\n");
+  var FN = "<función>";
+  // Cada paso: archivo y línea, explicación, sys.modules, globales de cada módulo, marco y salida.
+  // m: lista de [módulo, inicializando]; g: {modulo: [[nombre, valor]]}; f: [nombre del marco, [[var, valor]]]
+  var ESCENARIOS = [
+    { archivos: { "main.py": MAIN_ESC, "conversiones.py": CONV, "reporte.py": REP }, orden: ["main.py", "conversiones.py", "reporte.py"],
+      modPrincipal: "main.py",
+      pasos: [
+        { a: "main.py", l: 2, e: "<code>import conversiones</code>: conversiones no está en sys.modules. Python encuentra conversiones.py en sys.path[0] (la carpeta del script), crea el módulo, lo registra en sys.modules y empieza a ejecutar conversiones.py desde arriba. Ahí <code>__name__</code> vale <code>'conversiones'</code>.",
+          m: [["__main__", 0], ["conversiones", 1]], g: { "conversiones.py": [["__name__", "'conversiones'"]] } },
+        { a: "conversiones.py", l: 2, e: "El código suelto del módulo se ejecuta al importarlo: imprime.", s: "Cargando conversiones...\n" },
+        { a: "conversiones.py", l: 4, e: "<code>CERO_ABSOLUTO</code> es una variable <b>global del módulo conversiones</b>: vive en su propio espacio de nombres, no en el de main.py.",
+          g: { "conversiones.py": [["__name__", "'conversiones'"], ["CERO_ABSOLUTO", "-273.15"]] } },
+        { a: "conversiones.py", l: 7, e: "<code>def</code> solo crea la función c_a_f (todavía no la ejecuta).", gmas: { "conversiones.py": [["c_a_f", FN]] } },
+        { a: "conversiones.py", l: 12, e: "Crea la función f_a_c.", gmas: { "conversiones.py": [["f_a_c", FN]] } },
+        { a: "conversiones.py", l: 16, e: "Crea <code>_redondear</code>: el guion bajo avisa que es un detalle interno del módulo.", gmas: { "conversiones.py": [["_redondear", FN]] } },
+        { a: "conversiones.py", l: 20, e: "<code>__name__</code> vale <code>'conversiones'</code>, no <code>'__main__'</code>: la condición es False y la prueba de la línea 21 <b>no</b> se ejecuta. Termina el módulo." },
+        { a: "main.py", l: 2, r: 1, e: "De vuelta en main.py: el import termina y crea en main.py un solo nombre, <code>conversiones</code>, que apunta al módulo.",
+          m: [["__main__", 0], ["conversiones", 0]], gmas: { "main.py": [["conversiones", "módulo conversiones"]] } },
+        { a: "main.py", l: 3, e: "<code>import reporte</code>: reporte no está en sys.modules; Python lo registra y ejecuta reporte.py desde arriba.",
+          m: [["__main__", 0], ["conversiones", 0], ["reporte", 1]], g: { "reporte.py": [["__name__", "'reporte'"]] } },
+        { a: "reporte.py", l: 2, e: "reporte.py también importa conversiones, pero <b>ya está en sys.modules</b>: Python la reutiliza y <b>no la vuelve a ejecutar</b> (no se imprime otra vez). Solo crea en reporte el nombre c_a_f.",
+          gmas: { "reporte.py": [["c_a_f", FN + " (de conversiones)"]] } },
+        { a: "reporte.py", l: 5, e: "Crea la función linea. Termina reporte.py.", gmas: { "reporte.py": [["linea", FN]] } },
+        { a: "main.py", l: 3, r: 1, e: "El import termina: main.py tiene ahora el nombre <code>reporte</code>.",
+          m: [["__main__", 0], ["conversiones", 0], ["reporte", 0]], gmas: { "main.py": [["reporte", "módulo reporte"]] } },
+        { a: "main.py", l: 5, e: "Llama a <code>reporte.linea(\"01/09\", 35.0)</code>: se crea un marco para la función, con sus variables locales dia y tmax.",
+          f: ["linea (reporte.py)", [["dia", "'01/09'"], ["tmax", "35.0"]]] },
+        { a: "reporte.py", l: 6, e: "Para armar el texto llama a <code>c_a_f(35.0)</code>: otro marco, ahora de c_a_f, con su variable local celsius.",
+          f: ["c_a_f (conversiones.py)", [["celsius", "35.0"]]], f2: ["linea (reporte.py)", [["dia", "'01/09'"], ["tmax", "35.0"]]] },
+        { a: "conversiones.py", l: 8, e: "<code>f</code> es una variable <b>local</b> de c_a_f: existe solo dentro de esta llamada.",
+          f: ["c_a_f (conversiones.py)", [["celsius", "35.0"], ["f", "95.0"]]], f2: ["linea (reporte.py)", [["dia", "'01/09'"], ["tmax", "35.0"]]] },
+        { a: "conversiones.py", l: 9, e: "<code>return f</code> regresa 95.0. Al terminar la función, su marco desaparece y <code>f</code> con él: no queda en el módulo ni en main.py.",
+          f: ["linea (reporte.py)", [["dia", "'01/09'"], ["tmax", "35.0"]]] },
+        { a: "reporte.py", l: 6, r: 1, e: "linea regresa el texto <code>'01/09: 35.0 °C = 95.0 °F'</code> y su marco también desaparece." },
+        { a: "main.py", l: 5, r: 1, e: "print muestra el texto.", s: "01/09: 35.0 °C = 95.0 °F\n" },
+        { a: "main.py", l: 6, e: "Desde main.py, la global del otro módulo se usa con el prefijo: <code>conversiones.CERO_ABSOLUTO</code>. Fin del programa.", s: "-273.15\n" }
+      ] },
+    { archivos: { "conversiones.py": CONV }, orden: ["conversiones.py"], modPrincipal: "conversiones.py",
+      pasos: [
+        { a: "conversiones.py", l: 2, e: "Ahora conversiones.py es el archivo que se corre: Python lo ejecuta como el programa principal, así que aquí <code>__name__</code> vale <code>'__main__'</code>. El código suelto se ejecuta igual.",
+          m: [["__main__", 1]], g: { "conversiones.py": [["__name__", "'__main__'"]] }, s: "Cargando conversiones...\n" },
+        { a: "conversiones.py", l: 4, e: "Global del módulo.", gmas: { "conversiones.py": [["CERO_ABSOLUTO", "-273.15"]] } },
+        { a: "conversiones.py", l: 7, e: "Crea la función c_a_f.", gmas: { "conversiones.py": [["c_a_f", FN]] } },
+        { a: "conversiones.py", l: 12, e: "Crea la función f_a_c.", gmas: { "conversiones.py": [["f_a_c", FN]] } },
+        { a: "conversiones.py", l: 16, e: "Crea _redondear.", gmas: { "conversiones.py": [["_redondear", FN]] } },
+        { a: "conversiones.py", l: 20, e: "Esta vez <code>__name__ == \"__main__\"</code> es True: entra al bloque de prueba." },
+        { a: "conversiones.py", l: 21, e: "Llama a <code>c_a_f(30)</code>.", f: ["c_a_f", [["celsius", "30"]]] },
+        { a: "conversiones.py", l: 8, e: "Variable local f.", f: ["c_a_f", [["celsius", "30"], ["f", "86.0"]]] },
+        { a: "conversiones.py", l: 9, e: "Regresa 86.0 y el marco desaparece." },
+        { a: "conversiones.py", l: 21, r: 1, e: "print muestra la prueba. Fin del programa: así se prueba un módulo sin que la prueba se dispare al importarlo.",
+          m: [["__main__", 0]], s: "Prueba: 86.0\n" }
+      ] }
+  ];
+  // Completa cada paso con el estado acumulado (sys.modules, globales y salida)
+  ESCENARIOS.forEach(function (esc_) {
+    var m = [], g = {}, salida = "";
+    esc_.orden.forEach(function (a) { g[a] = esc_.modPrincipal === a ? [["__name__", "'__main__'"]] : []; });
+    if (esc_.modPrincipal === "conversiones.py") g["conversiones.py"] = [];
+    esc_.pasos.forEach(function (p) {
+      if (p.m) m = p.m;
+      if (p.g) Object.keys(p.g).forEach(function (a) { g[a] = p.g[a].slice(); });
+      if (p.gmas) Object.keys(p.gmas).forEach(function (a) { g[a] = g[a].concat(p.gmas[a]); });
+      if (p.s) salida += p.s;
+      p.estado = { m: m.slice(), g: JSON.parse(JSON.stringify(g)), salida: salida };
+    });
+  });
+  var esc0 = 0, kp = 0;
+  function pintarPaso() {
+    var E = ESCENARIOS[esc0], n = E.pasos.length, p = kp > 0 ? E.pasos[kp - 1] : null, sig = kp < n ? E.pasos[kp] : null;
+    var previo = kp > 1 ? E.pasos[kp - 2] : null;
+    $("p-paso").max = n; $("p-paso").value = kp;
+    $("p-txt").textContent = kp + " de " + n;
+    $("p-inicio").disabled = $("p-atras").disabled = kp === 0;
+    $("p-adelante").disabled = $("p-fin").disabled = kp === n;
+    $("p-explica").innerHTML = p ? "<b>Paso " + kp + " · " + esc(p.a) + ", línea " + p.l + ".</b> " + p.e + (kp === n ? "" : "")
+                                 : "<b>Antes de empezar.</b> Ninguna línea se ha ejecutado. Presiona ▶ (o la flecha derecha) para avanzar.";
+    $("p-archivos").innerHTML = E.orden.map(function (a) {
+      var activo = p && p.a === a, marca = activo ? p.l : null, siguiente = sig && sig.a === a ? sig.l : null;
+      var principal = E.modPrincipal === a;
+      var cargado = principal || (p && p.estado.m.some(function (x) { return x[0] + ".py" === a; }));
+      var estado = principal ? "se corre: __name__ = '__main__'" : cargado ? "importado" : "todavía no se importa";
+      return '<div class="archivo' + (activo ? " activo" : "") + (cargado ? "" : " apagado") + '"><div class="archivo-cab"><span>' + esc(a) +
+             '</span><span class="estado">' + esc(estado) + "</span></div>" + htmlCodigo(E.archivos[a], marca, siguiente, "Código de " + a) + "</div>";
+    }).join("");
+    var st = p ? p.estado : { m: E.modPrincipal === "main.py" ? [] : [], g: {}, salida: "" };
+    var mods = st.m.length ? st.m : (E.modPrincipal ? [] : []);
+    $("p-modulos").innerHTML = mods.length ? mods.map(function (x) {
+      var arch = x[0] === "__main__" ? E.modPrincipal : x[0] + ".py";
+      return '<li class="' + (x[1] ? "inicia" : "") + '">' + esc(x[0]) + " <small>(" + esc(arch) + (x[1] ? ", ejecutándose" : "") + ")</small></li>";
+    }).join("") : '<li class="vacio">Todavía ninguno.</li>';
+    var ant = previo ? previo.estado.g : {};
+    var filas = "";
+    E.orden.forEach(function (a) {
+      var vars = st.g[a];
+      if (!vars || (!vars.length && !(p && p.a === a))) return;
+      filas += '<tr class="grupo"><th colspan="2" scope="rowgroup">Globales de ' + esc(a) + "</th></tr>";
+      if (!vars.length) filas += '<tr><td colspan="2" class="nota">(ninguna todavía)</td></tr>';
+      vars.forEach(function (v) {
+        var antes = (ant[a] || []).filter(function (x) { return x[0] === v[0]; })[0];
+        var cambio = p && (!antes || antes[1] !== v[1]);
+        filas += "<tr" + (cambio ? ' class="cambio"' : "") + "><td>" + esc(v[0]) + "</td><td>" + esc(v[1]) + "</td></tr>";
+      });
+    });
+    [p && p.f2, p && p.f].forEach(function (f) {
+      if (!f) return;
+      filas += '<tr class="marco grupo"><th colspan="2" scope="rowgroup">Marco de ' + esc(f[0]) + " (variables locales)</th></tr>";
+      f[1].forEach(function (v) { filas += "<tr><td>" + esc(v[0]) + "</td><td>" + esc(v[1]) + "</td></tr>"; });
+    });
+    $("p-vars").innerHTML = '<thead><tr><th scope="col">Nombre</th><th scope="col">Valor</th></tr></thead><tbody>' +
+      (filas || '<tr><td colspan="2" class="nota">Todavía no hay variables.</td></tr>') + "</tbody>";
+    $("p-consola").textContent = st.salida;
+  }
+  function irPaso(n) {
+    kp = Math.max(0, Math.min(ESCENARIOS[esc0].pasos.length, n));
+    pintarPaso();
+  }
+  $("p-inicio").addEventListener("click", function () { irPaso(0); });
+  $("p-atras").addEventListener("click", function () { irPaso(kp - 1); });
+  $("p-adelante").addEventListener("click", function () { irPaso(kp + 1); });
+  $("p-fin").addEventListener("click", function () { irPaso(ESCENARIOS[esc0].pasos.length); });
+  $("p-paso").addEventListener("input", function () { irPaso(Number($("p-paso").value)); });
+  $("escenario").addEventListener("change", function () { esc0 = Number($("escenario").value); irPaso(0); });
+  document.addEventListener("keydown", function (e) {
+    if (!$("v-ejecuta").classList.contains("activo")) return;
+    var t = e.target;
+    if (/^(INPUT|SELECT|TEXTAREA|BUTTON)$/.test(t.tagName)) return;
+    if (e.key === "ArrowRight") { e.preventDefault(); irPaso(kp + 1); }
+    else if (e.key === "ArrowLeft") { e.preventDefault(); irPaso(kp - 1); }
+    else if (e.key === "Home") { e.preventDefault(); irPaso(0); }
+    else if (e.key === "End") { e.preventDefault(); irPaso(ESCENARIOS[esc0].pasos.length); }
+  });
+
+  // ===================== Retos =====================
+  function nombreA(r, nombre) {
+    for (var i = 0; i < r.nombres.length; i++) if (r.nombres[i].nombre === nombre) return r.nombres[i].valor;
+    return null;
+  }
+  function esModulo(r, nombre, modulo) { var v = nombreA(r, nombre); return !!v && v.k === "modulo" && v.m.nombre === modulo; }
+  function esFuncion(r, nombre, modulo, funcion) { var v = nombreA(r, nombre); return !!v && v.k === "funcion" && v.modulo === modulo && v.nombre === funcion; }
+  var NIVELES = [
+    { dia: "Día 1", titulo: "Todo el módulo", tipo: "escribe", modo: "A",
+      objetivo: "En main.py vas a llamar <code>conversiones.c_a_f(30)</code>. Escribe el import que hace falta.",
+      meta: function (r) { return esModulo(r, "conversiones", "conversiones"); },
+      falta: "Funciona, pero en main.py no quedó el nombre <code>conversiones</code> apuntando al módulo conversiones.",
+      pistas: ["import trae un módulo completo; después sus nombres se usan con el prefijo del módulo y un punto.",
+               "El nombre del módulo es el del archivo, sin .py."],
+      despues: "<code>import conversiones</code> crea un solo nombre en main.py: <code>conversiones</code>. Todo lo demás se usa con el prefijo: <code>conversiones.c_a_f(30)</code>, <code>conversiones.CERO_ABSOLUTO</code>." },
+    { dia: "Día 1", titulo: "Solo la función", tipo: "escribe", modo: "A",
+      objetivo: "Ahora quieres escribir solo <code>c_a_f(30)</code>, sin el prefijo <code>conversiones.</code>",
+      meta: function (r) { return esFuncion(r, "c_a_f", "conversiones", "c_a_f"); },
+      falta: "Funciona, pero en main.py no quedó el nombre <code>c_a_f</code> (la función de conversiones).",
+      pistas: ["from ... import ... trae nombres sueltos de un módulo.",
+               "Primero va el módulo (después de from) y luego el nombre que quieres traer (después de import)."],
+      despues: "<code>from conversiones import c_a_f</code> crea en main.py el nombre <code>c_a_f</code>, pero no el nombre <code>conversiones</code>: escribir <code>conversiones.c_a_f</code> daría NameError." },
+    { dia: "Día 1", titulo: "Un alias", tipo: "escribe", modo: "A",
+      objetivo: "Quieres usar el módulo con un nombre más corto: <code>conv.c_a_f(30)</code>.",
+      meta: function (r) { return esModulo(r, "conv", "conversiones"); },
+      falta: "Funciona, pero en main.py no quedó el nombre <code>conv</code> apuntando al módulo conversiones.",
+      pistas: ["as le pone otro nombre a lo que importas.", "import ... as conv"],
+      despues: "Con <code>import conversiones as conv</code> el módulo se ejecuta igual, pero en main.py se llama <code>conv</code>: el nombre <code>conversiones</code> ya no existe ahí." },
+    { dia: "Día 1", titulo: "¿Funciona?", tipo: "elige", modo: "A", lineas: ["from conversiones import c_a_k"],
+      objetivo: "main.py tiene esta línea. ¿Qué pasa al correr <code>python main.py</code>?",
+      opciones: [
+        ["Funciona: c_a_k queda disponible en main.py.", false, "c_a_k no está definida en conversiones.py: revisa sus nombres en el árbol."],
+        ["ModuleNotFoundError: Python no encuentra conversiones.", false, "conversiones.py sí está en sys.path[0]: el módulo se encuentra (y hasta se ejecuta)."],
+        ["Se ejecuta conversiones.py y después sale ImportError: no existe c_a_k.", true, ""],
+        ["NameError: c_a_k no está definida.", false, "NameError sale al usar un nombre que no existe; aquí el programa se detiene antes, en el import."]],
+      despues: "El módulo sí existe, así que Python lo ejecuta (por eso se imprime \"Cargando conversiones...\"); el error es ImportError porque el <b>nombre</b> no está en el módulo. Python 3.12 hasta sugiere el nombre parecido." },
+    { dia: "Día 1", titulo: "¿Con .py?", tipo: "elige", modo: "A", lineas: ["import conversiones.py"],
+      objetivo: "Alguien escribió el nombre completo del archivo. ¿Qué pasa al correr <code>python main.py</code>?",
+      opciones: [
+        ["Funciona igual que import conversiones.", false, "En un import, el punto separa un paquete de su módulo: conversiones.py se lee como \"el módulo py dentro de conversiones\"."],
+        ["SyntaxError: no se permite el punto.", false, "El punto sí se permite en un import (por ejemplo, herramientas.estadistica): no es un error de sintaxis."],
+        ["Primero se ejecuta conversiones.py y después sale ModuleNotFoundError.", true, ""],
+        ["ModuleNotFoundError, sin ejecutar nada.", false, "Antes de buscar \"el módulo py\", Python importa conversiones... y eso lo ejecuta."]],
+      despues: "Python importa <code>conversiones</code> (se imprime \"Cargando conversiones...\") y luego descubre que es un módulo, no un paquete. El nombre de un módulo nunca lleva .py." },
+    { dia: "Día 2", titulo: "Un módulo del paquete", tipo: "escribe", modo: "A",
+      objetivo: "En el paquete herramientas está estadistica.py. Quieres escribir <code>estadistica.promedio(datos)</code>.",
+      meta: function (r) { return esModulo(r, "estadistica", "herramientas.estadistica"); },
+      falta: "Funciona, pero en main.py no quedó el nombre <code>estadistica</code> apuntando al módulo herramientas.estadistica.",
+      pistas: ["Un paquete es una carpeta con __init__.py; sus módulos se importan a través del paquete.", "from paquete import modulo"],
+      despues: "<code>from herramientas import estadistica</code> ejecuta primero herramientas\\__init__.py y después estadistica.py; en main.py solo crea el nombre <code>estadistica</code>." },
+    { dia: "Día 2", titulo: "Directo a la función", tipo: "escribe", modo: "A",
+      objetivo: "Ahora quieres escribir solo <code>promedio(datos)</code>.",
+      meta: function (r) { return esFuncion(r, "promedio", "herramientas.estadistica", "promedio"); },
+      falta: "Funciona, pero en main.py no quedó el nombre <code>promedio</code> (la función de herramientas.estadistica).",
+      pistas: ["Después de from puedes escribir la ruta completa del módulo, con puntos.", "from paquete.modulo import funcion"],
+      despues: "En <code>from herramientas.estadistica import promedio</code>, la ruta con puntos va del paquete al módulo; lo que va después de import es lo único que llega a main.py." },
+    { dia: "Día 3", titulo: "La global de otro módulo", tipo: "elige", modo: "A", lineas: ["import conversiones", "print(CERO_ABSOLUTO)"],
+      objetivo: "<code>CERO_ABSOLUTO</code> es una variable global de conversiones.py. ¿Qué pasa con este programa?",
+      opciones: [
+        ["Imprime -273.15.", false, "import conversiones solo crea en main.py el nombre conversiones; CERO_ABSOLUTO sigue dentro del módulo."],
+        ["NameError: en main.py no existe CERO_ABSOLUTO.", true, ""],
+        ["AttributeError: el módulo no tiene CERO_ABSOLUTO.", false, "El módulo sí la tiene: conversiones.CERO_ABSOLUTO funciona."],
+        ["ImportError en la línea 1.", false, "La línea 1 funciona: conversiones.py existe."]],
+      despues: "Cada módulo tiene sus propias variables globales. Desde main.py se usan con el prefijo, <code>print(conversiones.CERO_ABSOLUTO)</code>, o se traen con <code>from conversiones import CERO_ABSOLUTO</code>." },
+    { dia: "Día 2", titulo: "Una sola vez", tipo: "elige", modo: "A", lineas: ["import conversiones", "import reporte"],
+      objetivo: "reporte.py también importa conversiones (míralo en el árbol). ¿Cuántas veces se imprime \"Cargando conversiones...\"?",
+      opciones: [
+        ["Ninguna: el print está en conversiones.py, no en main.py.", false, "El código suelto de un módulo se ejecuta cuando se importa."],
+        ["Una vez.", true, ""],
+        ["Dos veces: una por cada import.", false, "La segunda vez, conversiones ya está en sys.modules y Python no la vuelve a ejecutar."]],
+      despues: "La primera vez que se importa un módulo, Python lo ejecuta y lo guarda en sys.modules; los demás imports lo reutilizan sin volver a ejecutarlo." },
+    { dia: "Día 2", titulo: "__name__", tipo: "elige", directo: true,
+      comando: "python conversiones.py", consolaFija: "Cargando conversiones...\nPrueba: 86.0\n",
+      objetivo: "Ahora corres conversiones.py directamente: <code>python conversiones.py</code>. ¿Qué se imprime?",
+      opciones: [
+        ["Solo \"Cargando conversiones...\"", false, "Eso pasa al importarlo. Al correrlo directo, __name__ vale '__main__' y sí entra al if de la línea 20."],
+        ["\"Cargando conversiones...\" y después \"Prueba: 86.0\"", true, ""],
+        ["Solo \"Prueba: 86.0\"", false, "El código suelto de arriba (el print de la línea 2) también se ejecuta."],
+        ["Nada, porque nadie lo importa.", false, "Correr un archivo ejecuta todo su código, de arriba hacia abajo."]],
+      despues: "Al correr un archivo, su <code>__name__</code> vale <code>'__main__'</code> y se ejecuta el bloque de prueba; al importarlo, vale <code>'conversiones'</code> y el bloque se salta." },
+    { dia: "Día 5", titulo: "Desde otra carpeta", tipo: "elige", modo: "C", lineas: ["import conversiones"],
+      objetivo: "scripts\\grafica.py tiene <code>import conversiones</code> y lo corres desde la carpeta del proyecto. ¿Funciona?",
+      opciones: [
+        ["Sí, porque la terminal está en clima, donde está conversiones.py.", false, "Lo que cuenta es la carpeta del script, no la de la terminal."],
+        ["No: sys.path[0] es la carpeta scripts y ahí no está conversiones.py.", true, ""],
+        ["No: un script nunca puede importar módulos.", false, "Sí puede, si el módulo está en sys.path."],
+        ["Sí: Python busca en todas las carpetas del proyecto.", false, "Python solo busca en las carpetas de sys.path."]],
+      despues: "Con <code>python scripts\\grafica.py</code>, sys.path[0] es <code>clima\\scripts</code>. Mira el árbol: ahí no hay ningún conversiones.py." },
+    { dia: "Día 5", titulo: "Sin mover archivos", tipo: "elige", modo: "D", lineas: ["import conversiones"],
+      objetivo: "Sin mover ningún archivo, ¿con qué comando funciona el <code>import conversiones</code> de scripts\\grafica.py?",
+      opciones: [
+        ["cd scripts y luego python grafica.py", false, "sys.path[0] sigue siendo la carpeta scripts."],
+        ["python -m scripts.grafica (desde clima)", true, ""],
+        ["python scripts\\grafica.py (desde clima)", false, "Es justo el comando del reto anterior: sys.path[0] es scripts."],
+        ["python -m grafica (desde clima)", false, "Con -m se escribe el nombre del módulo desde la carpeta donde estás: scripts.grafica."]],
+      despues: "Con <code>python -m scripts.grafica</code>, sys.path[0] es la carpeta donde estás (clima) y grafica.py se corre como el módulo scripts.grafica." },
+    { dia: "Día 5", titulo: "Un nombre prestado", tipo: "elige", modo: "A", variante: "random", lineas: ["from random import randint"],
+      objetivo: "Alguien guardó en el proyecto un archivo <code>random.py</code> (míralo en el árbol). ¿Qué pasa con <code>from random import randint</code>?",
+      opciones: [
+        ["Funciona: randint viene del módulo random de Python.", false, "Python revisa sys.path[0] antes que la biblioteca estándar."],
+        ["ImportError: el random que encuentra es el del proyecto, y no tiene randint.", true, ""],
+        ["ModuleNotFoundError: hay dos random y Python no sabe cuál usar.", false, "Python no se confunde: toma el primero que encuentra."]],
+      despues: "El random.py del proyecto está en sys.path[0], que se revisa antes que la biblioteca estándar: <b>tapa</b> al módulo random de Python. No le pongas a tus archivos nombres de módulos de Python (random, math, statistics...)." },
+    { dia: "Día 4", titulo: "El import de adentro", tipo: "modulo", modo: "A", variante: "texto_mal", lineas: ["from herramientas import texto"],
+      archivo: "herramientas/texto.py", linea: 2,
+      objetivo: "main.py tiene <code>from herramientas import texto</code> y falla, aunque texto.py sí existe. El problema está en la línea 2 de herramientas\\texto.py. Escribe cómo debe quedar esa línea para que texto pueda usar <code>promedio</code>.",
+      meta: function (r) {
+        var t = r.modulo("herramientas.texto");
+        if (!t) return false;
+        var v = t.ns.get("promedio");
+        return !!v && v.k === "funcion" && v.modulo === "herramientas.estadistica";
+      },
+      falta: "Ya no hay error, pero texto.py debe tener el nombre <code>promedio</code> (la función de herramientas.estadistica).",
+      pistas: ["Cuando corres main.py, sys.path[0] es clima, no herramientas: ahí no hay ningún estadistica.py.",
+               "Escribe la ruta completa desde la carpeta del proyecto: el paquete, un punto y el módulo."],
+      despues: "Dentro de un paquete, los imports se escriben con la ruta completa desde la carpeta del proyecto: <code>from herramientas.estadistica import promedio</code>. <code>from estadistica import promedio</code> solo funcionaba si sys.path[0] era herramientas." }
+  ];
+  var CLAVE_R = "pb-s07-import-retos";
+  var avance = { completados: [], actual: 0, pistas: {}, respuestas: {} };
+  try {
+    var gr = JSON.parse(leerLS(CLAVE_R) || "null");
+    if (gr && Array.isArray(gr.completados)) {
+      avance.completados = gr.completados.filter(function (k) { return typeof k === "number" && k >= 0 && k < NIVELES.length; });
+      avance.actual = typeof gr.actual === "number" && gr.actual >= 0 && gr.actual < NIVELES.length ? gr.actual : 0;
+      avance.pistas = gr.pistas && typeof gr.pistas === "object" ? gr.pistas : {};
+      avance.respuestas = gr.respuestas && typeof gr.respuestas === "object" ? gr.respuestas : {};
+    }
+  } catch (e) { /* sin almacenamiento */ }
+  function guardarAvance() { guardarLS(CLAVE_R, JSON.stringify(avance)); }
+  function completado(k) { return avance.completados.indexOf(k) >= 0; }
+  function abierto(k) { return k === 0 || completado(k) || completado(k - 1); }
+  if (!abierto(avance.actual)) avance.actual = 0;
+  var archivoReto = null;
+
+  function pintarNiveles() {
+    $("niveles").innerHTML = NIVELES.map(function (n, k) {
+      var hecho = completado(k), ab = abierto(k), act = k === avance.actual;
+      return '<button type="button" data-k="' + k + '" class="' + (hecho ? "hecho" : "") + (act ? " actual" : "") + '"' +
+             (ab ? "" : " disabled") + ' aria-label="Reto ' + (k + 1) + (hecho ? ", completado" : ab ? "" : ", bloqueado") + '"' +
+             (act ? ' aria-current="step"' : "") + ">" + (k + 1) + (hecho ? " ✓" : ab ? "" : " 🔒") + "</button>";
+    }).join("") + '<span id="avanceTxt">' + avance.completados.length + " de " + NIVELES.length + " completados</span>";
+  }
+  $("niveles").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-k]");
+    if (b && !b.disabled) irNivel(Number(b.dataset.k));
+  });
+  function modoNivel(n) {
+    if (n.directo) return { cwd: RAIZ, comando: n.comando, script: "conversiones.py", sp0: "", m: null };
+    return MODOS[n.modo];
+  }
+  function archivosNivel(n, cambio) {
+    var cambios = {};
+    if (n.tipo === "modulo" && cambio !== undefined) {
+      var lineas = archivosDe(n.variante)[n.archivo].replace(/\n$/, "").split("\n");
+      lineas[n.linea - 1] = cambio;
+      cambios[n.archivo] = lineas.join("\n") + "\n";
+    }
+    return archivosDe(n.variante, cambios);
+  }
+  function pintarArbolReto(n) {
+    var nuevos = {};
+    if (n.variante === "random") nuevos["random.py"] = "nuevo";
+    if (n.variante === "texto_mal") nuevos["herramientas/texto.py"] = "revísalo";
+    pintarArbol($("arbol-retos"), { archivos: archivosNivel(n), modo: modoNivel(n), elegido: archivoReto, nuevos: nuevos });
+    var m = modoNivel(n);
+    $("terminal-reto").textContent = m.cwd + "> " + m.comando;
+  }
+  function verArchivoReto(rel) {
+    var n = NIVELES[avance.actual], m = modoNivel(n);
+    archivoReto = rel;
+    var lineasAlumno = null;
+    if (!n.directo && rel === m.script) {
+      lineasAlumno = n.lineas ? n.lineas : [avance.respuestas[avance.actual] || "# aquí va tu import"];
+    }
+    var conCambio = n.tipo === "modulo" && avance.respuestas[avance.actual] !== undefined ? avance.respuestas[avance.actual] : undefined;
+    mostrarArchivo({ titulo: $("titulo-archivo-reto"), nota: $("nota-archivo-reto"), cont: $("ver-archivo-reto"), archivos: archivosNivel(n, conCambio),
+                     rel: rel, lineasAlumno: lineasAlumno, marca: n.tipo === "modulo" && rel === n.archivo ? n.linea : null });
+    pintarArbolReto(n);
+  }
+  $("arbol-retos").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-archivo]");
+    if (!b) return;
+    verArchivoReto(b.dataset.archivo);
+    var otro = $("arbol-retos").querySelector('button[data-archivo="' + b.dataset.archivo + '"]');
+    if (otro) otro.focus();
+  });
+
+  function mostrarRetro(clase, html) {
+    $("retro").className = "lectura " + clase;
+    $("retro").innerHTML = html;
+    $("retro").hidden = false;
+  }
+  function mostrarConsola(modo, texto) {
+    $("consola-reto").innerHTML = consolaHTML(modo, texto);
+    $("consola-reto").hidden = false;
+  }
+  function marcarCompleto(k) {
+    if (!completado(k)) avance.completados.push(k);
+    guardarAvance();
+    pintarNiveles();
+    $("siguiente").disabled = k === NIVELES.length - 1;
+  }
+  function irNivel(k) {
+    avance.actual = k;
+    guardarAvance();
+    var n = NIVELES[k], m = modoNivel(n);
+    archivoReto = n.tipo === "modulo" ? n.archivo : n.directo ? "conversiones.py" : m.script;
+    $("etiquetas").innerHTML = "<span>Reto " + (k + 1) + " de " + NIVELES.length + "</span><span>" + esc(n.dia) + "</span>";
+    $("titulo-nivel").textContent = n.titulo;
+    $("objetivo").innerHTML = n.objetivo;
+    $("retro").hidden = true;
+    $("consola-reto").hidden = true;
+    var z = "";
+    if (n.tipo === "elige") {
+      if (n.lineas) z += "<p class=\"nota\">El programa (" + esc(nombreCorto(m.script)) + "):</p>" + htmlCodigo(n.lineas, null, null, "Programa del reto");
+      z += '<div class="opciones" role="group" aria-label="Opciones">' + n.opciones.map(function (o, i) {
+        return '<button type="button" data-op="' + i + '">' + esc(o[0]) + "</button>";
+      }).join("") + "</div>";
+    } else {
+      var etiqueta = n.tipo === "modulo" ? "Línea " + n.linea + " de " + nombreCorto(n.archivo) : "Línea 1 de " + nombreCorto(m.script);
+      z += '<label for="resp">' + esc(etiqueta) + ' <small>(Enter para probar)</small></label>' +
+           '<input id="resp" class="mono" type="text" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off">' +
+           '<div class="fila-botones"><button type="button" class="accion primaria" id="probar">Probar</button></div>';
+    }
+    $("zona-reto").innerHTML = z;
+    if (n.tipo !== "elige") {
+      $("resp").value = avance.respuestas[k] || (n.tipo === "modulo" ? "from estadistica import promedio" : "");
+      $("resp").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); probarReto(); } });
+      $("probar").addEventListener("click", probarReto);
+      if (n.tipo === "modulo") {
+        var r0 = MOTOR.correr({ raiz: RAIZ, archivos: archivosNivel(n) }, m, n.lineas);
+        mostrarConsola(m, r0.consola);
+      }
+    } else {
+      $("zona-reto").querySelectorAll("button[data-op]").forEach(function (b) {
+        b.addEventListener("click", function () { elegir(Number(b.dataset.op)); });
+      });
+    }
+    pintarPistas();
+    pintarNiveles();
+    $("anterior").disabled = k === 0;
+    $("siguiente").disabled = k === NIVELES.length - 1 || !completado(k);
+    verArchivoReto(archivoReto);
+    if (completado(k) && n.tipo === "elige") elegir(n.opciones.findIndex(function (o) { return o[1]; }), true);
+  }
+  function pintarPistas() {
+    var k = avance.actual, n = NIVELES[k], vistas = avance.pistas[k] || 0;
+    if (!n.pistas) { $("pistas").innerHTML = ""; return; }
+    $("pistas").innerHTML = n.pistas.slice(0, vistas).map(function (p, i) {
+      return '<div class="pista"><b>Pista ' + (i + 1) + ":</b> " + esc(p) + "</div>";
+    }).join("") + (vistas < n.pistas.length ? '<button type="button" class="accion" id="ver-pista">Ver la pista ' + (vistas + 1) + "</button>" : "");
+    var b = $("ver-pista");
+    if (b) b.addEventListener("click", function () {
+      avance.pistas[k] = (avance.pistas[k] || 0) + 1;
+      guardarAvance();
+      pintarPistas();
+      var nb = $("ver-pista");
+      if (nb) nb.focus();
+    });
+  }
+  function elegir(i, silencioso) {
+    var k = avance.actual, n = NIVELES[k], o = n.opciones[i], m = modoNivel(n);
+    $("zona-reto").querySelectorAll("button[data-op]").forEach(function (b) {
+      b.classList.remove("correcta", "incorrecta");
+      if (Number(b.dataset.op) === i) b.classList.add(o[1] ? "correcta" : "incorrecta");
+    });
+    if (!o[1]) {
+      mostrarRetro("mal", "<b>No.</b> " + esc(o[2]) + " Intenta otra opción.");
+      $("consola-reto").hidden = true;
+      return;
+    }
+    var texto = n.consolaFija !== undefined ? n.consolaFija : MOTOR.correr({ raiz: RAIZ, archivos: archivosNivel(n) }, m, n.lineas).consola;
+    mostrarConsola(m, texto);
+    mostrarRetro("bien", "<b>" + (silencioso ? "Reto completado." : "¡Correcto!") + "</b> " + n.despues);
+    marcarCompleto(k);
+    if (!silencioso) $("siguiente").focus();
+  }
+  function probarReto() {
+    var k = avance.actual, n = NIVELES[k], m = modoNivel(n), linea = $("resp").value.replace(/\s+$/, "");
+    avance.respuestas[k] = linea;
+    guardarAvance();
+    var r;
+    if (n.tipo === "modulo") r = MOTOR.correr({ raiz: RAIZ, archivos: archivosNivel(n, linea) }, m, n.lineas);
+    else r = MOTOR.correr({ raiz: RAIZ, archivos: archivosNivel(n) }, m, [linea]);
+    if (r.aviso) {
+      $("consola-reto").hidden = true;
+      mostrarRetro("mal", "<b>Esta página no lo corre:</b> " + esc(r.aviso));
+      return;
+    }
+    mostrarConsola(m, r.consola);
+    if (!r.error && n.meta(r)) {
+      mostrarRetro("bien", "<b>¡Reto completado!</b> " + n.despues);
+      marcarCompleto(k);
+      $("siguiente").focus();
+    } else if (r.error) {
+      var ex = explicar(r, m, archivosNivel(n, n.tipo === "modulo" ? linea : undefined), [linea]);
+      mostrarRetro("mal", ex.html);
+    } else {
+      mostrarRetro("mal", n.falta);
+    }
+    if (archivoReto) verArchivoReto(archivoReto);
+  }
+  $("anterior").addEventListener("click", function () { if (avance.actual > 0) irNivel(avance.actual - 1); });
+  $("siguiente").addEventListener("click", function () {
+    var k = avance.actual + 1;
+    if (k < NIVELES.length && abierto(k)) irNivel(k);
+  });
+  $("reiniciar").addEventListener("click", function () {
+    if (!confirm("¿Borrar tu avance en los retos?")) return;
+    avance = { completados: [], actual: 0, pistas: {}, respuestas: {} };
+    guardarAvance();
+    irNivel(0);
+  });
+
+  // ---------- Inicio ----------
+  pintarModo();
+  verArchivoExplorar(estadoExp.elegido);
+  correrExplorar();
+  irPaso(0);
+  irNivel(avance.actual);
+  var tabGuardada = leerLS("pb-s07-import-tab");
+  botonesTab.forEach(function (b) { if (b.dataset.vista === tabGuardada) activarTab(b); });
+})();
+</script>
+<div id="qr-sitio" class="qr-capa" hidden>
+  <div class="qr-caja" role="dialog" aria-modal="true" aria-label="Código QR de esta página">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 45" role="img" aria-label="Código QR de https://memosanchezg.github.io/programacion-basica-interactivos/semana-07-import.html" shape-rendering="crispEdges"><rect width="45" height="45" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM11 2h5v1h-5zM18 2h10v1h-10zM30 2h1v1h-1zM33 2h2v1h-2zM36 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM12 3h2v1h-2zM15 3h1v1h-1zM17 3h1v1h-1zM19 3h1v1h-1zM23 3h1v1h-1zM26 3h5v1h-5zM32 3h1v1h-1zM34 3h1v1h-1zM36 3h1v1h-1zM42 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM10 4h1v1h-1zM13 4h1v1h-1zM15 4h1v1h-1zM17 4h1v1h-1zM19 4h2v1h-2zM23 4h2v1h-2zM26 4h2v1h-2zM29 4h2v1h-2zM33 4h2v1h-2zM36 4h1v1h-1zM38 4h3v1h-3zM42 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h1v1h-1zM13 5h4v1h-4zM18 5h1v1h-1zM23 5h1v1h-1zM26 5h1v1h-1zM28 5h1v1h-1zM32 5h3v1h-3zM36 5h1v1h-1zM38 5h3v1h-3zM42 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h2v1h-2zM17 6h1v1h-1zM20 6h2v1h-2zM24 6h2v1h-2zM30 6h2v1h-2zM33 6h2v1h-2zM36 6h1v1h-1zM38 6h3v1h-3zM42 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h2v1h-2zM13 7h5v1h-5zM22 7h1v1h-1zM26 7h1v1h-1zM29 7h2v1h-2zM34 7h1v1h-1zM36 7h1v1h-1zM42 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM30 8h1v1h-1zM32 8h1v1h-1zM34 8h1v1h-1zM36 8h7v1h-7zM10 9h4v1h-4zM16 9h3v1h-3zM20 9h1v1h-1zM23 9h1v1h-1zM25 9h2v1h-2zM28 9h1v1h-1zM33 9h2v1h-2zM2 10h1v1h-1zM4 10h5v1h-5zM11 10h1v1h-1zM13 10h1v1h-1zM15 10h5v1h-5zM22 10h1v1h-1zM24 10h1v1h-1zM27 10h3v1h-3zM31 10h1v1h-1zM36 10h5v1h-5zM2 11h2v1h-2zM5 11h2v1h-2zM9 11h2v1h-2zM12 11h1v1h-1zM16 11h1v1h-1zM19 11h5v1h-5zM25 11h1v1h-1zM27 11h1v1h-1zM30 11h1v1h-1zM32 11h3v1h-3zM36 11h3v1h-3zM40 11h3v1h-3zM2 12h1v1h-1zM4 12h1v1h-1zM7 12h2v1h-2zM11 12h4v1h-4zM17 12h2v1h-2zM22 12h2v1h-2zM29 12h4v1h-4zM34 12h1v1h-1zM36 12h2v1h-2zM4 13h1v1h-1zM9 13h3v1h-3zM17 13h2v1h-2zM23 13h2v1h-2zM28 13h1v1h-1zM32 13h4v1h-4zM38 13h2v1h-2zM41 13h2v1h-2zM4 14h1v1h-1zM8 14h1v1h-1zM12 14h1v1h-1zM16 14h4v1h-4zM21 14h2v1h-2zM24 14h1v1h-1zM26 14h6v1h-6zM33 14h1v1h-1zM35 14h1v1h-1zM37 14h1v1h-1zM39 14h2v1h-2zM42 14h1v1h-1zM2 15h1v1h-1zM6 15h2v1h-2zM9 15h2v1h-2zM13 15h1v1h-1zM17 15h4v1h-4zM23 15h2v1h-2zM29 15h1v1h-1zM32 15h1v1h-1zM34 15h2v1h-2zM37 15h6v1h-6zM2 16h1v1h-1zM5 16h2v1h-2zM8 16h3v1h-3zM12 16h1v1h-1zM15 16h1v1h-1zM19 16h1v1h-1zM22 16h1v1h-1zM24 16h3v1h-3zM29 16h5v1h-5zM35 16h1v1h-1zM37 16h1v1h-1zM40 16h1v1h-1zM2 17h1v1h-1zM11 17h1v1h-1zM14 17h2v1h-2zM23 17h3v1h-3zM28 17h2v1h-2zM33 17h2v1h-2zM36 17h2v1h-2zM39 17h1v1h-1zM41 17h1v1h-1zM4 18h1v1h-1zM6 18h4v1h-4zM11 18h3v1h-3zM15 18h1v1h-1zM17 18h1v1h-1zM19 18h1v1h-1zM22 18h1v1h-1zM25 18h1v1h-1zM27 18h3v1h-3zM31 18h3v1h-3zM35 18h1v1h-1zM37 18h1v1h-1zM40 18h1v1h-1zM4 19h1v1h-1zM6 19h1v1h-1zM9 19h2v1h-2zM12 19h2v1h-2zM16 19h3v1h-3zM21 19h2v1h-2zM25 19h2v1h-2zM30 19h5v1h-5zM36 19h4v1h-4zM41 19h2v1h-2zM2 20h3v1h-3zM7 20h2v1h-2zM10 20h1v1h-1zM13 20h2v1h-2zM16 20h3v1h-3zM20 20h1v1h-1zM22 20h1v1h-1zM24 20h1v1h-1zM29 20h3v1h-3zM35 20h1v1h-1zM38 20h2v1h-2zM41 20h1v1h-1zM5 21h1v1h-1zM11 21h1v1h-1zM15 21h1v1h-1zM18 21h1v1h-1zM22 21h1v1h-1zM28 21h8v1h-8zM38 21h2v1h-2zM41 21h2v1h-2zM3 22h1v1h-1zM7 22h2v1h-2zM10 22h4v1h-4zM18 22h1v1h-1zM20 22h2v1h-2zM23 22h4v1h-4zM29 22h1v1h-1zM39 22h3v1h-3zM3 23h1v1h-1zM5 23h1v1h-1zM9 23h3v1h-3zM14 23h2v1h-2zM17 23h3v1h-3zM21 23h3v1h-3zM25 23h1v1h-1zM27 23h2v1h-2zM30 23h1v1h-1zM32 23h3v1h-3zM36 23h3v1h-3zM40 23h3v1h-3zM6 24h1v1h-1zM8 24h1v1h-1zM10 24h1v1h-1zM13 24h1v1h-1zM17 24h2v1h-2zM20 24h1v1h-1zM22 24h1v1h-1zM24 24h1v1h-1zM27 24h4v1h-4zM34 24h1v1h-1zM37 24h2v1h-2zM5 25h1v1h-1zM12 25h2v1h-2zM15 25h1v1h-1zM18 25h1v1h-1zM20 25h2v1h-2zM23 25h2v1h-2zM29 25h1v1h-1zM33 25h3v1h-3zM37 25h1v1h-1zM39 25h1v1h-1zM2 26h2v1h-2zM5 26h2v1h-2zM8 26h1v1h-1zM10 26h1v1h-1zM18 26h2v1h-2zM25 26h7v1h-7zM33 26h1v1h-1zM39 26h2v1h-2zM2 27h1v1h-1zM4 27h1v1h-1zM6 27h1v1h-1zM9 27h1v1h-1zM13 27h1v1h-1zM15 27h1v1h-1zM19 27h1v1h-1zM21 27h3v1h-3zM25 27h1v1h-1zM27 27h1v1h-1zM30 27h1v1h-1zM32 27h2v1h-2zM35 27h5v1h-5zM41 27h2v1h-2zM2 28h1v1h-1zM4 28h1v1h-1zM8 28h1v1h-1zM13 28h1v1h-1zM16 28h1v1h-1zM18 28h1v1h-1zM20 28h1v1h-1zM22 28h1v1h-1zM26 28h5v1h-5zM32 28h1v1h-1zM34 28h1v1h-1zM36 28h3v1h-3zM41 28h1v1h-1zM2 29h2v1h-2zM5 29h3v1h-3zM9 29h1v1h-1zM12 29h2v1h-2zM15 29h3v1h-3zM21 29h4v1h-4zM26 29h1v1h-1zM28 29h1v1h-1zM30 29h1v1h-1zM33 29h4v1h-4zM38 29h2v1h-2zM41 29h1v1h-1zM2 30h2v1h-2zM5 30h5v1h-5zM11 30h1v1h-1zM15 30h1v1h-1zM19 30h1v1h-1zM24 30h2v1h-2zM27 30h2v1h-2zM31 30h1v1h-1zM33 30h2v1h-2zM36 30h1v1h-1zM39 30h2v1h-2zM2 31h1v1h-1zM6 31h2v1h-2zM11 31h2v1h-2zM14 31h1v1h-1zM16 31h1v1h-1zM20 31h1v1h-1zM22 31h1v1h-1zM26 31h2v1h-2zM29 31h4v1h-4zM35 31h1v1h-1zM38 31h1v1h-1zM40 31h1v1h-1zM42 31h1v1h-1zM2 32h1v1h-1zM4 32h1v1h-1zM8 32h3v1h-3zM14 32h1v1h-1zM16 32h1v1h-1zM19 32h3v1h-3zM23 32h2v1h-2zM27 32h2v1h-2zM31 32h1v1h-1zM34 32h4v1h-4zM39 32h1v1h-1zM2 33h1v1h-1zM4 33h3v1h-3zM10 33h6v1h-6zM17 33h2v1h-2zM20 33h5v1h-5zM26 33h1v1h-1zM30 33h1v1h-1zM35 33h3v1h-3zM39 33h1v1h-1zM41 33h2v1h-2zM2 34h1v1h-1zM5 34h4v1h-4zM10 34h5v1h-5zM19 34h1v1h-1zM21 34h1v1h-1zM24 34h1v1h-1zM26 34h3v1h-3zM31 34h1v1h-1zM34 34h5v1h-5zM40 34h1v1h-1zM42 34h1v1h-1zM10 35h1v1h-1zM15 35h2v1h-2zM18 35h2v1h-2zM21 35h3v1h-3zM25 35h3v1h-3zM30 35h1v1h-1zM33 35h2v1h-2zM38 35h1v1h-1zM41 35h2v1h-2zM2 36h7v1h-7zM11 36h1v1h-1zM14 36h2v1h-2zM18 36h2v1h-2zM22 36h2v1h-2zM27 36h4v1h-4zM32 36h3v1h-3zM36 36h1v1h-1zM38 36h1v1h-1zM40 36h1v1h-1zM2 37h1v1h-1zM8 37h1v1h-1zM10 37h1v1h-1zM12 37h1v1h-1zM14 37h4v1h-4zM19 37h2v1h-2zM23 37h2v1h-2zM26 37h2v1h-2zM33 37h2v1h-2zM38 37h2v1h-2zM2 38h1v1h-1zM4 38h3v1h-3zM8 38h1v1h-1zM10 38h2v1h-2zM13 38h2v1h-2zM17 38h2v1h-2zM21 38h1v1h-1zM23 38h1v1h-1zM26 38h1v1h-1zM28 38h2v1h-2zM32 38h1v1h-1zM34 38h5v1h-5zM40 38h1v1h-1zM2 39h1v1h-1zM4 39h3v1h-3zM8 39h1v1h-1zM10 39h1v1h-1zM12 39h1v1h-1zM15 39h2v1h-2zM18 39h5v1h-5zM24 39h3v1h-3zM30 39h2v1h-2zM33 39h1v1h-1zM35 39h1v1h-1zM37 39h1v1h-1zM39 39h1v1h-1zM2 40h1v1h-1zM4 40h3v1h-3zM8 40h1v1h-1zM10 40h3v1h-3zM14 40h7v1h-7zM22 40h1v1h-1zM24 40h1v1h-1zM26 40h2v1h-2zM29 40h2v1h-2zM34 40h5v1h-5zM2 41h1v1h-1zM8 41h1v1h-1zM13 41h1v1h-1zM15 41h1v1h-1zM17 41h1v1h-1zM19 41h1v1h-1zM23 41h1v1h-1zM25 41h1v1h-1zM28 41h3v1h-3zM34 41h2v1h-2zM38 41h2v1h-2zM41 41h1v1h-1zM2 42h7v1h-7zM10 42h1v1h-1zM12 42h1v1h-1zM14 42h1v1h-1zM17 42h1v1h-1zM19 42h1v1h-1zM21 42h1v1h-1zM24 42h5v1h-5zM31 42h1v1h-1zM33 42h1v1h-1zM35 42h4v1h-4zM40 42h1v1h-1z"/></svg>
+    <p class="qr-texto">Escanea con la cámara del celular para abrir esta página</p>
+    <p class="qr-url">https://memosanchezg.github.io/programacion-basica-interactivos/semana-07-import.html</p>
+    <button type="button" class="qr-cerrar">Cerrar</button>
+  </div>
+</div>
+<style>
+  .qr-capa { position:fixed; top:0; right:0; bottom:0; left:0; z-index:10000; display:flex; align-items:center;
+             justify-content:center; padding:16px; background:#fff; }
+  .qr-capa[hidden] { display:none; }
+  .qr-caja { max-width:100%; text-align:center; color:#0A2A57; font:16px/1.4 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .qr-caja svg { display:block; width:min(62vh, 84vw); height:auto; margin:0 auto; }
+  .qr-texto { margin:12px 0 2px; font-size:1.15rem; font-weight:bold; }
+  .qr-url { margin:0 0 12px; color:#5B6472; word-break:break-all; }
+  .qr-cerrar { font:inherit; padding:6px 20px; border:2px solid #00408F; border-radius:4px; background:#fff;
+               color:#00408F; cursor:pointer; }
+</style>
+<script>
+  (function () {
+    var capa = document.getElementById("qr-sitio");
+    document.querySelectorAll("a.qr-abrir").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        capa.hidden = false;
+        capa.querySelector(".qr-cerrar").focus();
+      });
+    });
+    capa.addEventListener("click", function (e) {
+      if (e.target === capa || e.target.classList.contains("qr-cerrar")) capa.hidden = true;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !capa.hidden) capa.hidden = true;
+    });
+  })();
+</script>
+</body>
+</html>

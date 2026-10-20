@@ -1,0 +1,1036 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="tipo" content="simulador">
+<title>Nombres, objetos y mutabilidad</title>
+
+<style>
+  :root {
+    --azul:#00408F; --azul-oscuro:#0A2A57; --guinda:#8C1D35; --oro:#B8975A; --oro-texto:#8A6A2E;
+    --azul-claro:#E8EEF7; --oro-claro:#F7F1E6; --guinda-claro:#F5E6EA; --verde:#2F7D5B;
+    --tinta:#1B1F2A; --gris:#5B6472; --gris-claro:#E9ECF1; --borde:#D9DEE6; --fondo:#FFFFFF;
+    --cmd-fondo:#0C0C0C; --cmd-texto:#E6E6E6;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--fondo); color:var(--tinta);
+         font:16px/1.45 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .franja { height:8px; background:var(--azul); border-bottom:3px solid var(--oro); }
+  header { max-width:1280px; margin:0 auto; padding:12px 18px 4px; }
+  .semana { color:var(--guinda); font-weight:bold; letter-spacing:.04em; font-size:.85rem; text-transform:uppercase; }
+  h1 { font-family:Cambria,Georgia,serif; color:var(--azul-oscuro); font-size:1.7rem; margin:2px 0 2px; }
+  .sub { color:var(--gris); margin:0; }
+  main { max-width:1280px; margin:0 auto; padding:8px 18px 24px; }
+  .panel { background:#fff; border:1px solid var(--borde); border-radius:10px; padding:12px 14px; }
+  .panel h2 { font-size:1.02rem; color:var(--azul-oscuro); margin:0 0 8px; }
+  label { display:block; font-weight:bold; color:var(--azul-oscuro); margin-top:10px; }
+  label small { font-weight:normal; color:var(--gris); }
+  input[type=range] { width:100%; }
+  input[type=number], input[type=text], select, textarea { font:inherit; padding:4px 6px; border:1px solid var(--borde);
+                        border-radius:6px; }
+  button.accion { font:inherit; font-weight:bold; border-radius:8px; padding:7px 12px; margin:8px 6px 0 0;
+                  border:1px solid var(--azul); background:#fff; color:var(--azul); cursor:pointer; }
+  button.accion:hover, button.accion:focus-visible { background:var(--azul); color:#fff; outline:none; }
+  button.accion:disabled { opacity:.45; cursor:default; background:#fff; color:var(--azul); }
+  .lectura { background:var(--oro-claro); border-left:4px solid var(--oro); border-radius:8px; padding:10px 12px;
+             margin-top:12px; line-height:1.55; }
+  .lectura b { color:var(--azul-oscuro); }
+  .ok { color:var(--verde); font-weight:bold; }
+  .mal { color:var(--guinda); font-weight:bold; }
+  .preguntas { background:var(--azul-claro); border-radius:8px; padding:10px 14px; margin-top:12px; }
+  .preguntas h3 { margin:0 0 4px; font-size:.95rem; color:var(--azul-oscuro); }
+  .preguntas ol { margin:0; padding-left:20px; }
+  .preguntas li { margin:4px 0; }
+  /* Código Python con los colores del curso (minted, estilo borland) y salida de consola (cmd). */
+  .codigo { border:1px solid var(--tinta); background:#fff; font:15px/1.5 Consolas,"Courier New",monospace;
+            overflow-x:auto; margin:8px 0; }
+  .codigo ol { margin:0; padding:8px 12px 8px 3.4em; }
+  .codigo li { white-space:pre; }
+  .codigo li::marker { color:var(--gris); font:11px Cambria,Georgia,serif; }
+  .codigo .kw { color:#000080; font-weight:bold; }
+  .codigo .str, .codigo .num { color:#0000FF; }
+  .codigo .com { color:#008800; font-style:italic; }
+  .codigo .marca { background:var(--oro-claro); outline:1px solid var(--oro); }
+  .consola { background:var(--cmd-fondo); color:var(--cmd-texto); font:15px/1.45 Consolas,"Courier New",monospace;
+             white-space:pre-wrap; word-break:break-word; padding:8px 12px; border-radius:4px; margin:8px 0; min-height:2.2em; }
+  footer { max-width:1280px; margin:0 auto; padding:6px 18px 18px; color:var(--gris); font-size:.85rem; }
+  footer a { color:var(--azul); }
+
+  /* Propios de este simulador */
+  [hidden] { display:none !important; }
+  code { font-family:Consolas,"Courier New",monospace; color:var(--azul-oscuro); }
+  .selector { display:flex; flex-wrap:wrap; gap:6px 12px; align-items:center; margin:4px 0 12px; }
+  .selector label { margin:0; }
+  .selector select { max-width:100%; }
+  .selector .desc { color:var(--gris); }
+  .fila2 { display:grid; grid-template-columns:minmax(0,0.9fr) minmax(0,1.1fr); gap:16px; align-items:start; }
+  .fila2 > * { min-width:0; }
+  .codigo li.hecha { background:var(--oro-claro); outline:1px solid var(--oro); }
+  .codigo li.sigue { box-shadow:inset 3px 0 0 var(--guinda); }
+  .codigo li.falla { background:var(--guinda-claro); outline:1px solid var(--guinda); }
+  .codigo li[data-espera]::after { content:attr(data-espera); color:var(--gris); font:italic 13px Calibri,"Segoe UI",sans-serif;
+                                   margin-left:12px; }
+  .controles { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:4px; }
+  .controles button.accion { margin:0; min-width:46px; padding:6px 10px; }
+  .controles .barra { flex:1 1 180px; display:flex; flex-direction:column; min-width:150px; }
+  .controles .barra label { margin:0 0 2px; font-size:.95rem; }
+  .leyenda { display:flex; flex-wrap:wrap; gap:4px 14px; color:var(--gris); font-size:.9rem; margin:2px 0 6px; }
+  .leyenda span::before { content:""; display:inline-block; width:14px; height:12px; vertical-align:middle; margin-right:5px;
+                          background:var(--c); border:1px solid var(--b, var(--c)); }
+  .leyenda span.raya::before { width:4px; background:var(--guinda); border:none; }
+  .nota { color:var(--gris); font-size:.92rem; margin:6px 0 0; }
+  .lectura.alto { background:var(--guinda-claro); border-left-color:var(--guinda); }
+  .consola .error { color:#FF8A80; }
+  h2.rotulo { margin-top:14px !important; }
+  .predice { display:flex; flex-wrap:wrap; align-items:center; gap:4px 14px; margin:10px 0 0; }
+  .predice label { margin:0; display:flex; align-items:center; gap:6px; cursor:pointer; }
+  .predice input { width:18px; height:18px; accent-color:var(--azul); }
+  .marcador { color:var(--azul-oscuro); font-weight:bold; }
+  .caja-pregunta { border:2px solid var(--oro); border-radius:10px; padding:10px 12px; margin-top:10px; background:#fff; }
+  .caja-pregunta .texto { font-weight:bold; color:var(--azul-oscuro); margin:0 0 8px; }
+  .opciones { display:flex; flex-direction:column; gap:6px; }
+  .opciones button { text-align:left; font:15px/1.35 Consolas,"Courier New",monospace; padding:7px 10px; border:1px solid var(--borde);
+                     border-radius:8px; background:#fff; color:var(--tinta); cursor:pointer; overflow-wrap:anywhere; }
+  .opciones.prosa button { font:16px/1.35 Calibri,"Segoe UI",sans-serif; }
+  .opciones button:hover:not(:disabled), .opciones button:focus-visible { border-color:var(--azul); outline:2px solid var(--azul); outline-offset:1px; }
+  .opciones button:disabled { cursor:default; color:var(--tinta); }
+  .opciones button.correcta { border:2px solid var(--verde); background:#EAF4EF; }
+  .opciones button.equivocada { border:2px solid var(--guinda); background:var(--guinda-claro); }
+  .retro { margin:8px 0 0; }
+  .diagrama { overflow-x:auto; border:1px solid var(--borde); border-radius:10px; background:#fff; }
+  .diagrama svg { display:block; }
+  .diagrama .col { font:bold 13px Calibri,"Segoe UI",sans-serif; fill:#5B6472; }
+  .diagrama rect.marco { fill:#F3F3F3; stroke:#C9CED6; }
+  .diagrama rect.marco.activo { fill:#fff; stroke:#00408F; stroke-width:2; }
+  .diagrama .titulo-marco { font:bold 13px Calibri,"Segoe UI",sans-serif; fill:#0A2A57; }
+  .diagrama .nombre { font:15px Consolas,"Courier New",monospace; fill:#0A2A57; }
+  .diagrama .nombre.cambio { fill:#8C1D35; font-weight:bold; }
+  .diagrama .nombre.ret { font:italic 13px Calibri,"Segoe UI",sans-serif; fill:#8C1D35; }
+  .diagrama .casilla { fill:#fff; stroke:#9AA3B0; }
+  .diagrama .punto { fill:#0A2A57; }
+  .diagrama .flecha { fill:none; stroke:#0A2A57; stroke-width:1.6; }
+  .diagrama .etq { font:12px Calibri,"Segoe UI",sans-serif; fill:#5B6472; }
+  .diagrama .obj.list .celda { fill:#FFF9EC; stroke:#B8975A; }
+  .diagrama .obj.tuple .celda { fill:#F1F2F4; stroke:#8D96A3; }
+  .diagrama .obj.int .celda { fill:#fff; stroke:#8D96A3; }
+  .diagrama .obj.cambio .celda { stroke:#8C1D35; stroke-width:2; }
+  .diagrama .obj.cambio .etq { fill:#8C1D35; font-weight:bold; }
+  .diagrama .obj.nuevo { animation:aparece .5s ease-out; }
+  .diagrama .indice { font:9px Calibri,"Segoe UI",sans-serif; fill:#5B6472; }
+  .diagrama .v { font:14px Consolas,"Courier New",monospace; fill:#0000FF; }
+  .diagrama .v.kw { fill:#000080; font-weight:bold; }
+  .diagrama .func, .diagrama .valor { font:italic 13px Calibri,"Segoe UI",sans-serif; fill:#5B6472; }
+  @keyframes aparece { from { opacity:0; } to { opacity:1; } }
+  @media (prefers-reduced-motion: reduce) { .diagrama .obj.nuevo { animation:none; } }
+  @media (max-width: 900px) { .fila2 { grid-template-columns:1fr; } }
+  @media (max-width: 480px) {
+    header { padding:10px 12px 4px; }
+    main { padding:8px 10px 20px; }
+    footer { padding:6px 12px 16px; }
+    .panel { padding:10px; }
+    h1 { font-size:1.45rem; }
+    .codigo, .consola { font-size:13px; }
+    .codigo ol { padding-left:2.9em; }
+  }
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header>
+  <div class="semana">Semana 06 · Estructuras de datos · Días 1, 2 y 5</div>
+  <h1>Nombres, objetos y mutabilidad</h1>
+  <p class="sub">Paso a paso, mira a qué objeto apunta cada nombre: alias, copias, listas anidadas, tuplas, x += 1 y funciones que modifican lo que reciben.</p>
+</header>
+<main>
+  <div class="selector">
+    <label for="programa">Programa</label>
+    <select id="programa"></select>
+    <span class="desc" id="descProg"></span>
+  </div>
+  <div class="fila2">
+    <div class="panel">
+      <h2>El código</h2>
+      <div id="codigo"></div>
+      <div class="leyenda" aria-hidden="true">
+        <span style="--c:#F7F1E6;--b:#B8975A">acaba de ejecutarse</span>
+        <span class="raya">la que sigue</span>
+      </div>
+      <div class="controles">
+        <button type="button" class="accion" id="inicio" aria-label="Ir al inicio" title="Ir al inicio">⏮</button>
+        <button type="button" class="accion" id="atras" aria-label="Paso anterior" title="Paso anterior">◀</button>
+        <button type="button" class="accion" id="adelante" aria-label="Paso siguiente" title="Paso siguiente">▶</button>
+        <button type="button" class="accion" id="fin" aria-label="Ir al final" title="Ir al final">⏭</button>
+        <div class="barra">
+          <label for="paso">Paso <span id="pasoTxt"></span></label>
+          <input type="range" id="paso" min="0" max="1" step="1" value="0">
+        </div>
+      </div>
+      <div class="predice">
+        <label><input type="checkbox" id="modoPredice"> Predice y comprueba</label>
+        <span class="marcador" id="marcador" aria-live="polite"></span>
+      </div>
+      <p class="nota">Con esta opción, antes de cada línea importante eliges qué va a pasar y después lo compruebas.</p>
+      <div class="caja-pregunta" id="cajaPregunta" hidden>
+        <p class="texto" id="textoPregunta"></p>
+        <div class="opciones" id="opciones" role="group" aria-labelledby="textoPregunta"></div>
+        <p class="retro" id="retro" aria-live="polite"></p>
+      </div>
+      <div class="lectura" id="explica" aria-live="polite"></div>
+      <h2 class="rotulo">Consola</h2>
+      <div class="consola" id="consola" aria-live="polite"></div>
+      <p class="nota" id="notaRuta" hidden>En tu computadora, en lugar de <code>programa.py</code> aparece la ruta completa del archivo.</p>
+    </div>
+    <div class="panel">
+      <h2>Nombres y objetos</h2>
+      <div class="diagrama" id="diagrama"></div>
+      <p class="nota">Cada flecha va de un nombre al objeto al que apunta. El id de cada objeto no cambia mientras el objeto exista (aquí 1, 2, 3...; <code>id()</code> da números largos). Para simplificar, los números y textos dentro de una lista se dibujan en su casilla.</p>
+      <div class="preguntas">
+        <h3>Para explorar</h3>
+        <ol>
+          <li><b>Alias.</b> Después de la línea 2, ¿cuántas listas hay en la memoria? ¿Y cuántos nombres?</li>
+          <li><b>Tres formas de copiar.</b> ¿Cuál de las tres copias cambió con <code>a.append(4)</code>? ¿Por qué <code>b == a</code> daba True y <code>b is a</code> False?</li>
+          <li><b>Copia superficial.</b> ¿Por qué <code>b[0].append(99)</code> cambió a <code>a</code>, pero <code>b.append([5])</code> no?</li>
+          <li><b>[[0] * 3] * 3.</b> Después de la línea 1, ¿cuántas listas de tres números hay? ¿Cuántas filas distintas tiene <code>bien</code>?</li>
+          <li><b>Una tupla con una lista.</b> Después del error, ¿cambió <code>registro</code>? ¿Qué parte de la tupla sí se pudo modificar y por qué?</li>
+          <li><b>x += 1 contra lista +=.</b> ¿Por qué <code>y</code> no cambió con <code>x += 1</code>, pero <code>b</code> sí cambió con <code>a += [3]</code>? ¿Qué diferencia hay con <code>a = a + [4]</code>?</li>
+          <li><b>Una función modifica la lista.</b> Mientras corre <code>agregar_bono</code>, ¿cuántas listas hay? ¿Y cuando regresa <code>con_bono</code>?</li>
+          <li><b>is contra ==.</b> ¿Cuándo pueden ser <code>==</code> dos listas pero no <code>is</code>? ¿Puede pasar al revés?</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</main>
+<footer>
+  Programación Básica · FCFM-UANL · funciona sin internet. Cada paso reproduce lo que hace Python 3.12 al ejecutar el programa.
+  <a href="index.html">Índice de simuladores</a> · <a href="#qr-sitio" class="qr-abrir">Abrir en el celular (QR)</a>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+
+  // ==== NÚCLEO (sin DOM): objetos de Python, grabadora de eventos y programas ====
+  function esc(t) {
+    return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  // Un objeto del diagrama: list, tuple o int (con identidad propia).
+  function Obj(id, tipo, items, valor) { this.id = id; this.tipo = tipo; this.items = items; this.valor = valor; }
+  function Funcion(nombre, params) { this.nombre = nombre; this.params = params; }
+
+  // repr() de un texto: comillas simples, o dobles si el texto trae ' y no trae ".
+  function pyStr(s) {
+    var q = (s.indexOf("'") >= 0 && s.indexOf('"') < 0) ? '"' : "'";
+    var r = "";
+    for (var i = 0; i < s.length; i++) {
+      var c = s[i], code = s.charCodeAt(i);
+      if (c === "\\") r += "\\\\";
+      else if (c === q) r += "\\" + q;
+      else if (c === "\n") r += "\\n";
+      else if (c === "\r") r += "\\r";
+      else if (c === "\t") r += "\\t";
+      else if (code < 32 || code === 127) r += "\\x" + (code < 16 ? "0" : "") + code.toString(16);
+      else r += c;
+    }
+    return q + r + q;
+  }
+  // repr() de un valor: None, True/False, int, str, list, tuple (objetos) y funciones.
+  function pyRepr(v) {
+    if (v === null || v === undefined) return "None";
+    if (v === true) return "True";
+    if (v === false) return "False";
+    if (v instanceof Funcion) return "función " + v.nombre;
+    if (v instanceof Obj) {
+      if (v.tipo === "int") return String(v.valor);
+      var dentro = v.items.map(pyRepr).join(", ");
+      return v.tipo === "tuple" ? "(" + dentro + (v.items.length === 1 ? ",)" : ")") : "[" + dentro + "]";
+    }
+    if (typeof v === "number") return String(v);
+    if (typeof v === "string") return pyStr(v);
+    return String(v);
+  }
+  function pyTexto(v) { return typeof v === "string" ? v : pyRepr(v); }
+
+  function Grabadora() {
+    this.eventos = [];
+    this.marcos = [{ nombre: "<module>", vars: [], linea: null, llamada: null }];
+    this.salida = "";
+    this.defs = {};
+    this.siguienteId = 1;
+  }
+  Grabadora.prototype.lista = function (items) { return new Obj(this.siguienteId++, "list", items); };
+  Grabadora.prototype.tupla = function (items) { return new Obj(this.siguienteId++, "tuple", items); };
+  Grabadora.prototype.entero = function (valor) { return new Obj(this.siguienteId++, "int", null, valor); };
+  Grabadora.prototype.actual = function () { return this.marcos[this.marcos.length - 1]; };
+  Grabadora.prototype.asignar = function (nombre, valor) {
+    var vars = this.actual().vars;
+    for (var i = 0; i < vars.length; i++) {
+      if (vars[i][0] === nombre) { vars[i][1] = valor; return; }
+    }
+    vars.push([nombre, valor]);
+  };
+  Grabadora.prototype.def = function (nombre, params, linea) {
+    this.defs[nombre] = { linea: linea, params: params };
+    this.asignar(nombre, new Funcion(nombre, params));
+  };
+  // Foto del diagrama: los marcos con sus nombres y los objetos alcanzables, en el orden en que
+  // se encuentran (marcos de abajo hacia arriba, nombres en orden y luego el contenido).
+  Grabadora.prototype.foto = function (extra) {
+    var vistos = {}, objetos = [];
+    function desc(v, nivel) {
+      if (v instanceof Obj && (v.tipo !== "int" || nivel === 0)) { visitar(v); return ["ref", v.id]; }
+      if (v instanceof Funcion) return ["func", v.nombre];
+      return ["prim", pyRepr(v)];
+    }
+    function visitar(o) {
+      if (vistos[o.id]) return;
+      vistos[o.id] = true;
+      var obj = { id: o.id, tipo: o.tipo };
+      objetos.push(obj);
+      if (o.tipo === "int") obj.valor = String(o.valor);
+      else obj.items = o.items.map(function (x) { return desc(x, 1); });
+    }
+    var marcos = this.marcos.map(function (m) {
+      return { nombre: m.nombre, linea: m.linea, llamada: m.llamada,
+               vars: m.vars.map(function (v) { return [v[0], desc(v[1], 0)]; }) };
+    });
+    var r = { marcos: marcos, objetos: objetos };
+    if (extra !== undefined) r.retorno = desc(extra, 0);
+    return r;
+  };
+  Grabadora.prototype.evento = function (tipo, explica, extra, retorno) {
+    var m = this.actual(), f = this.foto(retorno);
+    var e = { tipo: tipo, func: m.nombre, linea: m.linea, marcos: f.marcos, objetos: f.objetos,
+              salida: this.salida, explica: explica || "" };
+    if (f.retorno) e.retorno = f.retorno;
+    if (extra) Object.keys(extra).forEach(function (k) { e[k] = extra[k]; });
+    this.eventos.push(e);
+  };
+  // Python está por ejecutar la línea n; pregunta: lo que se pide predecir de esa línea.
+  Grabadora.prototype.linea = function (n, explica, pregunta) {
+    var m = this.actual(), hecha = m.linea;
+    m.linea = n;
+    this.evento("line", explica, pregunta ? { hecha: hecha, pregunta: pregunta } : { hecha: hecha });
+  };
+  Grabadora.prototype.llamar = function (nombre, args, explica) {
+    var d = this.defs[nombre];
+    var m = { nombre: nombre, vars: [], linea: d.linea, llamada: this.actual().linea };
+    args.forEach(function (a) { m.vars.push([a[0], a[1]]); });
+    this.marcos.push(m);
+    this.evento("call", explica);
+  };
+  Grabadora.prototype.regresar = function (valor, explica) {
+    this.evento("return", explica, null, valor);
+    this.marcos.pop();
+    return valor;
+  };
+  Grabadora.prototype.imprimir = function () {
+    this.salida += Array.prototype.map.call(arguments, pyTexto).join(" ") + "\n";
+  };
+  Grabadora.prototype.fin = function (explica) { this.evento("fin", explica); };
+  Grabadora.prototype.error = function (traceback, explica) {
+    var lineas = traceback.trim().split("\n");
+    this.evento("exception", explica, { traceback: traceback, error: lineas[lineas.length - 1] });
+  };
+  // Una predicción: texto, opciones, índice de la correcta, explicación. tipo: "salida" (lo que
+  // imprime la línea), "error" (el mensaje del error) u "otro".
+  function P(texto, opciones, correcta, explica, tipo, prosa) {
+    return { texto: texto, opciones: opciones, correcta: correcta, explica: explica, tipo: tipo || "salida", prosa: !!prosa };
+  }
+
+  var TB_TUPLA = [
+    "Traceback (most recent call last):",
+    "  File \"programa.py\", line 4, in <module>",
+    "    registro[0] = \"Luis\"",
+    "    ~~~~~~~~^^^",
+    "TypeError: 'tuple' object does not support item assignment"
+  ].join("\n") + "\n";
+
+  var PROGRAMAS = [
+    {
+      id: "alias", titulo: "1 · Alias: b = a", dia: "Día 1",
+      desc: "Asignar no copia: pone otro nombre al mismo objeto.",
+      codigo: [
+        "a = [1, 2, 3]",
+        "b = a",
+        "b.append(4)",
+        "print(a)",
+        "print(a is b)"
+      ],
+      correr: function (T) {
+        T.linea(1);
+        var a = T.lista([1, 2, 3]);
+        T.asignar("a", a);
+        T.linea(2, "<code>[1, 2, 3]</code> crea un objeto lista (id 1) y el nombre <code>a</code> apunta a él.");
+        T.asignar("b", a);
+        T.linea(3, "<code>b = a</code> no copia nada: el nombre <code>b</code> apunta al <b>mismo</b> objeto. La lista ahora tiene dos nombres: <code>b</code> es un <b>alias</b> de <code>a</code>.");
+        a.items.push(4);
+        T.linea(4, "<code>b.append(4)</code> modifica el objeto al que apunta <code>b</code>... que es el mismo al que apunta <code>a</code>.",
+          P("¿Qué imprime <code>print(a)</code>?", ["[1, 2, 3]", "[1, 2, 3, 4]"], 1,
+            "Solo hay una lista y <code>b.append(4)</code> la modificó; <code>a</code> y <code>b</code> son dos nombres para ella."));
+        T.imprimir(a);
+        T.linea(5, "Imprime <code>[1, 2, 3, 4]</code>: aunque el <code>append</code> se hizo con <code>b</code>, la lista es una sola.",
+          P("¿Qué imprime <code>print(a is b)</code>?", ["True", "False"], 0,
+            "<code>is</code> pregunta si los dos nombres apuntan al mismo objeto: los dos apuntan a la lista id 1."));
+        T.imprimir(true);
+        T.fin("<code>a is b</code> es True: <code>is</code> compara la <b>identidad</b> (el id), no los valores.");
+      }
+    },
+    {
+      id: "copias", titulo: "2 · Tres formas de copiar", dia: "Día 1",
+      desc: "copy(), [:] y list() crean listas nuevas con los mismos valores.",
+      codigo: [
+        "a = [1, 2, 3]",
+        "b = a.copy()",
+        "c = a[:]",
+        "d = list(a)",
+        "print(b == a, b is a)",
+        "a.append(4)",
+        "print(a)",
+        "print(b, c, d)"
+      ],
+      correr: function (T) {
+        T.linea(1);
+        var a = T.lista([1, 2, 3]);
+        T.asignar("a", a);
+        T.linea(2, "<code>a</code> apunta a una lista (id 1).");
+        var b = T.lista([1, 2, 3]);
+        T.asignar("b", b);
+        T.linea(3, "<code>a.copy()</code> crea una lista <b>nueva</b> con los mismos valores: <code>b</code> apunta a otro objeto (id 2).");
+        var c = T.lista([1, 2, 3]);
+        T.asignar("c", c);
+        T.linea(4, "<code>a[:]</code>, la rebanada de principio a fin, también crea una lista nueva (id 3).");
+        var d = T.lista([1, 2, 3]);
+        T.asignar("d", d);
+        T.linea(5, "<code>list(a)</code> crea otra lista nueva (id 4). Hay cuatro listas con los mismos valores... y son objetos distintos.",
+          P("¿Qué imprime <code>print(b == a, b is a)</code>?", ["True True", "True False", "False False"], 1,
+            "<code>==</code> compara los valores (son iguales) e <code>is</code> la identidad (<code>b</code> es otro objeto)."));
+        T.imprimir(true, false);
+        T.linea(6, "Imprime <code>True False</code>: mismos valores, objetos distintos.");
+        a.items.push(4);
+        T.linea(7, "<code>a.append(4)</code> modifica solo la lista de <code>a</code> (id 1).");
+        T.imprimir(a);
+        T.linea(8, "Imprime <code>[1, 2, 3, 4]</code>.",
+          P("¿Qué imprime <code>print(b, c, d)</code>?", ["[1, 2, 3] [1, 2, 3] [1, 2, 3]", "[1, 2, 3, 4] [1, 2, 3, 4] [1, 2, 3, 4]", "[1, 2, 3, 4] [1, 2, 3] [1, 2, 3]"], 0,
+            "Las tres son copias: objetos aparte que no cambian cuando cambia la lista de <code>a</code>."));
+        T.imprimir(b, c, d);
+        T.fin("Las copias no se enteraron del <code>append</code>: cada una es su propio objeto.");
+      }
+    },
+    {
+      id: "anidadas", titulo: "3 · Copia superficial con listas anidadas", dia: "Día 5",
+      desc: "copy() copia la lista de afuera; las listas de adentro se comparten.",
+      codigo: [
+        "a = [[1, 2], [3, 4]]",
+        "b = a.copy()",
+        "b[0].append(99)",
+        "b.append([5])",
+        "print(a)",
+        "print(b)",
+        "print(a[0] is b[0])"
+      ],
+      correr: function (T) {
+        T.linea(1);
+        var a = T.lista([]), x = T.lista([1, 2]), y = T.lista([3, 4]);
+        a.items.push(x, y);
+        T.asignar("a", a);
+        T.linea(2, "<code>a</code> es una lista de listas: la lista de afuera (id 1) guarda <b>referencias</b> a dos listas de adentro (id 2 e id 3).");
+        var b = T.lista([x, y]);
+        T.asignar("b", b);
+        T.linea(3, "<code>a.copy()</code> crea una lista de afuera nueva (id 4)... pero sus casillas apuntan a las <b>mismas</b> listas de adentro. Es una copia <b>superficial</b>.");
+        x.items.push(99);
+        T.linea(4, "<code>b[0]</code> es la lista id 2, la misma que <code>a[0]</code>: <code>append(99)</code> la modifica para los dos.");
+        var z = T.lista([5]);
+        b.items.push(z);
+        T.linea(5, "<code>b.append([5])</code> agrega una casilla a la lista de afuera de <code>b</code> (id 4); la de <code>a</code> (id 1) no cambia.",
+          P("¿Qué imprime <code>print(a)</code>?", ["[[1, 2], [3, 4]]", "[[1, 2, 99], [3, 4]]", "[[1, 2, 99], [3, 4], [5]]"], 1,
+            "El 99 entró a una lista de adentro que <code>a</code> y <code>b</code> comparten; el <code>[5]</code> solo entró a la lista de afuera de <code>b</code>."));
+        T.imprimir(a);
+        T.linea(6, "Imprime <code>[[1, 2, 99], [3, 4]]</code>.");
+        T.imprimir(b);
+        T.linea(7, "Imprime <code>[[1, 2, 99], [3, 4], [5]]</code>.",
+          P("¿Qué imprime <code>print(a[0] is b[0])</code>?", ["True", "False"], 0,
+            "Las dos casillas apuntan al mismo objeto, la lista id 2."));
+        T.imprimir(true);
+        T.fin("<code>a[0] is b[0]</code> es True: la copia superficial comparte las listas de adentro.");
+      }
+    },
+    {
+      id: "tablero", titulo: "4 · [[0] * 3] * 3", dia: "Día 2",
+      desc: "Repetir una lista con * repite la referencia; la comprensión crea filas distintas.",
+      codigo: [
+        "tablero = [[0] * 3] * 3",
+        "tablero[0][0] = 5",
+        "print(tablero)",
+        "bien = [[0] * 3 for _ in range(3)]",
+        "bien[0][0] = 5",
+        "print(bien)"
+      ],
+      correr: function (T) {
+        T.linea(1);
+        var t = T.lista([]), fila = T.lista([0, 0, 0]);
+        t.items.push(fila, fila, fila);
+        T.asignar("tablero", t);
+        T.linea(2, "<code>[0] * 3</code> crea <b>una</b> lista <code>[0, 0, 0]</code> (id 2) y <code>* 3</code> repite tres veces la <b>referencia</b> a ella: las tres casillas de <code>tablero</code> apuntan al mismo objeto.");
+        fila.items[0] = 5;
+        T.linea(3, "<code>tablero[0][0] = 5</code> cambia la casilla 0 de la lista id 2... que también es <code>tablero[1]</code> y <code>tablero[2]</code>.",
+          P("¿Qué imprime <code>print(tablero)</code>?", ["[[5, 0, 0], [0, 0, 0], [0, 0, 0]]", "[[5, 0, 0], [5, 0, 0], [5, 0, 0]]"], 1,
+            "Las tres filas son la misma lista: se imprime tres veces."));
+        T.imprimir(t);
+        T.linea(4, "Imprime tres filas con 5: era una sola fila con tres flechas.");
+        var bien = T.lista([]), f1 = T.lista([0, 0, 0]), f2 = T.lista([0, 0, 0]), f3 = T.lista([0, 0, 0]);
+        bien.items.push(f1, f2, f3);
+        T.asignar("bien", bien);
+        T.linea(5, "La comprensión ejecuta <code>[0] * 3</code> <b>una vez en cada vuelta</b>: crea tres listas distintas (id 4, 5 y 6).");
+        f1.items[0] = 5;
+        T.linea(6, "<code>bien[0][0] = 5</code> cambia solo la primera fila (id 4).",
+          P("¿Qué imprime <code>print(bien)</code>?", ["[[5, 0, 0], [0, 0, 0], [0, 0, 0]]", "[[5, 0, 0], [5, 0, 0], [5, 0, 0]]"], 0,
+            "Cada fila es su propio objeto: el 5 solo está en la primera."));
+        T.imprimir(bien);
+        T.fin("Para una tabla, crea cada fila por separado, por ejemplo con una comprensión.");
+      }
+    },
+    {
+      id: "tupla", titulo: "5 · Una tupla con una lista", dia: "Día 2",
+      desc: "La tupla no deja cambiar sus casillas, pero la lista que contiene sí es mutable.",
+      codigo: [
+        "registro = (\"Ana\", [9, 8])",
+        "registro[1].append(10)",
+        "print(registro)",
+        "registro[0] = \"Luis\"",
+        "print(registro)"
+      ],
+      correr: function (T) {
+        T.linea(1);
+        var t = T.tupla([]), l = T.lista([9, 8]);
+        t.items.push("Ana", l);
+        T.asignar("registro", t);
+        T.linea(2, "<code>registro</code> apunta a una tupla (id 1) con dos casillas: el texto <code>'Ana'</code> y una referencia a una lista (id 2).",
+          P("¿Funciona <code>registro[1].append(10)</code>?", ["Sí: la lista de adentro se puede modificar.", "No: da TypeError porque la tupla es inmutable."], 0,
+            "<code>registro[1]</code> es la lista id 2, y las listas son mutables. La tupla no cambia: sigue apuntando a la misma lista.", "otro", true));
+        l.items.push(10);
+        T.linea(3, "Funcionó: <code>append</code> modificó la lista id 2. La tupla sigue apuntando a ella.");
+        T.imprimir(t);
+        T.linea(4, "Imprime <code>('Ana', [9, 8, 10])</code>.",
+          P("¿Qué pasa con <code>registro[0] = \"Luis\"</code>?", ["registro queda ('Luis', [9, 8, 10])", "TypeError: 'tuple' object does not support item assignment", "Python crea una tupla nueva para registro"], 1,
+            "Una tupla es <b>inmutable</b>: no deja cambiar a qué objeto apunta cada casilla.", "error"));
+        T.error(TB_TUPLA, "<code>TypeError: 'tuple' object does not support item assignment</code>: el objeto tupla no permite asignar a sus casillas. El programa se detiene y la línea 5 no se ejecuta; <code>registro</code> sigue igual.");
+      }
+    },
+    {
+      id: "masigual", titulo: "6 · x += 1 contra lista +=", dia: "Día 5",
+      desc: "Con un int, += mueve el nombre a otro objeto; con una lista, modifica el mismo.",
+      codigo: [
+        "x = 5",
+        "y = x",
+        "x += 1",
+        "print(x, y)",
+        "a = [1, 2]",
+        "b = a",
+        "a += [3]",
+        "print(a, b)",
+        "a = a + [4]",
+        "print(a, b)"
+      ],
+      correr: function (T) {
+        T.linea(1);
+        var cinco = T.entero(5);
+        T.asignar("x", cinco);
+        T.linea(2, "<code>x</code> apunta a un objeto <code>int</code> con el valor 5. En este programa, los números con nombre se dibujan como objetos.");
+        T.asignar("y", cinco);
+        T.linea(3, "<code>y = x</code>: <code>y</code> apunta al mismo objeto 5.");
+        var seis = T.entero(6);
+        T.asignar("x", seis);
+        T.linea(4, "<code>x += 1</code>: los <code>int</code> son <b>inmutables</b>. Python no cambia el 5: el nombre <code>x</code> pasa a apuntar a otro objeto, el 6. <code>y</code> sigue apuntando al 5.",
+          P("¿Qué imprime <code>print(x, y)</code>?", ["6 6", "6 5"], 1,
+            "El objeto 5 no cambió; solo se movió el nombre <code>x</code>."));
+        T.imprimir(seis, cinco);
+        T.linea(5, "Imprime <code>6 5</code>.");
+        var a = T.lista([1, 2]);
+        T.asignar("a", a);
+        T.linea(6, "<code>a</code> apunta a una lista.");
+        T.asignar("b", a);
+        T.linea(7, "<code>b = a</code>: alias de la misma lista.");
+        a.items.push(3);
+        T.linea(8, "Con una lista, <code>a += [3]</code> <b>modifica el mismo objeto</b> (como <code>extend</code>): <code>a</code> y <code>b</code> siguen apuntando a la misma lista.",
+          P("¿Qué imprime <code>print(a, b)</code>?", ["[1, 2, 3] [1, 2]", "[1, 2, 3] [1, 2, 3]"], 1,
+            "<code>+=</code> con una lista agrega al mismo objeto, y <code>b</code> apunta a ese objeto."));
+        T.imprimir(a, a);
+        T.linea(9, "Imprime <code>[1, 2, 3] [1, 2, 3]</code>.");
+        var a2 = T.lista([1, 2, 3, 4]);
+        T.asignar("a", a2);
+        T.linea(10, "<code>a = a + [4]</code> es distinto: <code>a + [4]</code> crea una lista <b>nueva</b> y luego <code>a</code> apunta a ella. <code>b</code> se queda con la lista anterior.",
+          P("¿Qué imprime ahora <code>print(a, b)</code>?", ["[1, 2, 3, 4] [1, 2, 3, 4]", "[1, 2, 3, 4] [1, 2, 3]"], 1,
+            "<code>a + [4]</code> crea otro objeto; la lista de <code>b</code> no cambió."));
+        T.imprimir(a2, a);
+        T.fin("<code>a += [4]</code> y <code>a = a + [4]</code> dan el mismo valor para <code>a</code>, pero solo el primero modifica la lista que comparte con <code>b</code>.");
+      }
+    },
+    {
+      id: "funcion", titulo: "7 · Una función modifica la lista", dia: "Día 5",
+      desc: "El parámetro recibe el mismo objeto: si la función lo modifica, se ve afuera.",
+      codigo: [
+        "def agregar_bono(calificaciones):",
+        "    calificaciones.append(10)",
+        "",
+        "def con_bono(calificaciones):",
+        "    return calificaciones + [10]",
+        "",
+        "mias = [8, 9]",
+        "agregar_bono(mias)",
+        "print(mias)",
+        "nuevas = con_bono(mias)",
+        "print(mias, nuevas)"
+      ],
+      correr: function (T) {
+        T.linea(1);
+        T.def("agregar_bono", ["calificaciones"], 1);
+        T.linea(4, "<code>def</code> crea la función <code>agregar_bono</code>.");
+        T.def("con_bono", ["calificaciones"], 4);
+        T.linea(7, "<code>def</code> crea la función <code>con_bono</code>.");
+        var mias = T.lista([8, 9]);
+        T.asignar("mias", mias);
+        T.linea(8, "<code>mias</code> apunta a una lista (id 1).");
+        T.llamar("agregar_bono", [["calificaciones", mias]], "Al llamar <code>agregar_bono(mias)</code>, el parámetro <code>calificaciones</code> recibe <b>el mismo objeto</b>: la lista no se copia. Hay dos nombres, en dos marcos, para una sola lista.");
+        T.linea(2);
+        mias.items.push(10);
+        T.regresar(null, "<code>calificaciones.append(10)</code> modificó ese objeto, que es la lista de <code>mias</code>. La función regresa <code>None</code>, pero el cambio ya está hecho.");
+        T.linea(9, "El marco de <code>agregar_bono</code> desapareció; la lista sigue ahí, modificada.",
+          P("¿Qué imprime <code>print(mias)</code>?", ["[8, 9]", "[8, 9, 10]"], 1,
+            "La función recibió la misma lista que <code>mias</code> y le agregó el 10."));
+        T.imprimir(mias);
+        T.linea(10, "Imprime <code>[8, 9, 10]</code>: la función modificó la lista que recibió.");
+        T.llamar("con_bono", [["calificaciones", mias]], "<code>con_bono</code> también recibe la misma lista...");
+        T.linea(5);
+        var nueva = T.lista([8, 9, 10, 10]);
+        T.regresar(nueva, "...pero <code>calificaciones + [10]</code> crea una lista <b>nueva</b> (id 2), y esa es la que regresa. La lista de <code>mias</code> no cambia.");
+        T.asignar("nuevas", nueva);
+        T.linea(11, "<code>nuevas</code> apunta a la lista que regresó <code>con_bono</code>.",
+          P("¿Qué imprime <code>print(mias, nuevas)</code>?", ["[8, 9, 10] [8, 9, 10, 10]", "[8, 9, 10, 10] [8, 9, 10, 10]"], 0,
+            "<code>+</code> crea un objeto nuevo; la lista de <code>mias</code> se quedó como estaba."));
+        T.imprimir(mias, nueva);
+        T.fin("Si una función no debe cambiar la lista que recibe, que regrese una nueva (como <code>con_bono</code>).");
+      }
+    },
+    {
+      id: "is", titulo: "8 · is contra ==", dia: "Día 5",
+      desc: "== compara valores; is pregunta si es el mismo objeto.",
+      codigo: [
+        "a = [1, 2, 3]",
+        "b = [1, 2, 3]",
+        "c = a",
+        "print(a == b)",
+        "print(a is b)",
+        "print(a is c)",
+        "c.append(4)",
+        "print(a == b)"
+      ],
+      correr: function (T) {
+        T.linea(1);
+        var a = T.lista([1, 2, 3]);
+        T.asignar("a", a);
+        T.linea(2, "<code>a</code> apunta a una lista (id 1).");
+        var b = T.lista([1, 2, 3]);
+        T.asignar("b", b);
+        T.linea(3, "<code>b = [1, 2, 3]</code> crea <b>otra</b> lista con los mismos valores (id 2).");
+        T.asignar("c", a);
+        T.linea(4, "<code>c = a</code>: <code>c</code> es otro nombre para la lista id 1.");
+        T.imprimir(true);
+        T.linea(5, "<code>a == b</code> compara los valores, elemento por elemento: son iguales, True.",
+          P("¿Qué imprime <code>print(a is b)</code>?", ["True", "False"], 1,
+            "Son dos objetos distintos (id 1 e id 2), aunque tengan los mismos valores."));
+        T.imprimir(false);
+        T.linea(6, "<code>a is b</code> es False: dos objetos distintos.");
+        T.imprimir(true);
+        T.linea(7, "<code>a is c</code> es True: los dos nombres apuntan a la lista id 1.");
+        a.items.push(4);
+        T.linea(8, "<code>c.append(4)</code> modifica la lista id 1, que también es <code>a</code>.",
+          P("¿Qué imprime ahora <code>print(a == b)</code>?", ["True", "False"], 1,
+            "<code>a</code> ya es <code>[1, 2, 3, 4]</code> y <code>b</code> sigue en <code>[1, 2, 3]</code>."));
+        T.imprimir(false);
+        T.fin("Imprime False: ahora los valores son distintos.");
+      }
+    }
+  ];
+
+  function trazar(prog) {
+    var T = new Grabadora();
+    prog.correr(T);
+    return T.eventos;
+  }
+  // ==== FIN DEL NÚCLEO ====
+
+  // ---------- Código Python con los colores del curso ----------
+  var PY_KW = /^(False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)$/;
+  function pyResaltar(linea) {
+    var html = "", i = 0, m, resto;
+    while (i < linea.length) {
+      resto = linea.slice(i);
+      if ((m = /^#.*/.exec(resto))) { html += '<span class="com">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[rRbBfFuU]{0,2}("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/.exec(resto))) { html += '<span class="str">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[\p{L}_][\p{L}\p{N}_]*/u.exec(resto))) { html += PY_KW.test(m[0]) ? '<span class="kw">' + m[0] + "</span>" : esc(m[0]); }
+      else if ((m = /^(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?j?/.exec(resto))) { html += '<span class="num">' + m[0] + "</span>"; }
+      else { m = [resto[0]]; html += esc(m[0]); }
+      i += m[0].length;
+    }
+    return html;
+  }
+
+  // ---------- Diagrama: nombres a la izquierda, objetos a la derecha ----------
+  var NOMBRES_W = 150, FILA_H = 30, TITULO_H = 24, X_OBJ = 206, CELDA_MIN = 32, CELDA_H = 30, ETQ_H = 15, SEP_B = 56, ARRIBA = 30;
+  function anchoTexto(t) { return t.length * 8.3; }   // Consolas de 14 px, aproximado
+  function medir(o) {
+    if (o.tipo === "int") return { w: Math.max(40, Math.ceil(anchoTexto(o.valor)) + 18), h: ETQ_H + CELDA_H, anchos: [] };
+    var anchos = o.items.map(function (d) { return d[0] === "ref" ? CELDA_MIN : Math.max(CELDA_MIN, Math.ceil(anchoTexto(d[1])) + 14); });
+    var w = anchos.reduce(function (s, x) { return s + x; }, 0);
+    return { w: Math.max(w, 56), h: ETQ_H + CELDA_H, anchos: anchos };
+  }
+  function acomodar(e) {
+    var objs = {}, marcos = [], filas = [], y = ARRIBA;
+    e.objetos.forEach(function (o) { objs[o.id] = o; });
+    e.marcos.forEach(function (m, j) {
+      var vars = m.vars.map(function (v) { return [v[0], v[1], false]; });
+      if (j === e.marcos.length - 1 && e.tipo === "return" && j > 0 && e.retorno) vars.push(["retorno", e.retorno, true]);
+      var alto = TITULO_H + Math.max(1, vars.length) * FILA_H + 6;
+      marcos.push({ x: 6, y: y, w: NOMBRES_W, h: alto, m: m, j: j, vacio: !vars.length });
+      vars.forEach(function (v, i) {
+        filas.push({ marco: j, nombre: v[0], desc: v[1], retorno: v[2], y: y + TITULO_H + i * FILA_H + FILA_H / 2 });
+      });
+      y += alto + 12;
+    });
+    var pos = {}, orden = [], yA = ARRIBA, xmax = X_OBJ;
+    filas.forEach(function (f) {
+      if (f.desc[0] !== "ref" || pos[f.desc[1]]) return;
+      var o = objs[f.desc[1]], med = medir(o);
+      var top = Math.max(yA, f.y - ETQ_H - CELDA_H / 2);
+      pos[o.id] = { x: X_OBJ, y: top, med: med, o: o };
+      orden.push(o.id);
+      yA = top + med.h + 14;
+      xmax = Math.max(xmax, X_OBJ + med.w);
+    });
+    // Objetos a los que solo llegan flechas desde casillas: en la columna de la derecha.
+    var xB = xmax + SEP_B, yB = ARRIBA;
+    for (var i = 0; i < orden.length; i++) {
+      var p = pos[orden[i]];
+      (p.o.items || []).forEach(function (d) {
+        if (d[0] !== "ref" || pos[d[1]]) return;
+        var o = objs[d[1]], med = medir(o);
+        var top = Math.max(yB, p.y + 12);
+        pos[o.id] = { x: xB, y: top, med: med, o: o };
+        orden.push(o.id);
+        yB = top + med.h + 12;
+        xmax = Math.max(xmax, xB + med.w);
+      });
+    }
+    return { marcos: marcos, filas: filas, pos: pos, orden: orden, ancho: Math.ceil(xmax + 18), alto: Math.ceil(Math.max(y, yA, yB) + 8) };
+  }
+  function flecha(x1, y1, x2, y2, desdeCelda) {
+    var c1x = x1 + 40, c1y = y1;
+    if (desdeCelda) {
+      // Hacia abajo si el objeto está más abajo; si está a la misma altura o arriba, curva corta.
+      if (y2 > y1 + 20) { c1x = x1; c1y = y1 + 38; } else { c1x = x1 + 16; c1y = y1 + 20; }
+    }
+    return '<path class="flecha" d="M' + x1 + " " + y1 + " C" + c1x + " " + c1y + " " + (x2 - 42) + " " + y2 + " " + x2 + " " + y2 + '" marker-end="url(#punta)"/>';
+  }
+  function claseValor(r) { return /^(True|False|None)$/.test(r) ? "v kw" : "v"; }
+
+  function dibujar(e, previo) {
+    var L = acomodar(e), s = [], flechas = [];
+    var antes = {}, nombresAntes = {};
+    if (previo) {
+      previo.objetos.forEach(function (o) { antes[o.id] = JSON.stringify(o.items || o.valor); });
+      previo.marcos.forEach(function (m, j) { m.vars.forEach(function (v) { nombresAntes[j + ":" + v[0]] = JSON.stringify(v[1]); }); });
+    }
+    s.push('<defs><marker id="punta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">' +
+           '<path d="M0,0 L10,5 L0,10 z" fill="#0A2A57"/></marker></defs>');
+    s.push('<text class="col" x="8" y="18">Nombres</text><text class="col" x="' + X_OBJ + '" y="18">Objetos</text>');
+    L.marcos.forEach(function (M) {
+      var activo = M.j === e.marcos.length - 1 && M.j > 0;
+      s.push('<rect class="marco' + (activo ? " activo" : "") + '" x="' + M.x + '" y="' + M.y + '" width="' + M.w + '" height="' + M.h + '" rx="6"/>');
+      s.push('<text class="titulo-marco" x="' + (M.x + 8) + '" y="' + (M.y + 16) + '">' + (M.j === 0 ? "Marco global" : esc(M.m.nombre)) + "</text>");
+      if (M.vacio) s.push('<text class="valor" x="' + (M.x + 10) + '" y="' + (M.y + TITULO_H + 19) + '">(sin nombres todavía)</text>');
+    });
+    L.filas.forEach(function (f) {
+      var cambio = previo && !f.retorno && nombresAntes[f.marco + ":" + f.nombre] !== JSON.stringify(f.desc);
+      var xc = 6 + NOMBRES_W - 28;
+      s.push('<text class="nombre' + (cambio ? " cambio" : "") + (f.retorno ? " ret" : "") + '" x="16" y="' + (f.y + 5) + '">' + esc(f.nombre) + "</text>");
+      if (f.desc[0] === "ref") {
+        s.push('<rect class="casilla" x="' + xc + '" y="' + (f.y - 11) + '" width="22" height="22" rx="3"/>');
+        s.push('<circle class="punto" cx="' + (xc + 11) + '" cy="' + f.y + '" r="4"/>');
+        var p = L.pos[f.desc[1]];
+        flechas.push(flecha(xc + 11, f.y, p.x - 2, p.y + ETQ_H + CELDA_H / 2, false));
+      } else {
+        s.push('<text class="' + (f.desc[0] === "func" ? "func" : "valor") + '" x="' + (6 + NOMBRES_W - 8) + '" y="' + (f.y + 5) + '" text-anchor="end">' +
+               (f.desc[0] === "func" ? "función" : esc(f.desc[1])) + "</text>");
+      }
+    });
+    L.orden.forEach(function (id) {
+      var p = L.pos[id], o = p.o, med = p.med, x = p.x, y = p.y;
+      var nuevo = previo && antes[id] === undefined;
+      var cambio = previo && !nuevo && antes[id] !== JSON.stringify(o.items || o.valor);
+      s.push('<g class="obj ' + o.tipo + (cambio ? " cambio" : "") + (nuevo ? " nuevo" : "") + '">');
+      s.push('<text class="etq" x="' + x + '" y="' + (y + 11) + '">' + o.tipo + " · id " + o.id + "</text>");
+      var yc = y + ETQ_H;
+      if (o.tipo === "int") {
+        s.push('<rect class="celda" x="' + x + '" y="' + yc + '" width="' + med.w + '" height="' + CELDA_H + '" rx="4"/>');
+        s.push('<text class="v" x="' + (x + med.w / 2) + '" y="' + (yc + 20) + '" text-anchor="middle">' + esc(o.valor) + "</text>");
+      } else if (!o.items.length) {
+        s.push('<rect class="celda" x="' + x + '" y="' + yc + '" width="' + med.w + '" height="' + CELDA_H + '"/>');
+        s.push('<text class="valor" x="' + (x + med.w / 2) + '" y="' + (yc + 20) + '" text-anchor="middle">vacía</text>');
+      } else {
+        var cx = x;
+        o.items.forEach(function (d, i) {
+          var w = med.anchos[i];
+          s.push('<rect class="celda" x="' + cx + '" y="' + yc + '" width="' + w + '" height="' + CELDA_H + '"/>');
+          s.push('<text class="indice" x="' + (cx + 3) + '" y="' + (yc + 9) + '">' + i + "</text>");
+          if (d[0] === "ref") {
+            s.push('<circle class="punto" cx="' + (cx + w / 2) + '" cy="' + (yc + CELDA_H / 2 + 2) + '" r="4"/>');
+            var q = L.pos[d[1]];
+            flechas.push(flecha(cx + w / 2, yc + CELDA_H / 2 + 2, q.x - 2, q.y + ETQ_H + CELDA_H / 2, true));
+          } else {
+            s.push('<text class="' + claseValor(d[1]) + '" x="' + (cx + w / 2) + '" y="' + (yc + 21) + '" text-anchor="middle">' + esc(d[1]) + "</text>");
+          }
+          cx += w;
+        });
+      }
+      s.push("</g>");
+    });
+    var caja = $("diagrama"), disponible = Math.max(200, caja.clientWidth - 2);
+    var escala = Math.min(1, Math.max(0.72, disponible / L.ancho));
+    caja.innerHTML = '<svg role="img" aria-label="' + esc(describir(e)) + '" width="' + Math.round(L.ancho * escala) + '" height="' + Math.round(L.alto * escala) +
+                     '" viewBox="0 0 ' + L.ancho + " " + L.alto + '">' + s.join("") + flechas.join("") + "</svg>";
+  }
+  // Descripción en texto del diagrama (para lectores de pantalla).
+  function describir(e) {
+    var objs = {}, partes = [];
+    e.objetos.forEach(function (o) { objs[o.id] = o; });
+    function texto(o) {
+      if (o.tipo === "int") return o.valor;
+      var dentro = o.items.map(function (d) { return d[0] === "ref" ? "flecha a id " + d[1] : d[1]; }).join(", ");
+      return o.tipo === "tuple" ? "(" + dentro + ")" : "[" + dentro + "]";
+    }
+    e.marcos.forEach(function (m, j) {
+      m.vars.forEach(function (v) {
+        if (v[1][0] === "ref") partes.push(v[0] + (j ? " (en " + m.nombre + ")" : "") + " apunta a " + objs[v[1][1]].tipo + " id " + v[1][1]);
+        else if (v[1][0] === "func") partes.push(v[0] + " es una función");
+      });
+    });
+    e.objetos.forEach(function (o) { partes.push(o.tipo + " id " + o.id + ": " + texto(o)); });
+    return partes.length ? "Diagrama. " + partes.join("; ") + "." : "Diagrama vacío: todavía no hay nombres.";
+  }
+
+  // ---------- Interfaz ----------
+  var prog = null, eventos = [], pasos = [], k = 0, respuestas = {};
+
+  $("programa").innerHTML = PROGRAMAS.map(function (p, i) {
+    return '<option value="' + i + '">' + esc(p.titulo) + " (" + p.dia + ")</option>";
+  }).join("");
+
+  function cargar(i) {
+    prog = PROGRAMAS[i];
+    eventos = trazar(prog);
+    pasos = [];
+    eventos.forEach(function (e, j) {
+      if (e.tipo === "line" && j > 0 && eventos[j - 1].tipo === "call") return;
+      pasos.push(j);
+    });
+    respuestas = {};
+    $("descProg").textContent = prog.desc;
+    $("paso").max = pasos.length - 1;
+    $("notaRuta").hidden = !eventos.some(function (e) { return e.tipo === "exception"; });
+    k = 0;
+    pintar();
+  }
+  function modoPredice() { return $("modoPredice").checked; }
+  function preguntaPendiente(paso) {
+    var e = eventos[pasos[paso]];
+    return modoPredice() && e.pregunta && respuestas[paso] === undefined;
+  }
+
+  function infoPaso(i) {
+    var e = eventos[i], n = e.marcos.length;
+    var r = { hecha: null, sigue: null, falla: null, espera: {} };
+    for (var j = 0; j < n - 1; j++) {
+      var l = e.marcos[j].linea;
+      if (l) r.espera[l] = (r.espera[l] || 0) + 1;
+    }
+    if (e.tipo === "line") { r.hecha = e.hecha; r.sigue = e.linea; }
+    else if (e.tipo === "call") { r.hecha = e.linea; r.sigue = eventos[i + 1] ? eventos[i + 1].linea : null; }
+    else if (e.tipo === "return") { r.hecha = e.linea; r.sigue = n > 1 ? e.marcos[n - 2].linea : null; }
+    else if (e.tipo === "fin") { r.hecha = e.linea; }
+    else if (e.tipo === "exception") { r.falla = e.linea; }
+    return r;
+  }
+  function pintarCodigo(info) {
+    $("codigo").innerHTML = '<div class="codigo"><ol>' + prog.codigo.map(function (l, j) {
+      var n = j + 1, cls = [];
+      if (info.hecha === n) cls.push("hecha");
+      if (info.sigue === n) cls.push("sigue");
+      if (info.falla === n) cls.push("falla");
+      return "<li" + (cls.length ? ' class="' + cls.join(" ") + '"' : "") + (info.espera[n] ? ' data-espera="← en espera"' : "") + ">" +
+             (pyResaltar(l) || " ") + "</li>";
+    }).join("") + "</ol></div>";
+  }
+  function tituloPaso(e, info) {
+    if (e.tipo === "call") return "llamada a " + esc(e.func);
+    if (e.tipo === "return") return "regresa " + esc(e.func);
+    if (e.tipo === "exception") return "error en la línea " + e.linea;
+    return "línea " + info.hecha;
+  }
+
+  function pintar() {
+    var i = pasos[k], e = eventos[i], previo = k > 0 ? eventos[pasos[k - 1]] : null;
+    var info = infoPaso(i), ultimo = k === pasos.length - 1, bloqueado = preguntaPendiente(k);
+    $("paso").value = k;
+    $("pasoTxt").textContent = k + " de " + (pasos.length - 1);
+    $("inicio").disabled = $("atras").disabled = k === 0;
+    $("adelante").disabled = $("fin").disabled = ultimo || bloqueado;
+    pintarCodigo(info);
+    var ex = $("explica");
+    ex.className = "lectura" + (e.tipo === "exception" ? " alto" : "");
+    if (k === 0) {
+      ex.innerHTML = "<b>Antes de empezar.</b> Ninguna línea se ha ejecutado; la raya guinda marca la primera. Presiona ▶ (o la flecha derecha) para avanzar.";
+    } else {
+      ex.innerHTML = "<b>Paso " + k + " · " + tituloPaso(e, info) + ".</b> " + e.explica + (ultimo && e.tipo !== "exception" ? " <b>Fin del programa.</b>" : "");
+    }
+    $("consola").innerHTML = esc(e.salida) + (e.tipo === "exception" ? '<span class="error">' + esc(e.traceback) + "</span>" : "");
+    dibujar(e, previo);
+    pintarPregunta();
+    pintarMarcador();
+  }
+
+  function pintarPregunta() {
+    var e = eventos[pasos[k]], caja = $("cajaPregunta");
+    if (!modoPredice() || !e.pregunta) { caja.hidden = true; return; }
+    var p = e.pregunta, elegida = respuestas[k];
+    caja.hidden = false;
+    $("textoPregunta").innerHTML = "Predice: " + p.texto;
+    $("opciones").className = "opciones" + (p.prosa ? " prosa" : "");
+    $("opciones").innerHTML = p.opciones.map(function (o, j) {
+      var cls = elegida === undefined ? "" : j === p.correcta ? "correcta" : j === elegida ? "equivocada" : "";
+      return '<button type="button" data-op="' + j + '"' + (cls ? ' class="' + cls + '"' : "") + (elegida !== undefined ? " disabled" : "") + ">" + esc(o) + "</button>";
+    }).join("");
+    if (elegida === undefined) {
+      $("retro").innerHTML = "Elige una opción para poder avanzar.";
+    } else {
+      $("retro").innerHTML = (elegida === p.correcta ? '<span class="ok">¡Bien!</span> ' : '<span class="mal">No es esa.</span> ') + p.explica +
+        (k < pasos.length - 1 ? " Presiona ▶ para comprobarlo." : "");
+    }
+  }
+  function pintarMarcador() {
+    if (!modoPredice()) { $("marcador").textContent = ""; return; }
+    var total = 0, bien = 0;
+    pasos.forEach(function (i, paso) {
+      var e = eventos[i];
+      if (!e.pregunta) return;
+      total++;
+      if (respuestas[paso] === e.pregunta.correcta) bien++;
+    });
+    var contestadas = Object.keys(respuestas).length;
+    $("marcador").textContent = "Aciertos: " + bien + " de " + contestadas + " (" + total + " predicciones en este programa)";
+  }
+  $("opciones").addEventListener("click", function (ev) {
+    var b = ev.target.closest("button[data-op]");
+    if (!b || respuestas[k] !== undefined) return;
+    respuestas[k] = Number(b.dataset.op);
+    pintar();
+    if (!$("adelante").disabled) $("adelante").focus();
+  });
+
+  function ir(nuevo, enfocar) {
+    nuevo = Math.max(0, Math.min(pasos.length - 1, nuevo));
+    // En "Predice y comprueba", no se avanza más allá de una pregunta sin contestar.
+    for (var p = k; p < nuevo; p++) {
+      if (preguntaPendiente(p)) { nuevo = p; break; }
+    }
+    if (nuevo === k) return;
+    k = nuevo;
+    pintar();
+    if (enfocar && preguntaPendiente(k)) {
+      var b = $("opciones").querySelector("button");
+      if (b) b.focus();
+    }
+  }
+  $("inicio").addEventListener("click", function () { ir(0); });
+  $("atras").addEventListener("click", function () { ir(k - 1); });
+  $("adelante").addEventListener("click", function () { ir(k + 1, true); });
+  $("fin").addEventListener("click", function () { ir(pasos.length - 1, true); });
+  $("paso").addEventListener("input", function () { ir(Number($("paso").value)); $("paso").value = k; });
+  $("modoPredice").addEventListener("change", function () {
+    respuestas = {};
+    if ($("modoPredice").checked) {
+      k = 0;
+      try { localStorage.setItem("pb-s06-predice", "1"); } catch (err) { /* sin almacenamiento */ }
+    } else {
+      try { localStorage.removeItem("pb-s06-predice"); } catch (err) { /* sin almacenamiento */ }
+    }
+    pintar();
+  });
+  $("programa").addEventListener("change", function () {
+    cargar(Number($("programa").value));
+    try { localStorage.setItem("pb-s06-referencias", $("programa").value); } catch (err) { /* sin almacenamiento */ }
+  });
+  document.addEventListener("keydown", function (ev) {
+    var t = ev.target;
+    if (/^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName) || ev.altKey || ev.ctrlKey || ev.metaKey) return;
+    if (ev.key === "ArrowRight") { ev.preventDefault(); ir(k + 1, true); }
+    else if (ev.key === "ArrowLeft") { ev.preventDefault(); ir(k - 1); }
+    else if (ev.key === "Home") { ev.preventDefault(); ir(0); }
+    else if (ev.key === "End") { ev.preventDefault(); ir(pasos.length - 1, true); }
+  });
+  var ultimoAncho = 0;
+  window.addEventListener("resize", function () {
+    var w = $("diagrama").clientWidth;
+    if (w !== ultimoAncho) { ultimoAncho = w; dibujar(eventos[pasos[k]], k > 0 ? eventos[pasos[k - 1]] : null); }
+  });
+
+  var inicial = 0;
+  try {
+    var g = localStorage.getItem("pb-s06-referencias");
+    if (g !== null && Number(g) >= 0 && Number(g) < PROGRAMAS.length) inicial = Number(g);
+    if (localStorage.getItem("pb-s06-predice") === "1") $("modoPredice").checked = true;
+  } catch (err) { /* sin almacenamiento */ }
+  $("programa").value = inicial;
+  cargar(inicial);
+})();
+</script>
+<div id="qr-sitio" class="qr-capa" hidden>
+  <div class="qr-caja" role="dialog" aria-modal="true" aria-label="Código QR de esta página">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 45" role="img" aria-label="Código QR de https://memosanchezg.github.io/programacion-basica-interactivos/semana-06-referencias.html" shape-rendering="crispEdges"><rect width="45" height="45" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM11 2h1v1h-1zM15 2h2v1h-2zM20 2h3v1h-3zM24 2h3v1h-3zM30 2h2v1h-2zM33 2h2v1h-2zM36 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM12 3h4v1h-4zM17 3h1v1h-1zM20 3h1v1h-1zM24 3h1v1h-1zM26 3h1v1h-1zM29 3h2v1h-2zM34 3h1v1h-1zM36 3h1v1h-1zM42 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM10 4h3v1h-3zM15 4h1v1h-1zM21 4h2v1h-2zM26 4h1v1h-1zM28 4h3v1h-3zM33 4h2v1h-2zM36 4h1v1h-1zM38 4h3v1h-3zM42 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h1v1h-1zM13 5h3v1h-3zM17 5h2v1h-2zM20 5h1v1h-1zM23 5h2v1h-2zM26 5h1v1h-1zM31 5h1v1h-1zM33 5h2v1h-2zM36 5h1v1h-1zM38 5h3v1h-3zM42 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM16 6h2v1h-2zM21 6h1v1h-1zM25 6h1v1h-1zM28 6h1v1h-1zM30 6h5v1h-5zM36 6h1v1h-1zM38 6h3v1h-3zM42 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h5v1h-5zM16 7h2v1h-2zM22 7h1v1h-1zM26 7h1v1h-1zM29 7h2v1h-2zM34 7h1v1h-1zM36 7h1v1h-1zM42 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM30 8h1v1h-1zM32 8h1v1h-1zM34 8h1v1h-1zM36 8h7v1h-7zM10 9h2v1h-2zM13 9h1v1h-1zM17 9h2v1h-2zM20 9h1v1h-1zM23 9h1v1h-1zM25 9h2v1h-2zM28 9h1v1h-1zM33 9h2v1h-2zM2 10h1v1h-1zM4 10h5v1h-5zM11 10h4v1h-4zM17 10h3v1h-3zM22 10h1v1h-1zM24 10h1v1h-1zM27 10h3v1h-3zM31 10h1v1h-1zM36 10h5v1h-5zM3 11h4v1h-4zM12 11h1v1h-1zM16 11h1v1h-1zM19 11h5v1h-5zM25 11h1v1h-1zM27 11h1v1h-1zM30 11h1v1h-1zM32 11h3v1h-3zM36 11h3v1h-3zM40 11h3v1h-3zM6 12h3v1h-3zM11 12h2v1h-2zM18 12h1v1h-1zM22 12h2v1h-2zM29 12h4v1h-4zM34 12h2v1h-2zM37 12h1v1h-1zM2 13h1v1h-1zM9 13h3v1h-3zM13 13h1v1h-1zM17 13h2v1h-2zM23 13h2v1h-2zM28 13h1v1h-1zM32 13h3v1h-3zM36 13h1v1h-1zM38 13h2v1h-2zM41 13h2v1h-2zM4 14h1v1h-1zM6 14h4v1h-4zM12 14h1v1h-1zM16 14h1v1h-1zM19 14h1v1h-1zM21 14h1v1h-1zM24 14h1v1h-1zM27 14h3v1h-3zM31 14h1v1h-1zM33 14h1v1h-1zM35 14h1v1h-1zM37 14h1v1h-1zM39 14h2v1h-2zM42 14h1v1h-1zM3 15h1v1h-1zM7 15h1v1h-1zM9 15h2v1h-2zM13 15h1v1h-1zM18 15h1v1h-1zM20 15h1v1h-1zM22 15h3v1h-3zM26 15h1v1h-1zM29 15h2v1h-2zM32 15h11v1h-11zM2 16h1v1h-1zM5 16h1v1h-1zM8 16h3v1h-3zM14 16h2v1h-2zM17 16h1v1h-1zM21 16h1v1h-1zM24 16h1v1h-1zM31 16h2v1h-2zM35 16h1v1h-1zM37 16h1v1h-1zM40 16h1v1h-1zM11 17h1v1h-1zM13 17h1v1h-1zM15 17h1v1h-1zM21 17h3v1h-3zM26 17h1v1h-1zM28 17h1v1h-1zM30 17h1v1h-1zM34 17h1v1h-1zM36 17h2v1h-2zM39 17h1v1h-1zM41 17h1v1h-1zM4 18h1v1h-1zM6 18h7v1h-7zM15 18h1v1h-1zM18 18h2v1h-2zM21 18h1v1h-1zM27 18h2v1h-2zM31 18h2v1h-2zM35 18h1v1h-1zM37 18h1v1h-1zM40 18h1v1h-1zM3 19h5v1h-5zM10 19h3v1h-3zM15 19h3v1h-3zM19 19h1v1h-1zM21 19h3v1h-3zM25 19h3v1h-3zM30 19h5v1h-5zM36 19h4v1h-4zM41 19h2v1h-2zM2 20h3v1h-3zM7 20h3v1h-3zM12 20h2v1h-2zM15 20h5v1h-5zM22 20h2v1h-2zM27 20h4v1h-4zM35 20h1v1h-1zM38 20h2v1h-2zM41 20h1v1h-1zM5 21h1v1h-1zM9 21h1v1h-1zM11 21h1v1h-1zM13 21h2v1h-2zM17 21h4v1h-4zM22 21h3v1h-3zM27 21h1v1h-1zM29 21h2v1h-2zM32 21h4v1h-4zM38 21h2v1h-2zM41 21h2v1h-2zM3 22h3v1h-3zM7 22h3v1h-3zM13 22h1v1h-1zM15 22h2v1h-2zM18 22h1v1h-1zM23 22h1v1h-1zM25 22h2v1h-2zM28 22h2v1h-2zM32 22h1v1h-1zM37 22h1v1h-1zM39 22h3v1h-3zM2 23h5v1h-5zM12 23h1v1h-1zM14 23h1v1h-1zM16 23h10v1h-10zM27 23h1v1h-1zM30 23h1v1h-1zM32 23h3v1h-3zM36 23h3v1h-3zM41 23h2v1h-2zM3 24h1v1h-1zM7 24h2v1h-2zM10 24h1v1h-1zM13 24h1v1h-1zM17 24h2v1h-2zM20 24h1v1h-1zM22 24h1v1h-1zM24 24h1v1h-1zM27 24h4v1h-4zM34 24h1v1h-1zM37 24h4v1h-4zM4 25h1v1h-1zM10 25h2v1h-2zM13 25h1v1h-1zM15 25h1v1h-1zM18 25h1v1h-1zM20 25h2v1h-2zM23 25h2v1h-2zM29 25h1v1h-1zM33 25h3v1h-3zM38 25h2v1h-2zM41 25h2v1h-2zM2 26h1v1h-1zM4 26h1v1h-1zM6 26h1v1h-1zM8 26h1v1h-1zM11 26h1v1h-1zM14 26h1v1h-1zM16 26h1v1h-1zM18 26h2v1h-2zM25 26h7v1h-7zM33 26h1v1h-1zM40 26h3v1h-3zM2 27h4v1h-4zM7 27h1v1h-1zM10 27h1v1h-1zM15 27h1v1h-1zM18 27h2v1h-2zM21 27h3v1h-3zM25 27h1v1h-1zM27 27h1v1h-1zM30 27h1v1h-1zM32 27h2v1h-2zM35 27h5v1h-5zM41 27h2v1h-2zM2 28h2v1h-2zM5 28h4v1h-4zM13 28h2v1h-2zM16 28h3v1h-3zM20 28h1v1h-1zM22 28h1v1h-1zM26 28h5v1h-5zM32 28h1v1h-1zM34 28h1v1h-1zM36 28h3v1h-3zM2 29h2v1h-2zM5 29h1v1h-1zM9 29h2v1h-2zM12 29h2v1h-2zM15 29h4v1h-4zM21 29h4v1h-4zM26 29h1v1h-1zM28 29h1v1h-1zM30 29h1v1h-1zM33 29h4v1h-4zM38 29h2v1h-2zM2 30h4v1h-4zM7 30h3v1h-3zM11 30h1v1h-1zM13 30h3v1h-3zM18 30h2v1h-2zM22 30h1v1h-1zM24 30h5v1h-5zM30 30h2v1h-2zM33 30h2v1h-2zM39 30h2v1h-2zM2 31h2v1h-2zM7 31h1v1h-1zM11 31h2v1h-2zM14 31h1v1h-1zM16 31h1v1h-1zM18 31h1v1h-1zM20 31h1v1h-1zM27 31h1v1h-1zM29 31h1v1h-1zM31 31h6v1h-6zM38 31h1v1h-1zM40 31h1v1h-1zM42 31h1v1h-1zM2 32h1v1h-1zM4 32h1v1h-1zM7 32h4v1h-4zM12 32h1v1h-1zM14 32h1v1h-1zM18 32h3v1h-3zM22 32h10v1h-10zM35 32h3v1h-3zM39 32h1v1h-1zM2 33h1v1h-1zM4 33h2v1h-2zM10 33h2v1h-2zM15 33h2v1h-2zM18 33h1v1h-1zM20 33h1v1h-1zM23 33h3v1h-3zM29 33h1v1h-1zM35 33h3v1h-3zM39 33h1v1h-1zM41 33h2v1h-2zM2 34h1v1h-1zM6 34h3v1h-3zM11 34h1v1h-1zM13 34h1v1h-1zM15 34h2v1h-2zM18 34h2v1h-2zM24 34h6v1h-6zM31 34h1v1h-1zM33 34h6v1h-6zM40 34h1v1h-1zM42 34h1v1h-1zM10 35h2v1h-2zM13 35h1v1h-1zM16 35h2v1h-2zM20 35h3v1h-3zM24 35h3v1h-3zM30 35h2v1h-2zM33 35h2v1h-2zM38 35h1v1h-1zM41 35h2v1h-2zM2 36h7v1h-7zM13 36h1v1h-1zM16 36h3v1h-3zM20 36h1v1h-1zM24 36h1v1h-1zM29 36h3v1h-3zM33 36h2v1h-2zM36 36h1v1h-1zM38 36h1v1h-1zM40 36h1v1h-1zM2 37h1v1h-1zM8 37h1v1h-1zM10 37h2v1h-2zM13 37h2v1h-2zM16 37h2v1h-2zM21 37h1v1h-1zM26 37h1v1h-1zM28 37h1v1h-1zM31 37h4v1h-4zM38 37h2v1h-2zM2 38h1v1h-1zM4 38h3v1h-3zM8 38h1v1h-1zM10 38h1v1h-1zM12 38h7v1h-7zM20 38h1v1h-1zM23 38h2v1h-2zM26 38h1v1h-1zM29 38h1v1h-1zM34 38h5v1h-5zM40 38h1v1h-1zM2 39h1v1h-1zM4 39h3v1h-3zM8 39h1v1h-1zM10 39h1v1h-1zM15 39h1v1h-1zM18 39h1v1h-1zM21 39h2v1h-2zM25 39h2v1h-2zM28 39h1v1h-1zM30 39h4v1h-4zM35 39h1v1h-1zM37 39h1v1h-1zM40 39h1v1h-1zM2 40h1v1h-1zM4 40h3v1h-3zM8 40h1v1h-1zM10 40h1v1h-1zM14 40h1v1h-1zM16 40h3v1h-3zM22 40h1v1h-1zM24 40h1v1h-1zM26 40h2v1h-2zM29 40h2v1h-2zM34 40h6v1h-6zM2 41h1v1h-1zM8 41h1v1h-1zM11 41h1v1h-1zM13 41h1v1h-1zM17 41h1v1h-1zM20 41h1v1h-1zM23 41h1v1h-1zM25 41h1v1h-1zM28 41h3v1h-3zM34 41h2v1h-2zM38 41h2v1h-2zM41 41h1v1h-1zM2 42h7v1h-7zM10 42h1v1h-1zM16 42h2v1h-2zM19 42h3v1h-3zM24 42h5v1h-5zM31 42h1v1h-1zM33 42h1v1h-1zM35 42h4v1h-4zM40 42h1v1h-1z"/></svg>
+    <p class="qr-texto">Escanea con la cámara del celular para abrir esta página</p>
+    <p class="qr-url">https://memosanchezg.github.io/programacion-basica-interactivos/semana-06-referencias.html</p>
+    <button type="button" class="qr-cerrar">Cerrar</button>
+  </div>
+</div>
+<style>
+  .qr-capa { position:fixed; top:0; right:0; bottom:0; left:0; z-index:10000; display:flex; align-items:center;
+             justify-content:center; padding:16px; background:#fff; }
+  .qr-capa[hidden] { display:none; }
+  .qr-caja { max-width:100%; text-align:center; color:#0A2A57; font:16px/1.4 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .qr-caja svg { display:block; width:min(62vh, 84vw); height:auto; margin:0 auto; }
+  .qr-texto { margin:12px 0 2px; font-size:1.15rem; font-weight:bold; }
+  .qr-url { margin:0 0 12px; color:#5B6472; word-break:break-all; }
+  .qr-cerrar { font:inherit; padding:6px 20px; border:2px solid #00408F; border-radius:4px; background:#fff;
+               color:#00408F; cursor:pointer; }
+</style>
+<script>
+  (function () {
+    var capa = document.getElementById("qr-sitio");
+    document.querySelectorAll("a.qr-abrir").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        capa.hidden = false;
+        capa.querySelector(".qr-cerrar").focus();
+      });
+    });
+    capa.addEventListener("click", function (e) {
+      if (e.target === capa || e.target.classList.contains("qr-cerrar")) capa.hidden = true;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !capa.hidden) capa.hidden = true;
+    });
+  })();
+</script>
+</body>
+</html>

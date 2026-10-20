@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="tipo" content="simulador">
+<title>Bits, ASCII y UTF-8</title>
+
+<style>
+  :root {
+    --azul:#00408F; --azul-oscuro:#0A2A57; --guinda:#8C1D35; --oro:#B8975A; --oro-texto:#8A6A2E;
+    --azul-claro:#E8EEF7; --oro-claro:#F7F1E6; --guinda-claro:#F5E6EA; --verde:#2F7D5B;
+    --tinta:#1B1F2A; --gris:#5B6472; --gris-claro:#E9ECF1; --borde:#D9DEE6; --fondo:#FFFFFF;
+    --cmd-fondo:#0C0C0C; --cmd-texto:#E6E6E6;
+    --c1:#00408F; --c2:#8C1D35; --c3:#2F7D5B; --c4:#8A6A2E; --c5:#6B3FA0;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--fondo); color:var(--tinta);
+         font:16px/1.45 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .franja { height:8px; background:var(--azul); border-bottom:3px solid var(--oro); }
+  header { max-width:1280px; margin:0 auto; padding:12px 18px 4px; }
+  .semana { color:var(--guinda); font-weight:bold; letter-spacing:.04em; font-size:.85rem; text-transform:uppercase; }
+  h1 { font-family:Cambria,Georgia,serif; color:var(--azul-oscuro); font-size:1.7rem; margin:2px 0 2px; }
+  .sub { color:var(--gris); margin:0; }
+  main { max-width:1280px; margin:0 auto; padding:8px 18px 24px; }
+  nav.pestanas { display:flex; gap:4px; flex-wrap:wrap; border-bottom:2px solid var(--gris-claro); margin:6px 0 12px; }
+  nav.pestanas button { font:inherit; font-weight:bold; border:none; background:none; color:var(--gris);
+                        padding:8px 14px; cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; }
+  nav.pestanas button.activo { color:var(--azul-oscuro); border-bottom-color:var(--azul); }
+  nav.pestanas button:focus-visible { outline:2px solid var(--azul); }
+  section.vista { display:none; }
+  section.vista.activo { display:block; }
+  .fila { display:grid; grid-template-columns:minmax(280px,420px) minmax(0,1fr); gap:16px; align-items:start; }
+  .fila > * { min-width:0; }
+  .panel { background:#fff; border:1px solid var(--borde); border-radius:10px; padding:12px 14px; min-width:0; }
+  .panel h2 { font-size:1.02rem; color:var(--azul-oscuro); margin:0 0 8px; }
+  label { display:block; font-weight:bold; color:var(--azul-oscuro); margin-top:10px; }
+  label small { font-weight:normal; color:var(--gris); }
+  input[type=number], input[type=text], select { font:inherit; padding:4px 6px; border:1px solid var(--borde); border-radius:6px; }
+  input.mono { font-family:Consolas,"Courier New",monospace; }
+  button.accion { font:inherit; font-weight:bold; border-radius:8px; padding:7px 12px; margin:8px 6px 0 0;
+                  border:1px solid var(--azul); background:#fff; color:var(--azul); cursor:pointer; }
+  button.accion:hover:not(:disabled), button.accion:focus-visible { background:var(--azul); color:#fff; outline:none; }
+  button.accion:disabled { opacity:.45; cursor:default; }
+  .lectura { background:var(--oro-claro); border-left:4px solid var(--oro); border-radius:8px; padding:10px 12px;
+             margin-top:12px; line-height:1.55; }
+  .lectura b { color:var(--azul-oscuro); }
+  .preguntas { background:var(--azul-claro); border-radius:8px; padding:10px 14px; margin-top:12px; }
+  .preguntas h3 { margin:0 0 4px; font-size:.95rem; color:var(--azul-oscuro); }
+  .preguntas ol { margin:0; padding-left:20px; }
+  .preguntas li { margin:3px 0; }
+  /* Código Python con los colores del curso (minted, estilo borland) y salida de consola (cmd). */
+  .codigo { border:1px solid var(--tinta); background:#fff; font:15px/1.5 Consolas,"Courier New",monospace;
+            overflow-x:auto; margin:8px 0; }
+  .codigo ol { margin:0; padding:8px 12px 8px 3.4em; }
+  .codigo li { white-space:pre; }
+  .codigo li::marker { color:var(--gris); font:11px Cambria,Georgia,serif; }
+  .codigo .kw { color:#000080; font-weight:bold; }
+  .codigo .str, .codigo .num { color:#0000FF; }
+  .codigo .com { color:#008800; font-style:italic; }
+  .codigo .marca { background:var(--oro-claro); outline:1px solid var(--oro); }
+  .consola { background:var(--cmd-fondo); color:var(--cmd-texto); font:15px/1.45 Consolas,"Courier New",monospace;
+             white-space:pre; overflow-x:auto; padding:8px 12px; border-radius:4px; margin:8px 0; min-height:2.2em; }
+  footer { max-width:1280px; margin:0 auto; padding:6px 18px 18px; color:var(--gris); font-size:.85rem; }
+  footer a { color:var(--azul); }
+  @media (max-width: 860px) { .fila { grid-template-columns:1fr; } }
+
+  /* Propios de este simulador */
+  [hidden] { display:none !important; }
+  code { font-family:Consolas,"Courier New",monospace; color:var(--azul-oscuro); }
+  .bits { display:grid; grid-template-columns:repeat(8, minmax(0,1fr)); gap:4px; margin:6px 0; }
+  .bits button { font:inherit; border:2px solid var(--azul-oscuro); border-radius:8px; background:#fff; color:var(--azul-oscuro);
+                 padding:4px 0 6px; cursor:pointer; display:flex; flex-direction:column; align-items:center; min-width:0; }
+  .bits button .v { font-size:.78rem; color:var(--gris); }
+  .bits button .b { font:bold 1.5rem/1.1 Consolas,"Courier New",monospace; }
+  .bits button[aria-pressed="true"] { background:var(--azul); color:#fff; border-color:var(--azul); }
+  .bits button[aria-pressed="true"] .v { color:#DDE6F3; }
+  .bits button:focus-visible { outline:3px solid var(--oro); outline-offset:1px; }
+  .potencias { display:grid; grid-template-columns:repeat(8, minmax(0,1fr)); gap:4px; text-align:center; font-size:.8rem; color:var(--gris); }
+  .suma { font:bold 1.15rem Cambria,Georgia,serif; color:var(--azul-oscuro); margin:8px 0 0; overflow-wrap:anywhere; }
+  .numero { display:flex; flex-wrap:wrap; gap:6px 10px; align-items:flex-end; }
+  .numero input[type=number] { width:6.5em; font-size:1.1rem; }
+  .numero .rapidos button.accion { margin:0; padding:5px 10px; }
+  table.div { border-collapse:collapse; margin-top:6px; font-size:.95rem; }
+  table.div th, table.div td { border:1px solid var(--borde); padding:2px 10px; text-align:center; }
+  table.div th { background:var(--gris-claro); color:var(--azul-oscuro); }
+  table.div td.res { font-weight:bold; color:var(--guinda); }
+  .flecha-res { color:var(--gris); font-size:.9rem; }
+  .entrada-texto { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  .entrada-texto input { flex:1 1 220px; min-width:0; font-size:1.15rem; }
+  .ejemplos { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  .ejemplos button { font:inherit; border:1px solid var(--borde); border-radius:999px; background:#fff; padding:2px 12px; cursor:pointer; color:var(--azul-oscuro); }
+  .ejemplos button:hover, .ejemplos button:focus-visible { border-color:var(--azul); outline:none; background:var(--azul-claro); }
+  .tabla-scroll { overflow-x:auto; margin-top:8px; }
+  table.chars { border-collapse:collapse; font-size:.95rem; min-width:100%; }
+  table.chars th, table.chars td { border:1px solid var(--borde); padding:3px 7px; text-align:left; vertical-align:middle; white-space:nowrap; }
+  table.chars th { background:var(--gris-claro); color:var(--azul-oscuro); }
+  table.chars td.car { font-size:1.35rem; text-align:center; }
+  table.chars td.car small { font-size:.8rem; color:var(--gris); }
+  table.chars td.mono, .mono { font-family:Consolas,"Courier New",monospace; }
+  .byte { display:inline-block; border-radius:4px; padding:0 4px; color:#fff; font:bold 14px/1.5 Consolas,"Courier New",monospace; margin:1px; }
+  .bitsb { font:14px/1.5 Consolas,"Courier New",monospace; margin-right:6px; }
+  .bitsb .pref { color:var(--guinda); font-weight:bold; text-decoration:underline; }
+  .tira { display:flex; flex-wrap:wrap; gap:2px; margin-top:6px; }
+  .resumen-len { display:flex; flex-wrap:wrap; gap:8px 18px; margin-top:8px; }
+  .resumen-len div { background:var(--gris-claro); border-radius:8px; padding:6px 12px; }
+  .resumen-len b { font:bold 1.3rem Cambria,Georgia,serif; color:var(--azul-oscuro); }
+  .nota { color:var(--gris); font-size:.92rem; margin:6px 0 0; }
+  .aviso { background:var(--guinda-claro); border-left:4px solid var(--guinda); border-radius:8px; padding:8px 10px; margin-top:8px; }
+  .opciones-moji { display:flex; flex-wrap:wrap; gap:6px 16px; align-items:center; margin-top:8px; }
+  .opciones-moji label { margin:0; font-weight:normal; color:var(--tinta); }
+  .opciones-moji select { font-size:1rem; }
+  @media (max-width: 480px) {
+    header { padding:10px 12px 4px; }
+    main { padding:8px 10px 20px; }
+    footer { padding:6px 12px 16px; }
+    .panel { padding:10px; }
+    h1 { font-size:1.45rem; }
+    .codigo, .consola { font-size:13px; }
+    .bits button .b { font-size:1.2rem; }
+    .bits button .v { font-size:.7rem; }
+    nav.pestanas button { padding:8px 10px; }
+  }
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header>
+  <div class="semana">Semana 01 · La programación como disciplina formal</div>
+  <h1>Bits, ASCII y UTF-8</h1>
+  <p class="sub">Prende y apaga bits para formar números, mira cuántos bytes ocupa cada letra en UTF-8 y descubre por qué a veces la ñ de "año" aparece como dos caracteres raros.</p>
+</header>
+<main>
+  <nav class="pestanas" role="tablist" aria-label="Secciones">
+    <button type="button" class="activo" data-vista="v-binario" role="tab" aria-selected="true">Binario y decimal</button>
+    <button type="button" data-vista="v-texto" role="tab" aria-selected="false">Texto y UTF-8</button>
+    <button type="button" data-vista="v-moji" role="tab" aria-selected="false">Mojibake</button>
+  </nav>
+
+  <section class="vista activo" id="v-binario" role="tabpanel" aria-label="Binario y decimal">
+    <div class="fila">
+      <div class="panel">
+        <h2>Un byte: 8 bits</h2>
+        <p class="nota" style="margin-top:0">Toca un bit para prenderlo (1) o apagarlo (0). Cada uno vale una potencia de 2.</p>
+        <div class="bits" id="bits" role="group" aria-label="Los 8 bits, del de 128 al de 1"></div>
+        <div class="potencias" aria-hidden="true"><span>2⁷</span><span>2⁶</span><span>2⁵</span><span>2⁴</span><span>2³</span><span>2²</span><span>2¹</span><span>2⁰</span></div>
+        <p class="suma" id="suma" aria-live="polite"></p>
+        <div class="numero">
+          <div>
+            <label for="decimal">En decimal <small>(0 a 255)</small></label>
+            <input id="decimal" type="number" min="0" max="255" step="1" value="65">
+          </div>
+          <div class="rapidos">
+            <button type="button" class="accion" id="menos" aria-label="Restar 1">−1</button>
+            <button type="button" class="accion" id="mas" aria-label="Sumar 1">+1</button>
+            <button type="button" class="accion" id="por2" aria-label="Multiplicar por 2">×2</button>
+            <button type="button" class="accion" id="entre2" aria-label="Dividir entre 2 (división entera)">÷2</button>
+          </div>
+        </div>
+        <div class="lectura" id="lecturaBin"></div>
+      </div>
+      <div class="panel">
+        <h2>De decimal a binario: divisiones entre 2</h2>
+        <div class="tabla-scroll"><table class="div" id="divisiones"></table></div>
+        <p class="flecha-res" id="leerRes"></p>
+        <h2 style="margin-top:14px">El código en Python</h2>
+        <div id="codigoBin"></div>
+        <div class="consola" id="salidaBin" aria-label="Lo que imprime"></div>
+        <div class="preguntas">
+          <h3>Para explorar</h3>
+          <ol>
+            <li>¿Cuál es el número más grande que cabe en 8 bits? ¿Cuántos números distintos se pueden formar?</li>
+            <li>Mira solo el bit de 1: ¿cómo sabes si un número es par sin dividir?</li>
+            <li>Forma 65 ('A') y luego 97 ('a'). ¿Qué bit cambió?</li>
+            <li>Usa ×2 varias veces desde 3. ¿Qué les pasa a los bits?</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="vista" id="v-texto" role="tabpanel" aria-label="Texto y UTF-8">
+    <div class="panel">
+      <label for="texto" style="margin-top:0">Escribe un texto</label>
+      <div class="entrada-texto">
+        <input id="texto" type="text" maxlength="40" value="Niño €" spellcheck="false" autocomplete="off">
+      </div>
+      <div class="ejemplos" id="ejemplos" aria-label="Ejemplos">
+        <button type="button" data-t="Hola">Hola</button>
+        <button type="button" data-t="ñ">ñ</button>
+        <button type="button" data-t="á">á</button>
+        <button type="button" data-t="€">€</button>
+        <button type="button" data-t="😀">😀</button>
+        <button type="button" data-t="año">año</button>
+        <button type="button" data-t="Hólá">Hólá</button>
+        <button type="button" data-t="👍🏽">👍🏽</button>
+      </div>
+      <div class="resumen-len" id="lens"></div>
+      <div class="tabla-scroll"><table class="chars" id="chars"></table></div>
+      <p class="nota">Los bits marcados en guinda son las marcas de UTF-8: el primer byte dice cuántos bytes tiene el carácter (110 = 2, 1110 = 3, 11110 = 4) y los siguientes empiezan con 10.</p>
+      <h2 style="margin-top:12px">Los bytes, en orden</h2>
+      <div class="tira" id="tira" aria-label="Los bytes de UTF-8 en orden"></div>
+    </div>
+    <div class="fila" style="margin-top:16px">
+      <div class="panel">
+        <h2>El código en Python <small style="font-weight:normal;color:var(--gris)">(texto.py)</small></h2>
+        <div id="codigoTexto"></div>
+      </div>
+      <div class="panel">
+        <h2>En la terminal</h2>
+        <div class="consola" id="salidaTexto" aria-label="Lo que muestra la terminal"></div>
+        <div id="avisoTexto"></div>
+        <div class="preguntas">
+          <h3>Para explorar</h3>
+          <ol>
+            <li>Escribe "Hola" y luego "Hólá". ¿Por qué <code>len(texto)</code> no cambia y <code>len(datos)</code> sí?</li>
+            <li>¿Cuántos bytes ocupan ñ, € y un emoji? ¿Con qué bits empieza el primer byte de cada uno?</li>
+            <li>Prueba 👍🏽. ¿Cuántos caracteres cuenta Python? ¿Por qué?</li>
+            <li>En <code>b'Ni\xc3\xb1o'</code>, ¿por qué la N, la i y la o se ven como letras y la ñ no?</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="vista" id="v-moji" role="tabpanel" aria-label="Mojibake">
+    <div class="fila">
+      <div class="panel">
+        <h2>Bytes leídos con la codificación equivocada</h2>
+        <p style="margin:0">Un programa guardó tu texto en UTF-8, pero otro programa lo leyó como si fuera de otra codificación. Los bytes están bien: lo que está mal es cómo se leen. A eso se le llama <i>mojibake</i>.</p>
+        <label for="textoMoji">Tu texto</label>
+        <div class="entrada-texto"><input id="textoMoji" type="text" maxlength="30" value="año" spellcheck="false" autocomplete="off"></div>
+        <div class="ejemplos" id="ejemplosMoji" aria-label="Ejemplos">
+          <button type="button" data-t="año">año</button>
+          <button type="button" data-t="Canción">Canción</button>
+          <button type="button" data-t="€">€</button>
+          <button type="button" data-t="Ángel">Ángel</button>
+          <button type="button" data-t="ÍNDICE">ÍNDICE</button>
+          <button type="button" data-t="π">π</button>
+        </div>
+        <div class="opciones-moji">
+          <label for="codec">Se leyó como</label>
+          <select id="codec">
+            <option value="cp1252">cp1252 (el de Windows)</option>
+            <option value="latin-1">latin-1</option>
+          </select>
+          <label><input type="checkbox" id="dosVeces"> Romperlo dos veces</label>
+        </div>
+        <div class="lectura" id="lecturaMoji"></div>
+      </div>
+      <div class="panel">
+        <h2>El código en Python <small style="font-weight:normal;color:var(--gris)">(mojibake.py)</small></h2>
+        <div id="codigoMoji"></div>
+        <h2>En la terminal</h2>
+        <div class="consola" id="salidaMoji" aria-label="Lo que muestra la terminal"></div>
+        <div id="avisoMoji"></div>
+        <div class="preguntas">
+          <h3>Para explorar</h3>
+          <ol>
+            <li>¿Por qué la ñ de "año" se convierte justamente en esos dos caracteres? Compara con los bytes de la pestaña anterior.</li>
+            <li>Prueba "Ángel" con cp1252 y con latin-1. ¿Qué pasa y por qué?</li>
+            <li>Rómpelo dos veces. ¿Se puede arreglar? ¿Cómo?</li>
+            <li>¿Qué debe hacer tu programa al leer un archivo para no producir mojibake?</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<footer>
+  Programación Básica · FCFM-UANL · funciona sin internet. Lo que se muestra como salida es lo que imprime Python 3.12.
+  <a href="index.html">Índice de simuladores</a> · <a href="#qr-sitio" class="qr-abrir">Abrir en el celular (QR)</a>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(t) {
+    return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  // ==== NÚCLEO (sin DOM): lo mismo que hace Python 3.12 ====
+  function hex2(n) { return (n < 16 ? "0" : "") + n.toString(16); }
+  function pyBin(n) { return "0b" + n.toString(2); }                          // bin(n), n >= 0
+  function pyFormato8b(n) { var s = n.toString(2); while (s.length < 8) s = "0" + s; return s; }   // format(n, "08b")
+  function pyIntBase2(s) { return parseInt(s, 2); }                           // int(s, 2) de 0 y 1
+  function puntos(s) { return Array.from(s).map(function (c) { return c.codePointAt(0); }); }
+  function utf8(cp) {
+    if (cp < 0x80) return [cp];
+    if (cp < 0x800) return [0xC0 | (cp >> 6), 0x80 | (cp & 0x3F)];
+    if (cp < 0x10000) return [0xE0 | (cp >> 12), 0x80 | ((cp >> 6) & 0x3F), 0x80 | (cp & 0x3F)];
+    return [0xF0 | (cp >> 18), 0x80 | ((cp >> 12) & 0x3F), 0x80 | ((cp >> 6) & 0x3F), 0x80 | (cp & 0x3F)];
+  }
+  function tieneSurrogate(s) { return puntos(s).some(function (cp) { return cp >= 0xD800 && cp <= 0xDFFF; }); }
+  function codificarUtf8(s) {                     // texto.encode("utf-8") de un texto sin surrogates
+    var bytes = [];
+    puntos(s).forEach(function (cp) { bytes = bytes.concat(utf8(cp)); });
+    return bytes;
+  }
+  function reprBytes(bytes) {                     // repr(b'...')
+    var tieneSimple = bytes.indexOf(39) >= 0, tieneDoble = bytes.indexOf(34) >= 0;
+    var q = tieneSimple && !tieneDoble ? '"' : "'", r = "";
+    bytes.forEach(function (b) {
+      if (b === 92) r += "\\\\";
+      else if (b === q.charCodeAt(0)) r += "\\" + q;
+      else if (b === 9) r += "\\t";
+      else if (b === 10) r += "\\n";
+      else if (b === 13) r += "\\r";
+      else if (b >= 32 && b < 127) r += String.fromCharCode(b);
+      else r += "\\x" + hex2(b);
+    });
+    return "b" + q + r + q;
+  }
+  function reprLista(bytes) { return "[" + bytes.join(", ") + "]"; }
+  // ¿Python lo imprime tal cual en un repr? (exacto para U+0000 a U+00FF y para los caracteres de cp1252)
+  function imprimibleLatin(cp) { return !(cp < 32 || (cp >= 127 && cp <= 160) || cp === 173); }
+  function reprStrLatin(s) {                      // repr() de un texto con caracteres de Latin-1 o cp1252
+    var q = (s.indexOf("'") >= 0 && s.indexOf('"') < 0) ? '"' : "'", r = "";
+    puntos(s).forEach(function (cp) {
+      var c = String.fromCodePoint(cp);
+      if (c === "\\") r += "\\\\";
+      else if (c === q) r += "\\" + q;
+      else if (cp === 10) r += "\\n";
+      else if (cp === 13) r += "\\r";
+      else if (cp === 9) r += "\\t";
+      else if (cp <= 0xFF && !imprimibleLatin(cp)) r += "\\x" + hex2(cp);
+      else r += c;
+    });
+    return q + r + q;
+  }
+  // cp1252: 0x80-0x9F (los demás bytes valen lo mismo que en Latin-1)
+  var CP1252 = [0x20AC, -1, 0x201A, 0x0192, 0x201E, 0x2026, 0x2020, 0x2021, 0x02C6, 0x2030, 0x0160, 0x2039, 0x0152, -1, 0x017D, -1,
+                -1, 0x2018, 0x2019, 0x201C, 0x201D, 0x2022, 0x2013, 0x2014, 0x02DC, 0x2122, 0x0161, 0x203A, 0x0153, -1, 0x017E, 0x0178];
+  function decodificar(bytes, codec) {            // bytes.decode("latin-1" o "cp1252") -> {texto} o {error, posicion}
+    var t = "";
+    for (var i = 0; i < bytes.length; i++) {
+      var b = bytes[i], cp = b;
+      if (codec === "cp1252" && b >= 0x80 && b <= 0x9F) {
+        cp = CP1252[b - 0x80];
+        if (cp < 0) return { error: "UnicodeDecodeError: 'charmap' codec can't decode byte 0x" + hex2(b) + " in position " + i + ": character maps to <undefined>", posicion: i, byte: b };
+      }
+      t += String.fromCodePoint(cp);
+    }
+    return { texto: t };
+  }
+  function codificar(s, codec) {                  // s.encode("latin-1" o "cp1252") de un texto que salió de decodificar
+    return puntos(s).map(function (cp) {
+      if (cp <= 0xFF) return cp;
+      return 0x80 + CP1252.indexOf(cp);
+    });
+  }
+  function decodificarUtf8(bytes) {               // bytes.decode("utf-8") de bytes válidos
+    var t = "", i = 0;
+    while (i < bytes.length) {
+      var b = bytes[i], cp, n;
+      if (b < 0x80) { cp = b; n = 1; }
+      else if (b < 0xE0) { cp = ((b & 0x1F) << 6) | (bytes[i + 1] & 0x3F); n = 2; }
+      else if (b < 0xF0) { cp = ((b & 0x0F) << 12) | ((bytes[i + 1] & 0x3F) << 6) | (bytes[i + 2] & 0x3F); n = 3; }
+      else { cp = ((b & 0x07) << 18) | ((bytes[i + 1] & 0x3F) << 12) | ((bytes[i + 2] & 0x3F) << 6) | (bytes[i + 3] & 0x3F); n = 4; }
+      t += String.fromCodePoint(cp);
+      i += n;
+    }
+    return t;
+  }
+  var RUTA = "C:\\Users\\alumno\\Documents\\programacion\\";
+  var CODEC_PY = "C:\\Users\\alumno\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\encodings\\cp1252.py";
+  function programaMoji(codec, dos) {
+    var l = ['texto = input("Texto: ")', 'datos = texto.encode("utf-8")', 'roto = datos.decode("' + codec + '")', "print(roto)"];
+    if (dos) l.push('roto2 = roto.encode("utf-8").decode("' + codec + '")', "print(roto2)",
+                    'arreglado = roto2.encode("' + codec + '").decode("utf-8").encode("' + codec + '").decode("utf-8")', "print(arreglado)");
+    else l.push('arreglado = roto.encode("' + codec + '").decode("utf-8")', "print(arreglado)");
+    return l.join("\n") + "\n";
+  }
+  function tracebackCp1252(linea, codigo, carets, error) {
+    return "Traceback (most recent call last):\n" +
+      '  File "' + RUTA + 'mojibake.py", line ' + linea + ", in <module>\n    " + codigo + "\n    " + carets + "\n" +
+      '  File "' + CODEC_PY + '", line 15, in decode\n    return codecs.charmap_decode(input,errors,decoding_table)\n' +
+      "           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n" + error + "\ndecoding with 'cp1252' codec failed\n";
+  }
+  // Lo que muestra la terminal al correr mojibake.py con ese texto
+  function correrMoji(texto, codec, dos) {
+    var r = { consola: "Texto: " + texto + "\n", textos: [], error: null, arreglado: null };   // textos: los textos rotos
+    var datos = codificarUtf8(texto), d1 = decodificar(datos, codec);
+    if (d1.error) {
+      r.error = d1; r.lineaError = 3;
+      r.consola += tracebackCp1252(3, 'roto = datos.decode("cp1252")', "       ^^^^^^^^^^^^^^^^^^^^^^", d1.error);
+      return r;
+    }
+    r.consola += d1.texto + "\n"; r.textos.push(d1.texto);
+    var ultimo = d1.texto;
+    if (dos) {
+      var d2 = decodificar(codificarUtf8(d1.texto), codec);
+      if (d2.error) {
+        r.error = d2; r.lineaError = 5;
+        r.consola += tracebackCp1252(5, 'roto2 = roto.encode("utf-8").decode("cp1252")', "        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^", d2.error);
+        return r;
+      }
+      r.consola += d2.texto + "\n"; r.textos.push(d2.texto);
+      ultimo = decodificarUtf8(codificar(d2.texto, codec));
+    }
+    r.arreglado = decodificarUtf8(codificar(ultimo, codec));
+    r.consola += r.arreglado + "\n";
+    return r;
+  }
+  // Lo que muestra la terminal al correr texto.py
+  function correrTexto(texto) {
+    var datos = codificarUtf8(texto);
+    return "Texto: " + texto + "\n" + puntos(texto).length + "\n" + reprBytes(datos) + "\n" + datos.length + "\n" + reprLista(datos) + "\n";
+  }
+  // repr de chr(n) para 0 <= n <= 255
+  function reprChr(n) { return reprStrLatin(String.fromCodePoint(n)); }
+  // ==== FIN DEL NÚCLEO ====
+
+  // ---------- Código Python con los colores del curso ----------
+  var PY_KW = /^(False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)$/;
+  function pyResaltar(linea) {
+    var html = "", i = 0, m, resto;
+    while (i < linea.length) {
+      resto = linea.slice(i);
+      if ((m = /^#.*/.exec(resto))) { html += '<span class="com">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[rRbBfFuU]{0,2}("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/.exec(resto))) { html += '<span class="str">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[A-Za-z_À-ɏ][\wÀ-ɏ]*/.exec(resto))) { html += PY_KW.test(m[0]) ? '<span class="kw">' + m[0] + "</span>" : esc(m[0]); }
+      else if ((m = /^(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?j?/.exec(resto))) { html += '<span class="num">' + m[0] + "</span>"; }
+      else { m = [resto[0]]; html += esc(m[0]); }
+      i += m[0].length;
+    }
+    return html;
+  }
+  function mostrarCodigo(el, codigo, marcar) {
+    var lineas = codigo.replace(/\n$/, "").split("\n");
+    el.innerHTML = '<div class="codigo"><ol>' + lineas.map(function (l, k) {
+      return "<li" + (marcar === k + 1 ? ' class="marca"' : "") + ">" + (pyResaltar(l) || " ") + "</li>";
+    }).join("") + "</ol></div>";
+  }
+
+  // ---------- Pestañas ----------
+  document.querySelectorAll("nav.pestanas button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      document.querySelectorAll("nav.pestanas button").forEach(function (x) { x.classList.remove("activo"); x.setAttribute("aria-selected", "false"); });
+      document.querySelectorAll("section.vista").forEach(function (x) { x.classList.remove("activo"); });
+      b.classList.add("activo"); b.setAttribute("aria-selected", "true");
+      $(b.dataset.vista).classList.add("activo");
+    });
+  });
+
+  // ---------- Pestaña 1: binario y decimal ----------
+  var VALORES = [128, 64, 32, 16, 8, 4, 2, 1];
+  $("bits").innerHTML = VALORES.map(function (v) {
+    return '<button type="button" data-v="' + v + '" aria-pressed="false" aria-label="Bit de ' + v + '"><span class="v">' + v + '</span><span class="b">0</span></button>';
+  }).join("");
+  var n = 65;
+  function pintarBinario() {
+    document.querySelectorAll("#bits button").forEach(function (b) {
+      var on = (n & Number(b.dataset.v)) !== 0;
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+      b.querySelector(".b").textContent = on ? "1" : "0";
+    });
+    if (Number($("decimal").value) !== n) $("decimal").value = n;
+    var prendidos = VALORES.filter(function (v) { return n & v; });
+    $("suma").textContent = prendidos.length ? prendidos.join(" + ") + " = " + n : "Ningún bit prendido: 0";
+    $("menos").disabled = n === 0; $("mas").disabled = n === 255;
+    $("por2").disabled = n * 2 > 255; $("entre2").disabled = n === 0;
+    var b8 = pyFormato8b(n);
+    var ascii = n < 128 ? "Es un código <b>ASCII</b> (0 a 127)." :
+      "Ya no es ASCII (llega hasta 127). Como carácter Unicode sí existe, pero en UTF-8 ocupa 2 bytes.";
+    $("lecturaBin").innerHTML = "<b>" + n + "</b> en binario es <b>" + b8 + "</b>; " + "<code>bin(" + n + ")</code> quita los ceros de la izquierda: <code>" +
+      esc(pyStr2(pyBin(n))) + "</code>.<br>Si este byte fuera texto: <code>chr(" + n + ")</code> es <code>" + esc(reprChr(n)) + "</code>. " + ascii;
+    // Divisiones entre 2
+    var filas = [], x = n;
+    if (x === 0) filas.push([0, 0, 0]);
+    while (x > 0) { filas.push([x, Math.floor(x / 2), x % 2]); x = Math.floor(x / 2); }
+    $("divisiones").innerHTML = "<thead><tr><th>División</th><th>Cociente</th><th>Residuo</th></tr></thead><tbody>" + filas.map(function (f) {
+      return "<tr><td>" + f[0] + " ÷ 2</td><td>" + f[1] + '</td><td class="res">' + f[2] + "</td></tr>";
+    }).join("") + "</tbody>";
+    $("leerRes").textContent = n === 0 ? "El 0 es 0 en cualquier base." :
+      "Leyendo los residuos de abajo hacia arriba: " + n.toString(2) + " (con ceros a la izquierda, " + b8 + ").";
+    mostrarCodigo($("codigoBin"), "n = " + n + "\nprint(bin(n))\nprint(format(n, \"08b\"))\nprint(int(\"" + b8 + "\", 2))\n");
+    $("salidaBin").textContent = pyBin(n) + "\n" + b8 + "\n" + pyIntBase2(b8);
+  }
+  function pyStr2(s) { return "'" + s + "'"; }
+  $("bits").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-v]");
+    if (!b) return;
+    n = n ^ Number(b.dataset.v);
+    pintarBinario();
+  });
+  $("decimal").addEventListener("input", function () {
+    var v = Number($("decimal").value);
+    if (Number.isInteger(v) && v >= 0 && v <= 255) { n = v; pintarBinario(); }
+  });
+  $("decimal").addEventListener("change", function () { $("decimal").value = n; });
+  $("menos").addEventListener("click", function () { if (n > 0) { n--; pintarBinario(); } });
+  $("mas").addEventListener("click", function () { if (n < 255) { n++; pintarBinario(); } });
+  $("por2").addEventListener("click", function () { if (n * 2 <= 255) { n *= 2; pintarBinario(); } });
+  $("entre2").addEventListener("click", function () { n = Math.floor(n / 2); pintarBinario(); });
+
+  // ---------- Pestaña 2: texto y UTF-8 ----------
+  var COLORES = ["var(--c1)", "var(--c2)", "var(--c3)", "var(--c4)", "var(--c5)"];
+  var RE_MARCA = /\p{M}/u, RE_INVISIBLE = /[\p{Cf}\p{Cc}\p{Zl}\p{Zp}]/u, RE_ESPACIO = /\p{Zs}/u;
+  function mostrarCaracter(cp) {
+    var c = String.fromCodePoint(cp);
+    if (cp === 32) return "<small>(espacio)</small>";
+    if (RE_ESPACIO.test(c)) return "<small>(otro espacio)</small>";
+    if (cp >= 0xD800 && cp <= 0xDFFF) return "<small>(incompleto)</small>";
+    if (RE_INVISIBLE.test(c)) return "<small>(invisible)</small>";
+    if (RE_MARCA.test(c)) return "◌" + esc(c);
+    return esc(c);
+  }
+  function bitsConMarcas(b, k, total) {
+    var s = pyFormato8b(b), pref = total === 1 ? 1 : (k === 0 ? total + 1 : 2);
+    return '<span class="bitsb"><span class="pref">' + s.slice(0, pref) + "</span>" + s.slice(pref) + "</span>";
+  }
+  function pintarTexto() {
+    var texto = $("texto").value;
+    if (tieneSurrogate(texto)) {
+      $("avisoTexto").innerHTML = '<div class="aviso">Ese texto trae un carácter incompleto (una mitad de emoji suelta) que no se puede escribir en el teclado. Bórralo o escribe otro texto.</div>';
+      $("salidaTexto").textContent = ""; $("chars").innerHTML = ""; $("tira").innerHTML = ""; $("lens").innerHTML = "";
+      return;
+    }
+    $("avisoTexto").innerHTML = "";
+    var cps = puntos(texto), datos = codificarUtf8(texto);
+    $("lens").innerHTML = "<div><code>len(texto)</code> = <b>" + cps.length + "</b> caracteres</div><div><code>len(datos)</code> = <b>" + datos.length + "</b> bytes</div>";
+    $("chars").innerHTML = "<thead><tr><th>Carácter</th><th><code>ord</code></th><th><code>hex(ord)</code></th><th>¿ASCII?</th><th>Bytes en UTF-8</th><th>Bits</th></tr></thead><tbody>" +
+      (cps.length ? cps.map(function (cp, k) {
+        var bs = utf8(cp), color = COLORES[k % COLORES.length];
+        return '<tr><td class="car">' + mostrarCaracter(cp) + '</td><td class="mono">' + cp + '</td><td class="mono">0x' + cp.toString(16) + "</td><td>" +
+          (cp < 128 ? "sí" : "no") + "</td><td>" + bs.map(function (b) { return '<span class="byte" style="background:' + color + '">' + hex2(b) + "</span>"; }).join("") +
+          " <small>(" + bs.length + (bs.length === 1 ? " byte" : " bytes") + ")</small></td><td>" + bs.map(function (b, j) { return bitsConMarcas(b, j, bs.length); }).join("") + "</td></tr>";
+      }).join("") : '<tr><td colspan="6">Escribe algo arriba.</td></tr>') + "</tbody>";
+    var tira = [];
+    cps.forEach(function (cp, k) {
+      utf8(cp).forEach(function (b) { tira.push('<span class="byte" style="background:' + COLORES[k % COLORES.length] + '">' + hex2(b) + "</span>"); });
+    });
+    $("tira").innerHTML = tira.join("") || '<span class="nota">(ningún byte)</span>';
+    mostrarCodigo($("codigoTexto"), 'texto = input("Texto: ")\nprint(len(texto))\ndatos = texto.encode("utf-8")\nprint(datos)\nprint(len(datos))\nprint(list(datos))\n');
+    $("salidaTexto").textContent = correrTexto(texto).replace(/\n$/, "");
+  }
+  $("texto").addEventListener("input", pintarTexto);
+  $("ejemplos").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-t]");
+    if (b) { $("texto").value = b.dataset.t; pintarTexto(); }
+  });
+
+  // ---------- Pestaña 3: mojibake ----------
+  function pintarMoji() {
+    var texto = $("textoMoji").value, codec = $("codec").value, dos = $("dosVeces").checked;
+    var prog = programaMoji(codec, dos);
+    if (tieneSurrogate(texto)) {
+      mostrarCodigo($("codigoMoji"), prog);
+      $("salidaMoji").textContent = "";
+      $("avisoMoji").innerHTML = '<div class="aviso">Ese texto trae un carácter incompleto que no se puede escribir en el teclado. Bórralo o escribe otro texto.</div>';
+      $("lecturaMoji").innerHTML = "";
+      return;
+    }
+    var r = correrMoji(texto, codec, dos);
+    mostrarCodigo($("codigoMoji"), prog, r.error ? r.lineaError : null);
+    $("salidaMoji").textContent = r.consola.replace(/\n$/, "");
+    var datos = codificarUtf8(texto), aviso = "";
+    var invisibles = r.textos.filter(function (t) { return puntos(t).some(function (cp) { return cp <= 0xFF && !imprimibleLatin(cp); }); });
+    if (invisibles.length) {
+      aviso = '<div class="aviso">Ojo: lo que se imprimió trae caracteres que no se ven (de control o espacios especiales). Con <code>repr()</code> Python los muestra: ' +
+        invisibles.map(function (t) { return "<code>" + esc(reprStrLatin(t)) + "</code>"; }).join(" y ") + ".</div>";
+    }
+    $("avisoMoji").innerHTML = aviso;
+    var lect = "<b>Bytes en UTF-8:</b> <code>" + esc(reprBytes(datos)) + "</code><br>";
+    if (r.error) {
+      lect += "<b>¡Error!</b> El byte <code>0x" + hex2(r.error.byte) + "</code> no existe en cp1252: no hay ningún carácter para él, así que Python se detiene con <code>UnicodeDecodeError</code>." +
+        (codec === "cp1252" ? " Prueba el mismo texto con latin-1." : "");
+    } else {
+      lect += "<b>Leídos como " + esc(codec) + ":</b> cada byte se volvió un carácter: <code>" + esc(r.textos[0]) + "</code> (" + puntos(r.textos[0]).length + " caracteres en vez de " + puntos(texto).length + ")." +
+        (dos ? " Al romperlo otra vez, cada carácter roto vuelve a convertirse en 2 o 3." : "") +
+        "<br><b>Para arreglarlo</b> se deshace el camino: se vuelve a codificar con " + esc(codec) + " y se decodifica con UTF-8" + (dos ? ", dos veces." : ".");
+    }
+    $("lecturaMoji").innerHTML = lect;
+  }
+  $("textoMoji").addEventListener("input", pintarMoji);
+  $("codec").addEventListener("change", pintarMoji);
+  $("dosVeces").addEventListener("change", pintarMoji);
+  $("ejemplosMoji").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-t]");
+    if (b) { $("textoMoji").value = b.dataset.t; pintarMoji(); }
+  });
+
+  pintarBinario();
+  pintarTexto();
+  pintarMoji();
+})();
+</script>
+<div id="qr-sitio" class="qr-capa" hidden>
+  <div class="qr-caja" role="dialog" aria-modal="true" aria-label="Código QR de esta página">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 45" role="img" aria-label="Código QR de https://memosanchezg.github.io/programacion-basica-interactivos/semana-01-bits-y-texto.html" shape-rendering="crispEdges"><rect width="45" height="45" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM17 2h1v1h-1zM19 2h1v1h-1zM21 2h7v1h-7zM30 2h1v1h-1zM33 2h2v1h-2zM36 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM11 3h3v1h-3zM15 3h1v1h-1zM17 3h1v1h-1zM19 3h1v1h-1zM23 3h1v1h-1zM26 3h5v1h-5zM34 3h1v1h-1zM36 3h1v1h-1zM42 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM10 4h1v1h-1zM15 4h1v1h-1zM18 4h3v1h-3zM22 4h3v1h-3zM26 4h2v1h-2zM29 4h2v1h-2zM32 4h3v1h-3zM36 4h1v1h-1zM38 4h3v1h-3zM42 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h1v1h-1zM13 5h2v1h-2zM17 5h2v1h-2zM23 5h1v1h-1zM26 5h1v1h-1zM28 5h1v1h-1zM31 5h1v1h-1zM33 5h2v1h-2zM36 5h1v1h-1zM38 5h3v1h-3zM42 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM15 6h3v1h-3zM20 6h2v1h-2zM24 6h2v1h-2zM30 6h5v1h-5zM36 6h1v1h-1zM38 6h3v1h-3zM42 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h2v1h-2zM13 7h3v1h-3zM17 7h1v1h-1zM22 7h1v1h-1zM26 7h1v1h-1zM29 7h2v1h-2zM34 7h1v1h-1zM36 7h1v1h-1zM42 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM30 8h1v1h-1zM32 8h1v1h-1zM34 8h1v1h-1zM36 8h7v1h-7zM10 9h2v1h-2zM13 9h1v1h-1zM16 9h3v1h-3zM20 9h1v1h-1zM23 9h1v1h-1zM25 9h2v1h-2zM28 9h1v1h-1zM33 9h2v1h-2zM2 10h1v1h-1zM4 10h5v1h-5zM11 10h1v1h-1zM13 10h2v1h-2zM17 10h3v1h-3zM22 10h1v1h-1zM24 10h1v1h-1zM27 10h3v1h-3zM31 10h1v1h-1zM36 10h5v1h-5zM2 11h3v1h-3zM19 11h5v1h-5zM25 11h1v1h-1zM27 11h1v1h-1zM30 11h1v1h-1zM32 11h3v1h-3zM36 11h3v1h-3zM40 11h1v1h-1zM42 11h1v1h-1zM2 12h1v1h-1zM7 12h2v1h-2zM10 12h3v1h-3zM14 12h1v1h-1zM17 12h1v1h-1zM22 12h2v1h-2zM29 12h4v1h-4zM34 12h1v1h-1zM37 12h1v1h-1zM2 13h2v1h-2zM5 13h1v1h-1zM9 13h3v1h-3zM14 13h1v1h-1zM17 13h2v1h-2zM23 13h2v1h-2zM28 13h1v1h-1zM32 13h4v1h-4zM38 13h2v1h-2zM2 14h1v1h-1zM8 14h2v1h-2zM12 14h2v1h-2zM16 14h1v1h-1zM19 14h1v1h-1zM21 14h2v1h-2zM24 14h1v1h-1zM26 14h6v1h-6zM33 14h2v1h-2zM37 14h1v1h-1zM39 14h2v1h-2zM42 14h1v1h-1zM2 15h2v1h-2zM7 15h1v1h-1zM9 15h2v1h-2zM13 15h1v1h-1zM15 15h1v1h-1zM18 15h1v1h-1zM20 15h1v1h-1zM23 15h2v1h-2zM29 15h1v1h-1zM32 15h11v1h-11zM2 16h1v1h-1zM5 16h7v1h-7zM15 16h1v1h-1zM19 16h2v1h-2zM22 16h2v1h-2zM25 16h2v1h-2zM29 16h4v1h-4zM35 16h1v1h-1zM37 16h1v1h-1zM40 16h1v1h-1zM2 17h1v1h-1zM6 17h2v1h-2zM11 17h3v1h-3zM15 17h2v1h-2zM23 17h3v1h-3zM28 17h2v1h-2zM36 17h2v1h-2zM39 17h1v1h-1zM41 17h1v1h-1zM2 18h3v1h-3zM6 18h1v1h-1zM8 18h2v1h-2zM13 18h1v1h-1zM15 18h6v1h-6zM22 18h1v1h-1zM25 18h1v1h-1zM27 18h3v1h-3zM31 18h3v1h-3zM35 18h1v1h-1zM37 18h1v1h-1zM40 18h1v1h-1zM3 19h1v1h-1zM6 19h1v1h-1zM11 19h2v1h-2zM14 19h1v1h-1zM16 19h2v1h-2zM20 19h3v1h-3zM25 19h2v1h-2zM30 19h5v1h-5zM36 19h4v1h-4zM41 19h2v1h-2zM2 20h2v1h-2zM5 20h1v1h-1zM7 20h2v1h-2zM10 20h2v1h-2zM16 20h1v1h-1zM18 20h1v1h-1zM20 20h1v1h-1zM22 20h1v1h-1zM24 20h1v1h-1zM29 20h2v1h-2zM35 20h1v1h-1zM38 20h2v1h-2zM41 20h1v1h-1zM4 21h2v1h-2zM9 21h1v1h-1zM11 21h1v1h-1zM13 21h4v1h-4zM28 21h3v1h-3zM33 21h3v1h-3zM38 21h2v1h-2zM41 21h2v1h-2zM3 22h1v1h-1zM5 22h1v1h-1zM7 22h5v1h-5zM16 22h3v1h-3zM20 22h2v1h-2zM23 22h4v1h-4zM29 22h1v1h-1zM31 22h1v1h-1zM37 22h1v1h-1zM39 22h3v1h-3zM2 23h3v1h-3zM6 23h1v1h-1zM10 23h3v1h-3zM14 23h2v1h-2zM17 23h3v1h-3zM21 23h3v1h-3zM25 23h1v1h-1zM27 23h2v1h-2zM30 23h1v1h-1zM32 23h3v1h-3zM36 23h4v1h-4zM41 23h2v1h-2zM3 24h1v1h-1zM8 24h1v1h-1zM11 24h1v1h-1zM13 24h1v1h-1zM15 24h1v1h-1zM17 24h2v1h-2zM20 24h1v1h-1zM22 24h1v1h-1zM24 24h1v1h-1zM27 24h4v1h-4zM34 24h1v1h-1zM38 24h1v1h-1zM3 25h1v1h-1zM6 25h2v1h-2zM10 25h1v1h-1zM12 25h2v1h-2zM16 25h1v1h-1zM18 25h1v1h-1zM20 25h2v1h-2zM23 25h2v1h-2zM29 25h1v1h-1zM33 25h3v1h-3zM39 25h1v1h-1zM42 25h1v1h-1zM2 26h2v1h-2zM6 26h3v1h-3zM11 26h2v1h-2zM14 26h2v1h-2zM18 26h2v1h-2zM25 26h7v1h-7zM33 26h1v1h-1zM40 26h3v1h-3zM4 27h1v1h-1zM7 27h1v1h-1zM13 27h3v1h-3zM18 27h2v1h-2zM21 27h3v1h-3zM25 27h1v1h-1zM27 27h1v1h-1zM30 27h1v1h-1zM32 27h2v1h-2zM35 27h5v1h-5zM41 27h2v1h-2zM2 28h2v1h-2zM6 28h3v1h-3zM14 28h1v1h-1zM16 28h1v1h-1zM18 28h1v1h-1zM20 28h1v1h-1zM22 28h1v1h-1zM26 28h5v1h-5zM32 28h1v1h-1zM34 28h1v1h-1zM36 28h3v1h-3zM41 28h1v1h-1zM3 29h3v1h-3zM9 29h1v1h-1zM12 29h1v1h-1zM14 29h4v1h-4zM21 29h4v1h-4zM26 29h1v1h-1zM28 29h1v1h-1zM30 29h1v1h-1zM33 29h2v1h-2zM36 29h1v1h-1zM38 29h2v1h-2zM2 30h5v1h-5zM8 30h2v1h-2zM11 30h1v1h-1zM15 30h1v1h-1zM17 30h3v1h-3zM24 30h2v1h-2zM27 30h2v1h-2zM31 30h1v1h-1zM33 30h1v1h-1zM35 30h1v1h-1zM39 30h4v1h-4zM2 31h1v1h-1zM6 31h1v1h-1zM11 31h6v1h-6zM18 31h3v1h-3zM22 31h1v1h-1zM26 31h2v1h-2zM29 31h8v1h-8zM38 31h1v1h-1zM40 31h1v1h-1zM42 31h1v1h-1zM2 32h1v1h-1zM4 32h1v1h-1zM6 32h1v1h-1zM8 32h5v1h-5zM15 32h2v1h-2zM21 32h1v1h-1zM23 32h2v1h-2zM27 32h2v1h-2zM31 32h1v1h-1zM35 32h3v1h-3zM39 32h1v1h-1zM2 33h1v1h-1zM4 33h2v1h-2zM10 33h3v1h-3zM14 33h1v1h-1zM16 33h1v1h-1zM18 33h1v1h-1zM21 33h4v1h-4zM26 33h1v1h-1zM30 33h1v1h-1zM33 33h5v1h-5zM39 33h1v1h-1zM41 33h2v1h-2zM2 34h1v1h-1zM6 34h3v1h-3zM10 34h8v1h-8zM19 34h1v1h-1zM21 34h1v1h-1zM24 34h1v1h-1zM26 34h3v1h-3zM31 34h1v1h-1zM33 34h6v1h-6zM40 34h1v1h-1zM42 34h1v1h-1zM10 35h2v1h-2zM13 35h2v1h-2zM17 35h3v1h-3zM21 35h3v1h-3zM25 35h3v1h-3zM30 35h2v1h-2zM33 35h2v1h-2zM38 35h1v1h-1zM41 35h2v1h-2zM2 36h7v1h-7zM11 36h2v1h-2zM15 36h2v1h-2zM18 36h2v1h-2zM23 36h1v1h-1zM27 36h4v1h-4zM33 36h2v1h-2zM36 36h1v1h-1zM38 36h1v1h-1zM40 36h1v1h-1zM2 37h1v1h-1zM8 37h1v1h-1zM10 37h2v1h-2zM13 37h2v1h-2zM19 37h3v1h-3zM23 37h2v1h-2zM26 37h2v1h-2zM32 37h3v1h-3zM38 37h2v1h-2zM2 38h1v1h-1zM4 38h3v1h-3zM8 38h1v1h-1zM10 38h3v1h-3zM14 38h1v1h-1zM16 38h3v1h-3zM23 38h1v1h-1zM26 38h1v1h-1zM28 38h2v1h-2zM32 38h1v1h-1zM34 38h5v1h-5zM40 38h1v1h-1zM2 39h1v1h-1zM4 39h3v1h-3zM8 39h1v1h-1zM10 39h1v1h-1zM12 39h1v1h-1zM15 39h2v1h-2zM18 39h5v1h-5zM24 39h3v1h-3zM30 39h4v1h-4zM35 39h1v1h-1zM37 39h1v1h-1zM39 39h1v1h-1zM2 40h1v1h-1zM4 40h3v1h-3zM8 40h1v1h-1zM10 40h3v1h-3zM14 40h1v1h-1zM16 40h4v1h-4zM22 40h1v1h-1zM24 40h1v1h-1zM26 40h2v1h-2zM29 40h2v1h-2zM34 40h6v1h-6zM2 41h1v1h-1zM8 41h1v1h-1zM13 41h1v1h-1zM17 41h1v1h-1zM23 41h1v1h-1zM25 41h1v1h-1zM28 41h3v1h-3zM34 41h2v1h-2zM38 41h2v1h-2zM41 41h1v1h-1zM2 42h7v1h-7zM10 42h1v1h-1zM14 42h2v1h-2zM17 42h1v1h-1zM21 42h1v1h-1zM24 42h5v1h-5zM31 42h1v1h-1zM33 42h1v1h-1zM35 42h6v1h-6z"/></svg>
+    <p class="qr-texto">Escanea con la cámara del celular para abrir esta página</p>
+    <p class="qr-url">https://memosanchezg.github.io/programacion-basica-interactivos/semana-01-bits-y-texto.html</p>
+    <button type="button" class="qr-cerrar">Cerrar</button>
+  </div>
+</div>
+<style>
+  .qr-capa { position:fixed; top:0; right:0; bottom:0; left:0; z-index:10000; display:flex; align-items:center;
+             justify-content:center; padding:16px; background:#fff; }
+  .qr-capa[hidden] { display:none; }
+  .qr-caja { max-width:100%; text-align:center; color:#0A2A57; font:16px/1.4 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .qr-caja svg { display:block; width:min(62vh, 84vw); height:auto; margin:0 auto; }
+  .qr-texto { margin:12px 0 2px; font-size:1.15rem; font-weight:bold; }
+  .qr-url { margin:0 0 12px; color:#5B6472; word-break:break-all; }
+  .qr-cerrar { font:inherit; padding:6px 20px; border:2px solid #00408F; border-radius:4px; background:#fff;
+               color:#00408F; cursor:pointer; }
+</style>
+<script>
+  (function () {
+    var capa = document.getElementById("qr-sitio");
+    document.querySelectorAll("a.qr-abrir").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        capa.hidden = false;
+        capa.querySelector(".qr-cerrar").focus();
+      });
+    });
+    capa.addEventListener("click", function (e) {
+      if (e.target === capa || e.target.classList.contains("qr-cerrar")) capa.hidden = true;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !capa.hidden) capa.hidden = true;
+    });
+  })();
+</script>
+</body>
+</html>

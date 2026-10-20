@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="tipo" content="simulador">
+<title>¿Qué tipo de error es?</title>
+
+<style>
+  :root {
+    --azul:#00408F; --azul-oscuro:#0A2A57; --guinda:#8C1D35; --oro:#B8975A; --oro-texto:#8A6A2E;
+    --azul-claro:#E8EEF7; --oro-claro:#F7F1E6; --guinda-claro:#F5E6EA; --verde:#2F7D5B;
+    --tinta:#1B1F2A; --gris:#5B6472; --gris-claro:#E9ECF1; --borde:#D9DEE6; --fondo:#FFFFFF;
+    --cmd-fondo:#0C0C0C; --cmd-texto:#E6E6E6;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--fondo); color:var(--tinta);
+         font:16px/1.45 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .franja { height:8px; background:var(--azul); border-bottom:3px solid var(--oro); }
+  header { max-width:1280px; margin:0 auto; padding:12px 18px 4px; }
+  .semana { color:var(--guinda); font-weight:bold; letter-spacing:.04em; font-size:.85rem; text-transform:uppercase; }
+  h1 { font-family:Cambria,Georgia,serif; color:var(--azul-oscuro); font-size:1.7rem; margin:2px 0 2px; }
+  .sub { color:var(--gris); margin:0; }
+  main { max-width:1280px; margin:0 auto; padding:8px 18px 24px; }
+  .fila { display:grid; grid-template-columns:minmax(0,1.25fr) minmax(280px,1fr); gap:16px; align-items:start; }
+  .fila > * { min-width:0; }
+  .panel { background:#fff; border:1px solid var(--borde); border-radius:10px; padding:12px 14px; min-width:0; }
+  .panel h2 { font-size:1.02rem; color:var(--azul-oscuro); margin:0 0 8px; }
+  button.accion { font:inherit; font-weight:bold; border-radius:8px; padding:7px 12px; margin:8px 6px 0 0;
+                  border:1px solid var(--azul); background:#fff; color:var(--azul); cursor:pointer; }
+  button.accion:hover:not(:disabled), button.accion:focus-visible { background:var(--azul); color:#fff; outline:none; }
+  button.accion.primaria { background:var(--azul); color:#fff; }
+  button.accion.primaria:hover, button.accion.primaria:focus-visible { background:var(--azul-oscuro); }
+  .lectura { background:var(--oro-claro); border-left:4px solid var(--oro); border-radius:8px; padding:10px 12px;
+             margin-top:12px; line-height:1.55; }
+  .lectura b { color:var(--azul-oscuro); }
+  .ok { color:var(--verde); font-weight:bold; }
+  .mal { color:var(--guinda); font-weight:bold; }
+  .preguntas { background:var(--azul-claro); border-radius:8px; padding:10px 14px; margin-top:12px; }
+  .preguntas h3 { margin:0 0 4px; font-size:.95rem; color:var(--azul-oscuro); }
+  .preguntas ol { margin:0; padding-left:20px; }
+  /* Código Python con los colores del curso (minted, estilo borland) y salida de consola (cmd). */
+  .codigo { border:1px solid var(--tinta); background:#fff; font:15px/1.5 Consolas,"Courier New",monospace;
+            overflow-x:auto; margin:8px 0; }
+  .codigo ol { margin:0; padding:8px 12px 8px 3.4em; }
+  .codigo li { white-space:pre; }
+  .codigo li::marker { color:var(--gris); font:11px Cambria,Georgia,serif; }
+  .codigo .kw { color:#000080; font-weight:bold; }
+  .codigo .str, .codigo .num { color:#0000FF; }
+  .codigo .com { color:#008800; font-style:italic; }
+  .codigo .marca { background:var(--oro-claro); outline:1px solid var(--oro); }
+  .consola { background:var(--cmd-fondo); color:var(--cmd-texto); font:15px/1.45 Consolas,"Courier New",monospace;
+             padding:8px 12px; border-radius:4px; margin:8px 0; min-height:2.2em; overflow-x:auto; }
+  footer { max-width:1280px; margin:0 auto; padding:6px 18px 18px; color:var(--gris); font-size:.85rem; }
+  footer a { color:var(--azul); }
+  @media (max-width: 860px) { .fila { grid-template-columns:1fr; } }
+
+  /* Propios de este juego */
+  [hidden] { display:none !important; }
+  code { font-family:Consolas,"Courier New",monospace; color:var(--azul-oscuro); }
+  .marcador { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:4px 12px; }
+  .marcador .ronda { font-weight:bold; color:var(--guinda); text-transform:uppercase; letter-spacing:.04em; font-size:.85rem; }
+  .marcador .puntos { font-weight:bold; color:var(--azul-oscuro); }
+  .rondas { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 4px; padding:0; list-style:none; }
+  .rondas button { width:30px; height:30px; border-radius:50%; border:2px solid var(--borde); background:#fff;
+                   font:bold 13px Calibri,"Segoe UI",sans-serif; color:var(--gris); cursor:pointer; padding:0; }
+  .rondas button.actual { border-color:var(--azul); color:var(--azul-oscuro); }
+  .rondas button.bien { background:var(--verde); border-color:var(--verde); color:#fff; }
+  .rondas button.mal { background:var(--guinda); border-color:var(--guinda); color:#fff; }
+  .rondas button:focus-visible { outline:2px solid var(--azul); outline-offset:2px; }
+  .pedido { font-size:1.05rem; margin:10px 0 6px; }
+  .pedido b { color:var(--azul-oscuro); }
+  .consola .l { display:block; white-space:pre; min-height:1.45em; }
+  .consola .l.evidencia { background:rgba(184,151,90,.38); outline:1px solid #B8975A; }
+  .entradas { color:var(--gris); font-size:.92rem; margin:0; }
+  .opciones { display:grid; gap:8px; margin-top:6px; }
+  .opciones button { font:inherit; text-align:left; border:2px solid var(--azul); border-radius:10px; background:#fff;
+                     color:var(--azul-oscuro); padding:10px 12px; cursor:pointer; display:flex; gap:10px; align-items:center; }
+  .opciones button .tecla { flex:0 0 auto; width:28px; height:28px; border-radius:50%; background:var(--azul-claro);
+                            color:var(--azul-oscuro); font-weight:bold; display:flex; align-items:center; justify-content:center; }
+  .opciones button b { display:block; font-size:1.08rem; }
+  .opciones button small { color:var(--gris); }
+  .opciones button:hover:not(:disabled), .opciones button:focus-visible { background:var(--azul-claro); outline:none; }
+  .opciones button:disabled { cursor:default; opacity:.6; }
+  .opciones button.correcta { border-color:var(--verde); background:#EAF4EF; opacity:1; }
+  .opciones button.elegida.incorrecta { border-color:var(--guinda); background:var(--guinda-claro); opacity:1; }
+  .tutor.bien { background:#EAF4EF; border-left-color:var(--verde); }
+  .tutor.mal { background:var(--guinda-claro); border-left-color:var(--guinda); }
+  details.defs { margin-top:12px; border:1px solid var(--borde); border-radius:8px; padding:6px 10px; }
+  details.defs summary { cursor:pointer; font-weight:bold; color:var(--azul-oscuro); }
+  details.defs dl { margin:6px 0 0; }
+  details.defs dt { font-weight:bold; color:var(--azul-oscuro); margin-top:6px; }
+  details.defs dd { margin:0 0 0 12px; }
+  .puntos-grande { font:bold 1.15rem Cambria,Georgia,serif; color:var(--azul-oscuro); }
+  table.resumen { border-collapse:collapse; width:100%; margin-top:8px; font-size:.95rem; }
+  table.resumen th, table.resumen td { border-bottom:1px solid var(--gris-claro); padding:5px 6px; text-align:left; vertical-align:top; }
+  table.resumen th { color:var(--azul-oscuro); }
+  table.resumen td.n { text-align:right; white-space:nowrap; }
+  .tabla-scroll { overflow-x:auto; }
+  @media (max-width: 480px) {
+    header { padding:10px 12px 4px; }
+    main { padding:8px 10px 20px; }
+    footer { padding:6px 12px 16px; }
+    .panel { padding:10px; }
+    h1 { font-size:1.45rem; }
+    .codigo, .consola { font-size:13px; }
+    .rondas button { width:28px; height:28px; }
+  }
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header>
+  <div class="semana">Semana 01 · La programación como disciplina formal</div>
+  <h1>¿Qué tipo de error es?</h1>
+  <p class="sub">15 programas que no hacen lo que se pedía. Lee la terminal y decide: ¿error sintáctico, semántico (de ejecución) o lógico?</p>
+</header>
+<main>
+  <div class="fila" id="vista-juego">
+    <div class="panel">
+      <div class="marcador">
+        <span class="ronda" id="txt-ronda">Programa 1 de 15</span>
+        <span class="puntos" id="txt-puntos">0 puntos</span>
+      </div>
+      <ul class="rondas" id="rondas" aria-label="Programas"></ul>
+      <p class="pedido" id="pedido"></p>
+      <h2 id="nombre-archivo"></h2>
+      <div id="codigo"></div>
+      <h2>Así se ejecutó en la terminal</h2>
+      <div class="consola" id="consola" tabindex="0" role="region" aria-label="Lo que mostró la terminal"></div>
+      <p class="entradas" id="entradas"></p>
+    </div>
+    <div class="panel">
+      <h2>¿Qué tipo de error tiene?</h2>
+      <div class="opciones" id="opciones">
+        <button type="button" data-tipo="sintactico"><span class="tecla" aria-hidden="true">1</span><span><b>Sintáctico</b><small>viola las reglas del lenguaje</small></span></button>
+        <button type="button" data-tipo="semantico"><span class="tecla" aria-hidden="true">2</span><span><b>Semántico (de ejecución)</b><small>falla al ejecutar una instrucción</small></span></button>
+        <button type="button" data-tipo="logico"><span class="tecla" aria-hidden="true">3</span><span><b>Lógico</b><small>el algoritmo no resuelve lo pedido</small></span></button>
+      </div>
+      <div class="lectura tutor" id="tutor" aria-live="polite" hidden></div>
+      <button type="button" class="accion primaria" id="siguiente" hidden>Siguiente programa</button>
+      <details class="defs">
+        <summary>Repasa las definiciones</summary>
+        <dl>
+          <dt>Error sintáctico</dt>
+          <dd>El código viola las reglas del lenguaje; el intérprete ni siquiera puede empezar a ejecutarlo.</dd>
+          <dt>Error semántico (o de ejecución)</dt>
+          <dd>La sintaxis es válida, pero algo falla al ejecutar una instrucción concreta.</dd>
+          <dt>Error lógico</dt>
+          <dd>El programa corre de principio a fin sin ningún mensaje de error, pero produce un resultado incorrecto porque el algoritmo está mal planteado.</dd>
+        </dl>
+      </details>
+      <p class="sub" style="font-size:.9rem;margin-top:10px">Un solo intento por programa: 10 puntos si aciertas. Puedes responder con las teclas 1, 2 y 3. Tu avance se guarda en este navegador.</p>
+      <button type="button" class="accion" id="reiniciar">Empezar de nuevo</button>
+    </div>
+  </div>
+
+  <div class="panel" id="vista-resumen" hidden>
+    <h2>Resumen</h2>
+    <p class="puntos-grande" id="total"></p>
+    <div class="tabla-scroll"><table class="resumen" id="tabla-tipos"></table></div>
+    <div class="tabla-scroll"><table class="resumen" id="tabla-resumen"></table></div>
+    <div>
+      <button type="button" class="accion primaria" id="repasar">Repasar los que fallé</button>
+      <button type="button" class="accion" id="otra-vez">Jugar otra vez</button>
+    </div>
+    <div class="preguntas">
+      <h3>Para pensar</h3>
+      <ol>
+        <li>Sin leer el código, ¿cómo distingues en la terminal un error sintáctico de uno semántico?</li>
+        <li>¿Por qué los errores lógicos son los más difíciles de encontrar? ¿Qué hiciste tú para descubrirlos?</li>
+        <li>En <code>reparto.py</code>, ¿el problema estaba en el código o en los datos? ¿Qué cambiarías para que no falle?</li>
+        <li><code>meses.py</code> y <code>nacimiento.py</code> olvidan lo mismo: convertir con <code>int()</code> lo que regresa <code>input()</code>. ¿Por qué uno es lógico y el otro semántico?</li>
+      </ol>
+    </div>
+  </div>
+</main>
+<footer>
+  Programación Básica · FCFM-UANL · funciona sin internet. Las salidas son las de Python 3.12 en la terminal de Windows.
+  <a href="index.html">Índice de simuladores</a> · <a href="#qr-sitio" class="qr-abrir">Abrir en el celular (QR)</a>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(t) {
+    return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  // ---------- Código Python con los colores del curso ----------
+  var PY_KW = /^(False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)$/;
+  function pyResaltar(linea) {
+    var html = "", i = 0, m, resto;
+    while (i < linea.length) {
+      resto = linea.slice(i);
+      if ((m = /^#.*/.exec(resto))) { html += '<span class="com">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[rRbBfFuU]{0,2}("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/.exec(resto))) { html += '<span class="str">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[A-Za-z_À-ɏ][\wÀ-ɏ]*/.exec(resto))) { html += PY_KW.test(m[0]) ? '<span class="kw">' + m[0] + "</span>" : esc(m[0]); }
+      else if ((m = /^(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?j?/.exec(resto))) { html += '<span class="num">' + m[0] + "</span>"; }
+      else { m = [resto[0]]; html += esc(m[0]); }
+      i += m[0].length;
+    }
+    return html;
+  }
+  function mostrarCodigo(el, codigo, marcar) {
+    var lineas = codigo.replace(/\n$/, "").split("\n");
+    el.innerHTML = '<div class="codigo"><ol>' + lineas.map(function (l, k) {
+      return "<li" + (marcar === k + 1 ? ' class="marca"' : "") + ">" + (pyResaltar(l) || " ") + "</li>";
+    }).join("") + "</ol></div>";
+  }
+
+  // ---------- Los 15 programas (salidas reales de Python 3.12.14 en Windows) ----------
+  var PROGRAMAS = [
+    { archivo: "area.py", tipo: "sintactico",
+      pedido: "Calcular el área de un triángulo de base 8 y altura 5, e imprimirla.",
+      codigo: "print(\"Área de un triángulo\")\nbase = 8\naltura = 5\narea = base * altura / 2\nprint(\"El área es\", area\n",
+      consola: "C:\\Users\\alumno\\Documents\\programacion>python area.py\n  File \"C:\\Users\\alumno\\Documents\\programacion\\area.py\", line 5\n    print(\"El área es\", area\n         ^\nSyntaxError: '(' was never closed\n",
+      linea: 5, evidencia: ["SyntaxError"],
+      porque: "Falta cerrar el paréntesis del último print. Fíjate: el print(\"Área de un triángulo\") de la línea 1 no apareció en la terminal. Python revisa todo el archivo antes de ejecutar la primera línea; como no respeta las reglas, no ejecutó ninguna. No hay \"Traceback\": el programa nunca empezó." },
+    { archivo: "registro.py", tipo: "semantico",
+      pedido: "Pedir tu edad y decirte cuántos años tendrás el próximo año.",
+      codigo: "print(\"Registro de alumnos\")\nedad = int(input(\"Edad: \"))\nprint(\"El próximo año tendrás\", edad + 1)\n",
+      consola: "C:\\Users\\alumno\\Documents\\programacion>python registro.py\nRegistro de alumnos\nEdad: diecinueve\nTraceback (most recent call last):\n  File \"C:\\Users\\alumno\\Documents\\programacion\\registro.py\", line 2, in <module>\n    edad = int(input(\"Edad: \"))\n           ^^^^^^^^^^^^^^^^^^^^\nValueError: invalid literal for int() with base 10: 'diecinueve'\n",
+      entradas: ["diecinueve"], linea: 2, evidencia: ["Registro de alumnos", "Traceback", "ValueError"],
+      porque: "La sintaxis está bien y el programa sí empezó: imprimió \"Registro de alumnos\" y pidió la edad. Falló al ejecutar la línea 2, porque int() no puede convertir el texto 'diecinueve' en un número. Con 19 habría funcionado: este error depende de los datos." },
+    { archivo: "promedio.py", tipo: "logico",
+      pedido: "Pedir tres calificaciones e imprimir su promedio. Con 80, 90 y 100 debe dar 90.",
+      codigo: "c1 = int(input(\"Calificación 1: \"))\nc2 = int(input(\"Calificación 2: \"))\nc3 = int(input(\"Calificación 3: \"))\npromedio = c1 + c2 + c3 / 3\nprint(\"Promedio:\", promedio)\n",
+      consola: "C:\\Users\\alumno\\Documents\\programacion>python promedio.py\nCalificación 1: 80\nCalificación 2: 90\nCalificación 3: 100\nPromedio: 203.33333333333334\n",
+      entradas: ["80", "90", "100"], linea: 4, evidencia: ["Promedio:"],
+      porque: "Corrió completo, sin ningún mensaje de error, pero 203.33... no es el promedio (debía dar 90). La división se hace antes que las sumas, así que solo c3 se dividió entre 3. Faltan paréntesis: (c1 + c2 + c3) / 3. Python hizo exactamente lo que dice el código, no lo que querías." },
+    { archivo: "saludo.py", tipo: "sintactico",
+      pedido: "Pedir tu nombre y saludarte.",
+      codigo: "nombre = input(\"¿Cómo te llamas? \")\nprint(\"Hola, + nombre)\n",
+      consola: "C:\\Users\\alumno\\Documents\\programacion>python saludo.py\n  File \"C:\\Users\\alumno\\Documents\\programacion\\saludo.py\", line 2\n    print(\"Hola, + nombre)\n          ^\nSyntaxError: unterminated string literal (detected at line 2)\n",
+      linea: 2, evidencia: ["SyntaxError"],
+      porque: "La comilla que abre \"Hola, nunca se cierra, así que Python no sabe dónde termina el texto. Fíjate: ni siquiera te preguntó el nombre. El error está en la línea 2, pero la línea 1 tampoco se ejecutó: Python revisa todo el archivo antes de empezar." },
+    { archivo: "iva.py", tipo: "semantico",
+      pedido: "Calcular el total con IVA (16 %) de un artículo de 250 pesos.",
+      codigo: "print(\"Total con IVA:\", precio * 1.16)\nprecio = 250\n",
+      consola: "C:\\Users\\alumno\\Documents\\programacion>python iva.py\nTraceback (most recent call last):\n  File \"C:\\Users\\alumno\\Documents\\programacion\\iva.py\", line 1, in <module>\n    print(\"Total con IVA:\", precio * 1.16)\n                            ^^^^^^\nNameError: name 'precio' is not defined\n",
+      linea: 1, evidencia: ["Traceback", "NameError"],
+      porque: "Las dos líneas están bien escritas, pero Python ejecuta en orden: al llegar a la línea 1, precio todavía no existe (se crea hasta la línea 2). El programa empezó y falló al ejecutar esa instrucción: hay Traceback. El orden de las instrucciones también es parte del algoritmo." },
+    { archivo: "meses.py", tipo: "logico",
+      pedido: "Pedir tu edad en años y decir cuántos meses has vivido, más o menos.",
+      codigo: "edad = input(\"¿Cuántos años tienes? \")\nmeses = edad * 12\nprint(\"Has vivido unos\", meses, \"meses\")\n",
+      consola: "C:\\Users\\alumno\\Documents\\programacion>python meses.py\n¿Cuántos años tienes? 18\nHas vivido unos 181818181818181818181818 meses\n",
+      entradas: ["18"], linea: 2, evidencia: ["Has vivido"],
+      porque: "No hubo ningún mensaje de error, pero el resultado no tiene sentido. input() siempre regresa texto: edad es '18', y '18' * 12 repite ese texto 12 veces. Faltó convertirlo con int(). No es semántico porque Python no se quejó: el programa corrió completo." },
+    { archivo: "reparto.py", tipo: "semantico",
+      pedido: "Repartir 120 pesos en partes iguales entre los amigos que lleguen.",
+      codigo: "amigos = int(input(\"¿Cuántos amigos llegaron? \"))\nprint(\"A cada quien le tocan\", 120 / amigos, \"pesos\")\n",
+      consola: "C:\\Users\\alumno\\Documents\\programacion>python reparto.py\n¿Cuántos amigos llegaron? 0\nTraceback (most recent call last):\n  File \"C:\\Users\\alumno\\Documents\\programacion\\reparto.py\", line 2, in <module>\n    print(\"A cada quien le tocan\", 120 / amigos, \"pesos\")\n                                   ~~~~^~~~~~~~\nZeroDivisionError: division by zero\n",
+      entradas: ["0"], linea: 2, evidencia: ["Traceback", "ZeroDivisionError"],
+      porque: "La sintaxis está bien y el programa empezó: preguntó cuántos amigos llegaron. Falló al ejecutar la división 120 / 0. Con 4 amigos habría funcionado: algunos errores de ejecución solo aparecen con ciertos datos, y un buen programa prevé esos casos especiales." },
+    { archivo: "perfecta.py", tipo: "sintactico",
+      pedido: "Pedir una calificación y decir si es perfecta (100).",
+      codigo: "calificacion = int(input(\"Calificación: \"))\nif calificacion = 100:\n    print(\"¡Perfecta!\")\n",
+      consola: "C:\\Users\\alumno\\Documents\\programacion>python perfecta.py\n  File \"C:\\Users\\alumno\\Documents\\programacion\\perfecta.py\", line 2\n    if calificacion = 100:\n       ^^^^^^^^^^^^^^^^^^\nSyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='?\n",
+      linea: 2, evidencia: ["SyntaxError"],
+      porque: "En un if se compara con ==; un solo = es una asignación y no puede ir ahí. Python hasta sugiere '=='. Fíjate: ni siquiera pidió la calificación de la línea 1. El archivo completo se rechazó antes de ejecutarse." },
+    { archivo: "temperatura.py", tipo: "logico",
+      pedido: "Convertir 100 °C a grados Fahrenheit. El resultado correcto es 212.",
+      codigo: "celsius = 100\nfahrenheit = celsius * 9 / 5 - 32\nprint(celsius, \"°C son\", fahrenheit, \"°F\")\n",
+      consola: "C:\\Users\\alumno\\Documents\\programacion>python temperatura.py\n100 °C son 148.0 °F\n",
+      linea: 2, evidencia: ["100 °C son"],
+      porque: "Corre sin errores, pero 148.0 no es 212. La fórmula correcta suma 32: celsius * 9 / 5 + 32. Solo comparando con el resultado que ya conocías se descubre el error." },
+    { archivo: "bienvenida.py", tipo: "semantico",
+      pedido: "Imprimir un mensaje de bienvenida.",
+      codigo: "mensaje = \"Bienvenida a la FCFM\"\nPrint(mensaje)\n",
+      consola: "C:\\Users\\alumno\\Documents\\programacion>python bienvenida.py\nTraceback (most recent call last):\n  File \"C:\\Users\\alumno\\Documents\\programacion\\bienvenida.py\", line 2, in <module>\n    Print(mensaje)\n    ^^^^^\nNameError: name 'Print' is not defined. Did you mean: 'print'?\n",
+      linea: 2, evidencia: ["Traceback", "NameError"],
+      porque: "Print con mayúscula es un nombre válido para Python (podría ser una variable), así que no viola ninguna regla de escritura. Solo al ejecutar la línea 2 descubre que no existe nada llamado Print. Python distingue mayúsculas de minúsculas, y hasta sugiere 'print'." },
+    { archivo: "tabla7.py", tipo: "sintactico",
+      pedido: "Imprimir 7 x 1, 7 x 2 y 7 x 3 con sus resultados.",
+      codigo: "print(\"Tabla del 7\")\n    n = 7\nfor i in range(1, 4):\n    print(n, \"x\", i, \"=\", n * i)\n",
+      consola: "C:\\Users\\alumno\\Documents\\programacion>python tabla7.py\n  File \"C:\\Users\\alumno\\Documents\\programacion\\tabla7.py\", line 2\n    n = 7\nIndentationError: unexpected indent\n",
+      linea: 2, evidencia: ["IndentationError"],
+      porque: "La línea 2 tiene sangría sin motivo: no está dentro de ningún bloque. IndentationError es un tipo de error de sintaxis. Fíjate: \"Tabla del 7\" no se imprimió aunque está en la línea 1. Ninguna línea se ejecutó." },
+    { archivo: "multiplos.py", tipo: "logico",
+      pedido: "Imprimir los múltiplos de 10 desde el 10 hasta el 50.",
+      codigo: "for n in range(10, 50, 10):\n    print(n)\n",
+      consola: "C:\\Users\\alumno\\Documents\\programacion>python multiplos.py\n10\n20\n30\n40\n",
+      linea: 1, evidencia: ["40"],
+      porque: "Imprime 10, 20, 30 y 40, pero falta el 50. range(10, 50, 10) se detiene ANTES de llegar a 50; debía ser range(10, 51, 10) o range(10, 60, 10). Python no avisa: el programa hace lo que dice, no lo que querías." },
+    { archivo: "nacimiento.py", tipo: "semantico",
+      pedido: "Pedir el año en que naciste y decir cuántos años cumples en 2026.",
+      codigo: "nacimiento = input(\"¿En qué año naciste? \")\nedad = 2026 - nacimiento\nprint(\"Este año cumples\", edad)\n",
+      consola: "C:\\Users\\alumno\\Documents\\programacion>python nacimiento.py\n¿En qué año naciste? 2007\nTraceback (most recent call last):\n  File \"C:\\Users\\alumno\\Documents\\programacion\\nacimiento.py\", line 2, in <module>\n    edad = 2026 - nacimiento\n           ~~~~~^~~~~~~~~~~~\nTypeError: unsupported operand type(s) for -: 'int' and 'str'\n",
+      entradas: ["2007"], linea: 2, evidencia: ["Traceback", "TypeError"],
+      porque: "El programa empezó y preguntó el año. Falló en la línea 2 porque nacimiento es texto ('2007') y no se puede restar un texto de un número: el mensaje dice que - no funciona entre int y str. Faltó int(...)." },
+    { archivo: "velocidad.py", tipo: "logico",
+      pedido: "Calcular la velocidad promedio de un viaje de 120 km en 2 horas (debe dar 60 km/h).",
+      codigo: "distancia = 120\ntiempo = 2\nvelocidad = tiempo / distancia\nprint(\"Velocidad:\", velocidad, \"km/h\")\n",
+      consola: "C:\\Users\\alumno\\Documents\\programacion>python velocidad.py\nVelocidad: 0.016666666666666666 km/h\n",
+      linea: 3, evidencia: ["Velocidad:"],
+      porque: "Corre completo, sin errores, pero 0.0166... no es 60. Se dividió al revés: la velocidad es distancia / tiempo. Probar con un caso cuyo resultado ya conoces delata el error." },
+    { archivo: "compra.py", tipo: "sintactico",
+      pedido: "Calcular cuánto pagas por 3 cuadernos de 25 pesos e imprimirlo.",
+      codigo: "print(\"Papelería FCFM\")\ntotal = 3 * 25\nprint(\"Total a pagar:\" total)\n",
+      consola: "C:\\Users\\alumno\\Documents\\programacion>python compra.py\n  File \"C:\\Users\\alumno\\Documents\\programacion\\compra.py\", line 3\n    print(\"Total a pagar:\" total)\n          ^^^^^^^^^^^^^^^^^^^^^^\nSyntaxError: invalid syntax. Perhaps you forgot a comma?\n",
+      linea: 3, evidencia: ["SyntaxError"],
+      porque: "Entre \"Total a pagar:\" y total falta una coma: Python no entiende dos valores pegados y lo dice (Perhaps you forgot a comma?). Fíjate: \"Papelería FCFM\" no aparece aunque está en la línea 1. Con un error de sintaxis no se ejecuta nada." }
+  ];
+  var NOMBRES = { sintactico: "sintáctico", semantico: "semántico (de ejecución)", logico: "lógico" };
+  var TIPOS = ["sintactico", "semantico", "logico"];
+
+  // ---------- Estado ----------
+  var CLAVE = "pb-s01-tipo-de-error";
+  function nuevoEstado() { return { actual: 0, resumen: false, respuestas: PROGRAMAS.map(function () { return null; }) }; }
+  var estado = nuevoEstado();
+  try {
+    var g = JSON.parse(localStorage.getItem(CLAVE) || "null");
+    if (g && Array.isArray(g.respuestas) && g.respuestas.length === PROGRAMAS.length) estado = g;
+  } catch (e) { /* sin almacenamiento: se empieza de cero */ }
+  function guardar() { try { localStorage.setItem(CLAVE, JSON.stringify(estado)); } catch (e) { /* sin almacenamiento */ } }
+  function bien(k) { return estado.respuestas[k] === PROGRAMAS[k].tipo; }
+  function puntos() { return estado.respuestas.reduce(function (a, r, k) { return a + (r && bien(k) ? 10 : 0); }, 0); }
+  function contestadas() { return estado.respuestas.filter(function (r) { return r; }).length; }
+
+  // ---------- Pintar ----------
+  function pintarMarcador() {
+    $("txt-ronda").textContent = "Programa " + (estado.actual + 1) + " de " + PROGRAMAS.length;
+    $("txt-puntos").textContent = puntos() + " puntos · " + contestadas() + " de " + PROGRAMAS.length + " respondidos";
+    $("rondas").innerHTML = PROGRAMAS.map(function (p, k) {
+      var r = estado.respuestas[k], clase = (k === estado.actual ? "actual " : "") + (r ? (bien(k) ? "bien" : "mal") : "");
+      var dice = "Programa " + (k + 1) + (r ? (bien(k) ? ", acertado" : ", fallado") : ", sin responder") + (k === estado.actual ? " (actual)" : "");
+      return '<li><button type="button" class="' + clase + '" data-k="' + k + '" aria-label="' + dice + '"' +
+             (k === estado.actual ? ' aria-current="step"' : "") + ">" + (k + 1) + "</button></li>";
+    }).join("");
+  }
+
+  function pintarConsola(p, conEvidencia) {
+    var lineas = p.consola.replace(/\n$/, "").split("\n");
+    $("consola").innerHTML = lineas.map(function (l) {
+      var ev = conEvidencia && p.evidencia.some(function (e) { return l.indexOf(e) === 0; });
+      return '<span class="l' + (ev ? " evidencia" : "") + '">' + (esc(l) || " ") + "</span>";
+    }).join("");
+  }
+
+  function pintarPrograma() {
+    var p = PROGRAMAS[estado.actual], r = estado.respuestas[estado.actual];
+    $("vista-juego").hidden = false;
+    $("vista-resumen").hidden = true;
+    pintarMarcador();
+    $("pedido").innerHTML = "<b>Lo que se pedía:</b> " + esc(p.pedido);
+    $("nombre-archivo").textContent = p.archivo;
+    mostrarCodigo($("codigo"), p.codigo, r ? p.linea : null);
+    pintarConsola(p, !!r);
+    $("entradas").textContent = p.entradas ? "Lo que tecleó el usuario: " + p.entradas.join(", ") + " (cada dato seguido de Enter)." : "";
+    document.querySelectorAll("#opciones button").forEach(function (b) {
+      b.disabled = !!r;
+      b.classList.toggle("correcta", !!r && b.dataset.tipo === p.tipo);
+      b.classList.toggle("elegida", !!r && b.dataset.tipo === r);
+      b.classList.toggle("incorrecta", !!r && b.dataset.tipo === r && r !== p.tipo);
+    });
+    if (r) mostrarTutor(p, r); else $("tutor").hidden = true;
+    $("siguiente").hidden = !r;
+    $("siguiente").textContent = contestadas() === PROGRAMAS.length ? "Ver el resumen" : "Siguiente programa";
+  }
+
+  function mostrarTutor(p, r) {
+    var t = $("tutor"), acierto = r === p.tipo;
+    t.className = "lectura tutor " + (acierto ? "bien" : "mal");
+    t.innerHTML = (acierto ? '<b class="ok">¡Correcto!</b> ' : '<b class="mal">No.</b> Respondiste ' + esc(NOMBRES[r]) + ". ") +
+      "Es un error <b>" + esc(NOMBRES[p.tipo]) + "</b>. " + esc(p.porque) +
+      ' <small>(En la terminal se marcó la evidencia; en el código, la línea con el error.)</small>';
+    t.hidden = false;
+  }
+
+  function responder(tipo) {
+    var k = estado.actual;
+    if (estado.respuestas[k]) return;
+    estado.respuestas[k] = tipo;
+    guardar();
+    pintarPrograma();
+    $("siguiente").focus();
+  }
+
+  function pendiente(desde) {
+    for (var j = 1; j <= PROGRAMAS.length; j++) {
+      var k = (desde + j) % PROGRAMAS.length;
+      if (!estado.respuestas[k]) return k;
+    }
+    return -1;
+  }
+  function irA(k) { estado.actual = k; estado.resumen = false; guardar(); pintarPrograma(); }
+
+  function pintarResumen() {
+    estado.resumen = true;
+    guardar();
+    $("vista-juego").hidden = true;
+    $("vista-resumen").hidden = false;
+    var aciertos = estado.respuestas.filter(function (r, k) { return r && bien(k); }).length;
+    $("total").textContent = puntos() + " de " + PROGRAMAS.length * 10 + " puntos · " + aciertos + " de " + PROGRAMAS.length + " aciertos";
+    $("tabla-tipos").innerHTML = "<thead><tr><th>Tipo de error</th><th>Aciertos</th></tr></thead><tbody>" + TIPOS.map(function (t) {
+      var total = 0, ok = 0;
+      PROGRAMAS.forEach(function (p, k) { if (p.tipo === t) { total++; if (bien(k)) ok++; } });
+      return "<tr><td>" + esc(NOMBRES[t].charAt(0).toUpperCase() + NOMBRES[t].slice(1)) + '</td><td class="n">' + ok + " de " + total + "</td></tr>";
+    }).join("") + "</tbody>";
+    $("tabla-resumen").innerHTML = "<thead><tr><th>#</th><th>Programa</th><th>Tu respuesta</th><th>Era</th></tr></thead><tbody>" +
+      PROGRAMAS.map(function (p, k) {
+        var r = estado.respuestas[k];
+        return '<tr><td class="n">' + (k + 1) + "</td><td><code>" + esc(p.archivo) + "</code></td><td>" +
+          (r ? '<span class="' + (bien(k) ? "ok" : "mal") + '">' + esc(NOMBRES[r]) + "</span>" : '<span class="mal">sin responder</span>') +
+          "</td><td>" + esc(NOMBRES[p.tipo]) + "</td></tr>";
+      }).join("") + "</tbody>";
+    $("repasar").hidden = aciertos === PROGRAMAS.length;
+    $("vista-resumen").scrollIntoView({ block: "start" });
+  }
+
+  // ---------- Eventos ----------
+  $("opciones").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-tipo]");
+    if (b && !b.disabled) responder(b.dataset.tipo);
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.ctrlKey || e.altKey || e.metaKey || $("vista-juego").hidden) return;
+    if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) return;
+    var n = ["1", "2", "3"].indexOf(e.key);
+    if (n >= 0 && !estado.respuestas[estado.actual]) { e.preventDefault(); responder(TIPOS[n]); }
+  });
+  $("siguiente").addEventListener("click", function () {
+    var k = pendiente(estado.actual);
+    if (k < 0) pintarResumen(); else { irA(k); $("opciones").querySelector("button").focus(); }
+  });
+  $("rondas").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-k]");
+    if (b) irA(Number(b.dataset.k));
+  });
+  $("repasar").addEventListener("click", function () {
+    for (var k = 0; k < PROGRAMAS.length; k++) if (!bien(k)) { irA(k); return; }
+  });
+  function reiniciar() { estado = nuevoEstado(); guardar(); pintarPrograma(); }
+  $("otra-vez").addEventListener("click", reiniciar);
+  $("reiniciar").addEventListener("click", function () {
+    if (confirm("¿Empezar de nuevo? Se borran tus respuestas.")) reiniciar();
+  });
+
+  if (estado.resumen) pintarResumen(); else pintarPrograma();
+})();
+</script>
+<div id="qr-sitio" class="qr-capa" hidden>
+  <div class="qr-caja" role="dialog" aria-modal="true" aria-label="Código QR de esta página">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 45" role="img" aria-label="Código QR de https://memosanchezg.github.io/programacion-basica-interactivos/semana-01-tipo-de-error.html" shape-rendering="crispEdges"><rect width="45" height="45" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM12 2h1v1h-1zM14 2h5v1h-5zM20 2h3v1h-3zM24 2h3v1h-3zM30 2h2v1h-2zM33 2h2v1h-2zM36 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM13 3h1v1h-1zM15 3h3v1h-3zM20 3h1v1h-1zM24 3h1v1h-1zM26 3h1v1h-1zM29 3h2v1h-2zM32 3h1v1h-1zM34 3h1v1h-1zM36 3h1v1h-1zM42 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM10 4h5v1h-5zM18 4h1v1h-1zM26 4h1v1h-1zM28 4h3v1h-3zM32 4h3v1h-3zM36 4h1v1h-1zM38 4h3v1h-3zM42 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h3v1h-3zM14 5h1v1h-1zM17 5h2v1h-2zM20 5h1v1h-1zM23 5h2v1h-2zM26 5h1v1h-1zM31 5h1v1h-1zM33 5h2v1h-2zM36 5h1v1h-1zM38 5h3v1h-3zM42 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h3v1h-3zM17 6h1v1h-1zM21 6h1v1h-1zM25 6h1v1h-1zM28 6h1v1h-1zM30 6h2v1h-2zM33 6h2v1h-2zM36 6h1v1h-1zM38 6h3v1h-3zM42 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h5v1h-5zM16 7h2v1h-2zM22 7h1v1h-1zM26 7h1v1h-1zM29 7h2v1h-2zM34 7h1v1h-1zM36 7h1v1h-1zM42 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM30 8h1v1h-1zM32 8h1v1h-1zM34 8h1v1h-1zM36 8h7v1h-7zM10 9h2v1h-2zM13 9h1v1h-1zM15 9h4v1h-4zM20 9h1v1h-1zM23 9h1v1h-1zM25 9h2v1h-2zM28 9h1v1h-1zM33 9h2v1h-2zM2 10h1v1h-1zM4 10h5v1h-5zM12 10h3v1h-3zM16 10h4v1h-4zM22 10h1v1h-1zM24 10h1v1h-1zM27 10h3v1h-3zM31 10h1v1h-1zM36 10h5v1h-5zM2 11h1v1h-1zM4 11h1v1h-1zM7 11h1v1h-1zM10 11h1v1h-1zM13 11h1v1h-1zM16 11h1v1h-1zM19 11h5v1h-5zM25 11h1v1h-1zM27 11h1v1h-1zM30 11h1v1h-1zM32 11h3v1h-3zM36 11h3v1h-3zM40 11h3v1h-3zM2 12h1v1h-1zM7 12h3v1h-3zM11 12h4v1h-4zM22 12h2v1h-2zM29 12h4v1h-4zM34 12h2v1h-2zM37 12h1v1h-1zM41 12h1v1h-1zM4 13h1v1h-1zM11 13h1v1h-1zM13 13h1v1h-1zM17 13h1v1h-1zM23 13h2v1h-2zM28 13h1v1h-1zM32 13h5v1h-5zM38 13h2v1h-2zM2 14h2v1h-2zM6 14h4v1h-4zM12 14h1v1h-1zM14 14h1v1h-1zM16 14h1v1h-1zM19 14h1v1h-1zM21 14h1v1h-1zM24 14h1v1h-1zM27 14h3v1h-3zM31 14h1v1h-1zM33 14h1v1h-1zM37 14h1v1h-1zM39 14h2v1h-2zM3 15h1v1h-1zM9 15h3v1h-3zM13 15h2v1h-2zM17 15h4v1h-4zM22 15h3v1h-3zM26 15h1v1h-1zM29 15h2v1h-2zM32 15h11v1h-11zM2 16h1v1h-1zM5 16h1v1h-1zM8 16h3v1h-3zM12 16h2v1h-2zM17 16h1v1h-1zM19 16h1v1h-1zM21 16h1v1h-1zM23 16h1v1h-1zM31 16h2v1h-2zM35 16h1v1h-1zM37 16h1v1h-1zM40 16h1v1h-1zM7 17h1v1h-1zM12 17h2v1h-2zM15 17h1v1h-1zM17 17h2v1h-2zM21 17h4v1h-4zM26 17h1v1h-1zM28 17h1v1h-1zM30 17h1v1h-1zM33 17h2v1h-2zM36 17h2v1h-2zM39 17h1v1h-1zM41 17h1v1h-1zM2 18h1v1h-1zM4 18h2v1h-2zM7 18h4v1h-4zM13 18h1v1h-1zM18 18h5v1h-5zM27 18h2v1h-2zM31 18h3v1h-3zM35 18h1v1h-1zM37 18h1v1h-1zM40 18h1v1h-1zM5 19h2v1h-2zM9 19h1v1h-1zM11 19h1v1h-1zM15 19h1v1h-1zM17 19h7v1h-7zM25 19h3v1h-3zM30 19h1v1h-1zM32 19h3v1h-3zM36 19h4v1h-4zM41 19h2v1h-2zM2 20h3v1h-3zM7 20h2v1h-2zM11 20h2v1h-2zM17 20h1v1h-1zM19 20h1v1h-1zM22 20h2v1h-2zM27 20h4v1h-4zM35 20h1v1h-1zM38 20h2v1h-2zM41 20h1v1h-1zM4 21h2v1h-2zM9 21h4v1h-4zM14 21h1v1h-1zM16 21h1v1h-1zM19 21h2v1h-2zM23 21h2v1h-2zM27 21h1v1h-1zM29 21h2v1h-2zM32 21h4v1h-4zM38 21h2v1h-2zM41 21h2v1h-2zM3 22h1v1h-1zM5 22h1v1h-1zM7 22h3v1h-3zM11 22h1v1h-1zM15 22h1v1h-1zM18 22h1v1h-1zM21 22h1v1h-1zM23 22h1v1h-1zM25 22h2v1h-2zM28 22h2v1h-2zM31 22h1v1h-1zM37 22h1v1h-1zM39 22h3v1h-3zM2 23h2v1h-2zM6 23h1v1h-1zM9 23h1v1h-1zM11 23h2v1h-2zM14 23h2v1h-2zM17 23h9v1h-9zM27 23h1v1h-1zM30 23h1v1h-1zM32 23h3v1h-3zM36 23h7v1h-7zM6 24h6v1h-6zM13 24h1v1h-1zM15 24h1v1h-1zM17 24h2v1h-2zM20 24h1v1h-1zM22 24h1v1h-1zM24 24h1v1h-1zM27 24h4v1h-4zM34 24h1v1h-1zM39 24h1v1h-1zM3 25h2v1h-2zM6 25h2v1h-2zM13 25h1v1h-1zM15 25h1v1h-1zM18 25h1v1h-1zM20 25h2v1h-2zM23 25h2v1h-2zM29 25h1v1h-1zM33 25h3v1h-3zM38 25h2v1h-2zM41 25h1v1h-1zM3 26h1v1h-1zM6 26h1v1h-1zM8 26h2v1h-2zM12 26h1v1h-1zM14 26h3v1h-3zM18 26h2v1h-2zM25 26h7v1h-7zM33 26h1v1h-1zM40 26h1v1h-1zM42 26h1v1h-1zM3 27h1v1h-1zM5 27h1v1h-1zM10 27h1v1h-1zM12 27h8v1h-8zM21 27h3v1h-3zM25 27h1v1h-1zM27 27h1v1h-1zM30 27h1v1h-1zM32 27h2v1h-2zM35 27h5v1h-5zM41 27h2v1h-2zM2 28h1v1h-1zM4 28h1v1h-1zM7 28h3v1h-3zM16 28h1v1h-1zM18 28h1v1h-1zM20 28h1v1h-1zM22 28h1v1h-1zM26 28h5v1h-5zM32 28h1v1h-1zM34 28h1v1h-1zM36 28h3v1h-3zM2 29h2v1h-2zM5 29h2v1h-2zM12 29h7v1h-7zM21 29h4v1h-4zM26 29h1v1h-1zM28 29h1v1h-1zM30 29h1v1h-1zM33 29h2v1h-2zM36 29h1v1h-1zM38 29h2v1h-2zM41 29h1v1h-1zM2 30h8v1h-8zM11 30h1v1h-1zM13 30h1v1h-1zM15 30h1v1h-1zM17 30h3v1h-3zM22 30h1v1h-1zM24 30h5v1h-5zM31 30h1v1h-1zM33 30h1v1h-1zM39 30h2v1h-2zM2 31h1v1h-1zM11 31h2v1h-2zM14 31h1v1h-1zM16 31h1v1h-1zM19 31h2v1h-2zM27 31h1v1h-1zM29 31h1v1h-1zM31 31h3v1h-3zM36 31h1v1h-1zM38 31h1v1h-1zM40 31h1v1h-1zM42 31h1v1h-1zM2 32h1v1h-1zM4 32h1v1h-1zM6 32h1v1h-1zM8 32h3v1h-3zM12 32h2v1h-2zM16 32h2v1h-2zM22 32h8v1h-8zM31 32h1v1h-1zM35 32h3v1h-3zM39 32h1v1h-1zM2 33h1v1h-1zM4 33h4v1h-4zM10 33h3v1h-3zM14 33h3v1h-3zM23 33h3v1h-3zM29 33h2v1h-2zM33 33h1v1h-1zM35 33h3v1h-3zM39 33h1v1h-1zM41 33h2v1h-2zM2 34h1v1h-1zM7 34h2v1h-2zM10 34h1v1h-1zM13 34h2v1h-2zM18 34h2v1h-2zM24 34h5v1h-5zM31 34h1v1h-1zM34 34h5v1h-5zM40 34h1v1h-1zM42 34h1v1h-1zM10 35h3v1h-3zM16 35h3v1h-3zM20 35h3v1h-3zM24 35h3v1h-3zM30 35h2v1h-2zM33 35h2v1h-2zM38 35h1v1h-1zM41 35h2v1h-2zM2 36h7v1h-7zM13 36h2v1h-2zM16 36h3v1h-3zM20 36h1v1h-1zM24 36h1v1h-1zM29 36h2v1h-2zM33 36h2v1h-2zM36 36h1v1h-1zM38 36h1v1h-1zM40 36h1v1h-1zM2 37h1v1h-1zM8 37h1v1h-1zM10 37h3v1h-3zM16 37h2v1h-2zM22 37h1v1h-1zM26 37h1v1h-1zM28 37h1v1h-1zM33 37h2v1h-2zM38 37h2v1h-2zM2 38h1v1h-1zM4 38h3v1h-3zM8 38h1v1h-1zM10 38h1v1h-1zM12 38h5v1h-5zM18 38h1v1h-1zM20 38h1v1h-1zM23 38h2v1h-2zM26 38h1v1h-1zM29 38h1v1h-1zM31 38h1v1h-1zM34 38h5v1h-5zM40 38h1v1h-1zM2 39h1v1h-1zM4 39h3v1h-3zM8 39h1v1h-1zM10 39h1v1h-1zM12 39h1v1h-1zM15 39h2v1h-2zM18 39h2v1h-2zM21 39h2v1h-2zM25 39h2v1h-2zM28 39h1v1h-1zM30 39h4v1h-4zM35 39h1v1h-1zM37 39h1v1h-1zM39 39h1v1h-1zM2 40h1v1h-1zM4 40h3v1h-3zM8 40h1v1h-1zM10 40h3v1h-3zM14 40h1v1h-1zM16 40h3v1h-3zM22 40h1v1h-1zM24 40h1v1h-1zM26 40h2v1h-2zM29 40h2v1h-2zM34 40h6v1h-6zM2 41h1v1h-1zM8 41h1v1h-1zM13 41h1v1h-1zM16 41h2v1h-2zM23 41h1v1h-1zM25 41h1v1h-1zM28 41h3v1h-3zM34 41h2v1h-2zM38 41h2v1h-2zM41 41h1v1h-1zM2 42h7v1h-7zM10 42h2v1h-2zM15 42h4v1h-4zM20 42h2v1h-2zM24 42h5v1h-5zM31 42h1v1h-1zM33 42h1v1h-1zM35 42h6v1h-6z"/></svg>
+    <p class="qr-texto">Escanea con la cámara del celular para abrir esta página</p>
+    <p class="qr-url">https://memosanchezg.github.io/programacion-basica-interactivos/semana-01-tipo-de-error.html</p>
+    <button type="button" class="qr-cerrar">Cerrar</button>
+  </div>
+</div>
+<style>
+  .qr-capa { position:fixed; top:0; right:0; bottom:0; left:0; z-index:10000; display:flex; align-items:center;
+             justify-content:center; padding:16px; background:#fff; }
+  .qr-capa[hidden] { display:none; }
+  .qr-caja { max-width:100%; text-align:center; color:#0A2A57; font:16px/1.4 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .qr-caja svg { display:block; width:min(62vh, 84vw); height:auto; margin:0 auto; }
+  .qr-texto { margin:12px 0 2px; font-size:1.15rem; font-weight:bold; }
+  .qr-url { margin:0 0 12px; color:#5B6472; word-break:break-all; }
+  .qr-cerrar { font:inherit; padding:6px 20px; border:2px solid #00408F; border-radius:4px; background:#fff;
+               color:#00408F; cursor:pointer; }
+</style>
+<script>
+  (function () {
+    var capa = document.getElementById("qr-sitio");
+    document.querySelectorAll("a.qr-abrir").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        capa.hidden = false;
+        capa.querySelector(".qr-cerrar").focus();
+      });
+    });
+    capa.addEventListener("click", function (e) {
+      if (e.target === capa || e.target.classList.contains("qr-cerrar")) capa.hidden = true;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !capa.hidden) capa.hidden = true;
+    });
+  })();
+</script>
+</body>
+</html>

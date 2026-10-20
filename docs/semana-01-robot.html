@@ -1,0 +1,899 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="tipo" content="simulador">
+<title>Programa al robot</title>
+
+<style>
+  :root {
+    --azul:#00408F; --azul-oscuro:#0A2A57; --guinda:#8C1D35; --oro:#B8975A; --oro-texto:#8A6A2E;
+    --azul-claro:#E8EEF7; --oro-claro:#F7F1E6; --guinda-claro:#F5E6EA; --verde:#2F7D5B;
+    --tinta:#1B1F2A; --gris:#5B6472; --gris-claro:#E9ECF1; --borde:#D9DEE6; --fondo:#FFFFFF;
+    --cmd-fondo:#0C0C0C; --cmd-texto:#E6E6E6;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--fondo); color:var(--tinta);
+         font:16px/1.45 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .franja { height:8px; background:var(--azul); border-bottom:3px solid var(--oro); }
+  header { max-width:1280px; margin:0 auto; padding:12px 18px 4px; }
+  .semana { color:var(--guinda); font-weight:bold; letter-spacing:.04em; font-size:.85rem; text-transform:uppercase; }
+  h1 { font-family:Cambria,Georgia,serif; color:var(--azul-oscuro); font-size:1.7rem; margin:2px 0 2px; }
+  .sub { color:var(--gris); margin:0; }
+  main { max-width:1280px; margin:0 auto; padding:8px 18px 24px; }
+  .fila { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px; align-items:start; }
+  .fila > * { min-width:0; }
+  .panel { background:#fff; border:1px solid var(--borde); border-radius:10px; padding:12px 14px; min-width:0; }
+  .panel h2 { font-size:1.02rem; color:var(--azul-oscuro); margin:0 0 8px; }
+  label { display:block; font-weight:bold; color:var(--azul-oscuro); margin-top:10px; }
+  input[type=range] { width:100%; }
+  button.accion { font:inherit; font-weight:bold; border-radius:8px; padding:7px 12px; margin:8px 6px 0 0;
+                  border:1px solid var(--azul); background:#fff; color:var(--azul); cursor:pointer; }
+  button.accion:hover:not(:disabled), button.accion:focus-visible { background:var(--azul); color:#fff; outline:none; }
+  button.accion:disabled { opacity:.45; cursor:default; }
+  button.accion.primaria { background:var(--azul); color:#fff; }
+  button.accion.primaria:hover:not(:disabled), button.accion.primaria:focus-visible { background:var(--azul-oscuro); }
+  .lectura { background:var(--oro-claro); border-left:4px solid var(--oro); border-radius:8px; padding:10px 12px;
+             margin-top:12px; line-height:1.55; }
+  .lectura b { color:var(--azul-oscuro); }
+  .ok { color:var(--verde); font-weight:bold; }
+  .mal { color:var(--guinda); font-weight:bold; }
+  .preguntas { background:var(--azul-claro); border-radius:8px; padding:10px 14px; margin-top:12px; }
+  .preguntas h3 { margin:0 0 4px; font-size:.95rem; color:var(--azul-oscuro); }
+  .preguntas ol { margin:0; padding-left:20px; }
+  .preguntas li { margin:3px 0; }
+  /* Código Python con los colores del curso (minted, estilo borland) y salida de consola (cmd). */
+  .codigo { border:1px solid var(--tinta); background:#fff; font:15px/1.5 Consolas,"Courier New",monospace;
+            overflow-x:auto; margin:8px 0; }
+  .codigo ol { margin:0; padding:8px 12px 8px 3.4em; }
+  .codigo li { white-space:pre; }
+  .codigo li::marker { color:var(--gris); font:11px Cambria,Georgia,serif; }
+  .codigo .kw { color:#000080; font-weight:bold; }
+  .codigo .str, .codigo .num { color:#0000FF; }
+  .codigo .com { color:#008800; font-style:italic; }
+  .codigo .marca { background:var(--oro-claro); outline:1px solid var(--oro); }
+  footer { max-width:1280px; margin:0 auto; padding:6px 18px 18px; color:var(--gris); font-size:.85rem; }
+  footer a { color:var(--azul); }
+  @media (max-width: 900px) { .fila { grid-template-columns:1fr; } }
+
+  /* Propios de este juego */
+  [hidden] { display:none !important; }
+  code { font-family:Consolas,"Courier New",monospace; color:var(--azul-oscuro); }
+  nav.niveles { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:4px 0 12px; }
+  nav.niveles button { font:bold 15px Calibri,"Segoe UI",sans-serif; min-width:2.6em; height:2.4em; border-radius:8px;
+                       border:1px solid var(--borde); background:#fff; color:var(--azul-oscuro); cursor:pointer; padding:0 8px; }
+  nav.niveles button.hecho { border-color:var(--verde); color:var(--verde); }
+  nav.niveles button.actual { border:2px solid var(--azul); color:#fff; background:var(--azul); }
+  nav.niveles button:disabled { color:var(--gris); background:var(--gris-claro); cursor:not-allowed; }
+  nav.niveles button:focus-visible { outline:2px solid var(--oro); outline-offset:2px; }
+  #avanceTxt { color:var(--gris); margin-left:6px; }
+  h2.nivel { font-family:Cambria,Georgia,serif; font-size:1.3rem; color:var(--azul-oscuro); margin:2px 0 4px; }
+  .objetivo { margin:4px 0; }
+  .reglas { display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 8px; padding:0; list-style:none; }
+  .reglas li { font-size:.85rem; font-weight:bold; border-radius:999px; padding:1px 10px; border:1px solid var(--guinda); color:var(--guinda); }
+  .tableros-tabs { display:flex; gap:6px; margin:4px 0; flex-wrap:wrap; }
+  .tableros-tabs button { font:inherit; font-size:.92rem; border:1px solid var(--borde); border-radius:8px; background:#fff; padding:3px 10px; cursor:pointer; color:var(--azul-oscuro); }
+  .tableros-tabs button[aria-pressed="true"] { border-color:var(--azul); background:var(--azul-claro); font-weight:bold; }
+  .tableros-tabs button:focus-visible { outline:2px solid var(--azul); }
+  .tableros-tabs .r-ok { color:var(--verde); } .tableros-tabs .r-mal { color:var(--guinda); }
+  .tablero { display:grid; gap:2px; background:var(--borde); border:2px solid var(--azul-oscuro); border-radius:6px; padding:2px;
+             max-width:420px; margin:6px auto 0; }
+  .celda { aspect-ratio:1/1; background:#fff; position:relative; display:flex; align-items:center; justify-content:center; min-width:0; }
+  .celda.pared { background:var(--azul-oscuro); }
+  .celda.rastro { background:var(--oro-claro); }
+  .celda.meta::before { content:""; position:absolute; inset:14%; border:3px solid var(--verde); border-radius:50%; }
+  .celda.meta::after { content:"meta"; position:absolute; bottom:2%; font:bold 10px Calibri,"Segoe UI",sans-serif; color:var(--verde); }
+  .celda.choque { background:var(--guinda-claro); outline:3px solid var(--guinda); outline-offset:-3px; }
+  .robot { width:78%; height:78%; position:relative; z-index:1; transition:transform .15s; }
+  .coord { font:10px Calibri,"Segoe UI",sans-serif; color:var(--gris); text-align:center; }
+  .estado { display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:6px; margin-top:8px; }
+  .estado div { background:var(--gris-claro); border-radius:8px; padding:4px 10px; }
+  .estado small { display:block; color:var(--gris); font-size:.8rem; }
+  .estado b { color:var(--azul-oscuro); }
+  .controles { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:8px; }
+  .controles button.accion { margin:0; min-width:44px; padding:6px 10px; }
+  .controles .barra { flex:1 1 160px; display:flex; flex-direction:column; min-width:140px; }
+  .controles .barra label { margin:0 0 2px; font-size:.92rem; }
+  .resultado { margin-top:10px; }
+  .resultado.bien { background:#EAF4EF; border-left-color:var(--verde); }
+  .resultado.mal { background:var(--guinda-claro); border-left-color:var(--guinda); }
+  .herramientas { display:flex; flex-wrap:wrap; gap:6px; }
+  .herramientas button { font:14.5px Consolas,"Courier New",monospace; border:1px solid var(--azul); border-radius:8px; background:#fff; color:var(--azul-oscuro);
+                         padding:6px 9px; cursor:pointer; }
+  .herramientas button .tecla { font:bold 11px Calibri,"Segoe UI",sans-serif; color:var(--guinda); margin-left:4px; }
+  .herramientas button:hover:not(:disabled), .herramientas button:focus-visible { background:var(--azul-claro); outline:none; }
+  .herramientas button:disabled { opacity:.35; cursor:not-allowed; }
+  .herramientas.editar button { font-family:Calibri,"Segoe UI",sans-serif; font-size:.95rem; }
+  ul.editor { list-style:none; margin:8px 0 0; padding:4px 0; border:1px solid var(--tinta); border-radius:4px; min-height:120px;
+              font:15px/1.6 Consolas,"Courier New",monospace; max-height:420px; overflow:auto; }
+  ul.editor:focus-visible { outline:2px solid var(--azul); outline-offset:2px; }
+  ul.editor li { padding:1px 8px; cursor:pointer; white-space:pre; display:flex; gap:8px; align-items:baseline; }
+  ul.editor li .n { color:var(--gris); font:11px Cambria,Georgia,serif; min-width:1.6em; text-align:right; }
+  ul.editor li.inicio, ul.editor li.fin { color:var(--gris); font-style:italic; font-size:13.5px; }
+  ul.editor li.vacio { color:var(--guinda); font-style:italic; font-size:13.5px; cursor:default; }
+  ul.editor li.sel { background:var(--azul-claro); box-shadow:inset 3px 0 0 var(--azul); }
+  ul.editor li.marca { background:var(--oro-claro); outline:1px solid var(--oro); }
+  ul.editor li .kw { color:#000080; font-weight:bold; }
+  .contador { color:var(--gris); font-size:.92rem; margin:6px 0 0; }
+  .contador.excede { color:var(--guinda); font-weight:bold; }
+  .vistas { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:12px; margin-top:12px; }
+  .vistas > div { min-width:0; }
+  .vistas h3 { margin:0; font-size:.95rem; color:var(--azul-oscuro); }
+  ol.natural { margin:6px 0; padding:8px 10px; border:1px solid var(--borde); border-radius:4px; list-style:none; font-size:.98rem; }
+  ol.natural li { padding:1px 4px; }
+  ol.natural li.marca { background:var(--oro-claro); outline:1px solid var(--oro); }
+  ol.natural .num { color:var(--guinda); font-weight:bold; margin-right:4px; }
+  .aviso-vacio { background:var(--guinda-claro); border-left:4px solid var(--guinda); border-radius:8px; padding:8px 10px; margin-top:8px; font-size:.95rem; }
+  .aviso-vacio code { color:var(--guinda); }
+  .felicidades { background:#E4F1EA; border-left:4px solid var(--verde); border-radius:8px; padding:10px 12px; margin-top:10px; }
+  .sub2 { color:var(--gris); font-size:.9rem; margin:4px 0 0; }
+  details.ayuda { margin-top:10px; }
+  details.ayuda summary { cursor:pointer; font-weight:bold; color:var(--azul-oscuro); }
+  details.ayuda ul { margin:4px 0; padding-left:20px; font-size:.95rem; }
+  @media (max-width: 600px) { .vistas { grid-template-columns:1fr; } }
+  @media (max-width: 480px) {
+    header { padding:10px 12px 4px; }
+    main { padding:8px 10px 20px; }
+    footer { padding:6px 12px 16px; }
+    .panel { padding:10px; }
+    h1 { font-size:1.45rem; }
+    .codigo, ul.editor { font-size:13.5px; }
+    nav.niveles button { min-width:2.3em; }
+  }
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header>
+  <div class="semana">Semana 01 · La programación como disciplina formal</div>
+  <h1>Programa al robot</h1>
+  <p class="sub">Arma el algoritmo con instrucciones, ejecútalo paso a paso y mira el mismo algoritmo en español y como programa de Python. 8 niveles: al completar uno se abre el siguiente.</p>
+</header>
+<main>
+  <nav class="niveles" id="niveles" aria-label="Niveles"></nav>
+  <div class="fila">
+    <section class="panel" aria-labelledby="tituloNivel">
+      <h2 class="nivel" id="tituloNivel"></h2>
+      <p class="objetivo" id="objetivo"></p>
+      <ul class="reglas" id="reglas"></ul>
+      <div class="tableros-tabs" id="tabsTableros" aria-label="Tableros"></div>
+      <div class="tablero" id="tablero" role="img"></div>
+      <div class="estado" id="estado" aria-live="polite"></div>
+      <div class="controles">
+        <button type="button" class="accion" id="inicio" aria-label="Volver al inicio" title="Volver al inicio">⏮</button>
+        <button type="button" class="accion" id="atras" aria-label="Paso anterior" title="Paso anterior">◀</button>
+        <button type="button" class="accion primaria" id="adelante" aria-label="Siguiente paso" title="Siguiente paso">▶</button>
+        <button type="button" class="accion" id="reproducir" aria-label="Ejecutar todo, animado" title="Ejecutar todo, animado">▶▶</button>
+        <button type="button" class="accion" id="fin" aria-label="Ir al final" title="Ir al final">⏭</button>
+        <div class="barra">
+          <label for="paso">Paso <span id="pasoTxt">0 de 0</span></label>
+          <input type="range" id="paso" min="0" max="0" step="1" value="0">
+        </div>
+      </div>
+      <div class="lectura resultado" id="resultado" aria-live="polite"></div>
+      <div id="felicidades"></div>
+      <div>
+        <button type="button" class="accion" id="anterior">◀ Nivel anterior</button>
+        <button type="button" class="accion" id="siguiente">Siguiente nivel ▶</button>
+      </div>
+    </section>
+
+    <section class="panel" aria-label="El programa">
+      <h2>Tu algoritmo</h2>
+      <div class="herramientas" id="herramientas" aria-label="Agregar instrucciones">
+        <button type="button" data-agregar="avanzar">avanzar()<span class="tecla">A</span></button>
+        <button type="button" data-agregar="izq">girar_izquierda()<span class="tecla">I</span></button>
+        <button type="button" data-agregar="der">girar_derecha()<span class="tecla">D</span></button>
+        <button type="button" data-agregar="repetir">repetir 3 veces:<span class="tecla">R</span></button>
+        <button type="button" data-agregar="mientras">mientras haya camino:<span class="tecla">M</span></button>
+      </div>
+      <div class="herramientas editar" aria-label="Editar la instrucción seleccionada" style="margin-top:6px">
+        <button type="button" id="subir" title="Alt + flecha arriba">▲ Subir</button>
+        <button type="button" id="bajar" title="Alt + flecha abajo">▼ Bajar</button>
+        <button type="button" id="menosN" title="Tecla −">− vez</button>
+        <button type="button" id="masN" title="Tecla +">+ vez</button>
+        <button type="button" id="borrar" title="Supr">Borrar</button>
+        <button type="button" id="deshacer" title="Ctrl + Z">Deshacer</button>
+        <button type="button" id="limpiar">Borrar todo</button>
+      </div>
+      <ul class="editor" id="editor" role="listbox" tabindex="0" aria-label="Instrucciones del programa. Flechas para elegir una línea; la nueva instrucción se agrega después de la línea elegida."></ul>
+      <p class="contador" id="contador"></p>
+      <div id="avisoVacio"></div>
+      <details class="ayuda">
+        <summary>Cómo se usa el editor</summary>
+        <ul>
+          <li>Elige una línea (clic o flechas ↑ ↓) y agrega una instrucción: se coloca justo después. Si eliges un "repetir" o un "mientras", la instrucción entra a su bloque.</li>
+          <li>Para agregar después de un bloque, elige su línea "fin de...".</li>
+          <li>Teclas: A, I, D, R y M agregan; Alt + ↑ ↓ mueven la instrucción (también entra y sale de los bloques); + y − cambian las veces; Supr borra; Ctrl + Z deshace.</li>
+        </ul>
+      </details>
+      <div class="vistas">
+        <div>
+          <h3>El algoritmo (en español)</h3>
+          <ol class="natural" id="natural" aria-label="El algoritmo en español"></ol>
+        </div>
+        <div>
+          <h3>El programa (en Python)</h3>
+          <div id="python"></div>
+        </div>
+      </div>
+      <p class="sub2">Las funciones <code>avanzar()</code>, <code>girar_izquierda()</code>, <code>girar_derecha()</code> y <code>hay_camino()</code> las trae el robot; <code>hay_camino()</code> regresa <code>True</code> si la casilla de enfrente está libre.</p>
+      <div class="preguntas">
+        <h3>Para explorar</h3>
+        <ol>
+          <li>El algoritmo en español y el programa en Python de tu solución, ¿son lo mismo? ¿Qué cambiaría si lo escribieras en otro lenguaje?</li>
+          <li>A una persona le dices "camina hasta la pared" y lo entiende. ¿Por qué el robot necesita "mientras haya camino: avanzar()"?</li>
+          <li>En el nivel 6, ¿el error era sintáctico, semántico o lógico? ¿Cómo lo encontraste?</li>
+          <li>En el nivel 4, compara tu programa con uno sin "repetir": ¿cambian los movimientos del robot, el número de pasos o solo el tamaño del programa?</li>
+          <li>¿Por qué en el nivel 7 no sirve "repetir n veces"?</li>
+        </ol>
+      </div>
+    </section>
+  </div>
+</main>
+<footer>
+  Programación Básica · FCFM-UANL · funciona sin internet. Tu avance y tus programas se guardan en este navegador.
+  <a href="index.html">Índice de simuladores</a> · <a href="#qr-sitio" class="qr-abrir">Abrir en el celular (QR)</a>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(t) {
+    return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  // ==== NÚCLEO (sin DOM): algoritmo, programa de Python y ejecución ====
+  // Instrucciones: {t:"avanzar"} {t:"izq"} {t:"der"} {t:"repetir", n, cuerpo:[]} {t:"mientras", cuerpo:[]}
+  // Una ruta es la lista de posiciones para llegar a una instrucción: [2] o [2, 0] (primera del bloque de la 3.ª).
+  var DIRS = ["norte", "este", "sur", "oeste"], DF = [-1, 0, 1, 0], DC = [0, 1, 0, -1];
+  function esBloque(x) { return x.t === "repetir" || x.t === "mientras"; }
+  function copiar(p) { return JSON.parse(JSON.stringify(p)); }
+  function cuerpo(prog, rutaPadre) {
+    var c = prog;
+    rutaPadre.forEach(function (k) { c = c[k].cuerpo; });
+    return c;
+  }
+  function nodo(prog, ruta) { return cuerpo(prog, ruta.slice(0, -1))[ruta[ruta.length - 1]]; }
+  function contar(prog) {
+    return prog.reduce(function (a, x) { return a + 1 + (esBloque(x) ? contar(x.cuerpo) : 0); }, 0);
+  }
+  // Líneas del editor: inicio, cada instrucción, "(vacío)" y "fin de..." de cada bloque
+  function lineasEditor(prog) {
+    var L = [{ tipo: "inicio", ruta: [], nivel: 0 }];
+    (function rec(c, base, nivel) {
+      c.forEach(function (x, k) {
+        var ruta = base.concat([k]);
+        L.push({ tipo: "nodo", ruta: ruta, nivel: nivel });
+        if (esBloque(x)) {
+          if (!x.cuerpo.length) L.push({ tipo: "vacio", ruta: ruta, nivel: nivel + 1 });
+          rec(x.cuerpo, ruta, nivel + 1);
+          L.push({ tipo: "fin", ruta: ruta, nivel: nivel });
+        }
+      });
+    })(prog, [], 0);
+    return L;
+  }
+  // Dónde entra una instrucción nueva según la línea elegida: [rutaPadre, posición]
+  function destino(prog, sel) {
+    if (sel.tipo === "inicio") return [[], 0];
+    if (sel.tipo === "fin") return [sel.ruta.slice(0, -1), sel.ruta[sel.ruta.length - 1] + 1];
+    var x = nodo(prog, sel.ruta);
+    if (esBloque(x)) return [sel.ruta, 0];
+    return [sel.ruta.slice(0, -1), sel.ruta[sel.ruta.length - 1] + 1];
+  }
+  function insertar(prog, sel, nuevo) {            // regresa la ruta de la instrucción nueva
+    var d = destino(prog, sel);
+    cuerpo(prog, d[0]).splice(d[1], 0, nuevo);
+    return d[0].concat([d[1]]);
+  }
+  // Todas las posiciones donde puede quedar una instrucción, en orden de arriba hacia abajo
+  function posiciones(prog) {
+    var P = [];
+    (function rec(c, base) {
+      for (var k = 0; k <= c.length; k++) {
+        P.push([base, k]);
+        if (k < c.length && esBloque(c[k])) rec(c[k].cuerpo, base.concat([k]));
+      }
+    })(prog, []);
+    return P;
+  }
+  function mismaPos(a, b) { return a[1] === b[1] && a[0].length === b[0].length && a[0].every(function (v, i) { return v === b[0][i]; }); }
+  function mover(prog, ruta, delta) {             // sube (-1) o baja (+1) una posición; regresa la ruta nueva o null
+    var padre = ruta.slice(0, -1), k = ruta[ruta.length - 1], c = cuerpo(prog, padre), x = c[k];
+    c.splice(k, 1);
+    var P = posiciones(prog), i = -1;
+    P.forEach(function (p, j) { if (mismaPos(p, [padre, k])) i = j; });
+    var j = i + delta;
+    if (j < 0 || j >= P.length) { c.splice(k, 0, x); return null; }
+    cuerpo(prog, P[j][0]).splice(P[j][1], 0, x);
+    return P[j][0].concat([P[j][1]]);
+  }
+  function borrar(prog, ruta) { cuerpo(prog, ruta.slice(0, -1)).splice(ruta[ruta.length - 1], 1); }
+  var VARS = ["i", "j", "k", "l", "m"];
+  // El programa en Python, una línea por instrucción; numeros[ruta] = número de línea
+  function lineasPython(prog) {
+    var L = [], numeros = {};
+    (function rec(c, base, nivel, prof) {
+      c.forEach(function (x, k) {
+        var ruta = base.concat([k]), sangria = "    ".repeat(nivel), t;
+        if (x.t === "avanzar") t = "avanzar()";
+        else if (x.t === "izq") t = "girar_izquierda()";
+        else if (x.t === "der") t = "girar_derecha()";
+        else if (x.t === "repetir") t = "for " + VARS[prof % VARS.length] + " in range(" + x.n + "):";
+        else t = "while hay_camino():";
+        L.push(sangria + t);
+        numeros[ruta.join(",")] = L.length;
+        if (esBloque(x)) rec(x.cuerpo, ruta, nivel + 1, prof + (x.t === "repetir" ? 1 : 0));
+      });
+    })(prog, [], 0, 0);
+    return { lineas: L, numeros: numeros };
+  }
+  // El primer bloque vacío, como lo diría Python 3.12
+  function errorBloqueVacio(prog) {
+    var py = lineasPython(prog), err = null;
+    (function rec(c, base) {
+      c.forEach(function (x, k) {
+        if (err) return;
+        var ruta = base.concat([k]);
+        if (esBloque(x)) {
+          if (!x.cuerpo.length) err = { ruta: ruta, mensaje: "IndentationError: expected an indented block after '" + (x.t === "repetir" ? "for" : "while") +
+                                        "' statement on line " + py.numeros[ruta.join(",")] };
+          else rec(x.cuerpo, ruta);
+        }
+      });
+    })(prog, []);
+    return err;
+  }
+  // El algoritmo en español, con numeración 1, 2, 2.1...
+  function lineasNatural(prog) {
+    var L = [];
+    (function rec(c, base, pref) {
+      c.forEach(function (x, k) {
+        var num = pref + (k + 1), t;
+        if (x.t === "avanzar") t = "Avanza una casilla.";
+        else if (x.t === "izq") t = "Gira a la izquierda.";
+        else if (x.t === "der") t = "Gira a la derecha.";
+        else if (x.t === "repetir") t = "Repite " + x.n + (x.n === 1 ? " vez:" : " veces:");
+        else t = "Mientras haya camino enfrente:";
+        L.push({ num: num, texto: t, nivel: base.length, ruta: base.concat([k]) });
+        if (esBloque(x)) rec(x.cuerpo, base.concat([k]), num + ".");
+      });
+    })(prog, [], "");
+    return L;
+  }
+  // Tablero: filas de texto con . libre, # pared, M meta y el robot > < ^ v
+  function leerTablero(filas) {
+    var t = { filas: filas.length, cols: filas[0].length, paredes: {}, meta: null, inicio: null };
+    filas.forEach(function (fila, f) {
+      fila.split("").forEach(function (ch, c) {
+        if (ch === "#") t.paredes[f + "," + c] = true;
+        else if (ch === "M") t.meta = [f, c];
+        else if ("^>v<".indexOf(ch) >= 0) t.inicio = { f: f, c: c, dir: "^>v<".indexOf(ch) };
+      });
+    });
+    return t;
+  }
+  function libre(t, f, c) { return f >= 0 && c >= 0 && f < t.filas && c < t.cols && !t.paredes[f + "," + c]; }
+  // Ejecuta el programa; cada paso es una línea de Python que se ejecuta (como sys.settrace)
+  function ejecutar(prog, t, limite) {
+    var py = lineasPython(prog), e = { f: t.inicio.f, c: t.inicio.c, dir: t.inicio.dir }, vars = {}, pasos = [];
+    var res = { pasos: pasos, fin: "termino", choque: null };
+    function paso(ruta, nota) {
+      pasos.push({ ruta: ruta, linea: py.numeros[ruta.join(",")], f: e.f, c: e.c, dir: e.dir, vars: copiar(vars), nota: nota });
+      if (pasos.length >= limite) throw { limite: true };
+    }
+    function correr(c, base, prof) {
+      for (var k = 0; k < c.length; k++) {
+        var x = c[k], ruta = base.concat([k]);
+        if (x.t === "avanzar") {
+          var f2 = e.f + DF[e.dir], c2 = e.c + DC[e.dir];
+          if (!libre(t, f2, c2)) {
+            res.fin = "choque";
+            res.choque = { f: f2, c: c2, dentro: f2 >= 0 && c2 >= 0 && f2 < t.filas && c2 < t.cols, desde: { f: e.f, c: e.c, dir: e.dir } };
+            paso(ruta, "choque");
+            throw { choque: true };
+          }
+          e.f = f2; e.c = c2;
+          paso(ruta, "avanza");
+        } else if (x.t === "izq" || x.t === "der") {
+          e.dir = (e.dir + (x.t === "der" ? 1 : 3)) % 4;
+          paso(ruta, x.t);
+        } else if (x.t === "repetir") {
+          var v = VARS[prof % VARS.length];
+          for (var i = 0; i < x.n; i++) {
+            vars[v] = i;
+            paso(ruta, "vuelta " + (i + 1) + " de " + x.n);
+            correr(x.cuerpo, ruta, prof + 1);
+          }
+          paso(ruta, "ya dio las " + x.n + (x.n === 1 ? " vuelta" : " vueltas") + ": sale del bloque");
+        } else {
+          for (;;) {
+            var hay = libre(t, e.f + DF[e.dir], e.c + DC[e.dir]);
+            paso(ruta, hay ? "hay_camino() regresa True: entra al bloque" : "hay_camino() regresa False: sale del bloque");
+            if (!hay) break;
+            correr(x.cuerpo, ruta, prof);
+          }
+        }
+      }
+    }
+    try { correr(prog, [], 0); }
+    catch (ex) {
+      if (ex && ex.limite) res.fin = "limite";
+      else if (!(ex && ex.choque)) throw ex;
+    }
+    res.final = { f: e.f, c: e.c, dir: e.dir };
+    res.enMeta = res.fin === "termino" && e.f === t.meta[0] && e.c === t.meta[1];
+    return res;
+  }
+  // ==== FIN DEL NÚCLEO ====
+
+  // ---------- Los niveles ----------
+  var NIVELES = [
+    { titulo: "Primeros pasos", objetivo: "Lleva al robot a la meta. Cada avanzar() lo mueve una casilla hacia donde mira.",
+      herramientas: ["avanzar"], tableros: [[">..M."]] },
+    { titulo: "Dar la vuelta", objetivo: "Ahora hay que girar. Ojo: girar_derecha() gira al robot sobre su lugar, hacia SU derecha; no lo mueve.",
+      herramientas: ["avanzar", "izq", "der"], tableros: [[">..", "##.", "##M"]] },
+    { titulo: "Descomponer el camino", objetivo: "Un camino más largo. Antes de armarlo, divídelo en tramos: ¿cuántas casillas avanza en cada uno y hacia dónde gira?",
+      herramientas: ["avanzar", "izq", "der"], tableros: [["##...", "##.#M", ">..##"]] },
+    { titulo: "Encuentra el patrón", objetivo: "Un pasillo largo, pero solo puedes usar 2 instrucciones. Usa repetir: lo que va dentro del bloque se hace varias veces.",
+      herramientas: ["avanzar", "izq", "der", "repetir"], max: 2, tableros: [[">.......M"]] },
+    { titulo: "La escalera", objetivo: "Sube la escalera hasta la meta con 6 instrucciones como máximo. ¿Qué se repite en cada escalón?",
+      herramientas: ["avanzar", "izq", "der", "repetir"], max: 6, tableros: [["####M", "###..", "##..#", "#..##", ">.###"]] },
+    { titulo: "Depura el programa", objetivo: "Un compañero escribió este programa y dice que el robot llega a la meta, pero no es así. Ejecútalo paso a paso, encuentra el error y corrígelo cambiando una sola instrucción.",
+      herramientas: ["avanzar", "izq", "der", "repetir"], tableros: [[">...#", "###.#", "###M#"]],
+      inicial: [{ t: "repetir", n: 3, cuerpo: [{ t: "avanzar" }] }, { t: "izq" }, { t: "repetir", n: 2, cuerpo: [{ t: "avanzar" }] }] },
+    { titulo: "Hasta donde haya camino", objetivo: "El mismo programa debe llevar al robot a la meta en los dos tableros, y los pasillos miden distinto. Máximo 2 instrucciones.",
+      herramientas: ["avanzar", "izq", "der", "repetir", "mientras"], max: 2, tableros: [[">...M"], [">......M"]] },
+    { titulo: "Reto final: la vuelta", objetivo: "Rodea el bloque hasta la meta en los dos tableros con 4 instrucciones como máximo. Combina repetir y mientras.",
+      herramientas: ["avanzar", "izq", "der", "repetir", "mientras"], max: 4,
+      tableros: [[">....", "####.", "####.", "M...."], [">......", "######.", "M......"]] }
+  ];
+  NIVELES.forEach(function (n) { n.t = n.tableros.map(leerTablero); });
+  var LIMITE = 300;
+  var NOMBRE_INSTR = { avanzar: "avanzar()", izq: "girar_izquierda()", der: "girar_derecha()" };
+
+  // ---------- Estado guardado ----------
+  var CLAVE = "pb-s01-robot";
+  var avance = { completados: [], programas: {}, actual: 0 };
+  try {
+    var g = JSON.parse(localStorage.getItem(CLAVE) || "null");
+    if (g && Array.isArray(g.completados)) {
+      avance.completados = g.completados.filter(function (k) { return typeof k === "number" && k >= 0 && k < NIVELES.length; });
+      avance.programas = g.programas && typeof g.programas === "object" ? g.programas : {};
+      avance.actual = typeof g.actual === "number" && g.actual >= 0 && g.actual < NIVELES.length ? g.actual : 0;
+    }
+  } catch (e) { /* sin almacenamiento */ }
+  function guardar() { try { localStorage.setItem(CLAVE, JSON.stringify(avance)); } catch (e) { /* sin almacenamiento */ } }
+  function completado(k) { return avance.completados.indexOf(k) >= 0; }
+  function abierto(k) { return k === 0 || completado(k) || completado(k - 1); }
+  if (!abierto(avance.actual)) avance.actual = 0;
+
+  var prog = [], sel = { tipo: "inicio", ruta: [] }, historial = [], corridas = null, tab = 0, k = 0, reloj = null;
+
+  // ---------- Navegación de niveles ----------
+  function pintarNav() {
+    $("niveles").innerHTML = NIVELES.map(function (n, i) {
+      var hecho = completado(i), ab = abierto(i), act = i === avance.actual;
+      return '<button type="button" data-n="' + i + '" class="' + (hecho ? "hecho" : "") + (act ? " actual" : "") + '"' +
+             (ab ? "" : " disabled") + ' aria-label="Nivel ' + (i + 1) + (hecho ? ", completado" : ab ? "" : ", bloqueado") + '"' +
+             (act ? ' aria-current="step"' : "") + ">" + (i + 1) + (hecho ? " ✓" : ab ? "" : " 🔒") + "</button>";
+    }).join("") + '<span id="avanceTxt">' + avance.completados.length + " de " + NIVELES.length + " completados</span>";
+  }
+  $("niveles").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-n]");
+    if (b && !b.disabled) irANivel(Number(b.dataset.n));
+  });
+
+  function irANivel(i) {
+    detener();
+    avance.actual = i;
+    var n = NIVELES[i];
+    var guardado = avance.programas[i];
+    prog = Array.isArray(guardado) ? copiar(guardado) : copiar(n.inicial || []);
+    sel = { tipo: "inicio", ruta: [] };
+    historial = [];
+    tab = 0;
+    guardar();
+    $("tituloNivel").textContent = "Nivel " + (i + 1) + ". " + n.titulo;
+    $("objetivo").textContent = n.objetivo;
+    var reglas = [];
+    if (n.max) reglas.push("Máximo " + n.max + " instrucciones");
+    if (n.tableros.length > 1) reglas.push("Debe funcionar en los " + n.tableros.length + " tableros");
+    if (n.inicial) reglas.push("Cambia una sola instrucción");
+    $("reglas").innerHTML = reglas.map(function (r) { return "<li>" + esc(r) + "</li>"; }).join("");
+    document.querySelectorAll("#herramientas button").forEach(function (b) {
+      b.disabled = n.herramientas.indexOf(b.dataset.agregar) < 0;
+      b.title = b.disabled ? "Se abre en un nivel más adelante" : "";
+    });
+    $("anterior").disabled = i === 0;
+    $("siguiente").disabled = !(i < NIVELES.length - 1 && abierto(i + 1));
+    $("felicidades").innerHTML = "";
+    pintarNav();
+    invalidar();
+  }
+
+  // ---------- Editor ----------
+  function cambiar(fn) {                          // guarda para deshacer, aplica el cambio y repinta
+    historial.push(copiar(prog));
+    if (historial.length > 60) historial.shift();
+    fn();
+    avance.programas[avance.actual] = copiar(prog);
+    guardar();
+    invalidar();
+  }
+  function textoEditor(x) {
+    if (x.t === "repetir") return '<span class="kw">repetir</span> ' + x.n + (x.n === 1 ? " vez:" : " veces:");
+    if (x.t === "mientras") return '<span class="kw">mientras</span> haya camino:';
+    return esc(NOMBRE_INSTR[x.t]);
+  }
+  function igualSel(a, b) { return a.tipo === b.tipo && a.ruta.join(",") === b.ruta.join(","); }
+  function pintarEditor(marcaRuta) {
+    var L = lineasEditor(prog), py = lineasPython(prog), html = "";
+    if (!L.some(function (l) { return l.tipo !== "vacio" && igualSel(l, sel); })) sel = { tipo: "inicio", ruta: [] };
+    L.forEach(function (l, j) {
+      var id = "ed-" + j, cl = [l.tipo], texto, num = "";
+      var sangria = "  ".repeat(l.nivel);
+      if (l.tipo === "inicio") texto = "▶ inicio del programa";
+      else if (l.tipo === "vacio") texto = sangria + "(vacío: agrega aquí al menos una instrucción)";
+      else if (l.tipo === "fin") texto = sangria + "└ fin de " + (nodo(prog, l.ruta).t === "repetir" ? "repetir" : "mientras");
+      else { texto = sangria + textoEditor(nodo(prog, l.ruta)); num = py.numeros[l.ruta.join(",")]; }
+      if (l.tipo !== "vacio" && igualSel(l, sel)) cl.push("sel");
+      if (l.tipo === "nodo" && marcaRuta && l.ruta.join(",") === marcaRuta.join(",")) cl.push("marca");
+      var desc = l.tipo === "inicio" ? "Inicio del programa" : l.tipo === "fin" ? "Fin del bloque" : l.tipo === "vacio" ? "Bloque vacío" :
+                 "Línea " + num + ": " + (textoEditor(nodo(prog, l.ruta)).replace(/<[^>]+>/g, ""));
+      html += '<li id="' + id + '" role="option" class="' + cl.join(" ") + '" data-j="' + j + '"' +
+              (l.tipo !== "vacio" && igualSel(l, sel) ? ' aria-selected="true"' : ' aria-selected="false"') + ' aria-label="' + esc(desc) + '">' +
+              '<span class="n" aria-hidden="true">' + (num || "") + "</span><span>" + (l.tipo === "nodo" ? texto : esc(texto)) + "</span></li>";
+    });
+    $("editor").innerHTML = html;
+    var elegido = $("editor").querySelector("li.sel");
+    if (elegido) {
+      $("editor").setAttribute("aria-activedescendant", elegido.id);
+      var caja = $("editor");
+      if (elegido.offsetTop < caja.scrollTop || elegido.offsetTop > caja.scrollTop + caja.clientHeight - 24) caja.scrollTop = Math.max(0, elegido.offsetTop - 40);
+    }
+    var n = NIVELES[avance.actual], cuantas = contar(prog);
+    $("contador").textContent = "Instrucciones: " + cuantas + (n.max ? " (máximo " + n.max + ")" : "");
+    $("contador").className = "contador" + (n.max && cuantas > n.max ? " excede" : "");
+    var esNodo = sel.tipo === "nodo", x = esNodo ? nodo(prog, sel.ruta) : null;
+    $("subir").disabled = $("bajar").disabled = $("borrar").disabled = !esNodo;
+    $("menosN").disabled = !(x && x.t === "repetir" && x.n > 1);
+    $("masN").disabled = !(x && x.t === "repetir" && x.n < 9);
+    $("deshacer").disabled = !historial.length;
+    $("limpiar").disabled = !prog.length;
+  }
+  function lineasSeleccionables() { return lineasEditor(prog).filter(function (l) { return l.tipo !== "vacio"; }); }
+  function agregar(t) {
+    var n = NIVELES[avance.actual];
+    if (n.herramientas.indexOf(t) < 0) return;
+    cambiar(function () {
+      var nuevo = t === "repetir" ? { t: "repetir", n: 3, cuerpo: [] } : t === "mientras" ? { t: "mientras", cuerpo: [] } : { t: t };
+      var ruta = insertar(prog, sel, nuevo);
+      sel = { tipo: "nodo", ruta: ruta };
+    });
+  }
+  document.querySelectorAll("#herramientas button").forEach(function (b) {
+    b.addEventListener("click", function () { agregar(b.dataset.agregar); });
+  });
+  function moverSel(delta) {
+    if (sel.tipo !== "nodo") return;
+    cambiar(function () {
+      var r = mover(prog, sel.ruta, delta);
+      if (r) sel = { tipo: "nodo", ruta: r }; else historial.pop();
+    });
+  }
+  $("subir").addEventListener("click", function () { moverSel(-1); });
+  $("bajar").addEventListener("click", function () { moverSel(1); });
+  function cambiarVeces(d) {
+    if (sel.tipo !== "nodo") return;
+    var x = nodo(prog, sel.ruta);
+    if (x.t !== "repetir" || x.n + d < 1 || x.n + d > 9) return;
+    cambiar(function () { nodo(prog, sel.ruta).n += d; });
+  }
+  $("menosN").addEventListener("click", function () { cambiarVeces(-1); });
+  $("masN").addEventListener("click", function () { cambiarVeces(1); });
+  function borrarSel() {
+    if (sel.tipo !== "nodo") return;
+    cambiar(function () {
+      var ruta = sel.ruta, k2 = ruta[ruta.length - 1];
+      borrar(prog, ruta);
+      if (k2 > 0) {                               // queda elegida la línea de arriba (si es un bloque, su "fin")
+        var previa = ruta.slice(0, -1).concat([k2 - 1]);
+        sel = { tipo: esBloque(nodo(prog, previa)) ? "fin" : "nodo", ruta: previa };
+      }
+      else if (ruta.length > 1) sel = { tipo: "nodo", ruta: ruta.slice(0, -1) };
+      else sel = { tipo: "inicio", ruta: [] };
+    });
+  }
+  $("borrar").addEventListener("click", borrarSel);
+  function deshacer() {
+    if (!historial.length) return;
+    prog = historial.pop();
+    avance.programas[avance.actual] = copiar(prog);
+    guardar();
+    invalidar();
+  }
+  $("deshacer").addEventListener("click", deshacer);
+  $("limpiar").addEventListener("click", function () {
+    if (!prog.length) return;
+    cambiar(function () { prog.length = 0; sel = { tipo: "inicio", ruta: [] }; });
+  });
+  $("editor").addEventListener("click", function (e) {
+    var li = e.target.closest("li[data-j]");
+    if (!li) return;
+    var l = lineasEditor(prog)[Number(li.dataset.j)];
+    if (l.tipo === "vacio") return;
+    sel = { tipo: l.tipo, ruta: l.ruta };
+    pintarEditor(marcaActual());
+  });
+  $("editor").addEventListener("keydown", function (e) {
+    var L = lineasSeleccionables(), i = -1;
+    L.forEach(function (l, j) { if (igualSel(l, sel)) i = j; });
+    var tecla = e.key.toLowerCase();
+    if ((e.key === "ArrowUp" || e.key === "ArrowDown") && e.altKey) { e.preventDefault(); moverSel(e.key === "ArrowUp" ? -1 : 1); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); if (i > 0) { sel = { tipo: L[i - 1].tipo, ruta: L[i - 1].ruta }; pintarEditor(marcaActual()); } }
+    else if (e.key === "ArrowDown") { e.preventDefault(); if (i < L.length - 1) { sel = { tipo: L[i + 1].tipo, ruta: L[i + 1].ruta }; pintarEditor(marcaActual()); } }
+    else if (e.key === "Home") { e.preventDefault(); sel = { tipo: "inicio", ruta: [] }; pintarEditor(marcaActual()); }
+    else if (e.key === "End") { e.preventDefault(); sel = { tipo: L[L.length - 1].tipo, ruta: L[L.length - 1].ruta }; pintarEditor(marcaActual()); }
+    else if (e.key === "Delete" || e.key === "Backspace") { e.preventDefault(); borrarSel(); }
+    else if (tecla === "z" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); deshacer(); }
+    else if (e.ctrlKey || e.metaKey || e.altKey) return;
+    else if (tecla === "a") { e.preventDefault(); agregar("avanzar"); }
+    else if (tecla === "i") { e.preventDefault(); agregar("izq"); }
+    else if (tecla === "d") { e.preventDefault(); agregar("der"); }
+    else if (tecla === "r") { e.preventDefault(); agregar("repetir"); }
+    else if (tecla === "m") { e.preventDefault(); agregar("mientras"); }
+    else if (e.key === "+") { e.preventDefault(); cambiarVeces(1); }
+    else if (e.key === "-") { e.preventDefault(); cambiarVeces(-1); }
+  });
+
+  // ---------- Vistas: algoritmo y Python ----------
+  var PY_KW = /^(False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)$/;
+  function pyResaltar(linea) {
+    var html = "", i = 0, m, resto;
+    while (i < linea.length) {
+      resto = linea.slice(i);
+      if ((m = /^[A-Za-z_][\w]*/.exec(resto))) { html += PY_KW.test(m[0]) ? '<span class="kw">' + m[0] + "</span>" : esc(m[0]); }
+      else if ((m = /^\d+/.exec(resto))) { html += '<span class="num">' + m[0] + "</span>"; }
+      else { m = [resto[0]]; html += esc(m[0]); }
+      i += m[0].length;
+    }
+    return html;
+  }
+  function pintarVistas(marcaRuta) {
+    var nat = lineasNatural(prog), py = lineasPython(prog), clave = marcaRuta ? marcaRuta.join(",") : null;
+    $("natural").innerHTML = nat.length ? nat.map(function (l) {
+      return '<li style="padding-left:' + (4 + l.nivel * 22) + 'px"' + (l.ruta.join(",") === clave ? ' class="marca"' : "") + '><span class="num">' + l.num + ".</span>" + esc(l.texto) + "</li>";
+    }).join("") : '<li class="sub2">(todavía no hay pasos)</li>';
+    var marcaLinea = clave ? py.numeros[clave] : null;
+    $("python").innerHTML = py.lineas.length ? '<div class="codigo"><ol>' + py.lineas.map(function (l, j) {
+      return "<li" + (marcaLinea === j + 1 ? ' class="marca"' : "") + ">" + (pyResaltar(l) || " ") + "</li>";
+    }).join("") + "</ol></div>" : '<p class="sub2" style="border:1px solid var(--tinta);padding:8px 10px;margin:6px 0">(todavía no hay instrucciones)</p>';
+    var err = errorBloqueVacio(prog);
+    $("avisoVacio").innerHTML = err ? '<div class="aviso-vacio">Hay un bloque vacío. Así no se puede ejecutar: en Python también sería un error, <code>' + esc(err.mensaje) +
+      "</code>. Agrégale al menos una instrucción.</div>" : "";
+  }
+
+  // ---------- Ejecución ----------
+  function invalidar() {
+    detener();
+    corridas = null;
+    k = 0;
+    pintarEditor(null);
+    pintarVistas(null);
+    pintarTablero();
+  }
+  function asegurarCorridas() {
+    if (corridas) return true;
+    if (errorBloqueVacio(prog)) return false;
+    var n = NIVELES[avance.actual];
+    corridas = n.t.map(function (t) { return ejecutar(prog, t, LIMITE); });
+    return true;
+  }
+  function corridaActual() { return corridas ? corridas[tab] : null; }
+  function marcaActual() { var r = corridaActual(); return r && k > 0 ? r.pasos[k - 1].ruta : null; }
+  function dirFlecha(d) { return ["arriba", "a la derecha", "abajo", "a la izquierda"][d]; }
+  function robotSVG(dir) {
+    return '<svg class="robot" viewBox="0 0 40 40" style="transform:rotate(' + (dir * 90) + 'deg)" aria-hidden="true">' +
+      '<circle cx="20" cy="20" r="17" fill="#00408F" stroke="#0A2A57" stroke-width="2"/>' +
+      '<polygon points="20,6 31,20 24,20 24,32 16,32 16,20 9,20" fill="#FFFFFF"/>' +
+      '<circle cx="20" cy="4" r="3" fill="#8C1D35"/></svg>';
+  }
+  function pintarTablero() {
+    var n = NIVELES[avance.actual], t = n.t[tab], r = corridaActual();
+    var e = r && k > 0 ? r.pasos[k - 1] : { f: t.inicio.f, c: t.inicio.c, dir: t.inicio.dir, vars: {} };
+    var rastro = {};
+    if (r) for (var j = 0; j < k; j++) rastro[r.pasos[j].f + "," + r.pasos[j].c] = true;
+    var choque = r && k === r.pasos.length && r.fin === "choque" ? r.choque : null;
+    var html = "";
+    $("tablero").style.gridTemplateColumns = "repeat(" + t.cols + ", minmax(0,1fr))";
+    $("tablero").style.maxWidth = Math.min(420, t.cols * 64) + "px";
+    for (var f = 0; f < t.filas; f++) {
+      for (var c = 0; c < t.cols; c++) {
+        var cl = ["celda"], clave = f + "," + c;
+        if (t.paredes[clave]) cl.push("pared");
+        else if (rastro[clave]) cl.push("rastro");
+        if (t.meta[0] === f && t.meta[1] === c) cl.push("meta");
+        if (choque && choque.f === f && choque.c === c) cl.push("choque");
+        html += '<div class="' + cl.join(" ") + '">' + (e.f === f && e.c === c ? robotSVG(e.dir) : "") + "</div>";
+      }
+    }
+    $("tablero").innerHTML = html;
+    var paredes = Object.keys(t.paredes).length;
+    $("tablero").setAttribute("aria-label", "Tablero de " + t.filas + " filas por " + t.cols + " columnas. Robot en la fila " + (e.f + 1) + ", columna " + (e.c + 1) +
+      ", mirando al " + DIRS[e.dir] + ". Meta en la fila " + (t.meta[0] + 1) + ", columna " + (t.meta[1] + 1) + ". " + paredes + (paredes === 1 ? " pared." : " paredes."));
+    // Pestañas de tableros
+    if (n.t.length > 1) {
+      $("tabsTableros").innerHTML = n.t.map(function (x, i) {
+        var res = corridas ? (corridas[i].enMeta ? ' <span class="r-ok">✓</span>' : ' <span class="r-mal">✗</span>') : "";
+        return '<button type="button" data-tab="' + i + '" aria-pressed="' + (i === tab) + '">Tablero ' + (i + 1) + " (" + x.filas + "×" + x.cols + ")" + res + "</button>";
+      }).join("");
+    } else $("tabsTableros").innerHTML = "";
+    // Estado
+    var vars = Object.keys(e.vars || {});
+    $("estado").innerHTML = "<div><small>Posición</small><b>fila " + (e.f + 1) + ", columna " + (e.c + 1) + "</b></div>" +
+      "<div><small>Dirección</small><b>" + DIRS[e.dir] + "</b> (" + dirFlecha(e.dir) + ")</div>" +
+      "<div><small>Paso</small><b>" + k + "</b>" + (r ? " de " + r.pasos.length : "") + "</div>" +
+      (vars.length ? "<div><small>Variables del for</small><b>" + vars.map(function (v) { return esc(v) + " = " + e.vars[v]; }).join(", ") + "</b></div>" : "");
+    // Controles
+    var total = r ? r.pasos.length : 0;
+    $("paso").max = total; $("paso").value = k;
+    $("pasoTxt").textContent = r ? k + " de " + total : "0 (todavía no se ejecuta)";
+    var bloqueado = !!errorBloqueVacio(prog) || !prog.length;
+    $("inicio").disabled = $("atras").disabled = k === 0;
+    $("adelante").disabled = bloqueado || (r && k >= total);
+    $("fin").disabled = bloqueado || (r && k >= total);
+    $("reproducir").disabled = bloqueado || (r && k >= total);
+    pintarResultado();
+  }
+  function lugar(f, c) { return "fila " + (f + 1) + ", columna " + (c + 1); }
+  function pintarResultado() {
+    var n = NIVELES[avance.actual], r = corridaActual(), caja = $("resultado");
+    caja.className = "lectura resultado";
+    if (!prog.length) { caja.innerHTML = "Agrega instrucciones con los botones (o con las teclas A, I, D...) y después presiona ▶ para ejecutarlas una por una."; return; }
+    if (errorBloqueVacio(prog)) { caja.innerHTML = "Hay un bloque vacío: agrégale instrucciones para poder ejecutar."; return; }
+    if (!r || k === 0) { caja.innerHTML = "Listo para ejecutar. ▶ ejecuta la siguiente instrucción; ▶▶ ejecuta todo con animación; ⏭ salta al final."; return; }
+    var p = r.pasos[k - 1], py = lineasPython(prog), linea = "línea " + p.linea + " (<code>" + esc(py.lineas[p.linea - 1].trim()) + "</code>)";
+    var html = "<b>Paso " + k + ":</b> " + linea + ". ";
+    if (p.nota === "avanza") html += "Avanza a la " + lugar(p.f, p.c) + ".";
+    else if (p.nota === "izq" || p.nota === "der") html += "Gira; ahora mira al " + DIRS[p.dir] + ".";
+    else if (p.nota !== "choque") html += esc(p.nota.charAt(0).toUpperCase() + p.nota.slice(1)) + ".";
+    if (k === r.pasos.length) {
+      if (r.fin === "choque") {
+        var ch = r.choque;
+        caja.className = "lectura resultado mal";
+        html += " <b>¡Choque!</b> El robot estaba en la " + lugar(ch.desde.f, ch.desde.c) + " mirando al " + DIRS[ch.desde.dir] + ", y avanzar() le pidió moverse a " +
+          (ch.dentro ? "la " + lugar(ch.f, ch.c) + ", donde hay una pared." : "una casilla fuera del tablero.") +
+          " El robot no ve la meta ni adivina: hace exactamente lo que dice cada instrucción. Revisa hacia dónde miraba antes de este avanzar(); retrocede con ◀ para ver en qué paso empezó a desviarse.";
+      } else if (r.fin === "limite") {
+        caja.className = "lectura resultado mal";
+        html += " <b>Se detuvo después de " + LIMITE + " pasos:</b> parece un ciclo que nunca termina (por ejemplo, un mientras cuyo bloque no hace avanzar al robot).";
+      } else if (r.enMeta) {
+        caja.className = "lectura resultado bien";
+        html += " <b>Fin del programa: ¡el robot llegó a la meta" + (n.t.length > 1 ? " en este tablero" : "") + "!</b>";
+      } else {
+        caja.className = "lectura resultado mal";
+        html += " <b>Fin del programa,</b> pero el robot quedó en la " + lugar(p.f, p.c) + " y la meta está en la " + lugar(n.t[tab].meta[0], n.t[tab].meta[1]) +
+          ". El programa terminó sin errores: es un error lógico.";
+      }
+    }
+    caja.innerHTML = html;
+    if (k === r.pasos.length) revisarNivel();
+  }
+  function revisarNivel() {
+    var n = NIVELES[avance.actual], i = avance.actual;
+    if (!corridas) return;
+    var todos = corridas.every(function (r) { return r.enMeta; }), cuantas = contar(prog), msg = "";
+    var vistos = corridas.length > 1 ? corridas.filter(function (r) { return r.enMeta; }).length : 0;
+    if (todos && n.max && cuantas > n.max) {
+      msg = '<div class="aviso-vacio">Llegaste a la meta, pero usaste ' + cuantas + " instrucciones y el máximo es " + n.max + ". Busca qué se repite.</div>";
+    } else if (todos) {
+      if (!completado(i)) { avance.completados.push(i); guardar(); pintarNav(); }
+      msg = '<div class="felicidades"><b>¡Nivel completado!</b> ' + (i < NIVELES.length - 1 ? "Se abrió el nivel " + (i + 2) + "." : "Completaste los " + NIVELES.length + " niveles.") + "</div>";
+    } else if (corridas.length > 1 && corridas[tab].enMeta) {
+      msg = '<div class="aviso-vacio">En este tablero sí llega, pero el mismo programa debe funcionar en los ' + corridas.length + " (" + vistos + " de " + corridas.length +
+            "). Revisa el otro tablero con su botón.</div>";
+    }
+    $("felicidades").innerHTML = msg;
+    $("siguiente").disabled = !(i < NIVELES.length - 1 && abierto(i + 1));
+  }
+  function ir(nuevo) {
+    if (!asegurarCorridas()) { pintarTablero(); return; }
+    var r = corridaActual();
+    k = Math.max(0, Math.min(r.pasos.length, nuevo));
+    pintarTablero();
+    pintarEditor(marcaActual());
+    pintarVistas(marcaActual());
+    if (k < r.pasos.length) $("felicidades").innerHTML = "";
+  }
+  function detener() {
+    if (reloj) { clearInterval(reloj); reloj = null; }
+    $("reproducir").textContent = "▶▶";
+    $("reproducir").setAttribute("aria-label", "Ejecutar todo, animado");
+  }
+  $("inicio").addEventListener("click", function () { detener(); ir(0); });
+  $("atras").addEventListener("click", function () { detener(); ir(k - 1); });
+  $("adelante").addEventListener("click", function () { detener(); ir(k + 1); });
+  $("fin").addEventListener("click", function () { detener(); if (asegurarCorridas()) ir(corridaActual().pasos.length); });
+  $("paso").addEventListener("input", function () { detener(); ir(Number($("paso").value)); });
+  $("reproducir").addEventListener("click", function () {
+    if (reloj) { detener(); return; }
+    if (!asegurarCorridas()) { pintarTablero(); return; }
+    if (k >= corridaActual().pasos.length) ir(0);
+    $("reproducir").textContent = "⏸";
+    $("reproducir").setAttribute("aria-label", "Pausar");
+    reloj = setInterval(function () {
+      if (!corridas || k >= corridaActual().pasos.length) { detener(); pintarTablero(); return; }
+      ir(k + 1);
+    }, 380);
+  });
+  $("tabsTableros").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-tab]");
+    if (!b) return;
+    detener();
+    tab = Number(b.dataset.tab);
+    k = 0;
+    pintarTablero();
+    pintarEditor(null);
+    pintarVistas(null);
+  });
+  $("anterior").addEventListener("click", function () { if (avance.actual > 0) irANivel(avance.actual - 1); });
+  $("siguiente").addEventListener("click", function () {
+    var i = avance.actual;
+    if (i < NIVELES.length - 1 && abierto(i + 1)) { irANivel(i + 1); $("editor").focus(); }
+  });
+
+  // Flechas izquierda y derecha: paso anterior y siguiente (fuera del editor y de los campos)
+  document.addEventListener("keydown", function (e) {
+    var t = e.target;
+    if (t.closest && t.closest("#editor")) return;
+    if (/^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName) || e.altKey || e.ctrlKey || e.metaKey) return;
+    if (e.key === "ArrowRight") { e.preventDefault(); detener(); ir(k + 1); }
+    else if (e.key === "ArrowLeft") { e.preventDefault(); detener(); ir(k - 1); }
+  });
+
+  irANivel(avance.actual);
+})();
+</script>
+<div id="qr-sitio" class="qr-capa" hidden>
+  <div class="qr-caja" role="dialog" aria-modal="true" aria-label="Código QR de esta página">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 41 41" role="img" aria-label="Código QR de https://memosanchezg.github.io/programacion-basica-interactivos/semana-01-robot.html" shape-rendering="crispEdges"><rect width="41" height="41" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM12 2h2v1h-2zM15 2h1v1h-1zM17 2h1v1h-1zM19 2h4v1h-4zM25 2h1v1h-1zM28 2h1v1h-1zM30 2h1v1h-1zM32 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM12 3h1v1h-1zM16 3h2v1h-2zM19 3h1v1h-1zM22 3h2v1h-2zM27 3h1v1h-1zM29 3h2v1h-2zM32 3h1v1h-1zM38 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM10 4h4v1h-4zM21 4h3v1h-3zM28 4h1v1h-1zM32 4h1v1h-1zM34 4h3v1h-3zM38 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h3v1h-3zM14 5h1v1h-1zM17 5h1v1h-1zM19 5h1v1h-1zM21 5h1v1h-1zM24 5h6v1h-6zM32 5h1v1h-1zM34 5h3v1h-3zM38 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h3v1h-3zM15 6h1v1h-1zM17 6h2v1h-2zM20 6h6v1h-6zM30 6h1v1h-1zM32 6h1v1h-1zM34 6h3v1h-3zM38 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h1v1h-1zM13 7h1v1h-1zM15 7h2v1h-2zM19 7h2v1h-2zM23 7h1v1h-1zM26 7h1v1h-1zM28 7h2v1h-2zM32 7h1v1h-1zM38 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM30 8h1v1h-1zM32 8h7v1h-7zM10 9h2v1h-2zM14 9h1v1h-1zM17 9h1v1h-1zM20 9h2v1h-2zM23 9h2v1h-2zM30 9h1v1h-1zM2 10h1v1h-1zM4 10h5v1h-5zM11 10h3v1h-3zM17 10h1v1h-1zM19 10h1v1h-1zM24 10h1v1h-1zM26 10h3v1h-3zM32 10h5v1h-5zM2 11h3v1h-3zM7 11h1v1h-1zM12 11h1v1h-1zM15 11h3v1h-3zM20 11h4v1h-4zM25 11h1v1h-1zM27 11h1v1h-1zM30 11h1v1h-1zM33 11h1v1h-1zM35 11h1v1h-1zM37 11h1v1h-1zM3 12h2v1h-2zM6 12h4v1h-4zM11 12h2v1h-2zM17 12h1v1h-1zM19 12h1v1h-1zM23 12h2v1h-2zM29 12h3v1h-3zM33 12h1v1h-1zM35 12h4v1h-4zM6 13h1v1h-1zM10 13h2v1h-2zM14 13h5v1h-5zM21 13h1v1h-1zM23 13h2v1h-2zM29 13h1v1h-1zM31 13h4v1h-4zM38 13h1v1h-1zM2 14h4v1h-4zM8 14h8v1h-8zM19 14h1v1h-1zM22 14h1v1h-1zM24 14h1v1h-1zM27 14h3v1h-3zM31 14h2v1h-2zM34 14h5v1h-5zM3 15h4v1h-4zM9 15h1v1h-1zM18 15h2v1h-2zM21 15h2v1h-2zM25 15h1v1h-1zM27 15h1v1h-1zM30 15h1v1h-1zM33 15h1v1h-1zM2 16h2v1h-2zM5 16h2v1h-2zM8 16h2v1h-2zM12 16h2v1h-2zM17 16h3v1h-3zM24 16h1v1h-1zM29 16h2v1h-2zM33 16h3v1h-3zM37 16h2v1h-2zM2 17h3v1h-3zM6 17h2v1h-2zM9 17h3v1h-3zM13 17h2v1h-2zM17 17h1v1h-1zM23 17h1v1h-1zM26 17h1v1h-1zM28 17h2v1h-2zM31 17h4v1h-4zM37 17h2v1h-2zM2 18h4v1h-4zM8 18h1v1h-1zM10 18h1v1h-1zM12 18h2v1h-2zM15 18h2v1h-2zM19 18h1v1h-1zM22 18h1v1h-1zM24 18h6v1h-6zM31 18h2v1h-2zM34 18h1v1h-1zM36 18h2v1h-2zM2 19h6v1h-6zM11 19h1v1h-1zM15 19h2v1h-2zM18 19h1v1h-1zM21 19h3v1h-3zM25 19h1v1h-1zM28 19h1v1h-1zM30 19h1v1h-1zM35 19h1v1h-1zM37 19h1v1h-1zM4 20h3v1h-3zM8 20h1v1h-1zM17 20h4v1h-4zM22 20h1v1h-1zM28 20h2v1h-2zM31 20h3v1h-3zM37 20h2v1h-2zM4 21h4v1h-4zM12 21h3v1h-3zM16 21h3v1h-3zM20 21h1v1h-1zM22 21h2v1h-2zM25 21h2v1h-2zM28 21h1v1h-1zM31 21h2v1h-2zM38 21h1v1h-1zM6 22h1v1h-1zM8 22h1v1h-1zM10 22h4v1h-4zM15 22h1v1h-1zM19 22h1v1h-1zM21 22h2v1h-2zM26 22h4v1h-4zM31 22h2v1h-2zM34 22h1v1h-1zM36 22h1v1h-1zM6 23h2v1h-2zM9 23h2v1h-2zM12 23h2v1h-2zM16 23h1v1h-1zM18 23h1v1h-1zM20 23h4v1h-4zM25 23h1v1h-1zM28 23h1v1h-1zM30 23h1v1h-1zM35 23h1v1h-1zM3 24h2v1h-2zM8 24h3v1h-3zM16 24h3v1h-3zM22 24h2v1h-2zM27 24h5v1h-5zM33 24h3v1h-3zM38 24h1v1h-1zM3 25h1v1h-1zM5 25h1v1h-1zM9 25h1v1h-1zM11 25h1v1h-1zM13 25h1v1h-1zM15 25h1v1h-1zM20 25h6v1h-6zM33 25h2v1h-2zM2 26h1v1h-1zM4 26h1v1h-1zM7 26h8v1h-8zM17 26h1v1h-1zM19 26h3v1h-3zM27 26h6v1h-6zM34 26h1v1h-1zM36 26h2v1h-2zM2 27h3v1h-3zM7 27h1v1h-1zM9 27h3v1h-3zM15 27h1v1h-1zM18 27h1v1h-1zM20 27h2v1h-2zM25 27h1v1h-1zM27 27h1v1h-1zM30 27h2v1h-2zM33 27h1v1h-1zM35 27h1v1h-1zM2 28h1v1h-1zM6 28h1v1h-1zM8 28h2v1h-2zM11 28h2v1h-2zM16 28h2v1h-2zM20 28h1v1h-1zM22 28h1v1h-1zM24 28h1v1h-1zM27 28h1v1h-1zM29 28h3v1h-3zM33 28h2v1h-2zM36 28h3v1h-3zM2 29h1v1h-1zM4 29h1v1h-1zM6 29h1v1h-1zM9 29h1v1h-1zM14 29h1v1h-1zM17 29h2v1h-2zM23 29h1v1h-1zM25 29h1v1h-1zM29 29h4v1h-4zM38 29h1v1h-1zM2 30h1v1h-1zM4 30h5v1h-5zM10 30h2v1h-2zM13 30h1v1h-1zM15 30h1v1h-1zM17 30h1v1h-1zM19 30h1v1h-1zM24 30h15v1h-15zM10 31h2v1h-2zM18 31h4v1h-4zM25 31h1v1h-1zM27 31h1v1h-1zM30 31h1v1h-1zM34 31h2v1h-2zM2 32h7v1h-7zM13 32h3v1h-3zM17 32h3v1h-3zM22 32h3v1h-3zM26 32h3v1h-3zM30 32h1v1h-1zM32 32h1v1h-1zM34 32h1v1h-1zM36 32h3v1h-3zM2 33h1v1h-1zM8 33h1v1h-1zM10 33h6v1h-6zM17 33h1v1h-1zM20 33h6v1h-6zM28 33h1v1h-1zM30 33h1v1h-1zM34 33h2v1h-2zM37 33h1v1h-1zM2 34h1v1h-1zM4 34h3v1h-3zM8 34h1v1h-1zM10 34h2v1h-2zM13 34h2v1h-2zM17 34h3v1h-3zM21 34h2v1h-2zM25 34h10v1h-10zM36 34h2v1h-2zM2 35h1v1h-1zM4 35h3v1h-3zM8 35h1v1h-1zM10 35h1v1h-1zM13 35h1v1h-1zM15 35h2v1h-2zM18 35h4v1h-4zM24 35h3v1h-3zM28 35h1v1h-1zM30 35h3v1h-3zM34 35h5v1h-5zM2 36h1v1h-1zM4 36h3v1h-3zM8 36h1v1h-1zM10 36h1v1h-1zM12 36h1v1h-1zM15 36h1v1h-1zM17 36h1v1h-1zM23 36h1v1h-1zM27 36h2v1h-2zM30 36h1v1h-1zM37 36h2v1h-2zM2 37h1v1h-1zM8 37h1v1h-1zM12 37h3v1h-3zM17 37h1v1h-1zM23 37h4v1h-4zM28 37h5v1h-5zM34 37h1v1h-1zM38 37h1v1h-1zM2 38h7v1h-7zM10 38h1v1h-1zM13 38h4v1h-4zM19 38h1v1h-1zM24 38h1v1h-1zM26 38h2v1h-2zM32 38h1v1h-1zM34 38h5v1h-5z"/></svg>
+    <p class="qr-texto">Escanea con la cámara del celular para abrir esta página</p>
+    <p class="qr-url">https://memosanchezg.github.io/programacion-basica-interactivos/semana-01-robot.html</p>
+    <button type="button" class="qr-cerrar">Cerrar</button>
+  </div>
+</div>
+<style>
+  .qr-capa { position:fixed; top:0; right:0; bottom:0; left:0; z-index:10000; display:flex; align-items:center;
+             justify-content:center; padding:16px; background:#fff; }
+  .qr-capa[hidden] { display:none; }
+  .qr-caja { max-width:100%; text-align:center; color:#0A2A57; font:16px/1.4 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .qr-caja svg { display:block; width:min(62vh, 84vw); height:auto; margin:0 auto; }
+  .qr-texto { margin:12px 0 2px; font-size:1.15rem; font-weight:bold; }
+  .qr-url { margin:0 0 12px; color:#5B6472; word-break:break-all; }
+  .qr-cerrar { font:inherit; padding:6px 20px; border:2px solid #00408F; border-radius:4px; background:#fff;
+               color:#00408F; cursor:pointer; }
+</style>
+<script>
+  (function () {
+    var capa = document.getElementById("qr-sitio");
+    document.querySelectorAll("a.qr-abrir").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        capa.hidden = false;
+        capa.querySelector(".qr-cerrar").focus();
+      });
+    });
+    capa.addEventListener("click", function (e) {
+      if (e.target === capa || e.target.classList.contains("qr-cerrar")) capa.hidden = true;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !capa.hidden) capa.hidden = true;
+    });
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,750 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="tipo" content="ejercicio">
+<title>Bitácora de viajes</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<style>
+  :root {
+    --azul:#00408F; --azul-oscuro:#0A2A57; --guinda:#8C1D35; --oro:#B8975A; --oro-texto:#8A6A2E;
+    --azul-claro:#E8EEF7; --oro-claro:#F7F1E6; --guinda-claro:#F5E6EA; --verde:#2F7D5B;
+    --tinta:#1B1F2A; --gris:#5B6472; --gris-claro:#E9ECF1; --borde:#D9DEE6; --fondo:#FFFFFF;
+    --cmd-fondo:#0C0C0C; --cmd-texto:#E6E6E6;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--fondo); color:var(--tinta);
+         font:16px/1.45 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .franja { height:8px; background:var(--azul); border-bottom:3px solid var(--oro); }
+  header { max-width:1280px; margin:0 auto; padding:12px 18px 4px; }
+  .semana { color:var(--guinda); font-weight:bold; letter-spacing:.04em; font-size:.85rem; text-transform:uppercase; }
+  h1 { font-family:Cambria,Georgia,serif; color:var(--azul-oscuro); font-size:1.7rem; margin:2px 0 2px; }
+  .sub { color:var(--gris); margin:0; }
+  main { max-width:1280px; margin:0 auto; padding:8px 18px 24px; }
+  .fila { display:grid; grid-template-columns:minmax(260px,380px) minmax(0,1fr); gap:16px; align-items:start; }
+  .panel { background:#fff; border:1px solid var(--borde); border-radius:10px; padding:12px 14px; min-width:0; }
+  .panel h2 { font-size:1.02rem; color:var(--azul-oscuro); margin:0 0 8px; }
+  .panel h3 { font-size:.95rem; color:var(--azul-oscuro); margin:12px 0 4px; }
+  .panel ol, .panel ul { padding-left:20px; margin:4px 0; }
+  .panel li { margin:4px 0; }
+  code { font-family:Consolas,"Courier New",monospace; color:var(--azul); }
+  .lectura { background:var(--oro-claro); border-left:4px solid var(--oro); border-radius:8px; padding:10px 12px;
+             margin-top:12px; line-height:1.55; }
+  .barra { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-bottom:8px; }
+  button.accion { font:inherit; font-weight:bold; border-radius:8px; padding:7px 12px;
+                  border:1px solid var(--azul); background:#fff; color:var(--azul); cursor:pointer; }
+  button.accion:hover:not(:disabled), button.accion:focus-visible { background:var(--azul); color:#fff; outline:none; }
+  button.accion.primaria { background:var(--azul); color:#fff; }
+  button.accion.primaria:hover:not(:disabled) { background:var(--azul-oscuro); }
+  button.accion:disabled { opacity:.5; cursor:wait; }
+  #estado { color:var(--gris); font-size:.92rem; margin-left:4px; }
+  #estado.listo { color:var(--verde); }
+  .editor-caja { border:1px solid var(--tinta); }
+  .CodeMirror { height:auto; min-height:260px; font:15px/1.5 Consolas,"Courier New",monospace; }
+  .CodeMirror-linenumber { color:var(--gris); font:11px Cambria,Georgia,serif; padding-top:3px; }
+  .cm-s-default .cm-keyword { color:#000080; font-weight:bold; }
+  .cm-s-default .cm-string { color:#0000FF; }
+  .cm-s-default .cm-number { color:#0000FF; }
+  .cm-s-default .cm-comment { color:#008800; font-style:italic; }
+  .cm-s-default .cm-builtin, .cm-s-default .cm-variable, .cm-s-default .cm-def,
+  .cm-s-default .cm-property, .cm-s-default .cm-operator { color:var(--tinta); }
+  textarea#editor { width:100%; min-height:260px; font:15px/1.5 Consolas,"Courier New",monospace; border:0; padding:8px; }
+  .consola { background:var(--cmd-fondo); color:var(--cmd-texto); font:15px/1.45 Consolas,"Courier New",monospace;
+             white-space:pre-wrap; word-break:break-word; padding:8px 12px; border-radius:4px; margin:6px 0; min-height:2.6em; }
+  .consola .error { color:#FF8A80; }
+  .consola .aviso { color:#B8975A; }
+  #figuras img { max-width:100%; border:1px solid var(--borde); border-radius:6px; margin:6px 0; display:block; }
+  #archivos a { display:inline-block; margin:4px 10px 4px 0; color:var(--azul); font-weight:bold; }
+  ul.pruebas { list-style:none; padding-left:0; }
+  ul.pruebas li { padding:4px 0 4px 26px; position:relative; }
+  ul.pruebas li::before { content:"•"; position:absolute; left:8px; color:var(--gris); }
+  ul.pruebas li.ok::before { content:"✓"; color:var(--verde); font-weight:bold; left:4px; }
+  ul.pruebas li.mal::before { content:"✗"; color:var(--guinda); font-weight:bold; left:4px; }
+  ul.pruebas li.mal { color:var(--guinda); }
+  .resumen { font-weight:bold; margin:6px 0; }
+  .resumen.ok { color:var(--verde); }
+  .resumen.mal { color:var(--guinda); }
+  footer { max-width:1280px; margin:0 auto; padding:6px 18px 18px; color:var(--gris); font-size:.85rem; }
+  footer a { color:var(--azul); }
+  @media (max-width: 860px) { .fila { grid-template-columns:1fr; } }
+
+  /* Propios de este ejercicio */
+  details.archivo { margin:6px 0; }
+  details.archivo summary { cursor:pointer; font-weight:bold; color:var(--azul-oscuro); }
+  details.archivo summary code { color:var(--azul-oscuro); }
+  pre.contenido { margin:6px 0 0; border:1px solid var(--borde); border-radius:6px; background:#fff; padding:6px 0;
+                  font:14px/1.5 Consolas,"Courier New",monospace; overflow-x:auto; counter-reset:renglon; }
+  pre.contenido span { display:block; padding:0 10px 0 0; white-space:pre; }
+  pre.contenido span::before { counter-increment:renglon; content:counter(renglon); display:inline-block; width:2.4em;
+                               padding-right:.6em; text-align:right; color:var(--gris); font:11px Cambria,Georgia,serif; }
+  .consola.sin-corte { white-space:pre; overflow-x:auto; word-break:normal; }
+  @media (max-width: 480px) {
+    header { padding:10px 12px 4px; } main { padding:8px 10px 20px; } footer { padding:6px 12px 16px; }
+    .panel { padding:10px; } h1 { font-size:1.45rem; }
+  }
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header>
+  <div class="semana">Semana 09 · Manejo profesional de errores · Ejercicio con Python</div>
+  <h1>Bitácora de viajes del transporte universitario</h1>
+  <p class="sub">Lee los archivos de la bitácora, convierte cada línea, registra las que vienen mal con un mensaje claro y sigue, sin que tu programa se detenga.</p>
+</header>
+<main>
+  <div class="fila">
+    <div class="panel">
+      <h2>Instrucciones</h2>
+      <ol id="instrucciones">
+        <li>Cada camión anota sus viajes en un archivo por día: <code>ruta,salida,llegada</code>, con el odómetro (km) al salir y al llegar. Ejecuta primero el código tal cual: ¿en qué línea del archivo se detiene? Lee el traceback de abajo hacia arriba.</li>
+        <li>Completa <code>leer_viaje(linea)</code>: regresa la tupla <code>(ruta, km)</code>, con la ruta sin espacios y <code>km = llegada - salida</code> (int). Si la línea no sirve, lanza <code>ValueError</code> con <b>tu propio mensaje</b>, no el de Python:
+          <ul>
+            <li>si no trae exactamente 3 datos separados por coma: di cuántos llegaron;</li>
+            <li>si la salida o la llegada no es un entero: incluye el dato que llegó;</li>
+            <li>si la llegada es menor que la salida (el odómetro no puede bajar): incluye los dos números.</li>
+          </ul>
+        </li>
+        <li>En <code>procesar_bitacora(nombre)</code> abre el archivo con <code>with</code>, quita espacios y saltos de línea con <code>strip()</code>, salta las líneas vacías y usa <code>try/except</code> dentro del <code>for</code>: guarda en <code>errores</code> un texto <code>"línea N: mensaje"</code> y sigue con la siguiente. Si el archivo no existe, deja que salga el <code>FileNotFoundError</code>.</li>
+        <li>En el programa principal atrapa ese <code>FileNotFoundError</code> para cada día: avisa qué archivo falta y sigue con los demás. Al final imprime el total de la semana: <code>Total: ... km</code>.</li>
+      </ol>
+      <h3>Los archivos de la carpeta</h3>
+      <div id="vistaArchivos"></div>
+      <p class="sub" style="margin-top:6px"><code>bitacora_miercoles.txt</code> no está en la carpeta. Si imprimes ese FileNotFoundError, aquí dice <code>[Errno 44]</code>: es el número que usa Python dentro del navegador; en tu computadora dice <code>[Errno 2]</code>.</p>
+      <h3>Lo que se revisa al presionar Verificar</h3>
+      <ul class="pruebas" id="lista-pruebas"></ul>
+      <div class="lectura" id="pista"><b>Pista:</b> lanza el error donde lo detectas (en <code>leer_viaje</code>) y atrápalo donde puedes hacer algo útil: en el ciclo de <code>procesar_bitacora</code>, para registrar la línea y seguir; y en el programa principal, para avisar que falta un archivo. Para dar tu propio mensaje cuando <code>int()</code> falla, atrapa su ValueError y lanza el tuyo.</div>
+    </div>
+    <div class="panel">
+      <div class="barra">
+        <button type="button" class="accion primaria" id="ejecutar" disabled>▶ Ejecutar</button>
+        <button type="button" class="accion" id="verificar" disabled>✓ Verificar</button>
+        <button type="button" class="accion" id="restaurar">↺ Código inicial</button>
+        <button type="button" class="accion" id="descargar">⬇ Descargar .py</button>
+        <span id="estado" role="status">Cargando Python…</span>
+      </div>
+      <div class="editor-caja"><textarea id="editor" spellcheck="false" aria-label="Editor de código Python"></textarea></div>
+      <h3>Salida</h3>
+      <div class="consola sin-corte" id="salida"></div>
+      <div id="figuras"></div>
+      <div id="archivos"></div>
+      <div id="resultados" aria-live="polite"></div>
+    </div>
+  </div>
+</main>
+<footer>
+  Programación Básica · FCFM-UANL · Python corre en tu navegador (la primera vez descarga unos 10 MB;
+  después funciona más rápido). Ctrl+Enter ejecuta. Tu código se guarda en este navegador.
+  <a href="index.html">Índice de simuladores</a> · <a href="#qr-sitio" class="qr-abrir">Abrir en el celular (QR)</a>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.27.7/full/pyodide.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  // ===================== Configuración del ejercicio =====================
+  var CLAVE = "pb-semana09-bitacora";       // dónde se guarda el código del alumno en el navegador
+  var NOMBRE_PY = "bitacora.py";            // nombre del archivo al descargar
+  var PAQUETES = [];
+  var MICROPIP = [];
+  var ARCHIVOS = {
+    "bitacora_lunes.txt": [
+      "CU-Mederos,48210,48223",
+      "CU-Salud,48223,48230",
+      "CU-Linares,48230,48361",
+      "CU-Mederos,48361",
+      "CU-Marín,48361,cuarenta",
+      "",
+      "CU-Salud,48400,48394",
+      " CU-Mederos , 48394 , 48407",
+    ].join("\n") + "\n",
+    "bitacora_martes.txt": [
+      "CU-Marín,48407,48443",
+      "CU-Salud;48443;48450",
+      "CU-Linares,48450,48580",
+      "CU-Mederos,48580,48593,2",
+      "CU-Salud,48593,48600",
+    ].join("\n") + "\n"
+  };
+  var CODIGO_INICIAL = [
+    "def leer_viaje(linea):",
+    '    """Convierte "ruta,salida,llegada" en (ruta, km), con km = llegada - salida.',
+    '    Debe lanzar ValueError con un mensaje claro si la línea no sirve."""',
+    '    ruta, salida, llegada = linea.split(",")',
+    "    km = int(llegada) - int(salida)",
+    "    return ruta, km",
+    "",
+    "",
+    "def procesar_bitacora(nombre):",
+    '    """Lee el archivo y regresa (viajes, errores): viajes es una lista de',
+    '    (ruta, km) y errores una lista de textos "línea N: mensaje"."""',
+    "    viajes = []",
+    "    errores = []",
+    '    archivo = open(nombre, encoding="utf-8")',
+    "    for numero, linea in enumerate(archivo, start=1):",
+    "        viajes.append(leer_viaje(linea))",
+    "    return viajes, errores",
+    "",
+    "",
+    "total = 0",
+    'for dia in ["lunes", "martes", "miercoles"]:',
+    '    nombre = f"bitacora_{dia}.txt"',
+    "    viajes, errores = procesar_bitacora(nombre)",
+    "    km = sum(k for ruta, k in viajes)",
+    "    total = total + km",
+    '    print(f"{dia}: {len(viajes)} viajes, {km} km, {len(errores)} errores")',
+    "    for e in errores:",
+    '        print("   ", e)',
+    'print("Total:", total, "km")',
+  ].join("\n") + "\n";
+  var PRUEBAS = [
+    "leer_viaje(\"CU-Salud,48223,48230\") regresa (\"CU-Salud\", 7)",
+    "leer_viaje(\" CU-Mederos , 48394 , 48407\") regresa (\"CU-Mederos\", 13): la ruta sin espacios",
+    "Con 2 datos: ValueError con tu mensaje, que diga cuántos datos llegaron",
+    "Con 1 dato y con 4 datos: ValueError con tu mensaje",
+    "Con un km que no es entero (\"cuarenta\"): ValueError con tu mensaje, que incluya ese dato",
+    "Con la llegada menor que la salida (48400 y 48394): ValueError con los dos números",
+    "procesar_bitacora(\"bitacora_lunes.txt\"): 4 viajes y errores en las líneas 4, 5 y 7",
+    "procesar_bitacora(\"bitacora_martes.txt\"): 3 viajes y errores en las líneas 2 y 4",
+    "Las líneas vacías se saltan: no son viajes ni errores",
+    "Un archivo con puras líneas malas no detiene a procesar_bitacora",
+    "Si el archivo no existe, procesar_bitacora deja salir el FileNotFoundError",
+    "procesar_bitacora deja cerrados los archivos que abre",
+    "El programa avisa que falta bitacora_miercoles.txt y sigue con los demás días",
+    "El programa imprime el total de la semana: 337 km",
+  ];
+  var PRUEBAS_PY = [
+    "import builtins as _builtins",
+    "import os as _os",
+    "import re as _re",
+    "",
+    "",
+    "def _llamar(f, *args):",
+    "    try:",
+    "        return f(*args), None",
+    "    except Exception as e:",
+    "        return None, e",
+    "",
+    "",
+    "def _propio(e):",
+    "    m = str(e)",
+    "    return not any(t in m for t in ('unpack', 'invalid literal', 'could not convert'))",
+    "",
+    "",
+    "def _viaje_ok(f, linea, esperado):",
+    "    v, e = _llamar(f, linea)",
+    "    if e is not None:",
+    "        return (False, f'leer_viaje({linea!r}) lanzó {type(e).__name__}: {e}; se esperaba {esperado!r}')",
+    "    if not isinstance(v, (tuple, list)) or len(v) != 2:",
+    "        return (False, f'leer_viaje({linea!r}) regresó {v!r}; se esperaba la tupla {esperado!r}')",
+    "    ruta, km = v",
+    "    if ruta != esperado[0]:",
+    "        return (False, f'leer_viaje({linea!r}): la ruta es {ruta!r}; se esperaba {esperado[0]!r}')",
+    "    if type(km) is not int or km != esperado[1]:",
+    "        return (False, f'leer_viaje({linea!r}): km es {km!r} ({type(km).__name__}); se esperaba {esperado[1]!r} (int)')",
+    "    return (True, f'leer_viaje({linea!r}) regresa {tuple(v)!r}')",
+    "",
+    "",
+    "def _error_ok(f, linea, deben, etiqueta):",
+    "    v, e = _llamar(f, linea)",
+    "    if e is None:",
+    "        return (False, f'{etiqueta}: leer_viaje({linea!r}) regresó {v!r}; debía lanzar ValueError')",
+    "    if type(e) is not ValueError:",
+    "        return (False, f'{etiqueta}: lanzó {type(e).__name__}: {e}; debía ser ValueError')",
+    "    if not _propio(e):",
+    "        return (False, f'{etiqueta}: el mensaje es el de Python ({e}); escribe el tuyo')",
+    "    faltan = [d for d in deben if d not in str(e)]",
+    "    if faltan:",
+    "        return (False, f'{etiqueta}: el mensaje {str(e)!r} no incluye {\", \".join(faltan)}')",
+    "    return (True, f'{etiqueta}: ValueError: {e}')",
+    "",
+    "",
+    "def _numeros(errores):",
+    "    r = []",
+    "    for t in errores:",
+    "        m = _re.match(r'\\s*l[ií]nea\\s+(\\d+)\\s*:\\s*\\S', str(t), _re.I)",
+    "        r.append(int(m.group(1)) if m else None)",
+    "    return r",
+    "",
+    "",
+    "def _bitacora_ok(f, nombre, viajes_esp, lineas_esp):",
+    "    v, e = _llamar(f, nombre)",
+    "    if e is not None:",
+    "        return (False, f'procesar_bitacora({nombre!r}) se detuvo con {type(e).__name__}: {e}')",
+    "    if not isinstance(v, (tuple, list)) or len(v) != 2:",
+    "        return (False, f'procesar_bitacora({nombre!r}) regresó {v!r}; se esperaba (viajes, errores)')",
+    "    viajes, errores = v",
+    "    viajes = [tuple(x) if isinstance(x, (list, tuple)) else x for x in viajes]",
+    "    if viajes != viajes_esp:",
+    "        return (False, f'procesar_bitacora({nombre!r}): viajes = {viajes!r}; se esperaba {viajes_esp!r}')",
+    "    nums = _numeros(errores)",
+    "    if None in nums:",
+    "        return (False, f'procesar_bitacora({nombre!r}): cada error debe empezar con \"línea N: \" y su mensaje; llegó {errores!r}')",
+    "    if nums != lineas_esp:",
+    "        return (False, f'procesar_bitacora({nombre!r}): errores en las líneas {nums}; se esperaban {lineas_esp}')",
+    "    return (True, f'procesar_bitacora({nombre!r}): {len(viajes)} viajes y errores en las líneas {nums}')",
+    "",
+    "",
+    "def revisar(ns, salida, archivos, figuras):",
+    "    r = []",
+    "    lv, pb = ns.get('leer_viaje'), ns.get('procesar_bitacora')",
+    "    if not callable(lv) or not callable(pb):",
+    "        return [(False, 'No encontré las funciones leer_viaje y procesar_bitacora')]",
+    "    r.append(_viaje_ok(lv, 'CU-Salud,48223,48230', ('CU-Salud', 7)))",
+    "    r.append(_viaje_ok(lv, ' CU-Mederos , 48394 , 48407', ('CU-Mederos', 13)))",
+    "    r.append(_error_ok(lv, 'CU-Mederos,48361', ['2'], 'Con 2 datos'))",
+    "    a = _error_ok(lv, 'CU-Salud;48443;48450', [], 'Con 1 dato')",
+    "    b = _error_ok(lv, 'CU-Mederos,48580,48593,2', [], 'Con 4 datos')",
+    "    r.append(b if a[0] else a)",
+    "    r.append(_error_ok(lv, 'CU-Marín,48361,cuarenta', ['cuarenta'], 'Km que no es entero'))",
+    "    r.append(_error_ok(lv, 'CU-Salud,48400,48394', ['48400', '48394'], 'La llegada es menor'))",
+    "    r.append(_bitacora_ok(pb, 'bitacora_lunes.txt',",
+    "                          [('CU-Mederos', 13), ('CU-Salud', 7), ('CU-Linares', 131), ('CU-Mederos', 13)], [4, 5, 7]))",
+    "    r.append(_bitacora_ok(pb, 'bitacora_martes.txt', [('CU-Marín', 36), ('CU-Linares', 130), ('CU-Salud', 7)], [2, 4]))",
+    "    with open('prueba_vacias.txt', 'w', encoding='utf-8') as f:",
+    "        f.write('\\nCU-Salud,10,15\\n   \\n\\nCU-Salud,15,22\\n')",
+    "    v, e = _llamar(pb, 'prueba_vacias.txt')",
+    "    if e is not None:",
+    "        r.append((False, f'Con líneas vacías, procesar_bitacora se detuvo con {type(e).__name__}: {e}'))",
+    "    else:",
+    "        viajes, errores = v",
+    "        ok = len(viajes) == 2 and len(errores) == 0",
+    "        r.append((ok, 'Las líneas vacías se saltan' if ok else",
+    "                  f'Un archivo con 2 viajes y 3 líneas vacías dio {len(viajes)} viajes y {len(errores)} errores (se esperaban 2 y 0)'))",
+    "    with open('prueba_malas.txt', 'w', encoding='utf-8') as f:",
+    "        f.write('CU-Salud\\nCU-Salud,diez,15\\nCU-Salud,30,20\\n,,,\\n')",
+    "    v, e = _llamar(pb, 'prueba_malas.txt')",
+    "    if e is not None:",
+    "        r.append((False, f'Con puras líneas malas, procesar_bitacora se detuvo con {type(e).__name__}: {e}'))",
+    "    else:",
+    "        viajes, errores = v",
+    "        ok = len(viajes) == 0 and _numeros(errores) == [1, 2, 3, 4]",
+    "        r.append((ok, 'Un archivo con puras líneas malas: 0 viajes y 4 errores, sin detenerse' if ok else",
+    "                  f'Con 4 líneas malas se esperaban 0 viajes y errores en las líneas [1, 2, 3, 4]; llegó {viajes!r} y {errores!r}'))",
+    "    v, e = _llamar(pb, 'bitacora_jueves.txt')",
+    "    ok = isinstance(e, FileNotFoundError)",
+    "    r.append((ok, 'procesar_bitacora(\"bitacora_jueves.txt\") deja salir el FileNotFoundError' if ok else",
+    "              f'procesar_bitacora(\"bitacora_jueves.txt\") (no existe) ' + (f'lanzó {type(e).__name__}: {e}' if e else f'regresó {v!r}') +",
+    "              '; debe dejar salir el FileNotFoundError para que el programa principal decida'))",
+    "    abiertos = []",
+    "    original = _builtins.open",
+    "    def _espia(*a, **k):",
+    "        x = original(*a, **k)",
+    "        abiertos.append(x)",
+    "        return x",
+    "    _builtins.open = _espia",
+    "    try:",
+    "        _llamar(pb, 'bitacora_martes.txt')",
+    "    finally:",
+    "        _builtins.open = original",
+    "    sin_cerrar = [x for x in abiertos if not x.closed]",
+    "    r.append((not sin_cerrar, 'procesar_bitacora deja cerrado el archivo que abre' if not sin_cerrar else",
+    "              'procesar_bitacora deja el archivo abierto: usa with open(...) as archivo:'))",
+    "    for n in ('prueba_vacias.txt', 'prueba_malas.txt'):",
+    "        if _os.path.exists(n):",
+    "            _os.remove(n)",
+    "    lineas = salida.splitlines()",
+    "    falta = [l for l in lineas if 'miercoles' in l.lower() or 'miércoles' in l.lower()]",
+    "    r.append((bool(falta), f'Avisa: {falta[0].strip()}' if falta else 'No encontré un aviso de que falta bitacora_miercoles.txt'))",
+    "    totales = [l for l in lineas if 'total' in l.lower()]",
+    "    ok = any(_re.search(r'(?<![\\d.])337(?![\\d.])', l) for l in totales)",
+    "    r.append((ok, f'Imprime: {totales[-1].strip()}' if ok else",
+    "              ('No encontré una línea con el total (por ejemplo: Total: ... km)' if not totales else f'El total no es 337: {totales[-1].strip()}')))",
+    "    return r",
+  ].join("\n");
+  // =======================================================================
+
+  var PREPARAR_PY = [
+    "import sys, io, os, json, base64, traceback, linecache",
+    "_TRABAJO = '/home/pyodide/trabajo'",
+    "",
+    "# Los errores como los imprime python.exe 3.12: solo las líneas de tu_programa.py, con las",
+    "# sugerencias \"Did you mean\" de Python/suggestions.c y las excepciones encadenadas.",
+    "def _costo(a, b):",
+    "    if (a & 31) != (b & 31):",
+    "        return 2",
+    "    if a == b:",
+    "        return 0",
+    "    if 65 <= a <= 90:",
+    "        a += 32",
+    "    if 65 <= b <= 90:",
+    "        b += 32",
+    "    return 1 if a == b else 2",
+    "",
+    "def _distancia(a, b, maximo):",
+    "    while a and b and a[0] == b[0]:",
+    "        a, b = a[1:], b[1:]",
+    "    while a and b and a[-1] == b[-1]:",
+    "        a, b = a[:-1], b[:-1]",
+    "    if not a or not b:",
+    "        return (len(a) + len(b)) * 2",
+    "    if len(a) > 40 or len(b) > 40:",
+    "        return maximo + 1",
+    "    if len(b) < len(a):",
+    "        a, b = b, a",
+    "    if (len(b) - len(a)) * 2 > maximo:",
+    "        return maximo + 1",
+    "    fila = [(i + 1) * 2 for i in range(len(a))]",
+    "    resultado = 0",
+    "    for j, cb in enumerate(b):",
+    "        distancia = resultado = j * 2",
+    "        minimo = sys.maxsize",
+    "        for k, ca in enumerate(a):",
+    "            sustituir = distancia + _costo(cb, ca)",
+    "            distancia = fila[k]",
+    "            resultado = min(min(resultado, distancia) + 2, sustituir)",
+    "            fila[k] = resultado",
+    "            if resultado < minimo:",
+    "                minimo = resultado",
+    "        if minimo > maximo:",
+    "            return maximo + 1",
+    "    return resultado",
+    "",
+    "def _sugerir(candidatos, nombre):",
+    "    if len(candidatos) >= 750:",
+    "        return None",
+    "    nb = nombre.encode('utf-8', 'surrogatepass')",
+    "    mejor, mejor_d = None, sys.maxsize",
+    "    for c in candidatos:",
+    "        if not isinstance(c, str) or c == nombre:",
+    "            continue",
+    "        cb = c.encode('utf-8', 'surrogatepass')",
+    "        maximo = min((len(nb) + len(cb) + 3) * 2 // 6, mejor_d - 1)",
+    "        d = _distancia(nb, cb, maximo)",
+    "        if d > maximo:",
+    "            continue",
+    "        if mejor is None or d < mejor_d:",
+    "            mejor, mejor_d = c, d",
+    "    return mejor",
+    "",
+    "def _sugerencia(e):",
+    "    try:",
+    "        if isinstance(e, ImportError):",
+    "            if getattr(e, 'name_from', None) is None or not isinstance(e.name, str):",
+    "                return None",
+    "            m = sys.modules.get(e.name)",
+    "            return None if m is None else _sugerir(dir(m), e.name_from)",
+    "        nombre = getattr(e, 'name', None)",
+    "        if not isinstance(nombre, str):",
+    "            return None",
+    "        if isinstance(e, AttributeError):",
+    "            return _sugerir(dir(e.obj), nombre)",
+    "        if isinstance(e, NameError):",
+    "            tb = e.__traceback__",
+    "            if tb is None:",
+    "                return None",
+    "            while tb.tb_next is not None:",
+    "                tb = tb.tb_next",
+    "            marco = tb.tb_frame",
+    "            locales = list(marco.f_code.co_varnames)",
+    "            s = _sugerir(locales, nombre)",
+    "            if s:",
+    "                return s",
+    "            if 'self' in locales and 'self' in marco.f_locals and hasattr(marco.f_locals['self'], nombre):",
+    "                return 'self.' + nombre",
+    "            return _sugerir(list(marco.f_globals), nombre) or _sugerir(list(marco.f_builtins), nombre)",
+    "    except Exception:",
+    "        return None",
+    "    return None",
+    "",
+    "def _mensaje(e):",
+    "    texto = traceback._safe_string(e, 'exception')",
+    "    s = _sugerencia(e)",
+    "    if s:",
+    "        texto += \". Did you mean: '\" + s + \"'?\"",
+    "    if isinstance(e, NameError) and isinstance(getattr(e, 'name', None), str) and e.name in sys.stdlib_module_names:",
+    "        texto += (\" Or did you forget to import '%s'?\" if s else \". Did you forget to import '%s'?\") % e.name",
+    "    return texto",
+    "",
+    "def _ajustar(te, e, vistos):",
+    "    if id(te) in vistos:",
+    "        return",
+    "    vistos.add(id(te))",
+    "    te.stack = traceback.StackSummary.from_list([m for m in te.stack if m.filename == 'tu_programa.py'])",
+    "    if not isinstance(e, SyntaxError):",
+    "        te._str = _mensaje(e)",
+    "    if te.__cause__ is not None and e.__cause__ is not None:",
+    "        _ajustar(te.__cause__, e.__cause__, vistos)",
+    "    if te.__context__ is not None and e.__context__ is not None:",
+    "        _ajustar(te.__context__, e.__context__, vistos)",
+    "",
+    "def _formatear_error(e):",
+    "    if isinstance(e, SystemExit):",
+    "        return None if e.code is None or isinstance(e.code, int) else str(e.code) + '\\n'",
+    "    te = traceback.TracebackException.from_exception(e)",
+    "    _ajustar(te, e, set())",
+    "    return ''.join(te.format())",
+    "",
+    "def _correr(codigo, archivos_json, verificar):",
+    "    archivos = json.loads(archivos_json)",
+    "    # Para que los errores muestren la línea de código, como en la consola",
+    "    linecache.cache['tu_programa.py'] = (len(codigo), None, codigo.splitlines(True), 'tu_programa.py')",
+    "    os.makedirs(_TRABAJO, exist_ok=True)",
+    "    os.chdir(_TRABAJO)",
+    "    for n in os.listdir('.'):",
+    "        if os.path.isfile(n):",
+    "            os.remove(n)",
+    "    for nombre, contenido in archivos.items():",
+    "        with open(nombre, 'w', encoding='utf-8') as f:",
+    "            f.write(contenido)",
+    "    salida, imagenes, figuras, plt = io.StringIO(), [], [], None",
+    "    if 'matplotlib' in sys.modules or 'matplotlib' in codigo:",
+    "        try:",
+    "            import matplotlib",
+    "            matplotlib.use('Agg')",
+    "            import matplotlib.pyplot as plt",
+    "            plt.close('all')",
+    "        except ImportError:",
+    "            plt = None",
+    "    def _mostrar(*args, **kwargs):",
+    "        for n in plt.get_fignums():",
+    "            b = io.BytesIO()",
+    "            plt.figure(n).savefig(b, format='png', dpi=100, bbox_inches='tight')",
+    "            imagenes.append(base64.b64encode(b.getvalue()).decode('ascii'))",
+    "            figuras.append(plt.figure(n))",
+    "        plt.close('all')",
+    "    if plt is not None:",
+    "        show_original, plt.show = plt.show, _mostrar",
+    "    ns = {'__name__': '__main__'}",
+    "    error = None",
+    "    viejo_out, viejo_err = sys.stdout, sys.stderr",
+    "    sys.stdout = sys.stderr = salida",
+    "    # Mismo margen de recursión que al correr el archivo con python (1000 marcos)",
+    "    profundidad, marco = 0, sys._getframe()",
+    "    while marco is not None:",
+    "        profundidad, marco = profundidad + 1, marco.f_back",
+    "    limite = sys.getrecursionlimit()",
+    "    sys.setrecursionlimit(1000 + profundidad)",
+    "    try:",
+    "        exec(compile(codigo, 'tu_programa.py', 'exec'), ns)",
+    "    except BaseException as e:",
+    "        error = _formatear_error(e)",
+    "    finally:",
+    "        sys.setrecursionlimit(limite)",
+    "        sys.stdout, sys.stderr = viejo_out, viejo_err",
+    "        if plt is not None:",
+    "            plt.show = show_original",
+    "    sin_show = plt is not None and not imagenes and len(plt.get_fignums()) > 0",
+    "    if sin_show:",
+    "        _mostrar()",
+    "    nuevos = sorted(n for n in os.listdir('.') if os.path.isfile(n) and n not in archivos)",
+    "    resultados = None",
+    "    if verificar and error is None:",
+    "        try:",
+    "            resultados = [[bool(ok), str(msg)] for ok, msg in revisar(ns, salida.getvalue(), nuevos, figuras)]",
+    "        except Exception as e:",
+    "            resultados = [[False, 'No se pudo revisar: ' + ''.join(traceback.format_exception_only(type(e), e)).strip()]]",
+    "    return json.dumps({'salida': salida.getvalue(), 'error': error, 'figuras': imagenes,",
+    "                       'archivos': nuevos, 'resultados': resultados, 'sin_show': sin_show})",
+  ].join("\n");
+
+  var $ = function (id) { return document.getElementById(id); };
+  var pyodide = null, editor = null;
+
+  function esc(t) {
+    return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  function estado(texto, listo) {
+    $("estado").textContent = texto;
+    $("estado").className = listo ? "listo" : "";
+  }
+  function leerGuardado() {
+    try { return localStorage.getItem(CLAVE); } catch (e) { return null; }
+  }
+  function guardar() {
+    try { localStorage.setItem(CLAVE, obtenerCodigo()); } catch (e) { /* sin almacenamiento */ }
+  }
+  function obtenerCodigo() { return editor ? editor.getValue() : $("editor").value; }
+  function ponerCodigo(t) { if (editor) editor.setValue(t); else $("editor").value = t; }
+
+  // Lista visible de lo que se revisa
+  $("lista-pruebas").innerHTML = PRUEBAS.map(function (p) { return "<li>" + esc(p) + "</li>"; }).join("");
+  // Los archivos de la carpeta, con números de línea
+  $("vistaArchivos").innerHTML = Object.keys(ARCHIVOS).map(function (n) {
+    var lineas = ARCHIVOS[n].replace(/\n$/, "").split("\n");
+    return '<details class="archivo"><summary><code>' + esc(n) + "</code> (" + lineas.length + ' líneas)</summary><pre class="contenido">' +
+      lineas.map(function (l) { return "<span>" + (esc(l) || " ") + "</span>"; }).join("") + "</pre></details>";
+  }).join("");
+
+  // Editor: CodeMirror si cargó; si no, el cuadro de texto con Tab = 4 espacios
+  var inicial = leerGuardado() || CODIGO_INICIAL;
+  $("editor").value = inicial;
+  if (window.CodeMirror) {
+    editor = CodeMirror.fromTextArea($("editor"), {
+      mode: "python", lineNumbers: true, indentUnit: 4, tabSize: 4, smartIndent: true,
+      extraKeys: {
+        "Tab": function (cm) { cm.replaceSelection("    "); },
+        "Ctrl-Enter": function () { ejecutar(false); },
+        "Cmd-Enter": function () { ejecutar(false); }
+      }
+    });
+    var temporizador = null;
+    editor.on("change", function () { clearTimeout(temporizador); temporizador = setTimeout(guardar, 500); });
+  } else {
+    $("editor").addEventListener("keydown", function (e) {
+      if (e.key === "Tab") {
+        e.preventDefault();
+        var t = e.target, i = t.selectionStart;
+        t.value = t.value.slice(0, i) + "    " + t.value.slice(t.selectionEnd);
+        t.selectionStart = t.selectionEnd = i + 4;
+      } else if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault(); ejecutar(false);
+      }
+    });
+    $("editor").addEventListener("input", guardar);
+  }
+
+  function limpiar() {
+    $("salida").innerHTML = "";
+    $("figuras").innerHTML = "";
+    $("archivos").innerHTML = "";
+    $("resultados").innerHTML = "";
+  }
+
+  function tipoArchivo(nombre) {
+    var ext = nombre.split(".").pop().toLowerCase();
+    return { png: "image/png", json: "application/json", csv: "text/csv", txt: "text/plain",
+             xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }[ext] || "application/octet-stream";
+  }
+
+  async function ejecutar(verificar) {
+    if (!pyodide) return;
+    guardar();
+    limpiar();
+    $("ejecutar").disabled = $("verificar").disabled = true;
+    estado(verificar ? "Verificando…" : "Ejecutando…");
+    await new Promise(function (r) { setTimeout(r, 30); });   // deja que se pinte el estado
+    var r;
+    try {
+      pyodide.globals.set("_codigo_alumno", obtenerCodigo());
+      pyodide.globals.set("_archivos_json", JSON.stringify(ARCHIVOS));
+      pyodide.globals.set("_verificar", !!verificar);
+      r = JSON.parse(await pyodide.runPythonAsync("_correr(_codigo_alumno, _archivos_json, _verificar)"));
+    } catch (e) {
+      $("salida").innerHTML = '<span class="error">' + esc(String(e)) + "</span>";
+      $("ejecutar").disabled = $("verificar").disabled = false;
+      estado("Python listo", true);
+      return;
+    }
+    var html = esc(r.salida);
+    if (r.error) html += '<span class="error">' + esc(r.error) + "</span>";
+    if (!r.salida && !r.error) html = '<span class="aviso">(el programa terminó sin imprimir nada)</span>';
+    $("salida").innerHTML = html;
+    r.figuras.forEach(function (b64, k) {
+      var img = new Image();
+      img.alt = "Figura " + (k + 1);
+      img.src = "data:image/png;base64," + b64;
+      $("figuras").appendChild(img);
+    });
+    if (r.sin_show) {
+      $("figuras").insertAdjacentHTML("beforeend",
+        '<p class="sub">No llamaste <code>plt.show()</code>; aquí se muestra la figura de todos modos.</p>');
+    }
+    r.archivos.forEach(function (nombre) {
+      var datos = pyodide.FS.readFile("/home/pyodide/trabajo/" + nombre);
+      var url = URL.createObjectURL(new Blob([datos], { type: tipoArchivo(nombre) }));
+      var a = document.createElement("a");
+      a.href = url; a.download = nombre;
+      a.textContent = "⬇ " + nombre + " (" + Math.max(1, Math.round(datos.length / 1024)) + " KB)";
+      $("archivos").appendChild(a);
+    });
+    if (verificar) {
+      if (r.error) {
+        $("resultados").innerHTML = '<p class="resumen mal">Corrige el error de arriba y vuelve a verificar.</p>';
+      } else if (r.resultados) {
+        var bien = r.resultados.filter(function (x) { return x[0]; }).length;
+        var total = r.resultados.length;
+        $("resultados").innerHTML =
+          '<p class="resumen ' + (bien === total ? "ok" : "mal") + '">' +
+          (bien === total ? "¡Todas las pruebas pasan! (" + total + " de " + total + ")" : bien + " de " + total + " pruebas pasan") +
+          "</p><ul class=\"pruebas\">" + r.resultados.map(function (x) {
+            return '<li class="' + (x[0] ? "ok" : "mal") + '">' + esc(x[1]) + "</li>";
+          }).join("") + "</ul>";
+      }
+    }
+    $("ejecutar").disabled = $("verificar").disabled = false;
+    estado("Python listo", true);
+  }
+
+  $("ejecutar").addEventListener("click", function () { ejecutar(false); });
+  $("verificar").addEventListener("click", function () { ejecutar(true); });
+  $("restaurar").addEventListener("click", function () {
+    if (confirm("¿Regresar al código inicial? Se perderán tus cambios.")) { ponerCodigo(CODIGO_INICIAL); guardar(); limpiar(); }
+  });
+  $("descargar").addEventListener("click", function () {
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([obtenerCodigo()], { type: "text/x-python" }));
+    a.download = NOMBRE_PY;
+    a.click();
+  });
+
+  async function iniciar() {
+    if (!window.loadPyodide) {
+      estado("No se pudo descargar Python: revisa tu conexión a internet y recarga la página.");
+      return;
+    }
+    try {
+      pyodide = await loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.27.7/full/" });
+      if (PAQUETES.length) {
+        estado("Cargando " + PAQUETES.join(", ") + "…");
+        await pyodide.loadPackage(PAQUETES);
+      }
+      if (MICROPIP.length) {
+        estado("Instalando " + MICROPIP.join(", ") + "…");
+        await pyodide.loadPackage("micropip");
+        await pyodide.pyimport("micropip").install(MICROPIP);
+      }
+      pyodide.runPython(PREPARAR_PY);
+      pyodide.runPython(PRUEBAS_PY);
+      $("ejecutar").disabled = $("verificar").disabled = false;
+      estado("Python listo", true);
+    } catch (e) {
+      estado("No se pudo preparar Python: " + e);
+    }
+  }
+  iniciar();
+})();
+</script>
+<div id="qr-sitio" class="qr-capa" hidden>
+  <div class="qr-caja" role="dialog" aria-modal="true" aria-label="Código QR de esta página">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 45" role="img" aria-label="Código QR de https://memosanchezg.github.io/programacion-basica-interactivos/semana-09-ejercicio.html" shape-rendering="crispEdges"><rect width="45" height="45" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM11 2h1v1h-1zM14 2h1v1h-1zM17 2h1v1h-1zM21 2h2v1h-2zM24 2h3v1h-3zM30 2h2v1h-2zM33 2h2v1h-2zM36 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM12 3h4v1h-4zM17 3h1v1h-1zM20 3h1v1h-1zM22 3h1v1h-1zM24 3h1v1h-1zM26 3h1v1h-1zM29 3h3v1h-3zM34 3h1v1h-1zM36 3h1v1h-1zM42 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM10 4h1v1h-1zM12 4h1v1h-1zM15 4h3v1h-3zM22 4h1v1h-1zM26 4h1v1h-1zM28 4h7v1h-7zM36 4h1v1h-1zM38 4h3v1h-3zM42 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h3v1h-3zM14 5h2v1h-2zM17 5h2v1h-2zM20 5h1v1h-1zM23 5h2v1h-2zM26 5h1v1h-1zM33 5h2v1h-2zM36 5h1v1h-1zM38 5h3v1h-3zM42 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h3v1h-3zM15 6h3v1h-3zM21 6h1v1h-1zM25 6h1v1h-1zM28 6h1v1h-1zM30 6h5v1h-5zM36 6h1v1h-1zM38 6h3v1h-3zM42 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h6v1h-6zM17 7h1v1h-1zM22 7h1v1h-1zM26 7h1v1h-1zM29 7h2v1h-2zM34 7h1v1h-1zM36 7h1v1h-1zM42 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM30 8h1v1h-1zM32 8h1v1h-1zM34 8h1v1h-1zM36 8h7v1h-7zM10 9h1v1h-1zM13 9h1v1h-1zM15 9h4v1h-4zM20 9h1v1h-1zM23 9h1v1h-1zM25 9h2v1h-2zM28 9h1v1h-1zM33 9h2v1h-2zM2 10h1v1h-1zM4 10h5v1h-5zM12 10h2v1h-2zM15 10h5v1h-5zM22 10h1v1h-1zM24 10h1v1h-1zM27 10h3v1h-3zM31 10h1v1h-1zM36 10h5v1h-5zM2 11h1v1h-1zM4 11h3v1h-3zM10 11h1v1h-1zM12 11h1v1h-1zM14 11h1v1h-1zM19 11h5v1h-5zM25 11h1v1h-1zM27 11h1v1h-1zM30 11h1v1h-1zM32 11h3v1h-3zM36 11h3v1h-3zM40 11h3v1h-3zM4 12h5v1h-5zM11 12h4v1h-4zM22 12h2v1h-2zM29 12h4v1h-4zM34 12h4v1h-4zM2 13h1v1h-1zM6 13h1v1h-1zM9 13h1v1h-1zM11 13h1v1h-1zM14 13h1v1h-1zM18 13h1v1h-1zM23 13h2v1h-2zM28 13h1v1h-1zM32 13h4v1h-4zM38 13h2v1h-2zM42 13h1v1h-1zM3 14h1v1h-1zM6 14h3v1h-3zM12 14h2v1h-2zM16 14h1v1h-1zM19 14h1v1h-1zM21 14h1v1h-1zM24 14h1v1h-1zM27 14h3v1h-3zM31 14h1v1h-1zM33 14h1v1h-1zM37 14h1v1h-1zM39 14h3v1h-3zM3 15h1v1h-1zM6 15h2v1h-2zM9 15h2v1h-2zM15 15h1v1h-1zM20 15h1v1h-1zM22 15h1v1h-1zM24 15h1v1h-1zM26 15h1v1h-1zM29 15h2v1h-2zM32 15h1v1h-1zM36 15h7v1h-7zM2 16h1v1h-1zM5 16h10v1h-10zM16 16h1v1h-1zM19 16h3v1h-3zM23 16h1v1h-1zM31 16h2v1h-2zM35 16h1v1h-1zM37 16h1v1h-1zM40 16h1v1h-1zM6 17h2v1h-2zM11 17h1v1h-1zM13 17h1v1h-1zM18 17h1v1h-1zM20 17h5v1h-5zM26 17h1v1h-1zM28 17h1v1h-1zM30 17h1v1h-1zM34 17h1v1h-1zM36 17h2v1h-2zM39 17h1v1h-1zM41 17h1v1h-1zM4 18h2v1h-2zM7 18h5v1h-5zM13 18h5v1h-5zM19 18h1v1h-1zM21 18h1v1h-1zM27 18h2v1h-2zM31 18h3v1h-3zM35 18h1v1h-1zM37 18h1v1h-1zM40 18h1v1h-1zM4 19h4v1h-4zM9 19h2v1h-2zM12 19h1v1h-1zM14 19h1v1h-1zM17 19h7v1h-7zM25 19h3v1h-3zM30 19h1v1h-1zM32 19h3v1h-3zM36 19h4v1h-4zM41 19h2v1h-2zM2 20h3v1h-3zM7 20h2v1h-2zM10 20h3v1h-3zM15 20h2v1h-2zM19 20h1v1h-1zM23 20h1v1h-1zM27 20h4v1h-4zM32 20h1v1h-1zM35 20h1v1h-1zM38 20h2v1h-2zM41 20h1v1h-1zM4 21h1v1h-1zM12 21h2v1h-2zM16 21h1v1h-1zM19 21h3v1h-3zM23 21h2v1h-2zM27 21h1v1h-1zM29 21h2v1h-2zM33 21h3v1h-3zM38 21h2v1h-2zM41 21h2v1h-2zM3 22h3v1h-3zM7 22h6v1h-6zM15 22h2v1h-2zM18 22h1v1h-1zM21 22h1v1h-1zM23 22h1v1h-1zM25 22h2v1h-2zM28 22h2v1h-2zM32 22h1v1h-1zM39 22h3v1h-3zM2 23h5v1h-5zM9 23h1v1h-1zM12 23h1v1h-1zM14 23h1v1h-1zM16 23h10v1h-10zM27 23h1v1h-1zM30 23h1v1h-1zM33 23h2v1h-2zM36 23h3v1h-3zM40 23h3v1h-3zM3 24h3v1h-3zM8 24h6v1h-6zM15 24h4v1h-4zM20 24h1v1h-1zM22 24h1v1h-1zM24 24h1v1h-1zM27 24h4v1h-4zM34 24h1v1h-1zM39 24h1v1h-1zM3 25h3v1h-3zM7 25h1v1h-1zM11 25h1v1h-1zM13 25h1v1h-1zM15 25h1v1h-1zM18 25h1v1h-1zM20 25h2v1h-2zM23 25h2v1h-2zM29 25h1v1h-1zM33 25h3v1h-3zM37 25h1v1h-1zM39 25h1v1h-1zM41 25h1v1h-1zM2 26h1v1h-1zM5 26h1v1h-1zM8 26h2v1h-2zM11 26h2v1h-2zM16 26h1v1h-1zM19 26h1v1h-1zM25 26h7v1h-7zM33 26h1v1h-1zM40 26h3v1h-3zM7 27h1v1h-1zM9 27h1v1h-1zM12 27h1v1h-1zM15 27h2v1h-2zM19 27h1v1h-1zM21 27h3v1h-3zM25 27h1v1h-1zM27 27h1v1h-1zM30 27h1v1h-1zM32 27h2v1h-2zM35 27h5v1h-5zM41 27h2v1h-2zM6 28h1v1h-1zM8 28h2v1h-2zM13 28h2v1h-2zM16 28h1v1h-1zM18 28h1v1h-1zM20 28h1v1h-1zM22 28h1v1h-1zM26 28h5v1h-5zM32 28h1v1h-1zM34 28h1v1h-1zM37 28h2v1h-2zM7 29h1v1h-1zM10 29h1v1h-1zM12 29h7v1h-7zM21 29h4v1h-4zM26 29h1v1h-1zM28 29h1v1h-1zM30 29h1v1h-1zM33 29h3v1h-3zM38 29h2v1h-2zM2 30h2v1h-2zM5 30h1v1h-1zM7 30h3v1h-3zM11 30h1v1h-1zM14 30h2v1h-2zM17 30h1v1h-1zM19 30h1v1h-1zM22 30h1v1h-1zM24 30h5v1h-5zM30 30h2v1h-2zM33 30h1v1h-1zM39 30h4v1h-4zM2 31h1v1h-1zM6 31h2v1h-2zM12 31h5v1h-5zM20 31h1v1h-1zM27 31h1v1h-1zM29 31h1v1h-1zM31 31h6v1h-6zM38 31h1v1h-1zM40 31h1v1h-1zM42 31h1v1h-1zM2 32h1v1h-1zM4 32h1v1h-1zM8 32h3v1h-3zM12 32h2v1h-2zM15 32h1v1h-1zM19 32h2v1h-2zM22 32h10v1h-10zM34 32h4v1h-4zM39 32h1v1h-1zM2 33h1v1h-1zM4 33h4v1h-4zM10 33h1v1h-1zM14 33h1v1h-1zM16 33h1v1h-1zM23 33h3v1h-3zM29 33h1v1h-1zM34 33h4v1h-4zM39 33h1v1h-1zM41 33h2v1h-2zM2 34h1v1h-1zM5 34h2v1h-2zM8 34h1v1h-1zM16 34h4v1h-4zM24 34h6v1h-6zM31 34h1v1h-1zM33 34h6v1h-6zM40 34h1v1h-1zM42 34h1v1h-1zM10 35h1v1h-1zM12 35h1v1h-1zM14 35h1v1h-1zM18 35h1v1h-1zM20 35h3v1h-3zM25 35h2v1h-2zM30 35h2v1h-2zM33 35h2v1h-2zM38 35h1v1h-1zM41 35h2v1h-2zM2 36h7v1h-7zM11 36h3v1h-3zM15 36h2v1h-2zM20 36h1v1h-1zM22 36h1v1h-1zM24 36h1v1h-1zM29 36h3v1h-3zM33 36h2v1h-2zM36 36h1v1h-1zM38 36h1v1h-1zM40 36h1v1h-1zM2 37h1v1h-1zM8 37h1v1h-1zM10 37h1v1h-1zM14 37h5v1h-5zM22 37h1v1h-1zM26 37h1v1h-1zM28 37h1v1h-1zM31 37h4v1h-4zM38 37h2v1h-2zM2 38h1v1h-1zM4 38h3v1h-3zM8 38h1v1h-1zM10 38h1v1h-1zM12 38h1v1h-1zM14 38h1v1h-1zM16 38h1v1h-1zM18 38h1v1h-1zM20 38h1v1h-1zM23 38h2v1h-2zM26 38h1v1h-1zM29 38h1v1h-1zM34 38h5v1h-5zM40 38h1v1h-1zM2 39h1v1h-1zM4 39h3v1h-3zM8 39h1v1h-1zM10 39h2v1h-2zM15 39h2v1h-2zM18 39h1v1h-1zM21 39h2v1h-2zM25 39h2v1h-2zM28 39h1v1h-1zM30 39h4v1h-4zM35 39h1v1h-1zM37 39h1v1h-1zM39 39h2v1h-2zM2 40h1v1h-1zM4 40h3v1h-3zM8 40h1v1h-1zM10 40h1v1h-1zM12 40h1v1h-1zM14 40h1v1h-1zM16 40h5v1h-5zM22 40h1v1h-1zM24 40h1v1h-1zM26 40h2v1h-2zM29 40h2v1h-2zM34 40h7v1h-7zM2 41h1v1h-1zM8 41h1v1h-1zM11 41h3v1h-3zM15 41h1v1h-1zM17 41h1v1h-1zM23 41h1v1h-1zM25 41h1v1h-1zM28 41h3v1h-3zM34 41h2v1h-2zM38 41h1v1h-1zM41 41h1v1h-1zM2 42h7v1h-7zM10 42h2v1h-2zM15 42h1v1h-1zM17 42h5v1h-5zM24 42h5v1h-5zM31 42h1v1h-1zM33 42h1v1h-1zM35 42h4v1h-4zM40 42h1v1h-1z"/></svg>
+    <p class="qr-texto">Escanea con la cámara del celular para abrir esta página</p>
+    <p class="qr-url">https://memosanchezg.github.io/programacion-basica-interactivos/semana-09-ejercicio.html</p>
+    <button type="button" class="qr-cerrar">Cerrar</button>
+  </div>
+</div>
+<style>
+  .qr-capa { position:fixed; top:0; right:0; bottom:0; left:0; z-index:10000; display:flex; align-items:center;
+             justify-content:center; padding:16px; background:#fff; }
+  .qr-capa[hidden] { display:none; }
+  .qr-caja { max-width:100%; text-align:center; color:#0A2A57; font:16px/1.4 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .qr-caja svg { display:block; width:min(62vh, 84vw); height:auto; margin:0 auto; }
+  .qr-texto { margin:12px 0 2px; font-size:1.15rem; font-weight:bold; }
+  .qr-url { margin:0 0 12px; color:#5B6472; word-break:break-all; }
+  .qr-cerrar { font:inherit; padding:6px 20px; border:2px solid #00408F; border-radius:4px; background:#fff;
+               color:#00408F; cursor:pointer; }
+</style>
+<script>
+  (function () {
+    var capa = document.getElementById("qr-sitio");
+    document.querySelectorAll("a.qr-abrir").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        capa.hidden = false;
+        capa.querySelector(".qr-cerrar").focus();
+      });
+    });
+    capa.addEventListener("click", function (e) {
+      if (e.target === capa || e.target.classList.contains("qr-cerrar")) capa.hidden = true;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !capa.hidden) capa.hidden = true;
+    });
+  })();
+</script>
+</body>
+</html>

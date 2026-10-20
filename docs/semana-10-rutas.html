@@ -1,0 +1,660 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="tipo" content="simulador">
+<title>Rutas con pathlib</title>
+
+<style>
+  :root {
+    --azul:#00408F; --azul-oscuro:#0A2A57; --guinda:#8C1D35; --oro:#B8975A; --oro-texto:#8A6A2E;
+    --azul-claro:#E8EEF7; --oro-claro:#F7F1E6; --guinda-claro:#F5E6EA; --verde:#2F7D5B;
+    --tinta:#1B1F2A; --gris:#5B6472; --gris-claro:#E9ECF1; --borde:#D9DEE6; --fondo:#FFFFFF;
+    --cmd-fondo:#0C0C0C; --cmd-texto:#E6E6E6;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--fondo); color:var(--tinta);
+         font:16px/1.45 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .franja { height:8px; background:var(--azul); border-bottom:3px solid var(--oro); }
+  header { max-width:1280px; margin:0 auto; padding:12px 18px 4px; }
+  .semana { color:var(--guinda); font-weight:bold; letter-spacing:.04em; font-size:.85rem; text-transform:uppercase; }
+  h1 { font-family:Cambria,Georgia,serif; color:var(--azul-oscuro); font-size:1.7rem; margin:2px 0 2px; }
+  .sub { color:var(--gris); margin:0; }
+  main { max-width:1280px; margin:0 auto; padding:8px 18px 24px; }
+  nav.pestanas { display:flex; gap:4px; flex-wrap:wrap; border-bottom:2px solid var(--gris-claro); margin:6px 0 12px; }
+  nav.pestanas button { font:inherit; font-weight:bold; border:none; background:none; color:var(--gris);
+                        padding:8px 14px; cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; }
+  nav.pestanas button.activo { color:var(--azul-oscuro); border-bottom-color:var(--azul); }
+  nav.pestanas button:focus-visible { outline:2px solid var(--azul); }
+  section.vista { display:none; }
+  section.vista.activo { display:block; }
+  .fila { display:grid; grid-template-columns:minmax(260px,360px) minmax(0,1fr); gap:16px; align-items:start; }
+  .panel { background:#fff; border:1px solid var(--borde); border-radius:10px; padding:12px 14px; }
+  .panel h2 { font-size:1.02rem; color:var(--azul-oscuro); margin:0 0 8px; }
+  label { display:block; font-weight:bold; color:var(--azul-oscuro); margin-top:10px; }
+  label small { font-weight:normal; color:var(--gris); }
+  input[type=number], input[type=text], select, textarea { font:inherit; padding:4px 6px; border:1px solid var(--borde);
+                        border-radius:6px; }
+  button.accion { font:inherit; font-weight:bold; border-radius:8px; padding:7px 12px; margin:8px 6px 0 0;
+                  border:1px solid var(--azul); background:#fff; color:var(--azul); cursor:pointer; }
+  button.accion:hover, button.accion:focus-visible { background:var(--azul); color:#fff; outline:none; }
+  .lectura { background:var(--oro-claro); border-left:4px solid var(--oro); border-radius:8px; padding:10px 12px;
+             margin-top:12px; line-height:1.55; }
+  .lectura b { color:var(--azul-oscuro); }
+  .ok { color:var(--verde); font-weight:bold; }
+  .mal { color:var(--guinda); font-weight:bold; }
+  .preguntas { background:var(--azul-claro); border-radius:8px; padding:10px 14px; margin-top:12px; }
+  .preguntas h3 { margin:0 0 4px; font-size:.95rem; color:var(--azul-oscuro); }
+  .preguntas ol { margin:0; padding-left:20px; }
+  /* Código Python con los colores del curso (minted, estilo borland) y salida de consola (cmd). */
+  .codigo { border:1px solid var(--tinta); background:#fff; font:15px/1.5 Consolas,"Courier New",monospace;
+            overflow-x:auto; margin:8px 0; }
+  .codigo ol { margin:0; padding:8px 12px 8px 3.4em; }
+  .codigo li { white-space:pre; }
+  .codigo li::marker { color:var(--gris); font:11px Cambria,Georgia,serif; }
+  .codigo .kw { color:#000080; font-weight:bold; }
+  .codigo .str, .codigo .num { color:#0000FF; }
+  .codigo .com { color:#008800; font-style:italic; }
+  .codigo .marca { background:var(--oro-claro); outline:1px solid var(--oro); }
+  .consola { background:var(--cmd-fondo); color:var(--cmd-texto); font:15px/1.45 Consolas,"Courier New",monospace;
+             white-space:pre-wrap; word-break:break-word; padding:8px 12px; border-radius:4px; margin:8px 0; min-height:2.2em; }
+  footer { max-width:1280px; margin:0 auto; padding:6px 18px 18px; color:var(--gris); font-size:.85rem; }
+  footer a { color:var(--azul); }
+  @media (max-width: 820px) { .fila { grid-template-columns:1fr; } }
+
+  /* Propios de este simulador */
+  [hidden] { display:none !important; }
+  code { font-family:Consolas,"Courier New",monospace; color:var(--azul-oscuro); overflow-wrap:anywhere; }
+  .fila > * { min-width:0; }
+  .consola.sin-corte { white-space:pre; overflow-x:auto; word-break:normal; }
+  .consola .error { color:#FF8A80; }
+  .consola .prompt { color:#9AA0A6; }
+  /* Árbol de carpetas */
+  ul.arbol, ul.arbol ul { list-style:none; margin:0; padding:0; }
+  ul.arbol ul { padding-left:18px; border-left:1px dotted #AEB4BE; margin-left:7px; }
+  ul.arbol li { margin:2px 0; }
+  .nodo { display:inline-flex; flex-wrap:wrap; align-items:center; gap:4px 6px; font:15px/1.4 Consolas,"Courier New",monospace;
+          padding:1px 6px; border-radius:6px; overflow-wrap:anywhere; }
+  .nodo .ic { font-family:"Segoe UI Emoji","Segoe UI",sans-serif; font-size:14px; }
+  .nodo.carpeta { color:var(--azul-oscuro); font-weight:bold; }
+  .nodo.archivo { color:var(--tinta); }
+  .nodo.apunta { background:var(--oro-claro); outline:2px solid var(--oro); }
+  .nodo.fantasma { color:var(--gris); font-style:italic; outline:2px dashed var(--guinda); background:#fff; }
+  .etq { font:bold 11px/1 Calibri,"Segoe UI",sans-serif; border-radius:8px; padding:2px 6px; white-space:nowrap; font-style:normal; }
+  .etq.cwd { background:var(--azul-oscuro); color:#fff; }
+  .etq.aqui { background:var(--oro); color:#1B1F2A; }
+  .etq.no { background:var(--guinda); color:#fff; }
+  .opciones-cwd { display:flex; flex-direction:column; gap:4px; margin:4px 0 8px; }
+  .opciones-cwd label { font-weight:normal; color:var(--tinta); margin:0; display:flex; gap:6px; align-items:baseline; overflow-wrap:anywhere; }
+  .opciones-cwd code { color:var(--azul-oscuro); }
+  .piezas { display:flex; flex-wrap:wrap; gap:6px; margin:6px 0; }
+  .piezas button { font:14px Consolas,"Courier New",monospace; border:1px solid var(--borde); border-radius:8px; background:#fff;
+                   color:var(--azul-oscuro); padding:6px 9px; cursor:pointer; }
+  .piezas button:hover:not(:disabled), .piezas button:focus-visible { border-color:var(--azul); background:var(--azul-claro); outline:none; }
+  .piezas button:disabled { opacity:.45; cursor:not-allowed; }
+  table.ficha { width:100%; border-collapse:collapse; font-size:.95rem; margin-top:6px; }
+  table.ficha th, table.ficha td { border:1px solid var(--borde); padding:4px 8px; text-align:left; vertical-align:top; }
+  table.ficha thead th { background:var(--gris-claro); color:var(--azul-oscuro); }
+  table.ficha td { font-family:Consolas,"Courier New",monospace; overflow-wrap:anywhere; word-break:break-word; }
+  table.ficha td:first-child { color:var(--azul-oscuro); white-space:nowrap; }
+  table.ficha tr.disco td:first-child::after { content:" disco"; font:bold 10px Calibri,"Segoe UI",sans-serif; color:var(--guinda);
+                                               vertical-align:2px; }
+  .error-py { color:var(--guinda); font-family:Consolas,"Courier New",monospace; }
+  .intentos { display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 10px; }
+  .intentos button { font:inherit; border:1px solid var(--borde); border-radius:8px; background:#fff; color:var(--azul-oscuro);
+                     padding:6px 10px; cursor:pointer; }
+  .intentos button[aria-pressed="true"] { border-color:var(--azul); background:var(--azul-claro); font-weight:bold; }
+  .intentos button:focus-visible { outline:2px solid var(--guinda); outline-offset:1px; }
+  .nota { color:var(--gris); font-size:.92rem; margin:8px 0 0; }
+  h3.rotulo { font-size:.98rem; color:var(--azul-oscuro); margin:14px 0 4px; }
+  .grupo-radio { border:none; margin:0; padding:0; min-width:0; }
+  .grupo-radio legend { font-weight:bold; color:var(--azul-oscuro); padding:0; margin-top:10px; }
+  @media (max-width: 480px) {
+    header { padding:10px 12px 4px; } main { padding:8px 10px 20px; } footer { padding:6px 12px 16px; }
+    .panel { padding:10px; } h1 { font-size:1.45rem; }
+    .codigo, .consola { font-size:13px; } .codigo ol { padding-left:2.9em; }
+    .nodo { font-size:14px; }
+    table.ficha td:first-child { white-space:normal; }
+  }
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header>
+  <div class="semana">Semana 10 · Archivos y persistencia</div>
+  <h1>Rutas con pathlib</h1>
+  <p class="sub">Arma rutas con Path y mira a dónde apuntan en el proyecto y qué imprime Python en Windows, según la carpeta desde donde corres el programa.</p>
+</header>
+<main>
+  <nav class="pestanas" role="tablist" aria-label="Partes del simulador">
+    <button type="button" class="activo" data-vista="v1" role="tab" aria-selected="true" id="t1">Construye rutas</button>
+    <button type="button" data-vista="v2" role="tab" aria-selected="false" id="t2">No concatenes texto</button>
+    <button type="button" data-vista="v3" role="tab" aria-selected="false" id="t3">Corre desde otra carpeta</button>
+  </nav>
+
+  <section class="vista activo" id="v1" role="tabpanel" aria-labelledby="t1">
+    <div class="fila">
+      <div class="panel">
+        <h2>El proyecto</h2>
+        <fieldset class="grupo-radio">
+          <legend>Carpeta actual <small style="font-weight:normal;color:var(--gris)">(desde donde corres python)</small></legend>
+          <div class="opciones-cwd" id="cwds1"></div>
+        </fieldset>
+        <ul class="arbol" id="arbol1" aria-label="Carpetas y archivos del proyecto"></ul>
+        <div class="lectura" id="dondeApunta" aria-live="polite"></div>
+      </div>
+      <div class="panel">
+        <h2>Tu ruta</h2>
+        <label for="inicio">Empieza con</label>
+        <select id="inicio"></select>
+        <p class="sub" style="margin-top:8px">Agrégale pasos (hasta 4):</p>
+        <div class="piezas" id="piezas" role="group" aria-label="Pasos para agregar"></div>
+        <div class="piezas">
+          <button type="button" id="quitar">Quitar el último paso</button>
+          <button type="button" id="limpiar">Empezar de nuevo</button>
+        </div>
+        <div id="codigo1"></div>
+        <div id="resultado1" aria-live="polite"></div>
+        <p class="nota">Las filas marcadas con <b style="color:var(--guinda)">disco</b> consultan el disco: dependen de la carpeta actual. Las demás solo trabajan con el texto de la ruta. En Linux o macOS, <code>print(p)</code> usa <code>/</code> (<code>datos/clima.csv</code>), el tipo es <code>PosixPath('datos/clima.csv')</code> y las rutas absolutas empiezan con <code>/</code>, como <code>/home/ana/proyecto</code>.</p>
+      </div>
+    </div>
+    <div class="preguntas">
+      <h3>Para explorar</h3>
+      <ol>
+        <li>Con la carpeta actual en <code>proyecto</code>, arma <code>Path("datos") / "clima.csv"</code>. Cambia la carpeta actual a <code>src</code>: ¿qué cambia en <code>print(p)</code>, en <code>exists()</code> y en <code>resolve()</code>?</li>
+        <li>Agrégale <code>.with_suffix(".json")</code>: ¿qué ruta da? ¿Existe? ¿Path creó algún archivo?</li>
+        <li>Desde <code>src</code>, llega a <code>clima.csv</code> con <code>".."</code> y también con <code>Path(__file__)</code>. ¿Cuál funciona desde cualquier carpeta actual?</li>
+        <li>¿Por qué <code>Path("..").parent</code> da <code>WindowsPath('.')</code> y no la carpeta de arriba?</li>
+        <li>Desde <code>src</code>, <code>sorted(Path("datos").glob("*.csv"))</code> da <code>[]</code>. ¿Por qué no hay error? ¿Es bueno o malo?</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="vista" id="v2" role="tabpanel" aria-labelledby="t2">
+    <div class="fila">
+      <div class="panel">
+        <h2>Cinco formas de armar la ruta</h2>
+        <p class="sub">El programa <code>rutas.py</code> está en <code>C:\Users\ana\proyecto</code> y se corre desde ahí. Elige un intento:</p>
+        <div class="intentos" id="intentos" role="group" aria-label="Intentos"></div>
+        <div class="lectura" id="explicaIntento" aria-live="polite"></div>
+      </div>
+      <div class="panel">
+        <h2>El código y lo que imprime Python 3.12</h2>
+        <div id="codigo2"></div>
+        <div class="consola sin-corte" id="consola2" aria-label="Lo que imprime Python"></div>
+        <p class="nota">Regla práctica: arma las rutas con <code>Path</code> y <code>/</code>. Si de verdad necesitas escribir una ruta de Windows completa, usa diagonales normales (<code>"C:/Users/ana"</code>) o un texto crudo (<code>r"C:\Users\ana"</code>).</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="vista" id="v3" role="tabpanel" aria-labelledby="t3">
+    <div class="fila">
+      <div class="panel">
+        <h2>¿Desde dónde lo corres?</h2>
+        <fieldset class="grupo-radio">
+          <legend>Carpeta actual</legend>
+          <div class="opciones-cwd" id="cwds3"></div>
+        </fieldset>
+        <fieldset class="grupo-radio">
+          <legend>Versión de main.py</legend>
+          <div class="opciones-cwd" id="versiones"></div>
+        </fieldset>
+        <ul class="arbol" id="arbol3" aria-label="Carpetas y archivos del proyecto"></ul>
+        <div class="lectura" id="explica3" aria-live="polite"></div>
+      </div>
+      <div class="panel">
+        <h2><code>src\main.py</code></h2>
+        <div id="codigo3"></div>
+        <div class="consola sin-corte" id="consola3" aria-label="Lo que imprime Python"></div>
+        <div class="preguntas">
+          <h3>Para explorar</h3>
+          <ol>
+            <li>Con la versión A, ¿qué dice la línea "Busco" desde cada carpeta? ¿Por qué solo funciona desde <code>proyecto</code>?</li>
+            <li>Con la versión B, ¿qué es <code>Path(__file__)</code>? ¿Por qué hace falta <code>.parent</code> dos veces?</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<footer>
+  Programación Básica · FCFM-UANL · funciona sin internet. Lo que muestra cada ruta es lo que da Python 3.12 en Windows.
+  <a href="index.html">Índice de simuladores</a> · <a href="#qr-sitio" class="qr-abrir">Abrir en el celular (QR)</a>
+</footer>
+
+<script id="nucleo">
+var NUCLEO = (function () {
+  "use strict";
+  var D = String.fromCharCode(92);              // la diagonal invertida de Windows
+
+  // repr() de un texto de Python (aquí basta con comillas simples o dobles)
+  function pyStr(s) {
+    var q = (s.indexOf("'") >= 0 && s.indexOf('"') < 0) ? '"' : "'";
+    var r = "";
+    for (var c of s) {
+      if (c === D) r += D + D;
+      else if (c === q) r += D + q;
+      else if (c === "\n") r += D + "n";
+      else if (c === "\t") r += D + "t";
+      else r += c;
+    }
+    return q + r + q;
+  }
+
+  // ---------- WindowsPath: unidad, raíz y partes, como pathlib ----------
+  function Ruta(unidad, raiz, partes) { this.unidad = unidad; this.raiz = raiz; this.partes = partes; }
+  function ruta(texto) {
+    var t = texto.replace(/\//g, D), unidad = "", raiz = "";
+    var m = /^([A-Za-z]:)/.exec(t);
+    if (m) { unidad = m[1]; t = t.slice(2); }
+    if (t[0] === D) { raiz = D; }
+    var partes = t.split(D).filter(function (x) { return x !== "" && x !== "."; });
+    return new Ruta(unidad, raiz, partes);
+  }
+  Ruta.prototype.texto = function () {        // str(p)
+    var s = this.unidad + this.raiz + this.partes.join(D);
+    return s === "" ? "." : s;
+  };
+  Ruta.prototype.posix = function () { return this.texto().split(D).join("/"); };
+  Ruta.prototype.repr = function () { return "WindowsPath(" + pyStr(this.posix()) + ")"; };
+  Ruta.prototype.absoluta = function () { return this.unidad !== "" && this.raiz !== ""; };
+  Ruta.prototype.entre = function (nombre) {    // p / "nombre" (un nombre sin diagonales)
+    return new Ruta(this.unidad, this.raiz, this.partes.concat(nombre === "." ? [] : [nombre]));
+  };
+  Ruta.prototype.padre = function () {
+    if (!this.partes.length) return this;
+    return new Ruta(this.unidad, this.raiz, this.partes.slice(0, -1));
+  };
+  Ruta.prototype.nombre = function () { return this.partes.length ? this.partes[this.partes.length - 1] : ""; };
+  Ruta.prototype.sufijo = function () {
+    var n = this.nombre(), i = n.lastIndexOf(".");
+    return (i > 0 && i < n.length - 1) ? n.slice(i) : "";
+  };
+  Ruta.prototype.raizNombre = function () {   // stem
+    var n = this.nombre(), i = n.lastIndexOf(".");
+    return (i > 0 && i < n.length - 1) ? n.slice(0, i) : n;
+  };
+  function ErrorPython(tipo, mensaje) { this.tipo = tipo; this.mensaje = mensaje; this.texto = tipo + ": " + mensaje; }
+  Ruta.prototype.conSufijo = function (sufijo) {
+    var n = this.nombre();
+    if (!n) throw new ErrorPython("ValueError", this.repr() + " has an empty name");
+    var viejo = this.sufijo();
+    var nuevo = viejo ? n.slice(0, n.length - viejo.length) + sufijo : n + sufijo;
+    return new Ruta(this.unidad, this.raiz, this.partes.slice(0, -1).concat([nuevo]));
+  };
+  // Ruta absoluta y sin "..": lo que hacen resolve() y Windows al buscar el archivo.
+  Ruta.prototype.normal = function (cwd) {
+    var base = this.absoluta() ? this : cwd.unir(this);
+    var pila = [];
+    base.partes.forEach(function (x) {
+      if (x === "..") { if (pila.length) pila.pop(); }
+      else pila.push(x);
+    });
+    return new Ruta(base.unidad, base.raiz, pila);
+  };
+  Ruta.prototype.unir = function (otra) {      // self / otra, con otra relativa
+    return new Ruta(this.unidad, this.raiz, this.partes.concat(otra.partes));
+  };
+
+  // ---------- El mundo: C:\Users\ana\proyecto ----------
+  var ARBOL = {
+    "C:": "d", "C:\\Users": "d", "C:\\Users\\ana": "d", "C:\\Users\\ana\\proyecto": "d",
+    "C:\\Users\\ana\\proyecto\\datos": "d", "C:\\Users\\ana\\proyecto\\datos\\clima.csv": "f",
+    "C:\\Users\\ana\\proyecto\\datos\\lluvia.csv": "f", "C:\\Users\\ana\\proyecto\\datos\\notas.txt": "f",
+    "C:\\Users\\ana\\proyecto\\reportes": "d", "C:\\Users\\ana\\proyecto\\src": "d",
+    "C:\\Users\\ana\\proyecto\\src\\main.py": "f"
+  };
+  var MUNDO = {};
+  Object.keys(ARBOL).forEach(function (k) { MUNDO[k.split("\\").join(D).toLowerCase()] = ARBOL[k]; });
+  function clave(r) { return [r.unidad].concat(r.partes).join(D).toLowerCase(); }
+  function tipoEn(p, cwd) { return MUNDO[clave(p.normal(cwd))] || null; }
+  function hijos(p, cwd) {
+    var k = clave(p.normal(cwd)) + D;
+    return Object.keys(MUNDO).filter(function (x) {
+      return x.indexOf(k) === 0 && x.slice(k.length).indexOf(D) < 0;
+    }).map(function (x) { return x.slice(k.length); }).sort();
+  }
+  var ARCHIVO = "C:\\Users\\ana\\proyecto\\src\\main.py".split("\\").join(D);
+  var CWDS = {
+    proyecto: "C:\\Users\\ana\\proyecto".split("\\").join(D),
+    src: "C:\\Users\\ana\\proyecto\\src".split("\\").join(D),
+    ana: "C:\\Users\\ana".split("\\").join(D)
+  };
+
+  // ---------- Las piezas del constructor ----------
+  var INICIOS = {
+    datos: { codigo: 'Path("datos")', crear: function () { return ruta("datos"); } },
+    clima: { codigo: 'Path("datos/clima.csv")', crear: function () { return ruta("datos/clima.csv"); } },
+    reportes: { codigo: 'Path("reportes")', crear: function () { return ruta("reportes"); } },
+    main: { codigo: 'Path("src/main.py")', crear: function () { return ruta("src/main.py"); } },
+    arriba: { codigo: 'Path("..")', crear: function () { return ruta(".."); } },
+    cwd: { codigo: "Path.cwd()", crear: function (cwd) { return cwd; } },
+    file: { codigo: "Path(__file__)", crear: function () { return ruta(ARCHIVO); } },
+    abs: { codigo: 'Path("C:/Users/ana/proyecto")', crear: function () { return ruta("C:/Users/ana/proyecto"); } }
+  };
+  var OPS = {
+    "/datos": { codigo: ' / "datos"', div: true }, "/clima.csv": { codigo: ' / "clima.csv"', div: true },
+    "/reportes": { codigo: ' / "reportes"', div: true }, "/resumen.json": { codigo: ' / "resumen.json"', div: true },
+    "/..": { codigo: ' / ".."', div: true }, ".parent": { codigo: ".parent" },
+    ".with_suffix": { codigo: '.with_suffix(".json")' }, ".resolve": { codigo: ".resolve()" }
+  };
+  function aplicar(p, op, cwd) {
+    if (op[0] === "/") return p.entre(op.slice(1));
+    if (op === ".parent") return p.padre();
+    if (op === ".with_suffix") return p.conSufijo(".json");
+    if (op === ".resolve") return p.normal(cwd);
+    throw new Error(op);
+  }
+  // El código de Python: un atributo después de / necesita paréntesis.
+  function codigo(inicio, ops) {
+    var c = INICIOS[inicio].codigo, ultimoDiv = false;
+    ops.forEach(function (op) {
+      var o = OPS[op];
+      if (o.div) { c += o.codigo; ultimoDiv = true; }
+      else { if (ultimoDiv) c = "(" + c + ")"; c += o.codigo; ultimoDiv = false; }
+    });
+    return c;
+  }
+  // Evalúa y regresa {ruta, error, ficha}
+  function evaluar(inicio, ops, cwdNombre) {
+    var cwd = ruta(CWDS[cwdNombre]), p = INICIOS[inicio].crear(cwd);
+    try {
+      ops.forEach(function (op) { p = aplicar(p, op, cwd); });
+    } catch (e) {
+      if (e instanceof ErrorPython) return { error: e.texto };
+      throw e;
+    }
+    var tipo = tipoEn(p, cwd), lista = [];
+    if (tipo === "d") {
+      lista = hijos(p, cwd).filter(function (h) { return /\.csv$/i.test(h); }).map(function (h) { return p.entre(h).repr(); });
+    }
+    var b = function (x) { return x ? "True" : "False"; };
+    return {
+      ruta: p, destino: p.normal(cwd), tipo: tipo,
+      ficha: {
+        str: p.texto(), repr: p.repr(), name: pyStr(p.nombre()), stem: pyStr(p.raizNombre()), suffix: pyStr(p.sufijo()),
+        parent: p.padre().repr(), exists: b(tipo !== null), is_file: b(tipo === "f"), is_dir: b(tipo === "d"),
+        resolve: p.normal(cwd).repr(), glob: "[" + lista.join(", ") + "]"
+      }
+    };
+  }
+  return { ruta: ruta, Ruta: Ruta, pyStr: pyStr, evaluar: evaluar, codigo: codigo, INICIOS: INICIOS, OPS: OPS,
+           CWDS: CWDS, ARBOL: ARBOL, ARCHIVO: ARCHIVO, tipoEn: tipoEn, hijos: hijos };
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(t) {
+    return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  var N = NUCLEO, D = String.fromCharCode(92);
+  // Salidas de las pestañas 2 y 3 (programas corridos en Python 3.12)
+  var CONSOLAS = /*CONSOLAS*/{"intentos":[{"id":"suma","titulo":"Sumar textos con +","codigo":"carpeta = \"datos\"\nruta = carpeta + \"clima.csv\"\nprint(ruta)\nwith open(ruta, encoding=\"utf-8\") as f:\n    print(f.readline().strip())\n","salida":"datosclima.csv\nTraceback (most recent call last):\n  File \"C:\\Users\\ana\\proyecto\\rutas.py\", line 4, in <module>\n    with open(ruta, encoding=\"utf-8\") as f:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No such file or directory: 'datosclima.csv'\n","explica":"<code>carpeta + \"clima.csv\"<\/code> pega los textos tal cual: falta la diagonal. Python busca un archivo llamado <code>datosclima.csv<\/code>, que no existe."},{"id":"enter","titulo":"Escribir \\ a mano: \\n","codigo":"ruta = \"datos\\notas.txt\"\nprint(ruta)\nwith open(ruta, encoding=\"utf-8\") as f:\n    print(f.readline().strip())\n","salida":"datos\notas.txt\nTraceback (most recent call last):\n  File \"C:\\Users\\ana\\proyecto\\rutas.py\", line 3, in <module>\n    with open(ruta, encoding=\"utf-8\") as f:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nOSError: [Errno 22] Invalid argument: 'datos\\notas.txt'\n","explica":"Dentro de un texto, <code>\\n<\/code> es un salto de línea: <code>\"datos\\notas.txt\"<\/code> trae un enter en medio. print lo muestra en dos renglones y Windows rechaza ese nombre: <code>OSError: [Errno 22] Invalid argument<\/code> (en el mensaje, el repr lo escribe otra vez como <code>\\n<\/code>)."},{"id":"suerte","titulo":"Escribir \\ a mano: \\c","codigo":"ruta = \"datos\\clima.csv\"\nprint(ruta)\nwith open(ruta, encoding=\"utf-8\") as f:\n    print(f.readline().strip())\n","salida":"C:\\Users\\ana\\proyecto\\rutas.py:1: SyntaxWarning: invalid escape sequence '\\c'\n  ruta = \"datos\\clima.csv\"\ndatos\\clima.csv\nfecha,tmax,tmin,lluvia_mm\n","explica":"Funciona, pero de suerte: <code>\\c<\/code> no es una secuencia de escape y Python deja la diagonal. Python 3.12 avisa con un <b>SyntaxWarning<\/b> antes de correr (en versiones futuras será un error). Con otra letra (<code>\\n<\/code>, <code>\\t<\/code>, <code>\\r<\/code>) ya no funciona, y en Linux o macOS la diagonal invertida no separa carpetas."},{"id":"pathmas","titulo":"Un Path con +","codigo":"from pathlib import Path\n\nruta = Path(\"datos\") + \"notas.txt\"\nprint(ruta)\n","salida":"Traceback (most recent call last):\n  File \"C:\\Users\\ana\\proyecto\\rutas.py\", line 3, in <module>\n    ruta = Path(\"datos\") + \"notas.txt\"\n           ~~~~~~~~~~~~~~^~~~~~~~~~~~~\nTypeError: unsupported operand type(s) for +: 'WindowsPath' and 'str'\n","explica":"Un Path no se suma con <code>+<\/code>: Python lanza TypeError. Las marcas <code>~~~^~~~<\/code> señalan la suma. Para unir partes de una ruta se usa <code>/<\/code>."},{"id":"bien","titulo":"Un Path con /","codigo":"from pathlib import Path\n\nruta = Path(\"datos\") / \"notas.txt\"\nprint(ruta)\nprint(repr(ruta))\nwith open(ruta, encoding=\"utf-8\") as f:\n    print(f.readline().strip())\n","salida":"datos\\notas.txt\nWindowsPath('datos/notas.txt')\nClima de Monterrey, septiembre de 2026 (Open-Meteo)\n","explica":"<code>/<\/code> une las partes con el separador del sistema. En Windows, print muestra <code>datos\\notas.txt<\/code> y repr usa <code>/<\/code>: <code>WindowsPath('datos/notas.txt')<\/code>. El mismo código funciona en Linux y macOS: ahí print muestra <code>datos/notas.txt<\/code> y el tipo es PosixPath."}],"main":{"A|proyecto":"Busco C:\\Users\\ana\\proyecto\\datos\\clima.csv\n30 días leídos\n","A|src":"Busco C:\\Users\\ana\\proyecto\\src\\datos\\clima.csv\nTraceback (most recent call last):\n  File \"C:\\Users\\ana\\proyecto\\src\\main.py\", line 6, in <module>\n    with open(ruta, encoding=\"utf-8\", newline=\"\") as f:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No such file or directory: 'datos\\\\clima.csv'\n","A|ana":"Busco C:\\Users\\ana\\datos\\clima.csv\nTraceback (most recent call last):\n  File \"C:\\Users\\ana\\proyecto\\src\\main.py\", line 6, in <module>\n    with open(ruta, encoding=\"utf-8\", newline=\"\") as f:\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No such file or directory: 'datos\\\\clima.csv'\n","B|proyecto":"Busco C:\\Users\\ana\\proyecto\\datos\\clima.csv\n30 días leídos\n","B|src":"Busco C:\\Users\\ana\\proyecto\\datos\\clima.csv\n30 días leídos\n","B|ana":"Busco C:\\Users\\ana\\proyecto\\datos\\clima.csv\n30 días leídos\n"},"codigo_main":{"A":"import csv\nfrom pathlib import Path\n\nruta = Path(\"datos\") / \"clima.csv\"\nprint(\"Busco\", ruta.resolve())\nwith open(ruta, encoding=\"utf-8\", newline=\"\") as f:\n    filas = list(csv.DictReader(f))\nprint(len(filas), \"días leídos\")\n","B":"import csv\nfrom pathlib import Path\n\nCARPETA = Path(__file__).parent.parent      # de src sube a proyecto\nruta = CARPETA / \"datos\" / \"clima.csv\"\nprint(\"Busco\", ruta)\nwith open(ruta, encoding=\"utf-8\", newline=\"\") as f:\n    filas = list(csv.DictReader(f))\nprint(len(filas), \"días leídos\")\n"}}/*fin CONSOLAS*/;
+
+  // ---------- Código Python con los colores del curso ----------
+  var PY_KW = /^(False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)$/;
+  function pyResaltar(linea) {
+    var html = "", i = 0, m, resto;
+    while (i < linea.length) {
+      resto = linea.slice(i);
+      if ((m = /^#.*/.exec(resto))) { html += '<span class="com">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[rRbBfFuU]{0,2}("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/.exec(resto))) { html += '<span class="str">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[A-Za-z_\u00C0-\u024F][\w\u00C0-\u024F]*/.exec(resto))) { html += PY_KW.test(m[0]) ? '<span class="kw">' + m[0] + "</span>" : esc(m[0]); }
+      else if ((m = /^(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?j?/.exec(resto))) { html += '<span class="num">' + m[0] + "</span>"; }
+      else { m = [resto[0]]; html += esc(m[0]); }
+      i += m[0].length;
+    }
+    return html;
+  }
+  function mostrarCodigo(el, codigo, marcar) {
+    var lineas = codigo.replace(/\n$/, "").split("\n");
+    el.innerHTML = '<div class="codigo"><ol>' + lineas.map(function (l, k) {
+      return "<li" + (marcar === k + 1 ? ' class="marca"' : "") + ">" + (pyResaltar(l) || " ") + "</li>";
+    }).join("") + "</ol></div>";
+  }
+
+  // ---------- Pestañas ----------
+  document.querySelectorAll("nav.pestanas button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      document.querySelectorAll("nav.pestanas button").forEach(function (x) {
+        x.classList.toggle("activo", x === b);
+        x.setAttribute("aria-selected", x === b ? "true" : "false");
+      });
+      document.querySelectorAll("section.vista").forEach(function (s) { s.classList.toggle("activo", s.id === b.dataset.vista); });
+    });
+  });
+
+  // ---------- El árbol del proyecto ----------
+  var NOMBRES_CWD = { proyecto: "proyecto", src: "proyecto" + D + "src", ana: "ana (la carpeta de tu usuario)" };
+  // Nodos: ruta completa (con \) -> "d" o "f"
+  var ARBOL = {};
+  Object.keys(N.ARBOL).forEach(function (k) { ARBOL[k.split("\\").join(D)] = N.ARBOL[k]; });
+  function hijosDe(ruta) {
+    var pre = ruta === "C:" ? "C:" + D : ruta + D;
+    return Object.keys(ARBOL).filter(function (k) {
+      return k.indexOf(pre) === 0 && k.slice(pre.length).indexOf(D) < 0 && k !== ruta;
+    }).sort(function (a, b) {
+      return (ARBOL[a] === ARBOL[b] ? 0 : ARBOL[a] === "d" ? -1 : 1) || (a < b ? -1 : 1);
+    });
+  }
+  // destino: {texto: ruta absoluta normalizada, existe, padreExiste, nombre}
+  function pintarArbol(el, cwd, destino) {
+    function nodo(ruta) {
+      var tipo = ARBOL[ruta], nombre = ruta === "C:" ? "C:" + D : ruta.slice(ruta.lastIndexOf(D) + 1);
+      var cl = "nodo " + (tipo === "d" ? "carpeta" : "archivo"), etqs = "";
+      if (destino && destino.existe && destino.texto.toLowerCase() === ruta.toLowerCase()) {
+        cl += " apunta"; etqs += '<span class="etq aqui">p apunta aquí</span>';
+      }
+      if (cwd && ruta === cwd) etqs += '<span class="etq cwd">carpeta actual</span>';
+      var ic = tipo === "d" ? "📁" : "📄";
+      var html = '<li><span class="' + cl + '"><span class="ic" aria-hidden="true">' + ic + "</span>" + esc(nombre) +
+                 (tipo === "d" && ruta !== "C:" ? esc(D) : "") + etqs + "</span>";
+      var hijos = hijosDe(ruta), fantasma = "";
+      if (destino && !destino.existe && destino.padre && destino.padre.toLowerCase() === ruta.toLowerCase()) {
+        fantasma = '<li><span class="nodo fantasma"><span class="ic" aria-hidden="true">❔</span>' + esc(destino.nombre) +
+                   '<span class="etq no">no existe</span></span></li>';
+      }
+      if (hijos.length || fantasma) html += "<ul>" + hijos.map(nodo).join("") + fantasma + "</ul>";
+      else if (tipo === "d") html += '<ul><li><span class="nodo archivo" style="color:var(--gris)">(vacía)</span></li></ul>';
+      return html + "</li>";
+    }
+    el.innerHTML = nodo("C:");
+  }
+  // Describe el destino: si no existe, la carpeta más profunda que sí existe y lo que falta
+  function destinoDe(r) {
+    return destinoDeTexto([r.destino.unidad].concat(r.destino.partes).join(D), r.tipo !== null);
+  }
+  function destinoDeTexto(texto, existe) {
+    var partes = texto.split(D), i = partes.length;
+    while (i > 1 && ARBOL[partes.slice(0, i).join(D)] !== "d") i--;
+    return { texto: texto, existe: existe, padre: partes.slice(0, i).join(D), nombre: partes.slice(i).join(D) };
+  }
+  function opcionesCwd(el, nombre, alCambiar, valor) {
+    el.innerHTML = ["proyecto", "src", "ana"].map(function (k) {
+      return '<label><input type="radio" name="' + nombre + '" value="' + k + '"' + (k === valor ? " checked" : "") + "> <code>" +
+        esc(N.CWDS[k]) + "</code></label>";
+    }).join("");
+    el.addEventListener("change", function (e) { if (e.target.name === nombre) alCambiar(e.target.value); });
+  }
+
+  // ---------- Pestaña 1: construir rutas ----------
+  var ETIQUETAS_INICIO = {
+    datos: 'Path("datos")', clima: 'Path("datos/clima.csv")', reportes: 'Path("reportes")', main: 'Path("src/main.py")',
+    arriba: 'Path("..")', cwd: "Path.cwd()", file: "Path(__file__)  (estás en src" + D + "main.py)",
+    abs: 'Path("C:/Users/ana/proyecto")'
+  };
+  var ORDEN_OPS = ["/datos", "/clima.csv", "/reportes", "/resumen.json", "/..", ".parent", ".with_suffix", ".resolve"];
+  var MAX_PASOS = 4;
+  var estado1 = { cwd: "proyecto", inicio: "datos", ops: ["/clima.csv"] };
+  try {
+    var g1 = JSON.parse(localStorage.getItem("pb-s10-rutas") || "null");
+    if (g1 && N.CWDS[g1.cwd] && N.INICIOS[g1.inicio] && Array.isArray(g1.ops) && g1.ops.length <= MAX_PASOS &&
+        g1.ops.every(function (o) { return N.OPS[o]; })) estado1 = g1;
+  } catch (e) { /* sin almacenamiento */ }
+  function guardar1() { try { localStorage.setItem("pb-s10-rutas", JSON.stringify(estado1)); } catch (e) { /* sin almacenamiento */ } }
+
+  Object.keys(N.INICIOS).forEach(function (k) {
+    var op = document.createElement("option");
+    op.value = k; op.textContent = ETIQUETAS_INICIO[k];
+    $("inicio").appendChild(op);
+  });
+  $("piezas").innerHTML = ORDEN_OPS.map(function (o) {
+    return '<button type="button" data-op="' + esc(o) + '">' + esc(N.OPS[o].codigo.trim()) + "</button>";
+  }).join("");
+  opcionesCwd($("cwds1"), "cwd1", function (v) { estado1.cwd = v; pintar1(); }, estado1.cwd);
+
+  var FILAS = [
+    ["print(p)", "str", false], ["p", "repr", false], ["p.name", "name", false], ["p.stem", "stem", false],
+    ["p.suffix", "suffix", false], ["p.parent", "parent", false], ["p.exists()", "exists", true],
+    ["p.is_file()", "is_file", true], ["p.is_dir()", "is_dir", true], ["p.resolve()", "resolve", true],
+    ['sorted(p.glob("*.csv"))', "glob", true]
+  ];
+  function pintar1() {
+    $("inicio").value = estado1.inicio;
+    var expr = N.codigo(estado1.inicio, estado1.ops);
+    mostrarCodigo($("codigo1"), "from pathlib import Path\n\np = " + expr + "\nprint(p)", 3);
+    document.querySelectorAll("#piezas button").forEach(function (b) { b.disabled = estado1.ops.length >= MAX_PASOS; });
+    $("quitar").disabled = !estado1.ops.length;
+    var r = N.evaluar(estado1.inicio, estado1.ops, estado1.cwd);
+    var cwdTexto = N.CWDS[estado1.cwd];
+    if (r.error) {
+      $("resultado1").innerHTML = '<p class="error-py">' + esc(r.error) + "</p><p class=\"nota\">La ruta no tiene nombre (como " +
+        "<code>.</code> o <code>C:" + esc(D) + "</code>): no hay a qué cambiarle la extensión. Python lanza el ValueError al " +
+        "ejecutar esa línea (su traceback incluye líneas de pathlib).</p>";
+      pintarArbol($("arbol1"), cwdTexto, null);
+      $("dondeApunta").innerHTML = "<b>Sin ruta:</b> la expresión lanza un error, así que <code>p</code> no llega a existir.";
+      guardar1();
+      return;
+    }
+    $("resultado1").innerHTML = '<table class="ficha"><thead><tr><th scope="col">Expresión</th><th scope="col">Lo que da Python</th></tr></thead><tbody>' +
+      FILAS.map(function (f) {
+        return "<tr" + (f[2] ? ' class="disco"' : "") + "><td>" + esc(f[0]) + "</td><td>" + esc(r.ficha[f[1]]) + "</td></tr>";
+      }).join("") + "</tbody></table>";
+    var d = destinoDe(r);
+    pintarArbol($("arbol1"), cwdTexto, d);
+    var rel = !r.ruta.absoluta(), conPuntos = r.ruta.partes.indexOf("..") >= 0, txt;
+    txt = rel ? "<b>Ruta relativa.</b> Python la completa con la carpeta actual (<code>" + esc(cwdTexto) + "</code>). "
+              : "<b>Ruta absoluta.</b> Empieza con la unidad <code>C:</code> y no depende de la carpeta actual. ";
+    if (conPuntos) txt += "<code>..</code> significa la carpeta de arriba; pathlib no lo simplifica hasta <code>resolve()</code>. ";
+    txt += "Apunta a <code>" + esc(r.destino.texto()) + "</code>: ";
+    if (r.tipo === "f") txt += '<span class="ok">existe y es un archivo.</span>';
+    else if (r.tipo === "d") txt += '<span class="ok">existe y es una carpeta.</span>';
+    else txt += '<span class="mal">no existe.</span> Path describe una ruta aunque no exista; abrirla para leer daría FileNotFoundError.';
+    $("dondeApunta").innerHTML = txt;
+    guardar1();
+  }
+  $("inicio").addEventListener("change", function () { estado1.inicio = $("inicio").value; estado1.ops = []; pintar1(); });
+  $("piezas").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-op]");
+    if (!b || b.disabled || estado1.ops.length >= MAX_PASOS) return;
+    estado1.ops.push(b.dataset.op);
+    pintar1();
+  });
+  $("quitar").addEventListener("click", function () { estado1.ops.pop(); pintar1(); });
+  $("limpiar").addEventListener("click", function () { estado1.ops = []; pintar1(); });
+
+  // ---------- Pestaña 2: no concatenes texto ----------
+  var intento = 0;
+  $("intentos").innerHTML = CONSOLAS.intentos.map(function (x, k) {
+    return '<button type="button" data-k="' + k + '" aria-pressed="false">' + esc(x.titulo) + "</button>";
+  }).join("");
+  function pintar2() {
+    var x = CONSOLAS.intentos[intento];
+    document.querySelectorAll("#intentos button").forEach(function (b) { b.setAttribute("aria-pressed", Number(b.dataset.k) === intento ? "true" : "false"); });
+    mostrarCodigo($("codigo2"), x.codigo);
+    var ruta = N.CWDS.proyecto;
+    var salida = x.salida, i = salida.indexOf("Traceback");
+    var html = '<span class="prompt">' + esc(ruta) + "&gt; </span>python rutas.py\n";
+    if (x.id === "suerte") {
+      var corte = salida.indexOf("\n", salida.indexOf("\n") + 1) + 1;
+      html += '<span class="error">' + esc(salida.slice(0, corte)) + "</span>" + esc(salida.slice(corte));
+    } else if (i >= 0) {
+      html += esc(salida.slice(0, i)) + '<span class="error">' + esc(salida.slice(i)) + "</span>";
+    } else {
+      html += esc(salida);
+    }
+    $("consola2").innerHTML = html;
+    $("explicaIntento").innerHTML = "<b>" + esc(x.titulo) + ".</b> " + x.explica;
+  }
+  $("intentos").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-k]");
+    if (b) { intento = Number(b.dataset.k); pintar2(); }
+  });
+
+  // ---------- Pestaña 3: correr desde otra carpeta ----------
+  var estado3 = { cwd: "src", version: "A" };
+  var COMANDOS = { proyecto: "python src" + D + "main.py", src: "python main.py", ana: "python proyecto" + D + "src" + D + "main.py" };
+  opcionesCwd($("cwds3"), "cwd3", function (v) { estado3.cwd = v; pintar3(); }, estado3.cwd);
+  $("versiones").innerHTML = [["A", 'A · ruta relativa: Path("datos") / "clima.csv"'], ["B", "B · desde el archivo: Path(__file__).parent.parent"]].map(function (v) {
+    return '<label><input type="radio" name="version" value="' + v[0] + '"' + (v[0] === estado3.version ? " checked" : "") + "> " + esc(v[1]) + "</label>";
+  }).join("");
+  $("versiones").addEventListener("change", function (e) { if (e.target.name === "version") { estado3.version = e.target.value; pintar3(); } });
+  function pintar3() {
+    var codigo = CONSOLAS.codigo_main[estado3.version];
+    mostrarCodigo($("codigo3"), codigo);
+    var salida = CONSOLAS.main[estado3.version + "|" + estado3.cwd], i = salida.indexOf("Traceback");
+    var cwdTexto = N.CWDS[estado3.cwd];
+    $("consola3").innerHTML = '<span class="prompt">' + esc(cwdTexto) + "&gt; </span>" + esc(COMANDOS[estado3.cwd]) + "\n" +
+      (i >= 0 ? esc(salida.slice(0, i)) + '<span class="error">' + esc(salida.slice(i)) + "</span>" : esc(salida));
+    // Dónde buscó Python: la línea "Busco ..."
+    var busco = /^Busco (.*)$/m.exec(salida)[1];
+    var existe = ARBOL[busco] === "f";
+    pintarArbol($("arbol3"), cwdTexto, destinoDeTexto(busco, existe));
+    var txt;
+    if (estado3.version === "A") {
+      txt = "La versión A busca <code>datos" + esc(D) + "clima.csv</code> <b>dentro de la carpeta actual</b>: " +
+            (existe ? 'desde aquí sí existe y lee los 30 días.' : '<span class="mal">desde aquí no existe</span> (en el árbol, la ruta con línea punteada) y <code>open</code> lanza FileNotFoundError, aunque el archivo sí está en el proyecto.');
+    } else {
+      txt = "<code>Path(__file__)</code> es la ruta completa de <code>main.py</code> (<code>" + esc(N.ARCHIVO) + "</code>), sin importar desde dónde lo corras. " +
+            "<code>.parent</code> es <code>src</code> y otro <code>.parent</code> es <code>proyecto</code>: la ruta siempre llega a <code>datos" + esc(D) + "clima.csv</code>.";
+    }
+    $("explica3").innerHTML = txt;
+  }
+
+  pintar1();
+  pintar2();
+  pintar3();
+})();
+</script>
+<div id="qr-sitio" class="qr-capa" hidden>
+  <div class="qr-caja" role="dialog" aria-modal="true" aria-label="Código QR de esta página">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 41 41" role="img" aria-label="Código QR de https://memosanchezg.github.io/programacion-basica-interactivos/semana-10-rutas.html" shape-rendering="crispEdges"><rect width="41" height="41" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM12 2h1v1h-1zM15 2h1v1h-1zM17 2h1v1h-1zM19 2h1v1h-1zM21 2h2v1h-2zM25 2h1v1h-1zM28 2h1v1h-1zM30 2h1v1h-1zM32 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM12 3h1v1h-1zM14 3h1v1h-1zM16 3h4v1h-4zM22 3h2v1h-2zM27 3h1v1h-1zM29 3h2v1h-2zM32 3h1v1h-1zM38 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM10 4h5v1h-5zM17 4h1v1h-1zM22 4h2v1h-2zM28 4h1v1h-1zM32 4h1v1h-1zM34 4h3v1h-3zM38 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h3v1h-3zM14 5h1v1h-1zM17 5h1v1h-1zM19 5h1v1h-1zM24 5h6v1h-6zM32 5h1v1h-1zM34 5h3v1h-3zM38 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h3v1h-3zM17 6h2v1h-2zM20 6h6v1h-6zM30 6h1v1h-1zM32 6h1v1h-1zM34 6h3v1h-3zM38 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h2v1h-2zM13 7h1v1h-1zM15 7h1v1h-1zM23 7h1v1h-1zM26 7h1v1h-1zM28 7h2v1h-2zM32 7h1v1h-1zM38 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM30 8h1v1h-1zM32 8h7v1h-7zM10 9h2v1h-2zM14 9h2v1h-2zM17 9h1v1h-1zM20 9h2v1h-2zM23 9h2v1h-2zM30 9h1v1h-1zM2 10h1v1h-1zM4 10h5v1h-5zM13 10h1v1h-1zM16 10h2v1h-2zM19 10h1v1h-1zM22 10h1v1h-1zM24 10h1v1h-1zM26 10h3v1h-3zM32 10h5v1h-5zM2 11h2v1h-2zM5 11h1v1h-1zM7 11h1v1h-1zM10 11h1v1h-1zM14 11h4v1h-4zM20 11h4v1h-4zM25 11h1v1h-1zM27 11h1v1h-1zM30 11h1v1h-1zM33 11h1v1h-1zM35 11h1v1h-1zM37 11h1v1h-1zM3 12h1v1h-1zM6 12h3v1h-3zM11 12h4v1h-4zM17 12h1v1h-1zM19 12h1v1h-1zM23 12h2v1h-2zM29 12h3v1h-3zM33 12h1v1h-1zM35 12h4v1h-4zM5 13h2v1h-2zM9 13h1v1h-1zM11 13h1v1h-1zM15 13h4v1h-4zM21 13h1v1h-1zM23 13h2v1h-2zM29 13h1v1h-1zM31 13h4v1h-4zM38 13h1v1h-1zM2 14h4v1h-4zM8 14h1v1h-1zM10 14h3v1h-3zM14 14h2v1h-2zM19 14h1v1h-1zM22 14h1v1h-1zM24 14h1v1h-1zM27 14h3v1h-3zM31 14h2v1h-2zM34 14h5v1h-5zM2 15h5v1h-5zM9 15h1v1h-1zM11 15h1v1h-1zM15 15h1v1h-1zM18 15h1v1h-1zM21 15h2v1h-2zM25 15h1v1h-1zM27 15h1v1h-1zM30 15h1v1h-1zM33 15h1v1h-1zM3 16h1v1h-1zM5 16h1v1h-1zM7 16h3v1h-3zM13 16h1v1h-1zM16 16h3v1h-3zM20 16h1v1h-1zM24 16h1v1h-1zM29 16h2v1h-2zM33 16h3v1h-3zM37 16h2v1h-2zM2 17h1v1h-1zM4 17h1v1h-1zM9 17h7v1h-7zM17 17h1v1h-1zM23 17h1v1h-1zM26 17h1v1h-1zM28 17h2v1h-2zM31 17h4v1h-4zM37 17h2v1h-2zM4 18h3v1h-3zM8 18h1v1h-1zM11 18h6v1h-6zM19 18h1v1h-1zM22 18h1v1h-1zM24 18h6v1h-6zM31 18h2v1h-2zM34 18h1v1h-1zM36 18h2v1h-2zM2 19h6v1h-6zM9 19h3v1h-3zM15 19h1v1h-1zM18 19h1v1h-1zM21 19h3v1h-3zM25 19h1v1h-1zM28 19h1v1h-1zM30 19h1v1h-1zM35 19h1v1h-1zM37 19h1v1h-1zM5 20h2v1h-2zM8 20h3v1h-3zM13 20h2v1h-2zM17 20h4v1h-4zM22 20h1v1h-1zM28 20h2v1h-2zM31 20h3v1h-3zM37 20h2v1h-2zM4 21h4v1h-4zM12 21h2v1h-2zM16 21h3v1h-3zM20 21h1v1h-1zM22 21h2v1h-2zM25 21h2v1h-2zM28 21h1v1h-1zM31 21h2v1h-2zM38 21h1v1h-1zM6 22h1v1h-1zM8 22h5v1h-5zM15 22h1v1h-1zM19 22h1v1h-1zM21 22h2v1h-2zM26 22h4v1h-4zM31 22h2v1h-2zM34 22h1v1h-1zM36 22h1v1h-1zM2 23h1v1h-1zM7 23h1v1h-1zM9 23h5v1h-5zM15 23h2v1h-2zM18 23h1v1h-1zM20 23h4v1h-4zM25 23h1v1h-1zM28 23h1v1h-1zM30 23h1v1h-1zM35 23h1v1h-1zM2 24h3v1h-3zM6 24h1v1h-1zM8 24h5v1h-5zM16 24h5v1h-5zM22 24h2v1h-2zM27 24h5v1h-5zM33 24h3v1h-3zM38 24h1v1h-1zM2 25h1v1h-1zM5 25h2v1h-2zM9 25h1v1h-1zM11 25h3v1h-3zM16 25h1v1h-1zM21 25h5v1h-5zM33 25h2v1h-2zM2 26h3v1h-3zM6 26h6v1h-6zM13 26h3v1h-3zM17 26h1v1h-1zM19 26h3v1h-3zM27 26h6v1h-6zM34 26h1v1h-1zM36 26h2v1h-2zM2 27h1v1h-1zM5 27h1v1h-1zM9 27h7v1h-7zM18 27h1v1h-1zM20 27h2v1h-2zM25 27h1v1h-1zM27 27h1v1h-1zM30 27h2v1h-2zM33 27h1v1h-1zM35 27h1v1h-1zM2 28h1v1h-1zM6 28h1v1h-1zM8 28h1v1h-1zM10 28h4v1h-4zM16 28h2v1h-2zM20 28h1v1h-1zM24 28h1v1h-1zM27 28h1v1h-1zM29 28h3v1h-3zM33 28h2v1h-2zM36 28h3v1h-3zM2 29h1v1h-1zM4 29h3v1h-3zM17 29h2v1h-2zM23 29h1v1h-1zM25 29h1v1h-1zM29 29h4v1h-4zM38 29h1v1h-1zM2 30h1v1h-1zM5 30h4v1h-4zM10 30h2v1h-2zM15 30h1v1h-1zM17 30h1v1h-1zM19 30h1v1h-1zM24 30h15v1h-15zM10 31h1v1h-1zM15 31h1v1h-1zM18 31h4v1h-4zM25 31h1v1h-1zM27 31h1v1h-1zM30 31h1v1h-1zM34 31h2v1h-2zM2 32h7v1h-7zM11 32h4v1h-4zM17 32h3v1h-3zM22 32h3v1h-3zM26 32h3v1h-3zM30 32h1v1h-1zM32 32h1v1h-1zM34 32h1v1h-1zM36 32h3v1h-3zM2 33h1v1h-1zM8 33h1v1h-1zM10 33h2v1h-2zM13 33h5v1h-5zM20 33h6v1h-6zM28 33h1v1h-1zM30 33h1v1h-1zM34 33h2v1h-2zM37 33h1v1h-1zM2 34h1v1h-1zM4 34h3v1h-3zM8 34h1v1h-1zM10 34h2v1h-2zM13 34h1v1h-1zM16 34h4v1h-4zM21 34h2v1h-2zM25 34h10v1h-10zM36 34h2v1h-2zM2 35h1v1h-1zM4 35h3v1h-3zM8 35h1v1h-1zM10 35h1v1h-1zM12 35h1v1h-1zM15 35h1v1h-1zM18 35h4v1h-4zM24 35h3v1h-3zM28 35h1v1h-1zM30 35h3v1h-3zM34 35h5v1h-5zM2 36h1v1h-1zM4 36h3v1h-3zM8 36h1v1h-1zM10 36h1v1h-1zM12 36h1v1h-1zM14 36h2v1h-2zM17 36h1v1h-1zM22 36h2v1h-2zM27 36h2v1h-2zM30 36h1v1h-1zM37 36h2v1h-2zM2 37h1v1h-1zM8 37h1v1h-1zM12 37h1v1h-1zM14 37h1v1h-1zM17 37h1v1h-1zM23 37h4v1h-4zM28 37h5v1h-5zM34 37h1v1h-1zM38 37h1v1h-1zM2 38h7v1h-7zM10 38h1v1h-1zM13 38h4v1h-4zM19 38h1v1h-1zM24 38h1v1h-1zM26 38h2v1h-2zM32 38h1v1h-1zM34 38h5v1h-5z"/></svg>
+    <p class="qr-texto">Escanea con la cámara del celular para abrir esta página</p>
+    <p class="qr-url">https://memosanchezg.github.io/programacion-basica-interactivos/semana-10-rutas.html</p>
+    <button type="button" class="qr-cerrar">Cerrar</button>
+  </div>
+</div>
+<style>
+  .qr-capa { position:fixed; top:0; right:0; bottom:0; left:0; z-index:10000; display:flex; align-items:center;
+             justify-content:center; padding:16px; background:#fff; }
+  .qr-capa[hidden] { display:none; }
+  .qr-caja { max-width:100%; text-align:center; color:#0A2A57; font:16px/1.4 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .qr-caja svg { display:block; width:min(62vh, 84vw); height:auto; margin:0 auto; }
+  .qr-texto { margin:12px 0 2px; font-size:1.15rem; font-weight:bold; }
+  .qr-url { margin:0 0 12px; color:#5B6472; word-break:break-all; }
+  .qr-cerrar { font:inherit; padding:6px 20px; border:2px solid #00408F; border-radius:4px; background:#fff;
+               color:#00408F; cursor:pointer; }
+</style>
+<script>
+  (function () {
+    var capa = document.getElementById("qr-sitio");
+    document.querySelectorAll("a.qr-abrir").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        capa.hidden = false;
+        capa.querySelector(".qr-cerrar").focus();
+      });
+    });
+    capa.addEventListener("click", function (e) {
+      if (e.target === capa || e.target.classList.contains("qr-cerrar")) capa.hidden = true;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !capa.hidden) capa.hidden = true;
+    });
+  })();
+</script>
+</body>
+</html>

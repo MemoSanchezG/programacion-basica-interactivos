@@ -1,0 +1,762 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="tipo" content="simulador">
+<title>Del código al bytecode</title>
+
+<style>
+  :root {
+    --azul:#00408F; --azul-oscuro:#0A2A57; --guinda:#8C1D35; --oro:#B8975A; --oro-texto:#8A6A2E;
+    --azul-claro:#E8EEF7; --oro-claro:#F7F1E6; --guinda-claro:#F5E6EA; --verde:#2F7D5B;
+    --tinta:#1B1F2A; --gris:#5B6472; --gris-claro:#E9ECF1; --borde:#D9DEE6; --fondo:#FFFFFF;
+    --cmd-fondo:#0C0C0C; --cmd-texto:#E6E6E6;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--fondo); color:var(--tinta);
+         font:16px/1.45 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .franja { height:8px; background:var(--azul); border-bottom:3px solid var(--oro); }
+  header { max-width:1280px; margin:0 auto; padding:12px 18px 4px; }
+  .semana { color:var(--guinda); font-weight:bold; letter-spacing:.04em; font-size:.85rem; text-transform:uppercase; }
+  h1 { font-family:Cambria,Georgia,serif; color:var(--azul-oscuro); font-size:1.7rem; margin:2px 0 2px; }
+  .sub { color:var(--gris); margin:0; }
+  main { max-width:1280px; margin:0 auto; padding:8px 18px 24px; }
+  nav.pestanas { display:flex; gap:4px; flex-wrap:wrap; border-bottom:2px solid var(--gris-claro); margin:6px 0 12px; }
+  nav.pestanas button { font:inherit; font-weight:bold; border:none; background:none; color:var(--gris);
+                        padding:8px 14px; cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; }
+  nav.pestanas button.activo { color:var(--azul-oscuro); border-bottom-color:var(--azul); }
+  nav.pestanas button:focus-visible { outline:2px solid var(--azul); }
+  section.vista { display:none; }
+  section.vista.activo { display:block; }
+  .panel { background:#fff; border:1px solid var(--borde); border-radius:10px; padding:12px 14px; min-width:0; }
+  .panel h2 { font-size:1.02rem; color:var(--azul-oscuro); margin:0 0 8px; }
+  label { display:block; font-weight:bold; color:var(--azul-oscuro); margin-top:10px; }
+  label small { font-weight:normal; color:var(--gris); }
+  input[type=range] { width:100%; }
+  select { font:inherit; padding:4px 6px; border:1px solid var(--borde); border-radius:6px; max-width:100%; }
+  button.accion { font:inherit; font-weight:bold; border-radius:8px; padding:7px 12px; margin:8px 6px 0 0;
+                  border:1px solid var(--azul); background:#fff; color:var(--azul); cursor:pointer; }
+  button.accion:hover:not(:disabled), button.accion:focus-visible { background:var(--azul); color:#fff; outline:none; }
+  button.accion:disabled { opacity:.45; cursor:default; }
+  .lectura { background:var(--oro-claro); border-left:4px solid var(--oro); border-radius:8px; padding:10px 12px;
+             margin-top:12px; line-height:1.55; }
+  .lectura b { color:var(--azul-oscuro); }
+  .preguntas { background:var(--azul-claro); border-radius:8px; padding:10px 14px; margin-top:12px; }
+  .preguntas h3 { margin:0 0 4px; font-size:.95rem; color:var(--azul-oscuro); }
+  .preguntas ol { margin:0; padding-left:20px; }
+  .preguntas li { margin:3px 0; }
+  /* Código Python con los colores del curso (minted, estilo borland) y salida de consola (cmd). */
+  .codigo { border:1px solid var(--tinta); background:#fff; font:15px/1.5 Consolas,"Courier New",monospace;
+            overflow-x:auto; margin:8px 0; }
+  .codigo ol { margin:0; padding:8px 12px 8px 3.4em; }
+  .codigo li { white-space:pre; }
+  .codigo li::marker { color:var(--gris); font:11px Cambria,Georgia,serif; }
+  .codigo .kw { color:#000080; font-weight:bold; }
+  .codigo .str, .codigo .num { color:#0000FF; }
+  .codigo .com { color:#008800; font-style:italic; }
+  .codigo .marca { background:var(--oro-claro); outline:1px solid var(--oro); }
+  .consola { background:var(--cmd-fondo); color:var(--cmd-texto); font:15px/1.45 Consolas,"Courier New",monospace;
+             white-space:pre-wrap; word-break:break-word; padding:8px 12px; border-radius:4px; margin:8px 0; min-height:2.2em; }
+  footer { max-width:1280px; margin:0 auto; padding:6px 18px 18px; color:var(--gris); font-size:.85rem; }
+  footer a { color:var(--azul); }
+
+  /* Propios de este simulador */
+  [hidden] { display:none !important; }
+  code { font-family:Consolas,"Courier New",monospace; color:var(--azul-oscuro); }
+  .selector { display:flex; flex-wrap:wrap; gap:6px 12px; align-items:center; margin:4px 0 12px; }
+  .selector label { margin:0; }
+  .selector .desc { color:var(--gris); }
+  .fila2 { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px; align-items:start; }
+  .fila2 > * { min-width:0; }
+  .codigo .siguiente { box-shadow:inset 3px 0 0 var(--guinda); }
+  .dis { border:1px solid var(--tinta); background:#fff; font:14px/1.45 Consolas,"Courier New",monospace;
+         overflow:auto; max-height:62vh; margin:8px 0; padding:6px 0; position:relative; }
+  .dis div { white-space:pre; padding:0 10px; min-height:1.45em; }
+  .dis .op { color:#000080; font-weight:bold; }
+  .dis .arg { color:#0000FF; }
+  .dis .titulo { color:var(--guinda); font-weight:bold; }
+  .dis .marca { background:var(--oro-claro); outline:1px solid var(--oro); }
+  .dis .siguiente { box-shadow:inset 4px 0 0 var(--guinda); }
+  .dis:focus-visible { outline:2px solid var(--azul); }
+  .controles { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:4px; }
+  .controles button.accion { margin:0; min-width:46px; padding:6px 10px; }
+  .controles .barra { flex:1 1 180px; display:flex; flex-direction:column; min-width:150px; }
+  .controles .barra label { margin:0 0 2px; font-size:.95rem; }
+  .leyenda { display:flex; flex-wrap:wrap; gap:4px 14px; color:var(--gris); font-size:.9rem; margin:2px 0 0; }
+  .leyenda span::before { content:""; display:inline-block; width:14px; height:12px; vertical-align:middle; margin-right:5px;
+                          background:var(--c); border:1px solid var(--b, var(--c)); }
+  .leyenda span.raya::before { width:4px; background:var(--guinda); border:none; }
+  .marcos { display:flex; flex-wrap:wrap; gap:10px; align-items:flex-start; margin-top:6px; }
+  .marco { flex:1 1 200px; border:1px solid var(--borde); border-radius:8px; padding:8px 10px; background:#fff; min-width:0; }
+  .marco.activo { border:2px solid var(--azul); }
+  .marco h3 { margin:0 0 6px; font-size:.95rem; color:var(--azul-oscuro); }
+  .marco h3 small { font-weight:normal; color:var(--gris); }
+  .pila { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:4px; }
+  .pila li { border:1px solid var(--azul-oscuro); border-radius:6px; padding:3px 8px; font:14px/1.35 Consolas,"Courier New",monospace;
+             background:var(--azul-claro); overflow-wrap:anywhere; position:relative; }
+  .pila li.tope::after { content:"tope"; position:absolute; right:6px; top:3px; font:bold 11px Calibri,"Segoe UI",sans-serif;
+                         color:var(--guinda); text-transform:uppercase; }
+  .pila li.tope { padding-right:44px; }
+  .pila li.nuevo { background:var(--oro-claro); border-color:var(--oro); }
+  .pila li.especial, table.vars td.especial { font-family:Calibri,"Segoe UI",sans-serif; font-style:italic; color:var(--gris); }
+  .vacia { color:var(--gris); font-style:italic; font-size:.92rem; }
+  table.vars { width:100%; border-collapse:collapse; font-size:.95rem; margin-top:4px; }
+  table.vars th, table.vars td { border:1px solid var(--borde); padding:3px 8px; text-align:left; vertical-align:top; }
+  table.vars thead th { background:var(--gris-claro); color:var(--azul-oscuro); }
+  table.vars td { font-family:Consolas,"Courier New",monospace; overflow-wrap:anywhere; }
+  table.vars td:first-child { color:var(--azul-oscuro); white-space:nowrap; }
+  table.vars tr.cambio td { background:var(--oro-claro); }
+  h2.rotulo { margin-top:14px !important; }
+  /* Pestaña de explicación */
+  .flujo { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin:10px 0; }
+  .flujo .caja { border:2px solid var(--azul-oscuro); border-radius:8px; padding:8px 10px; background:#fff; text-align:center;
+                 flex:1 1 130px; min-width:0; }
+  .flujo .caja b { display:block; color:var(--azul-oscuro); }
+  .flujo .caja small { color:var(--gris); }
+  .flujo .caja.oro { border-color:var(--oro); background:var(--oro-claro); }
+  .flujo .flecha { color:var(--guinda); font-weight:bold; font-size:1.3rem; flex:0 0 auto; }
+  .texto p { margin:6px 0; }
+  .texto h3 { color:var(--azul-oscuro); font-size:1rem; margin:14px 0 4px; }
+  .arbol { font:14px/1.5 Consolas,"Courier New",monospace; background:var(--gris-claro); border-radius:6px; padding:8px 12px;
+           white-space:pre; overflow-x:auto; }
+  .versiones { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px; }
+  .versiones > div { min-width:0; }
+  .versiones h3 { margin:0; font-size:1rem; color:var(--azul-oscuro); }
+  .versiones .dis { max-height:none; font-size:13px; }
+  .versiones .dis .dif { background:var(--guinda-claro); }
+  @media (max-width: 1000px) { .versiones { grid-template-columns:1fr; } }
+  @media (max-width: 900px) { .fila2 { grid-template-columns:1fr; } }
+  @media (max-width: 480px) {
+    header { padding:10px 12px 4px; }
+    main { padding:8px 10px 20px; }
+    footer { padding:6px 12px 16px; }
+    .panel { padding:10px; }
+    h1 { font-size:1.45rem; }
+    .codigo, .consola { font-size:13.5px; }
+    .dis { font-size:12.5px; }
+    nav.pestanas button { padding:8px 10px; }
+  }
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header>
+  <div class="semana">Semana 02 · Python desde un enfoque profesional</div>
+  <h1>Del código al bytecode</h1>
+  <p class="sub">Elige un programa, mira el bytecode que genera Python 3.12 y avanza instrucción por instrucción: verás cómo la máquina virtual usa su pila y guarda los nombres.</p>
+</header>
+<main>
+  <nav class="pestanas" role="tablist" aria-label="Secciones">
+    <button type="button" class="activo" data-vista="v-pasos" role="tab" aria-selected="true">Paso a paso</button>
+    <button type="button" data-vista="v-que" role="tab" aria-selected="false">¿Qué es todo esto?</button>
+    <button type="button" data-vista="v-versiones" role="tab" aria-selected="false">Cambia entre versiones</button>
+  </nav>
+
+  <section class="vista activo" id="v-pasos" role="tabpanel" aria-label="Paso a paso">
+    <div class="selector">
+      <label for="programa">Programa</label>
+      <select id="programa"></select>
+      <span class="desc" id="descProg"></span>
+    </div>
+    <div class="fila2">
+      <div class="panel">
+        <h2>El código fuente <small id="archivo1" style="font-weight:normal;color:var(--gris)"></small></h2>
+        <div id="codigo"></div>
+        <h2 class="rotulo">El bytecode <small style="font-weight:normal;color:var(--gris)">(lo que imprime <code id="comando">python -m dis</code> con Python 3.12)</small></h2>
+        <div class="dis" id="dis" tabindex="0" role="region" aria-label="Bytecode, salida de python -m dis"></div>
+        <div class="leyenda" aria-hidden="true">
+          <span style="--c:#F7F1E6;--b:#B8975A">instrucción que acaba de ejecutarse</span>
+          <span class="raya">la que sigue</span>
+        </div>
+        <p class="sub" style="font-size:.9rem;margin-top:6px">Columnas: línea del código, número de la instrucción (su posición en bytes), nombre, argumento y, entre paréntesis, lo que significa. <code>&gt;&gt;</code> marca un lugar al que se salta.</p>
+      </div>
+      <div class="panel">
+        <h2>La máquina virtual</h2>
+        <div class="controles">
+          <button type="button" class="accion" id="inicio" aria-label="Ir al inicio" title="Ir al inicio">⏮</button>
+          <button type="button" class="accion" id="atras" aria-label="Paso anterior" title="Paso anterior">◀</button>
+          <button type="button" class="accion" id="adelante" aria-label="Paso siguiente" title="Paso siguiente">▶</button>
+          <button type="button" class="accion" id="fin" aria-label="Ir al final" title="Ir al final">⏭</button>
+          <div class="barra">
+            <label for="paso">Paso <span id="pasoTxt"></span></label>
+            <input type="range" id="paso" min="0" max="1" step="1" value="0">
+          </div>
+        </div>
+        <div class="lectura" id="explica" aria-live="polite"></div>
+        <h2 class="rotulo">Marcos y pilas de valores</h2>
+        <div class="marcos" id="marcos"></div>
+        <h2 class="rotulo">Nombres del módulo <small style="font-weight:normal;color:var(--gris)">(las variables del programa)</small></h2>
+        <table class="vars" id="nombres"></table>
+        <h2 class="rotulo">Consola</h2>
+        <div class="consola" id="consola" aria-live="polite" aria-label="Lo que imprime el programa"></div>
+        <p class="sub" style="font-size:.9rem">Teclado: flecha derecha avanza, flecha izquierda retrocede, Inicio y Fin.</p>
+      </div>
+    </div>
+    <div class="preguntas">
+      <h3>Para explorar</h3>
+      <ol>
+        <li><b>Asignaciones y operaciones.</b> En <code>a + b * 2</code>, ¿qué operación se hace primero? Mira la pila justo antes y después de cada <code>BINARY_OP</code>.</li>
+        <li><b>El compilador ya hizo la cuenta.</b> El código dice <code>60 * 60</code>. ¿Dónde quedó esa multiplicación en el bytecode? ¿Por qué <code>horas * segundos</code> sí aparece?</li>
+        <li><b>Un if con else.</b> ¿Cuántas instrucciones se ejecutan y cuáles nunca? ¿Qué cambiaría si la temperatura fuera 25?</li>
+        <li><b>Un for corto.</b> ¿Cuántas veces se ejecuta <code>FOR_ITER</code>? ¿Y <code>END_FOR</code>?</li>
+        <li><b>Un while.</b> La comparación <code>n &gt; 0</code> aparece dos veces en el bytecode. ¿Por qué crees que Python la puso dos veces?</li>
+        <li><b>Una llamada a función.</b> ¿En qué paso se crea la función <code>doble</code> y en qué pasos se ejecuta su código? ¿Qué pasa con la pila del módulo mientras tanto?</li>
+        <li>¿Por qué después de cada <code>CALL</code> a <code>print</code> viene un <code>POP_TOP</code>?</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="vista" id="v-que" role="tabpanel" aria-label="Qué es todo esto">
+    <div class="panel texto">
+      <h2>De tu archivo .py al resultado</h2>
+      <div class="flujo" role="img" aria-label="hola.py pasa por el compilador, se vuelve bytecode y la máquina virtual lo ejecuta">
+        <div class="caja"><b>hola.py</b><small>el texto que escribes</small></div>
+        <div class="flecha" aria-hidden="true">→</div>
+        <div class="caja oro"><b>Compilador</b><small>revisa la sintaxis y traduce todo el archivo</small></div>
+        <div class="flecha" aria-hidden="true">→</div>
+        <div class="caja"><b>Bytecode</b><small>instrucciones sencillas, en memoria</small></div>
+        <div class="flecha" aria-hidden="true">→</div>
+        <div class="caja oro"><b>Máquina virtual</b><small>ejecuta una instrucción a la vez</small></div>
+        <div class="flecha" aria-hidden="true">→</div>
+        <div class="caja"><b>Resultado</b><small>lo que imprime, los archivos...</small></div>
+      </div>
+      <h3>El intérprete</h3>
+      <p>Cuando escribes <code>python hola.py</code>, el programa <b>python</b> (el intérprete, <code>python.exe</code> en Windows) hace dos cosas, siempre en este orden: primero <b>compila</b> todo tu archivo a bytecode y después lo <b>ejecuta</b> con su máquina virtual. Las dos partes viven dentro del mismo programa: por eso se siente como si Python leyera tu código directamente.</p>
+      <h3>Compilar a bytecode</h3>
+      <p>El compilador lee el archivo completo, revisa que respete las reglas del lenguaje (la sintaxis) y lo traduce a <b>bytecode</b>: una lista de instrucciones muy sencillas como <code>LOAD_CONST</code> o <code>BINARY_OP</code>. Si encuentra un error de sintaxis, se detiene aquí: por eso un <code>SyntaxError</code> en la última línea impide que se ejecute incluso la primera.</p>
+      <p>El compilador también hace algunas cuentas por adelantado: si escribes <code>60 * 60</code>, el bytecode ya trae el <code>3600</code>.</p>
+      <h3>La máquina virtual</h3>
+      <p>Es un ciclo que repite: toma la siguiente instrucción, la ejecuta y avanza. Trabaja con una <b>pila de valores</b>: las instrucciones ponen valores arriba (LOAD) o los sacan para usarlos (STORE, BINARY_OP, CALL...). Los <code>if</code> y los ciclos se vuelven <b>saltos</b>: instrucciones que cambian cuál es la siguiente. Cada llamada a una función escrita en Python crea un <b>marco</b> nuevo, con su propia pila y sus variables locales.</p>
+      <p>Se llama "virtual" porque no es una máquina de verdad: es un programa (escrito en C, en el caso de CPython) que se comporta como un procesador muy sencillo. El mismo bytecode corre en Windows, macOS o Linux.</p>
+      <h3>__pycache__ y los archivos .pyc</h3>
+      <p>Cuando un programa hace <code>import</code> de un módulo tuyo, Python guarda el bytecode de ese módulo en la carpeta <code>__pycache__</code> para no volver a compilarlo la próxima vez (si el .py no cambió). El nombre del archivo dice qué versión lo creó:</p>
+      <div class="arbol">programacion\
+├── herramientas.py
+├── principal.py              (hace: import herramientas)
+└── __pycache__\
+    └── herramientas.cpython-312.pyc</div>
+      <p>El archivo que corres directamente (<code>python principal.py</code>) se compila cada vez y no deja .pyc. Puedes borrar <code>__pycache__</code> sin miedo: Python la vuelve a crear. Y no la subas a tus entregas ni a GitHub: no es código tuyo, es una copia compilada.</p>
+      <h3>Ver el bytecode</h3>
+      <p>En la terminal, <code>python -m dis archivo.py</code> muestra el bytecode de un archivo. Desde Python, <code>import dis</code> y <code>dis.dis(funcion)</code>. Es una herramienta para curiosear y entender: para programar no necesitas leer bytecode.</p>
+    </div>
+  </section>
+
+  <section class="vista" id="v-versiones" role="tabpanel" aria-label="Cambia entre versiones">
+    <div class="panel">
+      <h2>El mismo programa, tres versiones de Python</h2>
+      <p style="margin:4px 0">Esto imprime <code>python -m dis operaciones.py</code> con <code>a = 7</code>, <code>b = 5</code>, <code>c = a + b * 2</code> y <code>print(c)</code>. En rosa, lo que cambia respecto a 3.12.</p>
+      <div class="versiones" id="versiones"></div>
+      <div class="lectura">
+        <b>El bytecode no es parte del lenguaje:</b> es un detalle interno de CPython y cambia en cada versión. En 3.11 la llamada usa <code>PRECALL</code> y <code>CALL</code> y el final es <code>LOAD_CONST</code> + <code>RETURN_VALUE</code>; 3.12 junta eso en <code>RETURN_CONST</code>; 3.14 carga los enteros pequeños con <code>LOAD_SMALL_INT</code>, pone <code>PUSH_NULL</code> después de la función y ya no muestra los números de instrucción si no se piden (<code>-O</code>). Tu archivo .py funciona igual en las tres; un .pyc de 3.12 no sirve para 3.14, y por eso su nombre lleva <code>cpython-312</code>.
+      </div>
+    </div>
+  </section>
+</main>
+<footer>
+  Programación Básica · FCFM-UANL · funciona sin internet. Bytecode real de Python 3.12.14 (también 3.11.9 y 3.14.6 en la pestaña de versiones).
+  <a href="index.html">Índice de simuladores</a> · <a href="#qr-sitio" class="qr-abrir">Abrir en el celular (QR)</a>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+
+  function esc(t) {
+    return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  // repr() de un texto: comillas simples, o dobles si el texto trae ' y no trae ".
+  function pyStr(s) {
+    var q = (s.indexOf("'") >= 0 && s.indexOf('"') < 0) ? '"' : "'";
+    var r = "";
+    for (var i = 0; i < s.length; i++) {
+      var c = s[i], code = s.charCodeAt(i);
+      if (c === "\\") r += "\\\\";
+      else if (c === q) r += "\\" + q;
+      else if (c === "\n") r += "\\n";
+      else if (c === "\r") r += "\\r";
+      else if (c === "\t") r += "\\t";
+      else if (code < 32 || code === 127) r += "\\x" + (code < 16 ? "0" : "") + code.toString(16);
+      else r += c;
+    }
+    return q + r + q;
+  }
+
+  // ==== DATOS: código y salida exacta de python -m dis (Python 3.12.14) ====
+  var PROGRAMAS = [
+    { clave: "operaciones", archivo: "operaciones.py", titulo: "Asignaciones y operaciones",
+      codigo: "a = 7\nb = 5\nc = a + b * 2\nprint(c)\n",
+      dis: "  0           0 RESUME                   0\n\n  1           2 LOAD_CONST               0 (7)\n              4 STORE_NAME               0 (a)\n\n  2           6 LOAD_CONST               1 (5)\n              8 STORE_NAME               1 (b)\n\n  3          10 LOAD_NAME                0 (a)\n             12 LOAD_NAME                1 (b)\n             14 LOAD_CONST               2 (2)\n             16 BINARY_OP                5 (*)\n             20 BINARY_OP                0 (+)\n             24 STORE_NAME               2 (c)\n\n  4          26 PUSH_NULL\n             28 LOAD_NAME                3 (print)\n             30 LOAD_NAME                2 (c)\n             32 CALL                     1\n             40 POP_TOP\n             42 RETURN_CONST             3 (None)\n" },
+    { clave: "constantes", archivo: "segundos.py", titulo: "El compilador ya hizo la cuenta",
+      codigo: "segundos = 60 * 60\nhoras = 7\ntotal = horas * segundos\nprint(total)\n",
+      dis: "  0           0 RESUME                   0\n\n  1           2 LOAD_CONST               0 (3600)\n              4 STORE_NAME               0 (segundos)\n\n  2           6 LOAD_CONST               1 (7)\n              8 STORE_NAME               1 (horas)\n\n  3          10 LOAD_NAME                1 (horas)\n             12 LOAD_NAME                0 (segundos)\n             14 BINARY_OP                5 (*)\n             18 STORE_NAME               2 (total)\n\n  4          20 PUSH_NULL\n             22 LOAD_NAME                3 (print)\n             24 LOAD_NAME                2 (total)\n             26 CALL                     1\n             34 POP_TOP\n             36 RETURN_CONST             2 (None)\n" },
+    { clave: "if", archivo: "clima.py", titulo: "Un if con else",
+      codigo: "temperatura = 31\nif temperatura > 30:\n    print(\"Hace calor\")\nelse:\n    print(\"Está agradable\")\n",
+      dis: "  0           0 RESUME                   0\n\n  1           2 LOAD_CONST               0 (31)\n              4 STORE_NAME               0 (temperatura)\n\n  2           6 LOAD_NAME                0 (temperatura)\n              8 LOAD_CONST               1 (30)\n             10 COMPARE_OP              68 (>)\n             14 POP_JUMP_IF_FALSE        9 (to 34)\n\n  3          16 PUSH_NULL\n             18 LOAD_NAME                1 (print)\n             20 LOAD_CONST               2 ('Hace calor')\n             22 CALL                     1\n             30 POP_TOP\n             32 RETURN_CONST             4 (None)\n\n  5     >>   34 PUSH_NULL\n             36 LOAD_NAME                1 (print)\n             38 LOAD_CONST               3 ('Está agradable')\n             40 CALL                     1\n             48 POP_TOP\n             50 RETURN_CONST             4 (None)\n" },
+    { clave: "for", archivo: "suma.py", titulo: "Un for corto",
+      codigo: "total = 0\nfor n in range(3):\n    total = total + n\nprint(total)\n",
+      dis: "  0           0 RESUME                   0\n\n  1           2 LOAD_CONST               0 (0)\n              4 STORE_NAME               0 (total)\n\n  2           6 PUSH_NULL\n              8 LOAD_NAME                1 (range)\n             10 LOAD_CONST               1 (3)\n             12 CALL                     1\n             20 GET_ITER\n        >>   22 FOR_ITER                 7 (to 40)\n             26 STORE_NAME               2 (n)\n\n  3          28 LOAD_NAME                0 (total)\n             30 LOAD_NAME                2 (n)\n             32 BINARY_OP                0 (+)\n             36 STORE_NAME               0 (total)\n             38 JUMP_BACKWARD            9 (to 22)\n\n  2     >>   40 END_FOR\n\n  4          42 PUSH_NULL\n             44 LOAD_NAME                3 (print)\n             46 LOAD_NAME                0 (total)\n             48 CALL                     1\n             56 POP_TOP\n             58 RETURN_CONST             2 (None)\n" },
+    { clave: "while", archivo: "despegue.py", titulo: "Un while",
+      codigo: "n = 3\nwhile n > 0:\n    print(n)\n    n = n - 1\nprint(\"¡Despegue!\")\n",
+      dis: "  0           0 RESUME                   0\n\n  1           2 LOAD_CONST               0 (3)\n              4 STORE_NAME               0 (n)\n\n  2           6 LOAD_NAME                0 (n)\n              8 LOAD_CONST               1 (0)\n             10 COMPARE_OP              68 (>)\n             14 POP_JUMP_IF_FALSE       19 (to 54)\n\n  3     >>   16 PUSH_NULL\n             18 LOAD_NAME                1 (print)\n             20 LOAD_NAME                0 (n)\n             22 CALL                     1\n             30 POP_TOP\n\n  4          32 LOAD_NAME                0 (n)\n             34 LOAD_CONST               2 (1)\n             36 BINARY_OP               10 (-)\n             40 STORE_NAME               0 (n)\n\n  2          42 LOAD_NAME                0 (n)\n             44 LOAD_CONST               1 (0)\n             46 COMPARE_OP              68 (>)\n             50 POP_JUMP_IF_FALSE        1 (to 54)\n             52 JUMP_BACKWARD           19 (to 16)\n\n  5     >>   54 PUSH_NULL\n             56 LOAD_NAME                1 (print)\n             58 LOAD_CONST               3 ('¡Despegue!')\n             60 CALL                     1\n             68 POP_TOP\n             70 RETURN_CONST             4 (None)\n" },
+    { clave: "funcion", archivo: "doble.py", titulo: "Una llamada a función",
+      codigo: "def doble(x):\n    return 2 * x\n\ny = doble(21)\nprint(y)\n",
+      dis: "  0           0 RESUME                   0\n\n  1           2 LOAD_CONST               0 (<code object doble at 0x000002CE365682A0, file \"doble.py\", line 1>)\n              4 MAKE_FUNCTION            0\n              6 STORE_NAME               0 (doble)\n\n  4           8 PUSH_NULL\n             10 LOAD_NAME                0 (doble)\n             12 LOAD_CONST               1 (21)\n             14 CALL                     1\n             22 STORE_NAME               1 (y)\n\n  5          24 PUSH_NULL\n             26 LOAD_NAME                2 (print)\n             28 LOAD_NAME                1 (y)\n             30 CALL                     1\n             38 POP_TOP\n             40 RETURN_CONST             2 (None)\n\nDisassembly of <code object doble at 0x000002CE365682A0, file \"doble.py\", line 1>:\n  1           0 RESUME                   0\n\n  2           2 LOAD_CONST               1 (2)\n              4 LOAD_FAST                0 (x)\n              6 BINARY_OP                5 (*)\n             10 RETURN_VALUE\n" }
+  ];
+  var VERSIONES = [
+    { nombre: "Python 3.11.9", dis: "  0           0 RESUME                   0\n\n  1           2 LOAD_CONST               0 (7)\n              4 STORE_NAME               0 (a)\n\n  2           6 LOAD_CONST               1 (5)\n              8 STORE_NAME               1 (b)\n\n  3          10 LOAD_NAME                0 (a)\n             12 LOAD_NAME                1 (b)\n             14 LOAD_CONST               2 (2)\n             16 BINARY_OP                5 (*)\n             20 BINARY_OP                0 (+)\n             24 STORE_NAME               2 (c)\n\n  4          26 PUSH_NULL\n             28 LOAD_NAME                3 (print)\n             30 LOAD_NAME                2 (c)\n             32 PRECALL                  1\n             36 CALL                     1\n             46 POP_TOP\n             48 LOAD_CONST               3 (None)\n             50 RETURN_VALUE\n",
+      distinto: /PRECALL|\(None\)|RETURN_VALUE/ },
+    { nombre: "Python 3.12.14", dis: null, distinto: null },
+    { nombre: "Python 3.14.6", dis: "  0           RESUME                   0\n\n  1           LOAD_SMALL_INT           7\n              STORE_NAME               0 (a)\n\n  2           LOAD_SMALL_INT           5\n              STORE_NAME               1 (b)\n\n  3           LOAD_NAME                0 (a)\n              LOAD_NAME                1 (b)\n              LOAD_SMALL_INT           2\n              BINARY_OP                5 (*)\n              BINARY_OP                0 (+)\n              STORE_NAME               2 (c)\n\n  4           LOAD_NAME                3 (print)\n              PUSH_NULL\n              LOAD_NAME                2 (c)\n              CALL                     1\n              POP_TOP\n              LOAD_CONST               1 (None)\n              RETURN_VALUE\n",
+      distinto: /LOAD_SMALL_INT|\(print\)|PUSH_NULL|\(None\)|RETURN_VALUE/ }
+  ];
+  VERSIONES[1].dis = PROGRAMAS[0].dis;
+
+  // ==== NÚCLEO: la máquina virtual de Python 3.12 (sin DOM) ====
+  // Lee el texto de dis: cada fila de instrucción trae línea, ">>", número, nombre, argumento y (significado).
+  var FILA_DIS = /^(?:\s*(\d+))?\s+(>>)?\s+(\d+) ([A-Z_]+)(?:\s+(\d+))?(?:\s+\((.*)\))?\s*$/;
+  function analizarDis(texto) {
+    var filas = [], codigos = {}, actual = "<module>", linea = null;
+    function nuevo(nombre) { codigos[nombre] = { nombre: nombre, instr: {}, orden: [], varnames: [] }; }
+    nuevo(actual);
+    texto.replace(/\n$/, "").split("\n").forEach(function (t) {
+      var m = /^Disassembly of <code object (\w+) at/.exec(t);
+      if (m) {
+        actual = m[1]; nuevo(actual); linea = null;
+        filas.push({ texto: t, marco: null, offset: null, titulo: true });
+        return;
+      }
+      m = FILA_DIS.exec(t);
+      if (!m) { filas.push({ texto: t, marco: null, offset: null }); return; }
+      if (m[1] !== undefined) linea = Number(m[1]);
+      var ins = { offset: Number(m[3]), opname: m[4], arg: m[5] === undefined ? null : Number(m[5]),
+                  argrepr: m[6] === undefined ? "" : m[6], linea: linea };
+      var c = codigos[actual];
+      c.instr[ins.offset] = ins;
+      c.orden.push(ins.offset);
+      if (ins.opname === "LOAD_FAST" || ins.opname === "STORE_FAST") c.varnames[ins.arg] = ins.argrepr;
+      filas.push({ texto: t, marco: actual, offset: ins.offset, ins: ins });
+    });
+    return { filas: filas, codigos: codigos };
+  }
+
+  // Valores de Python: {t: "int"|"str"|"None"|"bool"|"NULL"|"builtin"|"clase"|"range"|"iter"|"code"|"func", ...}
+  var NULO = { t: "NULL" };
+  function constante(argrepr) {
+    if (/^-?\d+$/.test(argrepr)) return { t: "int", v: Number(argrepr) };
+    if (argrepr === "None") return { t: "None" };
+    var m = /^<code object (\w+) at/.exec(argrepr);
+    if (m) return { t: "code", nombre: m[1] };
+    if (/^'.*'$/.test(argrepr) || /^".*"$/.test(argrepr)) return { t: "str", v: argrepr.slice(1, -1).replace(/\\(.)/g, "$1") };
+    throw new Error("Constante no prevista: " + argrepr);
+  }
+  // [cómo se muestra, si es el repr de Python]
+  function texto(v) {
+    switch (v.t) {
+      case "NULL": return ["NULL", false];
+      case "int": return [String(v.v), true];
+      case "str": return [pyStr(v.v), true];
+      case "None": return ["None", true];
+      case "bool": return [v.v ? "True" : "False", true];
+      case "builtin": return ["<built-in function " + v.nombre + ">", true];
+      case "clase": return ["<class '" + v.nombre + "'>", true];
+      case "range": return ["range(" + v.inicio + ", " + v.fin + ")", true];
+      case "iter": return ["iterador de range", false];
+      case "code": return ["objeto de código " + v.nombre, false];
+      case "func": return ["función " + v.nombre, false];
+    }
+    throw new Error("Valor no previsto");
+  }
+  function t0(v) { return texto(v)[0]; }
+  function comoStr(v) {                          // str(v), lo que escribe print
+    if (v.t === "str") return v.v;
+    if (v.t === "int") return String(v.v);
+    if (v.t === "bool") return v.v ? "True" : "False";
+    if (v.t === "None") return "None";
+    return t0(v);
+  }
+  var BUILTINS = { print: { t: "builtin", nombre: "print" }, range: { t: "clase", nombre: "range" } };
+
+  function ejecutarPrograma(textoDis) {
+    var an = analizarDis(textoDis), codigos = an.codigos;
+    var globales = {}, ordenGlobales = [], salida = "", pasos = [];
+    function marco(nombre, locales) {
+      var c = codigos[nombre];
+      return { nombre: nombre, c: c, pc: c.orden[0], pila: [], locales: locales };
+    }
+    var marcos = [marco("<module>", null)];
+    function siguiente(m) {
+      var k = m.c.orden.indexOf(m.pc);
+      return k + 1 < m.c.orden.length ? m.c.orden[k + 1] : null;
+    }
+    function guardar(nombre, v) {
+      if (!(nombre in globales)) ordenGlobales.push(nombre);
+      globales[nombre] = v;
+    }
+    function foto(m, ins, explica) {
+      var nombres = {};
+      ordenGlobales.forEach(function (n) { nombres[n] = texto(globales[n]); });
+      pasos.push({
+        marco: m.nombre, offset: ins.offset, opname: ins.opname, linea: ins.linea,
+        marcos: marcos.map(function (x) {
+          var loc = null;
+          if (x.locales) { loc = {}; Object.keys(x.locales).forEach(function (k) { loc[k] = texto(x.locales[k]); }); }
+          return { nombre: x.nombre, pila: x.pila.map(texto), locales: loc, pc: x.pc };
+        }),
+        nombres: nombres, salida: salida, explica: explica
+      });
+    }
+    var limite = 0;
+    while (marcos.length) {
+      if (++limite > 2000) throw new Error("Demasiados pasos");
+      var m = marcos[marcos.length - 1], ins = m.c.instr[m.pc], op = ins.opname, sig = siguiente(m), explica, a, b, r, v;
+      if (op === "RESUME") {
+        explica = "RESUME: el marco empieza a ejecutarse. No toca la pila.";
+        m.pc = sig;
+      } else if (op === "LOAD_CONST") {
+        v = constante(ins.argrepr);
+        m.pila.push(v);
+        explica = texto(v)[1] ? "LOAD_CONST: pone la constante " + t0(v) + " en la pila."
+          : "LOAD_CONST: pone en la pila el objeto de código de " + v.nombre + ": el bytecode de la función, que ya se compiló junto con todo el archivo.";
+        m.pc = sig;
+      } else if (op === "STORE_NAME") {
+        v = m.pila.pop();
+        guardar(ins.argrepr, v);
+        explica = "STORE_NAME: saca " + t0(v) + " de la pila y lo guarda con el nombre " + ins.argrepr + ".";
+        m.pc = sig;
+      } else if (op === "LOAD_NAME") {
+        if (ins.argrepr in globales) {
+          v = globales[ins.argrepr];
+          explica = "LOAD_NAME: busca el nombre " + ins.argrepr + ", encuentra " + t0(v) + " y lo pone en la pila.";
+        } else {
+          v = BUILTINS[ins.argrepr];
+          explica = "LOAD_NAME: " + ins.argrepr + " no es una variable del programa; lo encuentra entre las funciones que trae Python (builtins) y la pone en la pila.";
+        }
+        m.pila.push(v);
+        m.pc = sig;
+      } else if (op === "LOAD_FAST") {
+        v = m.locales[ins.argrepr];
+        m.pila.push(v);
+        explica = "LOAD_FAST: pone en la pila la variable local " + ins.argrepr + ", que vale " + t0(v) + ".";
+        m.pc = sig;
+      } else if (op === "BINARY_OP") {
+        b = m.pila.pop(); a = m.pila.pop();
+        r = { t: "int", v: ins.argrepr === "+" ? a.v + b.v : ins.argrepr === "-" ? a.v - b.v : a.v * b.v };
+        m.pila.push(r);
+        explica = "BINARY_OP " + ins.argrepr + ": saca los dos valores de arriba (" + t0(a) + " y " + t0(b) + "), calcula " +
+                  t0(a) + " " + ins.argrepr + " " + t0(b) + " y pone el resultado, " + t0(r) + ".";
+        m.pc = sig;
+      } else if (op === "COMPARE_OP") {
+        b = m.pila.pop(); a = m.pila.pop();
+        r = { t: "bool", v: a.v > b.v };
+        m.pila.push(r);
+        explica = "COMPARE_OP " + ins.argrepr + ": saca " + t0(a) + " y " + t0(b) + ", compara " + t0(a) + " " + ins.argrepr + " " +
+                  t0(b) + " y pone el resultado, " + t0(r) + ".";
+        m.pc = sig;
+      } else if (op === "POP_JUMP_IF_FALSE") {
+        v = m.pila.pop();
+        var destino = Number(/^to (\d+)$/.exec(ins.argrepr)[1]);
+        if (!v.v) {
+          m.pc = destino;
+          explica = "POP_JUMP_IF_FALSE: saca " + t0(v) + " de la pila. Como es falso, salta a la instrucción " + destino + ".";
+        } else {
+          m.pc = sig;
+          explica = "POP_JUMP_IF_FALSE: saca " + t0(v) + " de la pila. Como es verdadero, no salta: sigue con la instrucción de abajo.";
+        }
+      } else if (op === "PUSH_NULL") {
+        m.pila.push(NULO);
+        explica = "PUSH_NULL: pone un NULL en la pila; así se prepara una llamada a función.";
+        m.pc = sig;
+      } else if (op === "CALL") {
+        var n = ins.arg, args = m.pila.splice(m.pila.length - n, n), f = m.pila.pop();
+        m.pila.pop();                                  // el NULL
+        m.pc = sig;
+        if (f.t === "func") {
+          var c = codigos[f.nombre], locales = {};
+          args.forEach(function (x, k) { locales[c.varnames[k]] = x; });
+          marcos.push(marco(f.nombre, locales));
+          explica = "CALL " + n + ": saca el NULL, la función y " + n + " argumento(s). Como " + f.nombre +
+                    " está escrita en Python, crea un marco nuevo para ella con " + c.varnames[0] + " = " + t0(args[0]) + " y salta a su bytecode.";
+        } else if (f.nombre === "print") {
+          salida += args.map(comoStr).join(" ") + "\n";
+          m.pila.push({ t: "None" });
+          explica = "CALL " + n + ": saca el NULL, la función print y " + n + " argumento(s), llama a print (que escribe en la consola) y pone lo que regresa print: None.";
+        } else {
+          r = args.length === 1 ? { t: "range", inicio: 0, fin: args[0].v } : { t: "range", inicio: args[0].v, fin: args[1].v };
+          m.pila.push(r);
+          explica = "CALL " + n + ": saca el NULL, range y su argumento, llama a range(" + args.map(t0).join(", ") + ") y pone el resultado, " + t0(r) + ".";
+        }
+      } else if (op === "POP_TOP") {
+        v = m.pila.pop();
+        explica = "POP_TOP: saca " + t0(v) + " de la pila y lo tira: nadie lo va a usar.";
+        m.pc = sig;
+      } else if (op === "RETURN_CONST") {
+        v = constante(ins.argrepr);
+        marcos.pop();
+        explica = "RETURN_CONST: el módulo termina y regresa " + t0(v) + ". Fin del programa.";
+      } else if (op === "RETURN_VALUE") {
+        v = m.pila.pop();
+        marcos.pop();
+        marcos[marcos.length - 1].pila.push(v);
+        explica = "RETURN_VALUE: saca " + t0(v) + ", termina el marco de " + m.nombre + " y regresa ese valor a quien la llamó, que lo recibe en su pila.";
+      } else if (op === "GET_ITER") {
+        v = m.pila.pop();
+        m.pila.push({ t: "iter", rango: v, i: v.inicio });
+        explica = "GET_ITER: saca " + t0(v) + " y pone un iterador que va a dar sus valores uno por uno.";
+        m.pc = sig;
+      } else if (op === "FOR_ITER") {
+        var it = m.pila[m.pila.length - 1];
+        if (it.i < it.rango.fin) {
+          v = { t: "int", v: it.i++ };
+          m.pila.push(v);
+          explica = "FOR_ITER: pide el siguiente valor al iterador; le da " + t0(v) + " y lo pone en la pila (el iterador se queda abajo).";
+          m.pc = sig;
+        } else {
+          m.pila.pop();
+          var fin = Number(/^to (\d+)$/.exec(ins.argrepr)[1]);
+          m.pc = m.c.orden[m.c.orden.indexOf(fin) + 1];          // se brinca END_FOR
+          explica = "FOR_ITER: el iterador ya no tiene valores. Saca el iterador de la pila y salta a la instrucción " + m.pc +
+                    ", la que sigue después de END_FOR: se acabó el ciclo.";
+        }
+      } else if (op === "JUMP_BACKWARD") {
+        m.pc = Number(/^to (\d+)$/.exec(ins.argrepr)[1]);
+        explica = "JUMP_BACKWARD: salta hacia atrás, a la instrucción " + m.pc + ", para dar otra vuelta.";
+      } else if (op === "MAKE_FUNCTION") {
+        v = m.pila.pop();
+        m.pila.push({ t: "func", nombre: v.nombre });
+        explica = "MAKE_FUNCTION: saca el objeto de código de " + v.nombre + " y pone una función nueva. Todavía no ejecuta nada de " +
+                  v.nombre + ": solo la crea.";
+        m.pc = sig;
+      } else {
+        throw new Error("Instrucción no prevista: " + op);
+      }
+      foto(m, ins, explica);
+    }
+    return { pasos: pasos, filas: an.filas };
+  }
+  // ==== FIN DEL NÚCLEO ====
+
+  // ---------- Código Python con los colores del curso ----------
+  var PY_KW = /^(False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)$/;
+  function pyResaltar(linea) {
+    var html = "", i = 0, m, resto;
+    while (i < linea.length) {
+      resto = linea.slice(i);
+      if ((m = /^#.*/.exec(resto))) { html += '<span class="com">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[rRbBfFuU]{0,2}("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/.exec(resto))) { html += '<span class="str">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[A-Za-z_À-ɏ][\wÀ-ɏ]*/.exec(resto))) { html += PY_KW.test(m[0]) ? '<span class="kw">' + m[0] + "</span>" : esc(m[0]); }
+      else if ((m = /^(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?j?/.exec(resto))) { html += '<span class="num">' + m[0] + "</span>"; }
+      else { m = [resto[0]]; html += esc(m[0]); }
+      i += m[0].length;
+    }
+    return html;
+  }
+  function mostrarCodigo(el, codigo, marca, siguienteLinea) {
+    var lineas = codigo.replace(/\n$/, "").split("\n");
+    el.innerHTML = '<div class="codigo"><ol>' + lineas.map(function (l, k) {
+      var cl = [];
+      if (marca === k + 1) cl.push("marca");
+      if (siguienteLinea === k + 1) cl.push("siguiente");
+      return "<li" + (cl.length ? ' class="' + cl.join(" ") + '"' : "") + ">" + (pyResaltar(l) || " ") + "</li>";
+    }).join("") + "</ol></div>";
+  }
+
+  // Una fila de dis con colores: nombre de la instrucción y su argumento
+  function filaDis(f) {
+    if (f.titulo) return '<span class="titulo">' + esc(f.texto) + "</span>";
+    var m = /^(.*?)([A-Z][A-Z_]+)(.*)$/.exec(f.texto);
+    if (!m || !f.ins) return esc(f.texto) || " ";
+    return esc(m[1]) + '<span class="op">' + m[2] + '</span><span class="arg">' + esc(m[3]) + "</span>";
+  }
+
+  // ---------- Pestañas ----------
+  document.querySelectorAll("nav.pestanas button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      document.querySelectorAll("nav.pestanas button").forEach(function (x) {
+        x.classList.remove("activo"); x.setAttribute("aria-selected", "false");
+      });
+      document.querySelectorAll("section.vista").forEach(function (x) { x.classList.remove("activo"); });
+      b.classList.add("activo"); b.setAttribute("aria-selected", "true");
+      $(b.dataset.vista).classList.add("activo");
+    });
+  });
+
+  // ---------- Estado de la página ----------
+  var prog = null, corrida = null, k = 0;
+  PROGRAMAS.forEach(function (p, i) {
+    var op = document.createElement("option");
+    op.value = i;
+    op.textContent = (i + 1) + " · " + p.titulo;
+    $("programa").appendChild(op);
+  });
+
+  function cargar(i) {
+    prog = PROGRAMAS[i];
+    corrida = ejecutarPrograma(prog.dis);
+    k = 0;
+    $("paso").max = corrida.pasos.length;
+    $("archivo1").textContent = "(" + prog.archivo + ")";
+    $("comando").textContent = "python -m dis " + prog.archivo;
+    $("descProg").textContent = corrida.pasos.length + " instrucciones ejecutadas en total.";
+    pintar();
+  }
+
+  function pintar() {
+    var n = corrida.pasos.length, p = k > 0 ? corrida.pasos[k - 1] : null, previo = k > 1 ? corrida.pasos[k - 2] : null;
+    $("paso").value = k;
+    $("pasoTxt").textContent = k + " de " + n;
+    $("inicio").disabled = $("atras").disabled = k === 0;
+    $("adelante").disabled = $("fin").disabled = k === n;
+    // Lo que sigue: la instrucción pc del marco de arriba
+    var sigMarco = null, sigOffset = null;
+    if (!p) { sigMarco = "<module>"; sigOffset = 0; }
+    else if (p.marcos.length) { sigMarco = p.marcos[p.marcos.length - 1].nombre; sigOffset = p.marcos[p.marcos.length - 1].pc; }
+    var sigLinea = null;
+    corrida.filas.forEach(function (f) { if (f.marco === sigMarco && f.offset === sigOffset && f.ins) sigLinea = f.ins.linea; });
+    mostrarCodigo($("codigo"), prog.codigo, p ? p.linea : null, sigLinea);
+    var html = "", fila = null;
+    corrida.filas.forEach(function (f, j) {
+      var cl = [];
+      if (p && f.marco === p.marco && f.offset === p.offset) { cl.push("marca"); fila = j; }
+      if (f.marco === sigMarco && f.offset === sigOffset) cl.push("siguiente");
+      html += '<div data-j="' + j + '"' + (cl.length ? ' class="' + cl.join(" ") + '"' : "") + ">" + filaDis(f) + "</div>";
+    });
+    $("dis").innerHTML = html;
+    var ver = $("dis").querySelector(".marca") || $("dis").querySelector(".siguiente");
+    if (ver) {
+      var caja = $("dis");
+      if (ver.offsetTop < caja.scrollTop + 10 || ver.offsetTop > caja.scrollTop + caja.clientHeight - 40) {
+        caja.scrollTop = Math.max(0, ver.offsetTop - caja.clientHeight / 2);
+      }
+    }
+    if (!p) {
+      $("explica").innerHTML = "<b>Antes de empezar.</b> El archivo ya se compiló (si tuviera un error de sintaxis, aquí se habría detenido) y la máquina virtual va a ejecutar la primera instrucción. Presiona ▶ o la flecha derecha.";
+    } else {
+      $("explica").innerHTML = "<b>Paso " + k + " · " + (p.marco === "<module>" ? "módulo" : "función " + esc(p.marco)) +
+        " · instrucción " + p.offset + " (" + esc(p.opname) + ")" + (p.linea ? ", línea " + p.linea : "") + ".</b> " + esc(p.explica) +
+        (k === n ? " <b>La máquina virtual terminó.</b>" : "");
+    }
+    // Marcos
+    var marcos = p ? p.marcos : [{ nombre: "<module>", pila: [], locales: null }];
+    var antes = {};
+    if (previo) previo.marcos.forEach(function (x) { antes[x.nombre] = x.pila.length; });
+    if (!marcos.length) {
+      $("marcos").innerHTML = '<p class="vacia">Ya no hay marcos: el programa terminó.</p>';
+    } else {
+      $("marcos").innerHTML = marcos.map(function (x, j) {
+        var activo = j === marcos.length - 1;
+        var titulo = x.nombre === "<module>" ? "Marco del módulo <small>(el programa principal)</small>"
+                                              : "Marco de " + esc(x.nombre) + " <small>(" + Object.keys(x.locales || {}).join(", ") + ")</small>";
+        var crecio = p && antes[x.nombre] !== undefined && x.pila.length > antes[x.nombre];
+        var pila = x.pila.length ? '<ol class="pila" aria-label="Pila de valores, de arriba hacia abajo">' + x.pila.slice().reverse().map(function (v, i) {
+          var cl = [];
+          if (i === 0) cl.push("tope");
+          if (i === 0 && crecio) cl.push("nuevo");
+          if (!v[1]) cl.push("especial");
+          return "<li" + (cl.length ? ' class="' + cl.join(" ") + '"' : "") + ">" + esc(v[0]) + "</li>";
+        }).join("") + "</ol>" : '<p class="vacia">Pila vacía</p>';
+        var loc = "";
+        if (x.locales) {
+          loc = '<h3 style="margin-top:8px">Variables locales</h3><table class="vars"><tbody>' + Object.keys(x.locales).map(function (nom) {
+            var v = x.locales[nom];
+            return "<tr><td>" + esc(nom) + "</td><td" + (v[1] ? "" : ' class="especial"') + ">" + esc(v[0]) + "</td></tr>";
+          }).join("") + "</tbody></table>";
+        }
+        return '<div class="marco' + (activo ? " activo" : "") + '"><h3>' + titulo + (activo ? ' <small>· activo</small>' : "") + "</h3>" + pila + loc + "</div>";
+      }).join("");
+    }
+    // Nombres
+    var nombres = p ? p.nombres : {}, ant = previo ? previo.nombres : {};
+    var claves = Object.keys(nombres);
+    $("nombres").innerHTML = '<thead><tr><th scope="col">Nombre</th><th scope="col">Valor</th></tr></thead><tbody>' +
+      (claves.length ? claves.map(function (nom) {
+        var v = nombres[nom], cambio = p && (!ant[nom] || ant[nom][0] !== v[0]);
+        return "<tr" + (cambio ? ' class="cambio"' : "") + "><td>" + esc(nom) + "</td><td" + (v[1] ? "" : ' class="especial"') + ">" + esc(v[0]) + "</td></tr>";
+      }).join("") : '<tr><td colspan="2" class="especial">Todavía no hay nombres.</td></tr>') + "</tbody>";
+    $("consola").textContent = p ? p.salida : "";
+  }
+
+  function ir(nuevo) {
+    nuevo = Math.max(0, Math.min(corrida.pasos.length, nuevo));
+    if (nuevo === k) return;
+    k = nuevo;
+    pintar();
+  }
+  $("inicio").addEventListener("click", function () { ir(0); });
+  $("atras").addEventListener("click", function () { ir(k - 1); });
+  $("adelante").addEventListener("click", function () { ir(k + 1); });
+  $("fin").addEventListener("click", function () { ir(corrida.pasos.length); });
+  $("paso").addEventListener("input", function () { ir(Number($("paso").value)); });
+  $("programa").addEventListener("change", function () {
+    cargar(Number($("programa").value));
+    try { localStorage.setItem("pb-s02-bytecode", $("programa").value); } catch (e) { /* sin almacenamiento */ }
+  });
+  document.addEventListener("keydown", function (e) {
+    var t = e.target;
+    if (!$("v-pasos").classList.contains("activo")) return;
+    if (/^(INPUT|SELECT|TEXTAREA|BUTTON)$/.test(t.tagName) && !(t.tagName === "BUTTON" && t.closest(".controles"))) return;
+    if (e.key === "ArrowRight") { e.preventDefault(); ir(k + 1); }
+    else if (e.key === "ArrowLeft") { e.preventDefault(); ir(k - 1); }
+    else if (e.key === "Home") { e.preventDefault(); ir(0); }
+    else if (e.key === "End") { e.preventDefault(); ir(corrida.pasos.length); }
+  });
+
+  // Pestaña de versiones
+  $("versiones").innerHTML = VERSIONES.map(function (v) {
+    var filas = v.dis.replace(/\n$/, "").split("\n").map(function (t) {
+      var dif = v.distinto && v.distinto.test(t), esInstr = /[A-Z]{2,}/.test(t);
+      return "<div" + (dif ? ' class="dif"' : "") + ">" + (esInstr ? filaDis({ texto: t, ins: true }) : esc(t) || " ") + "</div>";
+    }).join("");
+    return '<div><h3>' + esc(v.nombre) + '</h3><div class="dis" tabindex="0" role="region" aria-label="Bytecode con ' + esc(v.nombre) + '">' + filas + "</div></div>";
+  }).join("");
+
+  var inicial = 0;
+  try {
+    var g = Number(localStorage.getItem("pb-s02-bytecode"));
+    if (g >= 0 && g < PROGRAMAS.length) inicial = g;
+  } catch (e) { /* sin almacenamiento */ }
+  $("programa").value = inicial;
+  cargar(inicial);
+})();
+</script>
+<div id="qr-sitio" class="qr-capa" hidden>
+  <div class="qr-caja" role="dialog" aria-modal="true" aria-label="Código QR de esta página">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 45" role="img" aria-label="Código QR de https://memosanchezg.github.io/programacion-basica-interactivos/semana-02-bytecode.html" shape-rendering="crispEdges"><rect width="45" height="45" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM11 2h1v1h-1zM13 2h2v1h-2zM16 2h1v1h-1zM19 2h9v1h-9zM30 2h1v1h-1zM33 2h2v1h-2zM36 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM15 3h1v1h-1zM17 3h1v1h-1zM19 3h1v1h-1zM23 3h1v1h-1zM26 3h5v1h-5zM32 3h1v1h-1zM34 3h1v1h-1zM36 3h1v1h-1zM42 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM10 4h2v1h-2zM13 4h2v1h-2zM16 4h2v1h-2zM19 4h2v1h-2zM22 4h3v1h-3zM26 4h2v1h-2zM29 4h2v1h-2zM33 4h2v1h-2zM36 4h1v1h-1zM38 4h3v1h-3zM42 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h1v1h-1zM12 5h1v1h-1zM14 5h1v1h-1zM17 5h2v1h-2zM23 5h1v1h-1zM26 5h1v1h-1zM28 5h1v1h-1zM32 5h3v1h-3zM36 5h1v1h-1zM38 5h3v1h-3zM42 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM15 6h3v1h-3zM20 6h2v1h-2zM24 6h2v1h-2zM30 6h2v1h-2zM33 6h2v1h-2zM36 6h1v1h-1zM38 6h3v1h-3zM42 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h2v1h-2zM13 7h2v1h-2zM17 7h1v1h-1zM22 7h1v1h-1zM26 7h1v1h-1zM29 7h2v1h-2zM34 7h1v1h-1zM36 7h1v1h-1zM42 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM30 8h1v1h-1zM32 8h1v1h-1zM34 8h1v1h-1zM36 8h7v1h-7zM10 9h1v1h-1zM12 9h2v1h-2zM15 9h1v1h-1zM17 9h2v1h-2zM20 9h1v1h-1zM23 9h1v1h-1zM25 9h2v1h-2zM28 9h1v1h-1zM33 9h2v1h-2zM2 10h1v1h-1zM4 10h5v1h-5zM13 10h2v1h-2zM17 10h3v1h-3zM22 10h1v1h-1zM24 10h1v1h-1zM27 10h3v1h-3zM31 10h1v1h-1zM36 10h5v1h-5zM4 11h3v1h-3zM9 11h2v1h-2zM12 11h1v1h-1zM14 11h1v1h-1zM19 11h5v1h-5zM25 11h1v1h-1zM27 11h1v1h-1zM30 11h1v1h-1zM32 11h3v1h-3zM36 11h3v1h-3zM40 11h3v1h-3zM3 12h1v1h-1zM6 12h4v1h-4zM11 12h2v1h-2zM17 12h1v1h-1zM22 12h2v1h-2zM29 12h4v1h-4zM34 12h1v1h-1zM37 12h1v1h-1zM3 13h5v1h-5zM10 13h2v1h-2zM13 13h2v1h-2zM18 13h1v1h-1zM23 13h2v1h-2zM28 13h1v1h-1zM32 13h4v1h-4zM38 13h2v1h-2zM41 13h1v1h-1zM7 14h3v1h-3zM12 14h3v1h-3zM16 14h2v1h-2zM19 14h1v1h-1zM21 14h2v1h-2zM24 14h1v1h-1zM26 14h6v1h-6zM33 14h1v1h-1zM37 14h1v1h-1zM39 14h2v1h-2zM2 15h2v1h-2zM9 15h3v1h-3zM14 15h2v1h-2zM17 15h1v1h-1zM20 15h1v1h-1zM23 15h2v1h-2zM29 15h1v1h-1zM32 15h1v1h-1zM34 15h9v1h-9zM2 16h1v1h-1zM5 16h1v1h-1zM7 16h4v1h-4zM12 16h2v1h-2zM16 16h1v1h-1zM18 16h1v1h-1zM22 16h1v1h-1zM25 16h2v1h-2zM29 16h5v1h-5zM35 16h1v1h-1zM37 16h1v1h-1zM40 16h1v1h-1zM2 17h1v1h-1zM6 17h2v1h-2zM11 17h1v1h-1zM14 17h1v1h-1zM23 17h1v1h-1zM25 17h1v1h-1zM28 17h2v1h-2zM33 17h2v1h-2zM36 17h2v1h-2zM39 17h1v1h-1zM41 17h1v1h-1zM4 18h2v1h-2zM7 18h3v1h-3zM12 18h2v1h-2zM15 18h1v1h-1zM18 18h2v1h-2zM22 18h1v1h-1zM25 18h1v1h-1zM27 18h3v1h-3zM31 18h3v1h-3zM35 18h1v1h-1zM37 18h1v1h-1zM40 18h1v1h-1zM3 19h2v1h-2zM6 19h1v1h-1zM10 19h1v1h-1zM12 19h2v1h-2zM16 19h1v1h-1zM18 19h1v1h-1zM20 19h3v1h-3zM25 19h2v1h-2zM30 19h5v1h-5zM36 19h4v1h-4zM41 19h2v1h-2zM2 20h3v1h-3zM7 20h3v1h-3zM11 20h3v1h-3zM16 20h1v1h-1zM18 20h1v1h-1zM20 20h1v1h-1zM22 20h1v1h-1zM24 20h1v1h-1zM29 20h3v1h-3zM35 20h1v1h-1zM38 20h2v1h-2zM41 20h1v1h-1zM4 21h1v1h-1zM9 21h1v1h-1zM11 21h1v1h-1zM13 21h6v1h-6zM28 21h8v1h-8zM38 21h2v1h-2zM41 21h2v1h-2zM3 22h1v1h-1zM5 22h1v1h-1zM7 22h2v1h-2zM13 22h1v1h-1zM16 22h1v1h-1zM18 22h1v1h-1zM20 22h2v1h-2zM23 22h4v1h-4zM29 22h1v1h-1zM37 22h1v1h-1zM39 22h3v1h-3zM3 23h1v1h-1zM5 23h1v1h-1zM11 23h1v1h-1zM14 23h2v1h-2zM17 23h3v1h-3zM21 23h3v1h-3zM25 23h1v1h-1zM27 23h2v1h-2zM30 23h1v1h-1zM32 23h3v1h-3zM36 23h4v1h-4zM41 23h2v1h-2zM2 24h3v1h-3zM7 24h7v1h-7zM15 24h4v1h-4zM20 24h1v1h-1zM22 24h1v1h-1zM24 24h1v1h-1zM27 24h4v1h-4zM34 24h1v1h-1zM38 24h2v1h-2zM2 25h3v1h-3zM6 25h2v1h-2zM9 25h2v1h-2zM12 25h2v1h-2zM15 25h1v1h-1zM18 25h1v1h-1zM20 25h2v1h-2zM23 25h2v1h-2zM29 25h1v1h-1zM33 25h3v1h-3zM42 25h1v1h-1zM3 26h2v1h-2zM6 26h5v1h-5zM12 26h1v1h-1zM14 26h1v1h-1zM19 26h1v1h-1zM25 26h7v1h-7zM33 26h1v1h-1zM40 26h1v1h-1zM2 27h2v1h-2zM6 27h1v1h-1zM9 27h2v1h-2zM12 27h2v1h-2zM15 27h2v1h-2zM18 27h2v1h-2zM21 27h3v1h-3zM25 27h1v1h-1zM27 27h1v1h-1zM30 27h1v1h-1zM32 27h2v1h-2zM35 27h5v1h-5zM41 27h2v1h-2zM2 28h1v1h-1zM5 28h1v1h-1zM7 28h2v1h-2zM13 28h1v1h-1zM16 28h3v1h-3zM20 28h1v1h-1zM22 28h1v1h-1zM26 28h5v1h-5zM32 28h1v1h-1zM34 28h1v1h-1zM36 28h3v1h-3zM3 29h1v1h-1zM5 29h3v1h-3zM12 29h6v1h-6zM21 29h4v1h-4zM26 29h1v1h-1zM28 29h1v1h-1zM30 29h1v1h-1zM33 29h2v1h-2zM38 29h2v1h-2zM42 29h1v1h-1zM4 30h2v1h-2zM8 30h1v1h-1zM11 30h1v1h-1zM13 30h3v1h-3zM17 30h1v1h-1zM19 30h1v1h-1zM24 30h2v1h-2zM27 30h2v1h-2zM31 30h1v1h-1zM33 30h1v1h-1zM39 30h2v1h-2zM42 30h1v1h-1zM2 31h2v1h-2zM7 31h1v1h-1zM12 31h5v1h-5zM20 31h1v1h-1zM22 31h1v1h-1zM26 31h2v1h-2zM29 31h4v1h-4zM35 31h2v1h-2zM38 31h1v1h-1zM40 31h1v1h-1zM42 31h1v1h-1zM2 32h1v1h-1zM4 32h1v1h-1zM7 32h5v1h-5zM16 32h1v1h-1zM18 32h4v1h-4zM23 32h2v1h-2zM27 32h2v1h-2zM31 32h1v1h-1zM35 32h3v1h-3zM39 32h1v1h-1zM2 33h1v1h-1zM4 33h2v1h-2zM7 33h1v1h-1zM10 33h6v1h-6zM17 33h2v1h-2zM21 33h4v1h-4zM26 33h1v1h-1zM30 33h1v1h-1zM34 33h4v1h-4zM39 33h1v1h-1zM41 33h2v1h-2zM2 34h1v1h-1zM6 34h1v1h-1zM8 34h1v1h-1zM10 34h2v1h-2zM15 34h2v1h-2zM19 34h1v1h-1zM21 34h2v1h-2zM24 34h1v1h-1zM26 34h3v1h-3zM31 34h1v1h-1zM33 34h6v1h-6zM40 34h1v1h-1zM42 34h1v1h-1zM10 35h5v1h-5zM17 35h7v1h-7zM25 35h3v1h-3zM30 35h1v1h-1zM33 35h2v1h-2zM38 35h1v1h-1zM41 35h2v1h-2zM2 36h7v1h-7zM13 36h1v1h-1zM15 36h5v1h-5zM23 36h1v1h-1zM27 36h4v1h-4zM32 36h3v1h-3zM36 36h1v1h-1zM38 36h1v1h-1zM40 36h1v1h-1zM2 37h1v1h-1zM8 37h1v1h-1zM10 37h2v1h-2zM13 37h2v1h-2zM18 37h4v1h-4zM23 37h2v1h-2zM26 37h2v1h-2zM33 37h2v1h-2zM38 37h2v1h-2zM2 38h1v1h-1zM4 38h3v1h-3zM8 38h1v1h-1zM10 38h2v1h-2zM13 38h6v1h-6zM23 38h1v1h-1zM26 38h1v1h-1zM28 38h2v1h-2zM32 38h1v1h-1zM34 38h5v1h-5zM40 38h1v1h-1zM2 39h1v1h-1zM4 39h3v1h-3zM8 39h1v1h-1zM10 39h3v1h-3zM15 39h1v1h-1zM18 39h5v1h-5zM24 39h3v1h-3zM30 39h2v1h-2zM33 39h1v1h-1zM35 39h1v1h-1zM37 39h1v1h-1zM39 39h2v1h-2zM2 40h1v1h-1zM4 40h3v1h-3zM8 40h1v1h-1zM10 40h2v1h-2zM14 40h5v1h-5zM22 40h1v1h-1zM24 40h1v1h-1zM26 40h2v1h-2zM29 40h2v1h-2zM34 40h5v1h-5zM40 40h1v1h-1zM2 41h1v1h-1zM8 41h1v1h-1zM12 41h2v1h-2zM17 41h1v1h-1zM19 41h2v1h-2zM23 41h1v1h-1zM25 41h1v1h-1zM28 41h3v1h-3zM34 41h2v1h-2zM38 41h2v1h-2zM41 41h1v1h-1zM2 42h7v1h-7zM10 42h3v1h-3zM14 42h6v1h-6zM21 42h1v1h-1zM24 42h5v1h-5zM31 42h1v1h-1zM33 42h1v1h-1zM35 42h4v1h-4zM40 42h1v1h-1z"/></svg>
+    <p class="qr-texto">Escanea con la cámara del celular para abrir esta página</p>
+    <p class="qr-url">https://memosanchezg.github.io/programacion-basica-interactivos/semana-02-bytecode.html</p>
+    <button type="button" class="qr-cerrar">Cerrar</button>
+  </div>
+</div>
+<style>
+  .qr-capa { position:fixed; top:0; right:0; bottom:0; left:0; z-index:10000; display:flex; align-items:center;
+             justify-content:center; padding:16px; background:#fff; }
+  .qr-capa[hidden] { display:none; }
+  .qr-caja { max-width:100%; text-align:center; color:#0A2A57; font:16px/1.4 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .qr-caja svg { display:block; width:min(62vh, 84vw); height:auto; margin:0 auto; }
+  .qr-texto { margin:12px 0 2px; font-size:1.15rem; font-weight:bold; }
+  .qr-url { margin:0 0 12px; color:#5B6472; word-break:break-all; }
+  .qr-cerrar { font:inherit; padding:6px 20px; border:2px solid #00408F; border-radius:4px; background:#fff;
+               color:#00408F; cursor:pointer; }
+</style>
+<script>
+  (function () {
+    var capa = document.getElementById("qr-sitio");
+    document.querySelectorAll("a.qr-abrir").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        capa.hidden = false;
+        capa.querySelector(".qr-cerrar").focus();
+      });
+    });
+    capa.addEventListener("click", function (e) {
+      if (e.target === capa || e.target.classList.contains("qr-cerrar")) capa.hidden = true;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !capa.hidden) capa.hidden = true;
+    });
+  })();
+</script>
+</body>
+</html>
