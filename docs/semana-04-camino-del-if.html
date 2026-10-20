@@ -1,0 +1,2511 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="tipo" content="simulador">
+<title>El camino de un if</title>
+
+<style>
+  :root {
+    --azul:#00408F; --azul-oscuro:#0A2A57; --guinda:#8C1D35; --oro:#B8975A; --oro-texto:#8A6A2E;
+    --azul-claro:#E8EEF7; --oro-claro:#F7F1E6; --guinda-claro:#F5E6EA; --verde:#2F7D5B;
+    --tinta:#1B1F2A; --gris:#5B6472; --gris-claro:#E9ECF1; --borde:#D9DEE6; --fondo:#FFFFFF;
+    --cmd-fondo:#0C0C0C; --cmd-texto:#E6E6E6;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--fondo); color:var(--tinta);
+         font:16px/1.45 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .franja { height:8px; background:var(--azul); border-bottom:3px solid var(--oro); }
+  header { max-width:1280px; margin:0 auto; padding:12px 18px 4px; }
+  .semana { color:var(--guinda); font-weight:bold; letter-spacing:.04em; font-size:.85rem; text-transform:uppercase; }
+  h1 { font-family:Cambria,Georgia,serif; color:var(--azul-oscuro); font-size:1.7rem; margin:2px 0 2px; }
+  .sub { color:var(--gris); margin:0; }
+  main { max-width:1280px; margin:0 auto; padding:8px 18px 24px; }
+  .panel { background:#fff; border:1px solid var(--borde); border-radius:10px; padding:12px 14px; min-width:0; }
+  .panel h2 { font-size:1.02rem; color:var(--azul-oscuro); margin:0 0 8px; }
+  label { display:block; font-weight:bold; color:var(--azul-oscuro); margin-top:10px; }
+  label small { font-weight:normal; color:var(--gris); }
+  input[type=range] { width:100%; }
+  input[type=number], input[type=text], select, textarea { font:inherit; padding:4px 6px; border:1px solid var(--borde);
+                        border-radius:6px; }
+  button.accion { font:inherit; font-weight:bold; border-radius:8px; padding:7px 12px; margin:8px 6px 0 0;
+                  border:1px solid var(--azul); background:#fff; color:var(--azul); cursor:pointer; }
+  button.accion:hover, button.accion:focus-visible { background:var(--azul); color:#fff; outline:none; }
+  .lectura { background:var(--oro-claro); border-left:4px solid var(--oro); border-radius:8px; padding:10px 12px;
+             margin-top:12px; line-height:1.55; }
+  .lectura b { color:var(--azul-oscuro); }
+  .ok { color:var(--verde); font-weight:bold; }
+  .mal { color:var(--guinda); font-weight:bold; }
+  .preguntas { background:var(--azul-claro); border-radius:8px; padding:10px 14px; margin-top:12px; }
+  .preguntas h3 { margin:0 0 4px; font-size:.95rem; color:var(--azul-oscuro); }
+  .preguntas ol { margin:0; padding-left:20px; }
+  /* Código Python con los colores del curso (minted, estilo borland) y salida de consola (cmd). */
+  .codigo { border:1px solid var(--tinta); background:#fff; font:15px/1.5 Consolas,"Courier New",monospace;
+            overflow-x:auto; margin:8px 0; }
+  .codigo ol { margin:0; padding:8px 12px 8px 3.4em; }
+  .codigo li { white-space:pre; }
+  .codigo li::marker { color:var(--gris); font:11px Cambria,Georgia,serif; }
+  .codigo .kw { color:#000080; font-weight:bold; }
+  .codigo .str, .codigo .num { color:#0000FF; }
+  .codigo .com { color:#008800; font-style:italic; }
+  .codigo .marca { background:var(--oro-claro); outline:1px solid var(--oro); }
+  .consola { background:var(--cmd-fondo); color:var(--cmd-texto); font:15px/1.45 Consolas,"Courier New",monospace;
+             white-space:pre-wrap; word-break:break-word; padding:8px 12px; border-radius:4px; margin:8px 0; min-height:2.2em; }
+  footer { max-width:1280px; margin:0 auto; padding:6px 18px 18px; color:var(--gris); font-size:.85rem; }
+  footer a { color:var(--azul); }
+
+  /* Propios de esta página */
+  [hidden] { display:none !important; }
+  code { font-family:Consolas,"Courier New",monospace; color:var(--azul-oscuro); }
+  .selector { display:flex; flex-wrap:wrap; gap:6px 12px; align-items:center; margin:4px 0 4px; }
+  .selector label { margin:0; }
+  .selector select { max-width:100%; }
+  .desc { color:var(--gris); margin:0 0 12px; }
+  .fila2 { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px; align-items:start; }
+  .fila2 > * { min-width:0; }
+  .control { display:grid; grid-template-columns:minmax(0,1fr) 6.5em; gap:4px 10px; align-items:center; }
+  .control label { grid-column:1 / -1; margin:8px 0 0; }
+  .control input[type=text] { width:100%; font-family:Consolas,"Courier New",monospace; text-align:right; }
+  .control .error { grid-column:1 / -1; color:var(--guinda); font-size:.9rem; margin:0; }
+  .casilla { display:flex; align-items:center; gap:8px; margin-top:10px; font-weight:bold; color:var(--azul-oscuro); }
+  .insignia { font:bold 12px/1.4 Calibri,"Segoe UI",sans-serif; border-radius:9px; padding:0 7px; margin-left:10px;
+              border:1px solid; vertical-align:1px; }
+  .insignia.si { color:var(--verde); border-color:var(--verde); background:#EAF4EF; }
+  .insignia.no { color:var(--guinda); border-color:var(--guinda); background:var(--guinda-claro); }
+  .insignia.sin { color:var(--gris); border-color:var(--borde); background:var(--gris-claro); font-weight:normal; }
+  .diagrama { overflow-x:auto; border:1px solid var(--borde); border-radius:10px; background:#fff; }
+  .diagrama svg { display:block; width:100%; min-width:480px; height:auto; }
+  .df-texto { font:12.5px Consolas,"Courier New",monospace; fill:#1B1F2A; }
+  .df-pildora { font:bold 13px Calibri,"Segoe UI",sans-serif; fill:#1B1F2A; }
+  .df-etiqueta { font:bold 12px Calibri,"Segoe UI",sans-serif; }
+  .evaluacion { margin:6px 0 0; padding-left:20px; }
+  .evaluacion > li { margin:6px 0; }
+  .evaluacion ul { margin:2px 0; padding-left:18px; list-style:disc; }
+  .evaluacion .omitida { color:var(--gris); }
+  .rompe { border:2px solid var(--guinda); border-radius:10px; padding:10px 12px; margin-top:12px; background:#fff; }
+  .rompe h3 { margin:0 0 6px; font-size:1rem; color:var(--guinda); }
+  table.espera { border-collapse:collapse; margin:6px 0; font-size:.95rem; }
+  table.espera th, table.espera td { border-bottom:1px solid var(--gris-claro); padding:2px 10px 2px 0; text-align:left; }
+  table.espera th { color:var(--azul-oscuro); }
+  .veredicto { margin:6px 0 0; }
+  .estado-reto { font-weight:bold; margin:6px 0 0; }
+  .estado-reto.listo { color:var(--verde); }
+  .probados { color:var(--gris); font-size:.92rem; margin:4px 0 0; overflow-wrap:anywhere; }
+  .explica-reto { background:#EAF4EF; border-left:4px solid var(--verde); border-radius:8px; padding:8px 10px; margin-top:8px; }
+  .nota { color:var(--gris); font-size:.88rem; margin:4px 0 0; }
+  @media (max-width: 900px) { .fila2 { grid-template-columns:1fr; } }
+  @media (max-width: 480px) {
+    header { padding:10px 12px 4px; } main { padding:8px 10px 20px; } footer { padding:6px 12px 16px; }
+    .panel { padding:10px; } h1 { font-size:1.45rem; }
+    .codigo, .consola { font-size:13.5px; } .codigo ol { padding-left:2.9em; }
+  }
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header>
+  <div class="semana">Semana 04 · Control de flujo</div>
+  <h1>El camino de un if</h1>
+  <p class="sub">Mueve el valor y mira qué camino sigue Python en el código y en el diagrama de flujo: qué condiciones evalúa, cuáles se salta y qué imprime. Después, rompe los programas con error.</p>
+</header>
+<main>
+  <div class="selector">
+    <label for="programa">Programa</label>
+    <select id="programa"></select>
+  </div>
+  <p class="desc" id="desc"></p>
+  <div class="fila2">
+    <div class="panel">
+      <h2>El código</h2>
+      <div id="controles"></div>
+      <div id="codigo"></div>
+      <h2>Consola</h2>
+      <div class="consola" id="consola" aria-live="polite" aria-label="Lo que imprime el programa"></div>
+      <div class="lectura" id="lectura" aria-live="polite"></div>
+      <div class="rompe" id="rompe" hidden>
+        <h3>Rómpelo</h3>
+        <p id="objetivo" style="margin:0"></p>
+        <table class="espera" id="espera" aria-label="Lo que debería imprimir"></table>
+        <p class="veredicto" id="veredicto" aria-live="polite"></p>
+        <p class="estado-reto" id="estadoReto" aria-live="polite"></p>
+        <p class="probados" id="probados"></p>
+        <div class="explica-reto" id="explicaReto" hidden></div>
+        <p class="nota">Un valor cuenta como probado cuando sueltas el deslizador o escribes el número y presionas Enter.</p>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>El diagrama de flujo</h2>
+      <div class="diagrama" id="diagrama"></div>
+      <h2 style="margin-top:12px">Cómo se evaluó cada condición</h2>
+      <ol class="evaluacion" id="evaluacion"></ol>
+      <div class="preguntas">
+        <h3>Para explorar</h3>
+        <ol>
+          <li>En "Calificación", ¿cuál es la calificación más baja que imprime Excelente? ¿Cuántas condiciones evalúa Python con 95? ¿Y con 50?</li>
+          <li>En "Temperatura y lluvia", con 40 °C, ¿se evalúa <code>temperatura &lt;= 5</code>? ¿Por qué?</li>
+          <li>¿Con qué temperaturas y lluvia se llega al <code>else</code>?</li>
+          <li>Con 20 °C y sin lluvia, ¿por qué no se evalúa <code>not llueve</code>?</li>
+          <li>En "Rómpelo 2", ¿con qué calificaciones se imprimen tres mensajes?</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</main>
+<footer>
+  Programación Básica · FCFM-UANL · funciona sin internet. Las condiciones se evalúan como en Python 3.12.
+  <a href="index.html">Índice de simuladores</a> · <a href="#qr-sitio" class="qr-abrir">Abrir en el celular (QR)</a>
+</footer>
+
+<script type="application/json" id="programas">
+[
+ {
+  "id": "calificacion",
+  "tipo": "normal",
+  "titulo": "Calificación: if, elif y else",
+  "desc": "Mueve la calificación: Python revisa las condiciones de arriba hacia abajo y ejecuta solo el primer bloque cuya condición es True.",
+  "vars": [
+   {
+    "nombre": "calificacion",
+    "min": 0,
+    "max": 100,
+    "valor": "85"
+   }
+  ],
+  "codigo": "calificacion = {{calificacion}}\nif calificacion >= 90:\n    print(\"Excelente\")\nelif calificacion >= 80:\n    print(\"Muy bien\")\nelif calificacion >= 70:\n    print(\"Aprobado\")\nelse:\n    print(\"No aprobado\")\n"
+ },
+ {
+  "id": "temperatura",
+  "tipo": "normal",
+  "titulo": "Temperatura y lluvia: and, or y not",
+  "desc": "Las condiciones compuestas se evalúan de izquierda a derecha y Python deja de evaluar en cuanto conoce el resultado (cortocircuito).",
+  "vars": [
+   {
+    "nombre": "temperatura",
+    "min": -5,
+    "max": 45,
+    "valor": "28",
+    "unidad": "°C"
+   },
+   {
+    "nombre": "llueve",
+    "tipo": "bool",
+    "valor": "False"
+   }
+  ],
+  "codigo": "temperatura = {{temperatura}}\nllueve = {{llueve}}\nif temperatura >= 35 or temperatura <= 5:\n    print(\"Quédate en casa\")\nelif temperatura >= 25 and not llueve:\n    print(\"Ve al parque\")\nelif llueve:\n    print(\"Lleva paraguas\")\nelse:\n    print(\"Sal a caminar\")\n"
+ },
+ {
+  "id": "orden",
+  "tipo": "rompe",
+  "titulo": "Rómpelo 1: condiciones en mal orden",
+  "desc": "Este programa tiene un error. Encuentra la calificación más baja con la que se equivoca.",
+  "objetivo": "frontera",
+  "vars": [
+   {
+    "nombre": "calificacion",
+    "min": 0,
+    "max": 100,
+    "valor": "60"
+   }
+  ],
+  "codigo": "calificacion = {{calificacion}}\nif calificacion >= 70:\n    print(\"Aprobado\")\nelif calificacion >= 80:\n    print(\"Muy bien\")\nelif calificacion >= 90:\n    print(\"Excelente\")\nelse:\n    print(\"No aprobado\")\n",
+  "explica": "Python revisa las condiciones en orden y ejecuta solo la primera que es True. Desde 70, calificacion >= 70 ya es True, así que nunca llega a revisar >= 80 ni >= 90. Las condiciones más exigentes van primero."
+ },
+ {
+  "id": "separados",
+  "tipo": "rompe",
+  "titulo": "Rómpelo 2: if separados en lugar de elif",
+  "desc": "Este programa tiene un error. Encuentra la calificación más baja con la que se equivoca.",
+  "objetivo": "frontera",
+  "vars": [
+   {
+    "nombre": "calificacion",
+    "min": 0,
+    "max": 100,
+    "valor": "60"
+   }
+  ],
+  "codigo": "calificacion = {{calificacion}}\nif calificacion >= 90:\n    print(\"Excelente\")\nif calificacion >= 80:\n    print(\"Muy bien\")\nif calificacion >= 70:\n    print(\"Aprobado\")\nelse:\n    print(\"No aprobado\")\n",
+  "explica": "Con tres if separados, Python revisa los tres sin importar lo que pasó antes: desde 80 se cumplen dos condiciones (o tres) e imprime varios mensajes. Con elif, solo se ejecuta el primer bloque verdadero."
+ },
+ {
+  "id": "huecos",
+  "tipo": "rompe",
+  "titulo": "Rómpelo 3: rangos con huecos",
+  "desc": "Este programa tiene un error. Encuentra las calificaciones (enteras) con las que no imprime nada.",
+  "objetivo": "todos",
+  "vars": [
+   {
+    "nombre": "calificacion",
+    "min": 0,
+    "max": 100,
+    "valor": "60"
+   }
+  ],
+  "codigo": "calificacion = {{calificacion}}\nif calificacion >= 90:\n    print(\"Excelente\")\nelif calificacion >= 80 and calificacion < 89:\n    print(\"Muy bien\")\nelif calificacion > 70 and calificacion < 80:\n    print(\"Aprobado\")\nelif calificacion < 70:\n    print(\"No aprobado\")\n",
+  "explica": "Los rangos dejan huecos: 89 no cumple calificacion < 89 y 70 no cumple calificacion > 70, y no hay else que los atrape. En las fronteras hay que decidir con cuidado entre < y <=, y entre > y >=."
+ }
+]
+</script>
+<script>
+(function () {
+  "use strict";
+  // =====================================================================================
+  // NÚCLEO: un pedacito de Python 3.12 en JavaScript (valores, operaciones, formato,
+  // expresiones y programas cortos paso a paso). Cada resultado imita a Python 3.12 en
+  // Windows. Lo que la página no simula se avisa con un Aviso, nunca con un error inventado.
+  // Valores: int = BigInt, float = number, bool = boolean, None = null, str = string,
+  // list = Array; range, tipos y funciones son objetos de este núcleo.
+  // =====================================================================================
+
+  // ---------- Excepciones de Python y avisos de la página ----------
+  function ErrorPy(tipo, mensaje, nodo) { this.tipo = tipo; this.mensaje = mensaje; this.nodo = nodo || null; }
+  ErrorPy.prototype.texto = function () { return this.mensaje === "" ? this.tipo : this.tipo + ": " + this.mensaje; };
+  function Aviso(texto) { this.texto = texto; }
+  function TipoPy(nombre) { this.nombre = nombre; }
+  function FuncionPy(nombre, impl) { this.nombre = nombre; this.impl = impl; }
+  function MetodoPy(nombre, dueno, impl) { this.nombre = nombre; this.dueno = dueno; this.impl = impl; }
+  function RangoPy(inicio, fin, paso) { this.inicio = inicio; this.fin = fin; this.paso = paso; }
+  RangoPy.prototype.largo = function () {
+    var a = this.inicio, b = this.fin, p = this.paso;
+    if (p > 0n) return a < b ? (b - a - 1n) / p + 1n : 0n;
+    return a > b ? (a - b - 1n) / (-p) + 1n : 0n;
+  };
+
+  function nombreTipo(v) {
+    if (v === null || v === undefined) return "NoneType";
+    switch (typeof v) {
+      case "boolean": return "bool";
+      case "bigint": return "int";
+      case "number": return "float";
+      case "string": return "str";
+    }
+    if (Array.isArray(v)) return "list";
+    if (v instanceof RangoPy) return "range";
+    if (v instanceof TipoPy) return "type";
+    if (v instanceof FuncionPy || v instanceof MetodoPy) return "builtin_function_or_method";
+    return "object";
+  }
+
+  // ---------- repr() y str() ----------
+  // repr() de un float: la representación más corta que vuelve al mismo número.
+  function pyFloat(x) {
+    if (Number.isNaN(x)) return "nan";
+    if (x === Infinity) return "inf";
+    if (x === -Infinity) return "-inf";
+    if (x === 0) return Object.is(x, -0) ? "-0.0" : "0.0";
+    var partes = Math.abs(x).toExponential().split("e");
+    var digitos = partes[0].replace(".", "");
+    var exp = parseInt(partes[1], 10);
+    var decpt = exp + 1, signo = x < 0 ? "-" : "";
+    if (decpt > 16 || decpt < -3) {
+      var mant = digitos.length > 1 ? digitos[0] + "." + digitos.slice(1) : digitos[0];
+      return signo + mant + "e" + (exp < 0 ? "-" : "+") + (Math.abs(exp) < 10 ? "0" : "") + Math.abs(exp);
+    }
+    if (decpt <= 0) return signo + "0." + "0".repeat(-decpt) + digitos;
+    if (decpt >= digitos.length) return signo + digitos + "0".repeat(decpt - digitos.length) + ".0";
+    return signo + digitos.slice(0, decpt) + "." + digitos.slice(decpt);
+  }
+
+  function hexa(n, ancho) { var s = n.toString(16); while (s.length < ancho) s = "0" + s; return s; }
+  // Caracteres que Python no considera imprimibles (repr los escribe como \x.., \u.. o \U........)
+  var NO_IMPRIMIBLE = /[\p{Cc}\p{Cf}\p{Cs}\p{Co}\p{Cn}\p{Zl}\p{Zp}\p{Zs}]/u;
+  function escaparCaracter(c, comilla) {
+    var code = c.codePointAt(0);
+    if (c === "\\") return "\\\\";
+    if (c === comilla) return "\\" + comilla;
+    if (c === "\n") return "\\n";
+    if (c === "\r") return "\\r";
+    if (c === "\t") return "\\t";
+    if (code < 32 || code === 127) return "\\x" + hexa(code, 2);
+    if (code > 127 && NO_IMPRIMIBLE.test(c)) {
+      return code <= 0xff ? "\\x" + hexa(code, 2) : code <= 0xffff ? "\\u" + hexa(code, 4) : "\\U" + hexa(code, 8);
+    }
+    return c;
+  }
+  // repr() de un texto: comillas simples, o dobles si el texto trae ' y no trae ".
+  function pyStr(s) {
+    var q = (s.indexOf("'") >= 0 && s.indexOf('"') < 0) ? '"' : "'";
+    var r = "";
+    for (var c of s) r += escaparCaracter(c, q);
+    return q + r + q;
+  }
+
+  var MSJ_LIMITE_STR = "Exceeds the limit (4300 digits) for integer string conversion; use sys.set_int_max_str_digits() to increase the limit";
+  function textoEntero(n) {
+    var s = n.toString();
+    if (s.length - (n < 0n ? 1 : 0) > 4300) throw new ErrorPy("ValueError", MSJ_LIMITE_STR);
+    return s;
+  }
+
+  function pyRepr(v) {
+    if (v === null || v === undefined) return "None";
+    if (v === true) return "True";
+    if (v === false) return "False";
+    if (typeof v === "bigint") return textoEntero(v);
+    if (typeof v === "number") return pyFloat(v);
+    if (typeof v === "string") return pyStr(v);
+    if (Array.isArray(v)) return "[" + v.map(pyRepr).join(", ") + "]";
+    if (v instanceof RangoPy) return "range(" + v.inicio + ", " + v.fin + (v.paso === 1n ? "" : ", " + v.paso) + ")";
+    if (v instanceof TipoPy) return "<class '" + v.nombre + "'>";
+    if (v instanceof FuncionPy) return "<built-in function " + v.nombre + ">";
+    throw new Aviso("Python mostraría aquí una dirección de memoria (at 0x...), que cambia en cada ejecución: esta página no la inventa.");
+  }
+  function pyStrDe(v) { return typeof v === "string" ? v : pyRepr(v); }
+
+  function verdad(v) {
+    if (v === null || v === undefined) return false;
+    if (typeof v === "boolean") return v;
+    if (typeof v === "bigint") return v !== 0n;
+    if (typeof v === "number") return v !== 0;
+    if (typeof v === "string") return v.length > 0;
+    if (Array.isArray(v)) return v.length > 0;
+    if (v instanceof RangoPy) return v.largo() > 0n;
+    return true;
+  }
+
+  // ---------- Tablas de Unicode de Python 3.12 (Unicode 15.0) ----------
+  // str.isspace()
+  var ESPACIOS_PY = [0x9, 0xa, 0xb, 0xc, 0xd, 0x1c, 0x1d, 0x1e, 0x1f, 0x20, 0x85, 0xa0, 0x1680, 0x2000, 0x2001,
+    0x2002, 0x2003, 0x2004, 0x2005, 0x2006, 0x2007, 0x2008, 0x2009, 0x200a, 0x2028, 0x2029, 0x202f, 0x205f, 0x3000];
+  // El cero de cada bloque de dígitos decimales (int() y float() los aceptan)
+  var CEROS_DECIMALES = [0x30, 0x660, 0x6f0, 0x7c0, 0x966, 0x9e6, 0xa66, 0xae6, 0xb66, 0xbe6, 0xc66, 0xce6, 0xd66,
+    0xde6, 0xe50, 0xed0, 0xf20, 0x1040, 0x1090, 0x17e0, 0x1810, 0x1946, 0x19d0, 0x1a80, 0x1a90, 0x1b50, 0x1bb0,
+    0x1c40, 0x1c50, 0xa620, 0xa8d0, 0xa900, 0xa9d0, 0xa9f0, 0xaa50, 0xabf0, 0xff10, 0x104a0, 0x10d30, 0x11066,
+    0x110f0, 0x11136, 0x111d0, 0x112f0, 0x11450, 0x114d0, 0x11650, 0x116c0, 0x11730, 0x118e0, 0x11950, 0x11c50,
+    0x11d50, 0x11da0, 0x11f50, 0x16a60, 0x16ac0, 0x16b50, 0x1d7ce, 0x1d7d8, 0x1d7e2, 0x1d7ec, 0x1d7f6, 0x1e140,
+    0x1e2f0, 0x1e4f0, 0x1e950, 0x1fbf0];
+  // Rangos [desde, hasta] de los caracteres con str.isdigit() == True
+  var RANGOS_DIGITOS = [0x30, 0x39, 0xb2, 0xb3, 0xb9, 0xb9, 0x660, 0x669, 0x6f0, 0x6f9, 0x7c0, 0x7c9, 0x966, 0x96f,
+    0x9e6, 0x9ef, 0xa66, 0xa6f, 0xae6, 0xaef, 0xb66, 0xb6f, 0xbe6, 0xbef, 0xc66, 0xc6f, 0xce6, 0xcef, 0xd66, 0xd6f,
+    0xde6, 0xdef, 0xe50, 0xe59, 0xed0, 0xed9, 0xf20, 0xf29, 0x1040, 0x1049, 0x1090, 0x1099, 0x1369, 0x1371,
+    0x17e0, 0x17e9, 0x1810, 0x1819, 0x1946, 0x194f, 0x19d0, 0x19da, 0x1a80, 0x1a89, 0x1a90, 0x1a99, 0x1b50, 0x1b59,
+    0x1bb0, 0x1bb9, 0x1c40, 0x1c49, 0x1c50, 0x1c59, 0x2070, 0x2070, 0x2074, 0x2079, 0x2080, 0x2089, 0x2460, 0x2468,
+    0x2474, 0x247c, 0x2488, 0x2490, 0x24ea, 0x24ea, 0x24f5, 0x24fd, 0x24ff, 0x24ff, 0x2776, 0x277e, 0x2780, 0x2788,
+    0x278a, 0x2792, 0xa620, 0xa629, 0xa8d0, 0xa8d9, 0xa900, 0xa909, 0xa9d0, 0xa9d9, 0xa9f0, 0xa9f9, 0xaa50, 0xaa59,
+    0xabf0, 0xabf9, 0xff10, 0xff19, 0x104a0, 0x104a9, 0x10a40, 0x10a43, 0x10d30, 0x10d39, 0x10e60, 0x10e68,
+    0x11052, 0x1105a, 0x11066, 0x1106f, 0x110f0, 0x110f9, 0x11136, 0x1113f, 0x111d0, 0x111d9, 0x112f0, 0x112f9,
+    0x11450, 0x11459, 0x114d0, 0x114d9, 0x11650, 0x11659, 0x116c0, 0x116c9, 0x11730, 0x11739, 0x118e0, 0x118e9,
+    0x11950, 0x11959, 0x11c50, 0x11c59, 0x11d50, 0x11d59, 0x11da0, 0x11da9, 0x11f50, 0x11f59, 0x16a60, 0x16a69,
+    0x16ac0, 0x16ac9, 0x16b50, 0x16b59, 0x1d7ce, 0x1d7ff, 0x1e140, 0x1e149, 0x1e2f0, 0x1e2f9, 0x1e4f0, 0x1e4f9,
+    0x1e950, 0x1e959, 0x1f100, 0x1f10a, 0x1fbf0, 0x1fbf9];
+  function esEspacioPy(cp) { return ESPACIOS_PY.indexOf(cp) >= 0; }
+  function valorDecimal(cp) {
+    for (var i = 0; i < CEROS_DECIMALES.length; i++) {
+      var z = CEROS_DECIMALES[i];
+      if (cp >= z && cp <= z + 9) return cp - z;
+    }
+    return -1;
+  }
+  function esDigitoPy(cp) {
+    for (var i = 0; i < RANGOS_DIGITOS.length; i += 2) if (cp >= RANGOS_DIGITOS[i] && cp <= RANGOS_DIGITOS[i + 1]) return true;
+    return false;
+  }
+  function pyIsdigit(s) {
+    var cs = Array.from(s);
+    return cs.length > 0 && cs.every(function (c) { return esDigitoPy(c.codePointAt(0)); });
+  }
+
+  // ---------- int(), float(), str(), bool() ----------
+  // Lo que hace CPython antes de leer un número: espacios → " ", dígitos decimales → "0".."9";
+  // otro carácter no ASCII → "?" (y corta ahí).
+  function aAsciiPy(s) {
+    var r = "";
+    for (var c of s) {
+      var cp = c.codePointAt(0);
+      if (cp < 127) { r += c; continue; }
+      if (esEspacioPy(cp)) { r += " "; continue; }
+      var d = valorDecimal(cp);
+      if (d < 0) return r + "?";
+      r += String(d);
+    }
+    return r;
+  }
+  function recortar200(t) { var c = Array.from(t); return c.length > 200 ? c.slice(0, 200).join("") : t; }
+  var RX_INT_TEXTO = /^[ \t\n\v\f\r]*([+-]?)([0-9](?:_?[0-9])*)[ \t\n\v\f\r]*$/;
+  function intDeTexto(s) {
+    var m = RX_INT_TEXTO.exec(aAsciiPy(s));
+    if (!m) throw new ErrorPy("ValueError", "invalid literal for int() with base 10: " + recortar200(pyStr(s)));
+    var digs = m[2].replace(/_/g, "");
+    if (digs.length > 4300) {
+      throw new ErrorPy("ValueError", "Exceeds the limit (4300 digits) for integer string conversion: value has " + digs.length +
+                        " digits; use sys.set_int_max_str_digits() to increase the limit");
+    }
+    var n = BigInt(digs);
+    return m[1] === "-" ? -n : n;
+  }
+  var RX_FLOAT_TEXTO = /^[+-]?(?:(?:[0-9]+\.?[0-9]*|\.[0-9]+)(?:[eE][+-]?[0-9]+)?|inf|infinity|nan)$/i;
+  function floatDeTexto(s) {
+    var mal = new ErrorPy("ValueError", "could not convert string to float: " + pyStr(s));
+    var t = aAsciiPy(s).replace(/^[ \t\n\v\f\r]+/, "");
+    if (t === "") throw mal;
+    t = t.replace(/[ \t\n\v\f\r]+$/, "");
+    if (t.indexOf("_") >= 0) {
+      var prev = "";
+      for (var i = 0; i < t.length; i++) {
+        var c = t[i];
+        if (c === "_") { if (!(prev >= "0" && prev <= "9")) throw mal; }
+        else if (prev === "_" && !(c >= "0" && c <= "9")) throw mal;
+        prev = c;
+      }
+      if (prev === "_") throw mal;
+      t = t.replace(/_/g, "");
+    }
+    if (!RX_FLOAT_TEXTO.test(t)) throw mal;
+    var sin = t.replace(/^[+-]/, "").toLowerCase(), neg = t[0] === "-";
+    if (sin === "nan") return NaN;
+    if (sin === "inf" || sin === "infinity") return neg ? -Infinity : Infinity;
+    return Number(t);
+  }
+  function aBig(v) { return typeof v === "boolean" ? (v ? 1n : 0n) : v; }
+  function aDoble(v) {
+    if (typeof v === "number") return v;
+    var x = Number(aBig(v));
+    if (!isFinite(x)) throw new ErrorPy("OverflowError", "int too large to convert to float");
+    return x;
+  }
+  function intDe(v) {
+    if (typeof v === "bigint") return v;
+    if (typeof v === "boolean") return v ? 1n : 0n;
+    if (typeof v === "number") {
+      if (Number.isNaN(v)) throw new ErrorPy("ValueError", "cannot convert float NaN to integer");
+      if (!isFinite(v)) throw new ErrorPy("OverflowError", "cannot convert float infinity to integer");
+      return BigInt(Math.trunc(v));
+    }
+    if (typeof v === "string") return intDeTexto(v);
+    throw new ErrorPy("TypeError", "int() argument must be a string, a bytes-like object or a real number, not '" + nombreTipo(v) + "'");
+  }
+  function floatDe(v) {
+    if (typeof v === "number") return v;
+    if (typeof v === "bigint" || typeof v === "boolean") return aDoble(v);
+    if (typeof v === "string") return floatDeTexto(v);
+    throw new ErrorPy("TypeError", "float() argument must be a string or a real number, not '" + nombreTipo(v) + "'");
+  }
+
+  // ---------- Aritmética ----------
+  function esInt(v) { return typeof v === "bigint" || typeof v === "boolean"; }
+  function esNum(v) { return esInt(v) || typeof v === "number"; }
+  function potencia2(e) {               // 2**e exacto como double (e entre -1074 y 1023)
+    var dv = new DataView(new ArrayBuffer(8));
+    if (e >= -1022) { dv.setUint32(0, (e + 1023) << 20); dv.setUint32(4, 0); }
+    else {
+      var bit = e + 1074;               // 0..51
+      if (bit >= 32) { dv.setUint32(0, 1 << (bit - 32)); dv.setUint32(4, 0); }
+      else { dv.setUint32(0, 0); dv.setUint32(4, (1 << bit) >>> 0); }
+    }
+    return dv.getFloat64(0);
+  }
+  function largoBits(n) { return n === 0n ? 0 : n.toString(2).length; }
+  // a / b de dos int, redondeado correctamente (como long_true_divide)
+  function divVerdadera(a, b) {
+    if (b === 0n) throw new ErrorPy("ZeroDivisionError", "division by zero");
+    var neg = (a < 0n) !== (b < 0n), aa = a < 0n ? -a : a, bb = b < 0n ? -b : b;
+    var LIM = 9007199254740992n;
+    if (aa <= LIM && bb <= LIM) return Number(a) / Number(b);
+    if (aa === 0n) return neg ? -0 : 0;
+    var E = largoBits(aa) - largoBits(bb);         // 2^E <= aa/bb < 2^(E+1)
+    if (E >= 0 ? aa < (bb << BigInt(E)) : (aa << BigInt(-E)) < bb) E--;
+    if (E > 1023) throw new ErrorPy("OverflowError", "integer division result too large for a float");
+    var u = Math.max(E - 52, -1074), num = aa, den = bb;
+    if (u >= 0) den = bb << BigInt(u); else num = aa << BigInt(-u);
+    var q = num / den, r = num % den, doble = 2n * r;
+    if (doble > den || (doble === den && (q & 1n) === 1n)) q += 1n;
+    var x = Number(q) * potencia2(u);
+    if (!isFinite(x)) throw new ErrorPy("OverflowError", "integer division result too large for a float");
+    return neg ? -x : x;
+  }
+  function divPiso(a, b) { var q = a / b; if (a % b !== 0n && ((a < 0n) !== (b < 0n))) q -= 1n; return q; }
+  function modPiso(a, b) { var r = a % b; if (r !== 0n && ((r < 0n) !== (b < 0n))) r += b; return r; }
+  function floatDivMod(vx, wx) {        // _float_div_mod de CPython (en C, NaN cuenta como verdadero)
+    var mod = vx % wx, div = (vx - mod) / wx, piso;
+    if (mod !== 0) { if ((wx < 0) !== (mod < 0)) { mod += wx; div -= 1.0; } }
+    else mod = wx < 0 || Object.is(wx, -0) ? -0 : 0;
+    if (div !== 0) { piso = Math.floor(div); if (div - piso > 0.5) piso += 1.0; }
+    else { var q = vx / wx; piso = (q < 0 || Object.is(q, -0)) ? -0 : 0; }
+    return [piso, mod];
+  }
+  function esImparEntero(x) { return isFinite(x) && x === Math.floor(x) && Math.abs(x % 2) === 1; }
+  function potenciaFloat(iv, iw) {      // float_pow de CPython
+    if (iw === 0) return 1.0;
+    if (Number.isNaN(iv)) return iv;
+    if (Number.isNaN(iw)) return iv === 1.0 ? 1.0 : iw;
+    if (!isFinite(iw)) {
+      iv = Math.abs(iv);
+      if (iv === 1.0) return 1.0;
+      if ((iw > 0.0) === (iv > 1.0)) return Math.abs(iw);
+      return 0.0;
+    }
+    if (!isFinite(iv)) {
+      var impar = esImparEntero(iw);
+      if (iw > 0.0) return impar ? iv : Math.abs(iv);
+      return impar ? (iv < 0 ? -0 : 0) : 0.0;
+    }
+    if (iv === 0.0) {
+      var impar0 = esImparEntero(iw);
+      if (iw < 0.0) throw new ErrorPy("ZeroDivisionError", "0.0 cannot be raised to a negative power");
+      return impar0 ? iv : 0.0;
+    }
+    var negar = false;
+    if (iv < 0.0) {
+      if (iw !== Math.floor(iw)) {
+        throw new Aviso("Un número negativo elevado a un exponente con decimales da un número complejo (con j); esta página no calcula complejos.");
+      }
+      iv = -iv;
+      negar = esImparEntero(iw);
+    }
+    if (iv === 1.0) return negar ? -1.0 : 1.0;
+    var ix = Math.pow(iv, iw);
+    if (!isFinite(ix)) throw new ErrorPy("OverflowError", "(34, 'Result too large')");
+    return negar ? -ix : ix;
+  }
+  function noSoportado(simbolo, a, b) {
+    return new ErrorPy("TypeError", "unsupported operand type(s) for " + simbolo + ": '" + nombreTipo(a) + "' and '" + nombreTipo(b) + "'");
+  }
+  var LIMITE_TEXTO = 100000;
+  function repetir(sec, n) {
+    var k = aBig(n);
+    if (k <= 0n) return typeof sec === "string" ? "" : [];
+    var largo = typeof sec === "string" ? sec.length : sec.length;
+    if (BigInt(largo) * k > BigInt(LIMITE_TEXTO)) throw new Aviso("El resultado tendría más de " + LIMITE_TEXTO + " elementos: es demasiado largo para mostrarlo aquí.");
+    if (typeof sec === "string") return sec.repeat(Number(k));
+    var r = [];
+    for (var i = 0n; i < k; i++) r = r.concat(sec);
+    return r;
+  }
+  // a <op> b; aug = true para +=, -=... (cambia el símbolo de los mensajes)
+  function binario(op, a, b, aug) {
+    var sim = (op === "**" && !aug) ? "** or pow()" : op + (aug ? "=" : "");
+    switch (op) {
+      case "+":
+        if (esNum(a) && esNum(b)) {
+          if (typeof a === "number" || typeof b === "number") return aDoble(a) + aDoble(b);
+          return aBig(a) + aBig(b);
+        }
+        if (typeof a === "string") {
+          if (typeof b === "string") return a + b;
+          throw new ErrorPy("TypeError", "can only concatenate str (not \"" + nombreTipo(b) + "\") to str");
+        }
+        if (Array.isArray(a)) {
+          if (Array.isArray(b)) return a.concat(b);
+          throw new ErrorPy("TypeError", "can only concatenate list (not \"" + nombreTipo(b) + "\") to list");
+        }
+        throw noSoportado(sim, a, b);
+      case "-":
+        if (esNum(a) && esNum(b)) {
+          if (typeof a === "number" || typeof b === "number") return aDoble(a) - aDoble(b);
+          return aBig(a) - aBig(b);
+        }
+        throw noSoportado(sim, a, b);
+      case "*":
+        if (esNum(a) && esNum(b)) {
+          if (typeof a === "number" || typeof b === "number") return aDoble(a) * aDoble(b);
+          return aBig(a) * aBig(b);
+        }
+        if (typeof a === "string" || Array.isArray(a)) {
+          if (esInt(b)) return repetir(a, b);
+          throw new ErrorPy("TypeError", "can't multiply sequence by non-int of type '" + nombreTipo(b) + "'");
+        }
+        if (typeof b === "string" || Array.isArray(b)) {
+          if (esInt(a)) return repetir(b, a);
+          throw new ErrorPy("TypeError", "can't multiply sequence by non-int of type '" + nombreTipo(a) + "'");
+        }
+        throw noSoportado(sim, a, b);
+      case "/":
+        if (esNum(a) && esNum(b)) {
+          if (typeof a === "number" || typeof b === "number") {
+            var x = aDoble(a), y = aDoble(b);
+            if (y === 0) throw new ErrorPy("ZeroDivisionError", "float division by zero");
+            return x / y;
+          }
+          return divVerdadera(aBig(a), aBig(b));
+        }
+        throw noSoportado(sim, a, b);
+      case "//":
+        if (esNum(a) && esNum(b)) {
+          if (typeof a === "number" || typeof b === "number") {
+            var x2 = aDoble(a), y2 = aDoble(b);
+            if (y2 === 0) throw new ErrorPy("ZeroDivisionError", "float floor division by zero");
+            return floatDivMod(x2, y2)[0];
+          }
+          if (aBig(b) === 0n) throw new ErrorPy("ZeroDivisionError", "integer division or modulo by zero");
+          return divPiso(aBig(a), aBig(b));
+        }
+        throw noSoportado(sim, a, b);
+      case "%":
+        if (esNum(a) && esNum(b)) {
+          if (typeof a === "number" || typeof b === "number") {
+            var x3 = aDoble(a), y3 = aDoble(b);
+            if (y3 === 0) throw new ErrorPy("ZeroDivisionError", "float modulo");
+            return floatDivMod(x3, y3)[1];
+          }
+          if (aBig(b) === 0n) throw new ErrorPy("ZeroDivisionError", "integer modulo by zero");
+          return modPiso(aBig(a), aBig(b));
+        }
+        if (typeof a === "string") {
+          if (a.indexOf("%") >= 0) throw new Aviso("Con un texto que tiene %, el operador % da formato al estilo antiguo (printf); esta página no lo simula.");
+          if (Array.isArray(b) || b instanceof RangoPy) return a;
+          throw new ErrorPy("TypeError", "not all arguments converted during string formatting");
+        }
+        throw noSoportado(sim, a, b);
+      case "**":
+        if (esNum(a) && esNum(b)) {
+          if (typeof a === "number" || typeof b === "number") return potenciaFloat(aDoble(a), aDoble(b));
+          var base = aBig(a), ex = aBig(b);
+          if (ex < 0n) return potenciaFloat(aDoble(base), aDoble(ex));
+          var absb = base < 0n ? -base : base;
+          if (absb > 1n && BigInt(largoBits(absb)) * ex > 2000000n) throw new Aviso("Ese número es demasiado grande para esta página.");
+          return base ** ex;
+        }
+        throw noSoportado(sim, a, b);
+    }
+    throw new Aviso("Esta página no simula el operador " + op + ".");
+  }
+  function unario(op, v) {
+    if (op === "not") return !verdad(v);
+    if (esNum(v)) {
+      if (op === "-") return typeof v === "number" ? -v : -aBig(v);
+      if (op === "+") return typeof v === "number" ? v : aBig(v);
+      if (op === "~" && esInt(v)) return -aBig(v) - 1n;
+    }
+    throw new ErrorPy("TypeError", "bad operand type for unary " + op + ": '" + nombreTipo(v) + "'");
+  }
+  function compararNum(a, b) {            // -1, 0, 1 o NaN (comparación exacta, como Python)
+    a = aBig(a); b = aBig(b);
+    if (a < b) return -1;
+    if (a > b) return 1;
+    if (a == b) return 0;                 // eslint-disable-line eqeqeq
+    return NaN;
+  }
+  function compararTexto(a, b) {
+    var x = Array.from(a), y = Array.from(b), n = Math.min(x.length, y.length);
+    for (var i = 0; i < n; i++) {
+      var p = x[i].codePointAt(0), q = y[i].codePointAt(0);
+      if (p !== q) return p < q ? -1 : 1;
+    }
+    return x.length === y.length ? 0 : (x.length < y.length ? -1 : 1);
+  }
+  function igual(a, b) {
+    if (esNum(a) && esNum(b)) return compararNum(a, b) === 0;
+    if (typeof a === "string" && typeof b === "string") return a === b;
+    if (Array.isArray(a) && Array.isArray(b)) {
+      if (a.length !== b.length) return false;
+      for (var i = 0; i < a.length; i++) if (!igual(a[i], b[i])) return false;
+      return true;
+    }
+    if (a === null || b === null) return a === b;
+    if (a instanceof RangoPy && b instanceof RangoPy) {
+      var la = a.largo(), lb = b.largo();
+      if (la !== lb) return false;
+      if (la === 0n) return true;
+      if (a.inicio !== b.inicio) return false;
+      return la === 1n || a.paso === b.paso;
+    }
+    return a === b;
+  }
+  var SIMBOLO_CMP = { "<": "<", "<=": "<=", ">": ">", ">=": ">=" };
+  function orden(op, a, b) {
+    var c;
+    if (esNum(a) && esNum(b)) c = compararNum(a, b);
+    else if (typeof a === "string" && typeof b === "string") c = compararTexto(a, b);
+    else if (Array.isArray(a) && Array.isArray(b)) {
+      var n = Math.min(a.length, b.length);
+      for (var i = 0; i < n; i++) if (!igual(a[i], b[i])) return orden(op, a[i], b[i]);
+      c = a.length === b.length ? 0 : (a.length < b.length ? -1 : 1);
+    } else {
+      throw new ErrorPy("TypeError", "'" + SIMBOLO_CMP[op] + "' not supported between instances of '" + nombreTipo(a) + "' and '" + nombreTipo(b) + "'");
+    }
+    if (Number.isNaN(c)) return false;
+    return op === "<" ? c < 0 : op === "<=" ? c <= 0 : op === ">" ? c > 0 : c >= 0;
+  }
+  function contiene(contenedor, x) {
+    if (typeof contenedor === "string") {
+      if (typeof x !== "string") throw new ErrorPy("TypeError", "'in <string>' requires string as left operand, not " + nombreTipo(x));
+      return contenedor.indexOf(x) >= 0;
+    }
+    if (Array.isArray(contenedor)) return contenedor.some(function (e) { return igual(e, x); });
+    if (contenedor instanceof RangoPy) {
+      if (esInt(x)) {
+        var k = aBig(x), r = contenedor;
+        if (r.largo() === 0n) return false;
+        if (r.paso > 0n ? (k < r.inicio || k >= r.fin) : (k > r.inicio || k <= r.fin)) return false;
+        return (k - r.inicio) % r.paso === 0n;
+      }
+      var it = iterar(contenedor), p;
+      while (!(p = it.next()).done) if (igual(p.value, x)) return true;
+      return false;
+    }
+    throw new ErrorPy("TypeError", "argument of type '" + nombreTipo(contenedor) + "' is not iterable");
+  }
+  function comparar(op, a, b) {
+    switch (op) {
+      case "==": return igual(a, b);
+      case "!=": return !igual(a, b);
+      case "in": return contiene(b, a);
+      case "not in": return !contiene(b, a);
+      case "is": case "is not":
+        var mismo = (a === null || b === null || typeof a === "boolean" || typeof b === "boolean") ? a === b : null;
+        if (mismo === null) throw new Aviso("Esta página solo evalúa is con None, True o False.");
+        return op === "is" ? mismo : !mismo;
+    }
+    return orden(op, a, b);
+  }
+  function* iterar(v) {
+    if (typeof v === "string") { for (var c of v) yield c; return; }
+    if (Array.isArray(v)) { for (var i = 0; i < v.length; i++) yield v[i]; return; }
+    if (v instanceof RangoPy) {
+      var x = v.inicio;
+      if (v.paso > 0n) { for (; x < v.fin; x += v.paso) yield x; }
+      else { for (; x > v.fin; x += v.paso) yield x; }
+      return;
+    }
+    throw new ErrorPy("TypeError", "'" + nombreTipo(v) + "' object is not iterable");
+  }
+
+  // ---------- Decimales exactos (para format y round) ----------
+  // |x| = 0.dig × 10^punto, con todos los dígitos exactos del double (sin ceros finales)
+  function decimalExacto(x) {
+    if (x === 0) return { dig: "0", punto: 1 };
+    var dv = new DataView(new ArrayBuffer(8));
+    dv.setFloat64(0, Math.abs(x));
+    var alto = dv.getUint32(0), bajo = dv.getUint32(4);
+    var exp = (alto >>> 20) & 0x7ff;
+    var mant = (BigInt(alto & 0xfffff) << 32n) | BigInt(bajo);
+    if (exp === 0) exp = 1; else mant |= 1n << 52n;
+    var e2 = exp - 1075, dig, punto;
+    if (e2 >= 0) { dig = (mant << BigInt(e2)).toString(); punto = dig.length; }
+    else { dig = (mant * 5n ** BigInt(-e2)).toString(); punto = dig.length + e2; }
+    return { dig: dig.replace(/0+$/, ""), punto: punto };
+  }
+  function sumarUno(s) {
+    var a = s.split(""), i = a.length - 1;
+    while (i >= 0) {
+      if (a[i] === "9") { a[i] = "0"; i--; } else { a[i] = String(+a[i] + 1); return a.join(""); }
+    }
+    return "1" + a.join("");
+  }
+  // Deja n dígitos (n puede ser 0 o negativo), redondeando a la mitad par sobre el valor exacto.
+  function redondearDigitos(d, n) {
+    var dig = d.dig, punto = d.punto;
+    if (n >= dig.length) return { dig: dig, punto: punto };
+    if (n < 0) return { dig: "", punto: punto };
+    var conservar = dig.slice(0, n), resto = dig.slice(n), subir;
+    if (resto[0] > "5") subir = true;
+    else if (resto[0] < "5") subir = false;
+    else if (resto.length > 1) subir = true;
+    else subir = conservar.length > 0 && (+conservar[conservar.length - 1]) % 2 === 1;
+    if (subir) {
+      var inc = sumarUno(conservar);
+      punto += inc.length - conservar.length;
+      conservar = inc;
+    }
+    return { dig: conservar.replace(/0+$/, ""), punto: punto };
+  }
+  // _Py_dg_dtoa: modo 0 (repr), 2 (n cifras significativas) o 3 (n dígitos después del punto)
+  function dtoa(x, modo, n) {
+    if (x === 0) return { dig: "0", punto: 1 };
+    if (modo === 0) {
+      var p = Math.abs(x).toExponential().split("e");
+      return { dig: p[0].replace(".", ""), punto: parseInt(p[1], 10) + 1 };
+    }
+    var ex = decimalExacto(x);
+    var r = redondearDigitos(ex, modo === 2 ? n : ex.punto + n);
+    if (r.dig === "" && modo === 3) r.punto = -n;
+    return r;
+  }
+  // PyOS_double_to_string (format_float_short): codigo es e, E, f, F, g, G o r
+  function dobleATexto(x, codigo, precision, alterno, agregarPunto0, sinCeroNeg) {
+    var mayus = codigo === "E" || codigo === "F" || codigo === "G", c = codigo.toLowerCase(), modo;
+    if (c === "e") { modo = 2; precision++; }
+    else if (c === "f") modo = 3;
+    else if (c === "g") { modo = 2; if (precision === 0) precision = 1; }
+    else { modo = 0; precision = 0; }
+    if (Number.isNaN(x)) return mayus ? "NAN" : "nan";
+    if (!isFinite(x)) return (x < 0 ? "-" : "") + (mayus ? "INF" : "inf");
+    var neg = x < 0 || Object.is(x, -0);
+    var d = dtoa(x, modo, precision), digitos = d.dig, decpt = d.punto, n = digitos.length;
+    if (sinCeroNeg && neg && (n === 0 || digitos === "0")) neg = false;
+    var usarExp = false, exp = 0, vFin = n;
+    if (c === "e") { usarExp = true; vFin = precision; }
+    else if (c === "f") vFin = decpt + precision;
+    else if (c === "g") {
+      if (decpt <= -4 || decpt > (agregarPunto0 ? precision - 1 : precision)) usarExp = true;
+      if (alterno) vFin = precision;
+    } else if (decpt <= -4 || decpt > 16) usarExp = true;
+    if (usarExp) { exp = decpt - 1; decpt = 1; }
+    var vIni = decpt <= 0 ? decpt - 1 : 0;
+    if (!usarExp && agregarPunto0) vFin = vFin > decpt ? vFin : decpt + 1;
+    else vFin = vFin > decpt ? vFin : decpt;
+    var s = neg ? "-" : "";
+    if (decpt <= 0) s += "0".repeat(decpt - vIni) + "." + "0".repeat(-decpt);
+    else s += "0".repeat(-vIni);
+    if (decpt > 0 && decpt <= n) s += digitos.slice(0, decpt) + "." + digitos.slice(decpt);
+    else s += digitos;
+    if (n < decpt) s += "0".repeat(decpt - n) + "." + "0".repeat(vFin - decpt);
+    else s += "0".repeat(vFin - n);
+    if (s[s.length - 1] === "." && !alterno) s = s.slice(0, -1);
+    if (usarExp) {
+      var ae = Math.abs(exp);
+      s += (mayus ? "E" : "e") + (exp < 0 ? "-" : "+") + (ae < 10 ? "0" : "") + ae;
+    }
+    return s;
+  }
+
+  // ---------- format(valor, spec): el minilenguaje de formato de Python 3.12 ----------
+  var LIMITE_ANCHO = 100;
+  var MAX_SSIZE = 9223372036854775807n;
+  function citarCodigo(c) {
+    var cp = c.codePointAt(0);
+    return (cp > 32 && cp < 128) ? "'" + c + "'" : "'\\x" + cp.toString(16) + "'";
+  }
+  function leerEnteroEspec(c, i) {
+    var acc = 0n, cuantos = 0;
+    while (i < c.length) {
+      var d = valorDecimal(c[i].codePointAt(0));
+      if (d < 0) break;
+      if (acc > (MAX_SSIZE - BigInt(d)) / 10n) throw new ErrorPy("ValueError", "Too many decimal digits in format string");
+      acc = acc * 10n + BigInt(d);
+      i++; cuantos++;
+    }
+    return { valor: Number(acc), cuantos: cuantos, i: i };
+  }
+  function esAlineacion(ch) { return ch === "<" || ch === ">" || ch === "=" || ch === "^"; }
+  // parse_internal_render_format_spec
+  function analizarEspec(spec, tipoNombre, tipoDefecto, alinDefecto) {
+    var c = Array.from(spec), n = c.length, i = 0;
+    var f = { relleno: " ", alin: alinDefecto, alterno: false, sinCeroNeg: false, signo: "", ancho: -1,
+              miles: "", precision: -1, tipo: tipoDefecto };
+    var alinDada = false, rellenoDado = false;
+    if (n - i >= 2 && esAlineacion(c[i + 1])) { f.alin = c[i + 1]; f.relleno = c[i]; rellenoDado = alinDada = true; i += 2; }
+    else if (n - i >= 1 && esAlineacion(c[i])) { f.alin = c[i]; alinDada = true; i++; }
+    if (n - i >= 1 && (c[i] === "+" || c[i] === "-" || c[i] === " ")) { f.signo = c[i]; i++; }
+    if (n - i >= 1 && c[i] === "z") { f.sinCeroNeg = true; i++; }
+    if (n - i >= 1 && c[i] === "#") { f.alterno = true; i++; }
+    if (!rellenoDado && n - i >= 1 && c[i] === "0") {
+      f.relleno = "0";
+      if (!alinDada && alinDefecto === ">") f.alin = "=";
+      i++;
+    }
+    var r = leerEnteroEspec(c, i);
+    i = r.i;
+    if (r.cuantos > 0) f.ancho = r.valor;
+    if (n - i >= 1 && c[i] === ",") { f.miles = ","; i++; }
+    if (n - i >= 1 && c[i] === "_") {
+      if (f.miles) throw new ErrorPy("ValueError", "Cannot specify both ',' and '_'.");
+      f.miles = "_"; i++;
+    }
+    if (n - i >= 1 && c[i] === "," && f.miles === "_") throw new ErrorPy("ValueError", "Cannot specify both ',' and '_'.");
+    if (n - i >= 1 && c[i] === ".") {
+      i++;
+      r = leerEnteroEspec(c, i);
+      i = r.i;
+      if (r.cuantos === 0) throw new ErrorPy("ValueError", "Format specifier missing precision");
+      f.precision = r.valor;
+    }
+    if (n - i > 1) throw new ErrorPy("ValueError", "Invalid format specifier '" + spec + "' for object of type '" + tipoNombre + "'");
+    if (n - i === 1) f.tipo = c[i];
+    if (f.miles) {
+      switch (f.tipo) {
+        case "d": case "e": case "f": case "g": case "E": case "G": case "%": case "F": case "": break;
+        case "b": case "o": case "x": case "X":
+          if (f.miles === "_") { f.miles = "_4"; break; }
+          throw new ErrorPy("ValueError", "Cannot specify '" + f.miles + "' with " + citarCodigo(f.tipo) + ".");
+        default:
+          throw new ErrorPy("ValueError", "Cannot specify '" + f.miles + "' with " + citarCodigo(f.tipo) + ".");
+      }
+    }
+    return f;
+  }
+  function codigoDesconocido(c, nombre) {
+    var cp = c.codePointAt(0);
+    var cita = (cp > 32 && cp < 128) ? "'" + c + "'" : "'\\x" + cp.toString(16) + "'";
+    return new ErrorPy("ValueError", "Unknown format code " + cita + " for object of type '" + nombre + "'");
+  }
+  // _PyUnicode_InsertThousandsGrouping: agrupa de derecha a izquierda y rellena con ceros hasta minAncho
+  function agruparDigitos(dig, minAncho, miles) {
+    minAncho = Math.max(0, minAncho);
+    var restantes = dig.length;
+    if (!miles) return "0".repeat(Math.max(0, Math.max(restantes, minAncho, 1) - restantes)) + dig;
+    var tam = miles === "_4" ? 4 : 3, sep = miles === "_4" ? "_" : miles, pos = dig.length, partes = [], usarSep = false;
+    for (;;) {
+      var len = Math.min(tam, Math.max(restantes, minAncho, 1));
+      var ceros = Math.max(0, len - restantes), nchars = Math.max(0, Math.min(restantes, len));
+      partes.unshift("0".repeat(ceros) + dig.slice(pos - nchars, pos) + (usarSep ? sep : ""));
+      pos -= nchars; usarSep = true; restantes -= nchars; minAncho -= len;
+      if (restantes <= 0 && minAncho <= 0) break;
+      minAncho -= sep.length;
+    }
+    return partes.join("");
+  }
+  function revisarTamano(f) {
+    if (f.ancho > LIMITE_ANCHO || f.precision > LIMITE_ANCHO) {
+      throw new Aviso("Python sí acepta ese formato, pero esta página solo muestra anchos y precisiones de hasta " + LIMITE_ANCHO + ".");
+    }
+  }
+  // calc_number_widths + fill_number: [relleno][signo][prefijo][relleno '='][dígitos][.][resto][relleno]
+  function armarNumero(f, signoChar, prefijo, digitos, decimal, resto) {
+    var signo = "";
+    if (f.signo === "+") signo = signoChar === "-" ? "-" : "+";
+    else if (f.signo === " ") signo = signoChar === "-" ? "-" : " ";
+    else if (signoChar === "-") signo = "-";
+    var noDig = signo.length + prefijo.length + (decimal ? 1 : 0) + Array.from(resto).length;
+    var minAncho = (f.relleno === "0" && f.alin === "=") ? f.ancho - noDig : 0;
+    var agrupados = digitos.length === 0 ? "" : agruparDigitos(digitos, minAncho, f.miles);
+    var relleno = f.ancho - (noDig + agrupados.length), izq = 0, sp = 0, der = 0;
+    if (relleno > 0) {
+      if (f.alin === "<") der = relleno;
+      else if (f.alin === "^") { izq = Math.floor(relleno / 2); der = relleno - izq; }
+      else if (f.alin === "=") sp = relleno;
+      else izq = relleno;
+    }
+    var partes = [];
+    function agrega(clase, t) { if (t) partes.push([clase, t]); }
+    agrega("relleno", f.relleno.repeat(izq));
+    agrega("signo", signo);
+    agrega("prefijo", prefijo);
+    agrega("relleno", f.relleno.repeat(sp));
+    var tramo = "";
+    for (var k = 0; k < agrupados.length; k++) {
+      var ch = agrupados[k];
+      if (ch === "," || ch === "_") { agrega("digitos", tramo); tramo = ""; agrega("separador", ch); }
+      else tramo += ch;
+    }
+    agrega("digitos", tramo);
+    agrega("punto", decimal ? "." : "");
+    agrega("resto", resto);
+    agrega("relleno", f.relleno.repeat(der));
+    return { texto: partes.map(function (p) { return p[1]; }).join(""), partes: partes };
+  }
+  function formatoFlotante(x, f) {
+    if (f.precision > 2147483647) throw new ErrorPy("ValueError", "precision too big");
+    var tipo = f.tipo, precision = f.precision, porDefecto = 6, punto0 = false, pct = false;
+    if (tipo === "") { punto0 = true; tipo = "r"; porDefecto = 0; }
+    if (tipo === "%") { tipo = "f"; x = x * 100; pct = true; }
+    if (precision < 0) precision = porDefecto; else if (tipo === "r") tipo = "g";
+    revisarTamano(f);
+    var buf = dobleATexto(x, tipo, precision, f.alterno, punto0, f.sinCeroNeg) + (pct ? "%" : "");
+    var signoChar = "";
+    if (buf[0] === "-") { signoChar = "-"; buf = buf.slice(1); }
+    var digs = /^[0-9]*/.exec(buf)[0], resto = buf.slice(digs.length), decimal = false;
+    if (resto[0] === ".") { decimal = true; resto = resto.slice(1); }
+    return armarNumero(f, signoChar, "", digs, decimal, resto);
+  }
+  function formatoEntero(v, f) {
+    if (f.precision !== -1) throw new ErrorPy("ValueError", "Precision not allowed in integer format specifier");
+    if (f.sinCeroNeg) throw new ErrorPy("ValueError", "Negative zero coercion (z) not allowed in integer format specifier");
+    if (f.tipo === "c") {
+      if (f.signo) throw new ErrorPy("ValueError", "Sign not allowed with integer format specifier 'c'");
+      if (f.alterno) throw new ErrorPy("ValueError", "Alternate form (#) not allowed with integer format specifier 'c'");
+      if (v > 2147483647n || v < -2147483648n) throw new ErrorPy("OverflowError", "Python int too large to convert to C long");
+      if (v < 0n || v > 0x10ffffn) throw new ErrorPy("OverflowError", "%c arg not in range(0x110000)");
+      var cp = Number(v);
+      if (cp >= 0xd800 && cp <= 0xdfff) throw new Aviso("Ese número es un sustituto (surrogate) de UTF-16: la consola no podría imprimirlo.");
+      revisarTamano(f);
+      return armarNumero(f, "", "", "", false, String.fromCodePoint(cp));
+    }
+    if (f.tipo === "n") throw new Aviso("El tipo n depende del idioma configurado en la computadora (locale); esta página no lo simula.");
+    var base = f.tipo === "b" ? 2 : f.tipo === "o" ? 8 : (f.tipo === "x" || f.tipo === "X") ? 16 : 10;
+    var neg = v < 0n, abs = neg ? -v : v;
+    var dig = base === 10 ? textoEntero(abs) : abs.toString(base);
+    if (f.tipo === "X") dig = dig.toUpperCase();
+    var prefijo = (f.alterno && base !== 10) ? "0" + (f.tipo === "X" ? "X" : f.tipo) : "";
+    revisarTamano(f);
+    return armarNumero(f, neg ? "-" : "", prefijo, dig, false, "");
+  }
+  function formatoTexto(s, f) {
+    if (f.signo) throw new ErrorPy("ValueError", f.signo === " " ? "Space not allowed in string format specifier" : "Sign not allowed in string format specifier");
+    if (f.sinCeroNeg) throw new ErrorPy("ValueError", "Negative zero coercion (z) not allowed in string format specifier");
+    if (f.alterno) throw new ErrorPy("ValueError", "Alternate form (#) not allowed in string format specifier");
+    if (f.alin === "=") throw new ErrorPy("ValueError", "'=' alignment not allowed in string format specifier");
+    if (f.ancho > LIMITE_ANCHO) revisarTamano(f);
+    var cs = Array.from(s), len = cs.length;
+    if (f.precision >= 0 && len >= f.precision) len = f.precision;
+    var total = f.ancho > len ? f.ancho : len;
+    var izq = f.alin === ">" ? total - len : f.alin === "^" ? Math.floor((total - len) / 2) : 0;
+    var der = total - len - izq, partes = [];
+    if (izq) partes.push(["relleno", f.relleno.repeat(izq)]);
+    if (len) partes.push(["texto", cs.slice(0, len).join("")]);
+    if (der) partes.push(["relleno", f.relleno.repeat(der)]);
+    return { texto: partes.map(function (p) { return p[1]; }).join(""), partes: partes };
+  }
+  // format(v, spec) con las partes del resultado (para colorearlas)
+  function pyFormatPartes(v, spec) {
+    var t = nombreTipo(v), f;
+    if (spec === "") { var s = pyStrDe(v); return { texto: s, partes: s ? [["texto", s]] : [] }; }
+    if (t === "str") {
+      f = analizarEspec(spec, t, "s", "<");
+      if (f.tipo !== "s") throw codigoDesconocido(f.tipo, t);
+      return formatoTexto(v, f);
+    }
+    if (t === "int" || t === "bool") {
+      f = analizarEspec(spec, t, "d", ">");
+      if ("bcdoxXn".indexOf(f.tipo) >= 0 && f.tipo.length === 1) return formatoEntero(aBig(v), f);
+      if ("eEfFgG%".indexOf(f.tipo) >= 0 && f.tipo.length === 1) return formatoFlotante(aDoble(v), f);
+      throw codigoDesconocido(f.tipo, t);
+    }
+    if (t === "float") {
+      f = analizarEspec(spec, t, "", ">");
+      if (f.tipo === "n") throw new Aviso("El tipo n depende del idioma configurado en la computadora (locale); esta página no lo simula.");
+      if (f.tipo === "" || ("eEfFgG%".indexOf(f.tipo) >= 0 && f.tipo.length === 1)) return formatoFlotante(v, f);
+      throw codigoDesconocido(f.tipo, t);
+    }
+    throw new ErrorPy("TypeError", "unsupported format string passed to " + t + ".__format__");
+  }
+  function pyFormat(v, spec) { return pyFormatPartes(v, spec).texto; }
+
+  // ---------- round() ----------
+  function redondeoC(x) { var r = Math.trunc(x); if (Math.abs(x - r) >= 0.5) r += Math.sign(x); return r; }
+  function pyRound(x, n) {
+    var nd = (n === undefined || n === null) ? null : n;
+    if (nd !== null && !esInt(nd)) {
+      throw new ErrorPy("TypeError", "'" + nombreTipo(nd) + "' object cannot be interpreted as an integer");
+    }
+    if (esInt(x)) {
+      var v = aBig(x);
+      if (nd === null || aBig(nd) >= 0n) return v;
+      var digitosV = (v < 0n ? -v : v).toString().length;
+      if (-aBig(nd) > BigInt(digitosV)) return 0n;
+      var b = 10n ** (-aBig(nd));
+      var q = divPiso(v, b), r = v - q * b, dos = 2n * r;
+      if (dos > b || (dos === b && (q & 1n) === 1n)) { q += 1n; r -= b; }
+      return v - r;
+    }
+    if (typeof x === "number") {
+      if (nd === null) {
+        if (Number.isNaN(x)) throw new ErrorPy("ValueError", "cannot convert float NaN to integer");
+        if (!isFinite(x)) throw new ErrorPy("OverflowError", "cannot convert float infinity to integer");
+        var red = redondeoC(x);
+        if (Math.abs(x - red) === 0.5) red = 2.0 * redondeoC(x / 2.0);
+        return BigInt(red);
+      }
+      var k = aBig(nd);
+      if (!isFinite(x)) return x;
+      if (k > 323n) return x;
+      if (k < -308n) return 0.0 * x;
+      var d = dtoa(x, 3, Number(k));
+      var texto = (x < 0 || Object.is(x, -0) ? "-" : "") + "0" + d.dig + "e" + (d.punto - d.dig.length);
+      var res = Number(texto);
+      if (!isFinite(res)) throw new ErrorPy("OverflowError", "rounded value too large to represent");
+      return res;
+    }
+    throw new ErrorPy("TypeError", "type " + nombreTipo(x) + " doesn't define __round__ method");
+  }
+
+  // ---------- Funciones integradas ----------
+  function largo(v) {
+    if (typeof v === "string") return BigInt(Array.from(v).length);
+    if (Array.isArray(v)) return BigInt(v.length);
+    if (v instanceof RangoPy) return v.largo();
+    throw new ErrorPy("TypeError", "object of type '" + nombreTipo(v) + "' has no len()");
+  }
+  function exigirArgs(nombre, args, kw, min, max) {
+    if (kw && Object.keys(kw).length) throw new Aviso("Esta página no simula argumentos con nombre en " + nombre + "().");
+    if (args.length < min || args.length > max) throw new Aviso("Revisa cuántos datos le pasas a " + nombre + "(): esta página no simula esa llamada.");
+  }
+  function enteroArg(v) {
+    if (esInt(v)) return aBig(v);
+    throw new ErrorPy("TypeError", "'" + nombreTipo(v) + "' object cannot be interpreted as an integer");
+  }
+  var T_INT = new TipoPy("int"), T_FLOAT = new TipoPy("float"), T_STR = new TipoPy("str"), T_BOOL = new TipoPy("bool"),
+      T_NONE = new TipoPy("NoneType"), T_LIST = new TipoPy("list"), T_RANGE = new TipoPy("range"), T_TYPE = new TipoPy("type"),
+      T_FUNC = new TipoPy("builtin_function_or_method");
+  function tipoDe(v) {
+    return { "int": T_INT, "float": T_FLOAT, "str": T_STR, "bool": T_BOOL, "NoneType": T_NONE, "list": T_LIST,
+             "range": T_RANGE, "type": T_TYPE, "builtin_function_or_method": T_FUNC }[nombreTipo(v)];
+  }
+  T_INT.impl = function (args, kw) { exigirArgs("int", args, kw, 0, 1); return args.length ? intDe(args[0]) : 0n; };
+  T_FLOAT.impl = function (args, kw) { exigirArgs("float", args, kw, 0, 1); return args.length ? floatDe(args[0]) : 0.0; };
+  T_STR.impl = function (args, kw) { exigirArgs("str", args, kw, 0, 1); return args.length ? pyStrDe(args[0]) : ""; };
+  T_BOOL.impl = function (args, kw) { exigirArgs("bool", args, kw, 0, 1); return args.length ? verdad(args[0]) : false; };
+  T_TYPE.impl = function (args, kw) { exigirArgs("type", args, kw, 1, 1); return tipoDe(args[0]); };
+  T_RANGE.impl = function (args, kw) {
+    exigirArgs("range", args, kw, 1, 3);
+    var a = args.map(enteroArg);
+    if (a.length === 1) return new RangoPy(0n, a[0], 1n);
+    if (a.length === 3 && a[2] === 0n) throw new ErrorPy("ValueError", "range() arg 3 must not be zero");
+    return new RangoPy(a[0], a[1], a.length === 3 ? a[2] : 1n);
+  };
+  T_LIST.impl = function (args, kw) {
+    exigirArgs("list", args, kw, 0, 1);
+    if (!args.length) return [];
+    var r = [], it = iterar(args[0]), p;
+    while (!(p = it.next()).done) r.push(p.value);
+    return r;
+  };
+  var INTEGRADAS = {
+    "int": T_INT, "float": T_FLOAT, "str": T_STR, "bool": T_BOOL, "type": T_TYPE, "range": T_RANGE, "list": T_LIST,
+    "len": new FuncionPy("len", function (args, kw) { exigirArgs("len", args, kw, 1, 1); return largo(args[0]); }),
+    "abs": new FuncionPy("abs", function (args, kw) {
+      exigirArgs("abs", args, kw, 1, 1);
+      var v = args[0];
+      if (typeof v === "number") return Math.abs(v);
+      if (esInt(v)) { var b = aBig(v); return b < 0n ? -b : b; }
+      throw new ErrorPy("TypeError", "bad operand type for abs(): '" + nombreTipo(v) + "'");
+    }),
+    "round": new FuncionPy("round", function (args, kw) { exigirArgs("round", args, kw, 1, 2); return pyRound(args[0], args[1]); }),
+    "print": new FuncionPy("print", null),
+    "input": new FuncionPy("input", null)
+  };
+
+  // ---------- NameError como lo imprime Python 3.12 (sugerencias de Python/suggestions.c) ----------
+  // Los nombres de builtins en su orden (python.exe 3.12 en Windows, con site)
+  var NOMBRES_BUILTINS = ("__name__ __doc__ __package__ __loader__ __spec__ __build_class__ __import__ abs all any ascii bin " +
+    "breakpoint callable chr compile delattr dir divmod eval exec format getattr globals hasattr hash hex id input isinstance " +
+    "issubclass iter aiter len locals max min next anext oct ord pow print repr round setattr sorted sum vars None Ellipsis " +
+    "NotImplemented False True bool memoryview bytearray bytes classmethod complex dict enumerate filter float frozenset " +
+    "property int list map object range reversed set slice staticmethod str super tuple type zip __debug__ BaseException " +
+    "BaseExceptionGroup Exception GeneratorExit KeyboardInterrupt SystemExit ArithmeticError AssertionError AttributeError " +
+    "BufferError EOFError ImportError LookupError MemoryError NameError OSError ReferenceError RuntimeError " +
+    "StopAsyncIteration StopIteration SyntaxError SystemError TypeError ValueError Warning FloatingPointError OverflowError " +
+    "ZeroDivisionError BytesWarning DeprecationWarning EncodingWarning FutureWarning ImportWarning PendingDeprecationWarning " +
+    "ResourceWarning RuntimeWarning SyntaxWarning UnicodeWarning UserWarning BlockingIOError ChildProcessError ConnectionError " +
+    "FileExistsError FileNotFoundError InterruptedError IsADirectoryError NotADirectoryError PermissionError " +
+    "ProcessLookupError TimeoutError IndentationError IndexError KeyError ModuleNotFoundError NotImplementedError " +
+    "RecursionError UnboundLocalError UnicodeError BrokenPipeError ConnectionAbortedError ConnectionRefusedError " +
+    "ConnectionResetError TabError UnicodeDecodeError UnicodeEncodeError UnicodeTranslateError ExceptionGroup " +
+    "EnvironmentError IOError WindowsError open quit exit copyright credits license help").split(" ");
+  // sys.stdlib_module_names de Python 3.12
+  var MODULOS_ESTANDAR = new Set(("__future__ _abc _aix_support _ast _asyncio _bisect _blake2 _bz2 _codecs _codecs_cn " +
+    "_codecs_hk _codecs_iso2022 _codecs_jp _codecs_kr _codecs_tw _collections _collections_abc _compat_pickle _compression " +
+    "_contextvars _crypt _csv _ctypes _curses _curses_panel _datetime _dbm _decimal _elementtree _frozen_importlib " +
+    "_frozen_importlib_external _functools _gdbm _hashlib _heapq _imp _io _json _locale _lsprof _lzma _markupbase _md5 _msi " +
+    "_multibytecodec _multiprocessing _opcode _operator _osx_support _overlapped _pickle _posixshmem _posixsubprocess " +
+    "_py_abc _pydatetime _pydecimal _pyio _pylong _queue _random _scproxy _sha1 _sha2 _sha3 _signal _sitebuiltins _socket " +
+    "_sqlite3 _sre _ssl _stat _statistics _string _strptime _struct _symtable _thread _threading_local _tkinter _tokenize " +
+    "_tracemalloc _typing _uuid _warnings _weakref _weakrefset _winapi _wmi _zoneinfo abc aifc antigravity argparse array " +
+    "ast asyncio atexit audioop base64 bdb binascii bisect builtins bz2 cProfile calendar cgi cgitb chunk cmath cmd code " +
+    "codecs codeop collections colorsys compileall concurrent configparser contextlib contextvars copy copyreg crypt csv " +
+    "ctypes curses dataclasses datetime dbm decimal difflib dis doctest email encodings ensurepip enum errno faulthandler " +
+    "fcntl filecmp fileinput fnmatch fractions ftplib functools gc genericpath getopt getpass gettext glob graphlib grp " +
+    "gzip hashlib heapq hmac html http idlelib imaplib imghdr importlib inspect io ipaddress itertools json keyword " +
+    "lib2to3 linecache locale logging lzma mailbox mailcap marshal math mimetypes mmap modulefinder msilib msvcrt " +
+    "multiprocessing netrc nis nntplib nt ntpath nturl2path numbers opcode operator optparse os ossaudiodev pathlib pdb " +
+    "pickle pickletools pipes pkgutil platform plistlib poplib posix posixpath pprint profile pstats pty pwd py_compile " +
+    "pyclbr pydoc pydoc_data pyexpat queue quopri random re readline reprlib resource rlcompleter runpy sched secrets " +
+    "select selectors shelve shlex shutil signal site smtplib sndhdr socket socketserver spwd sqlite3 sre_compile " +
+    "sre_constants sre_parse ssl stat statistics string stringprep struct subprocess sunau symtable sys sysconfig syslog " +
+    "tabnanny tarfile telnetlib tempfile termios textwrap this threading time timeit tkinter token tokenize tomllib trace " +
+    "traceback tracemalloc tty turtle turtledemo types typing unicodedata unittest urllib uu uuid venv warnings wave " +
+    "weakref webbrowser winreg winsound wsgiref xdrlib xml xmlrpc zipapp zipfile zipimport zlib zoneinfo").split(" "));
+  // Globales iniciales de __main__: en la consola interactiva y al correr un archivo
+  var GLOBALES_CONSOLA = ["__name__", "__doc__", "__package__", "__loader__", "__spec__", "__annotations__", "__builtins__"];
+  var GLOBALES_ARCHIVO = GLOBALES_CONSOLA.concat(["__file__", "__cached__"]);
+  function bytesUtf8(s) {               // los bytes UTF-8 de un texto (como nombre.encode('utf-8'))
+    var r = [];
+    for (var c of s) {
+      var cp = c.codePointAt(0);
+      if (cp < 0x80) r.push(cp);
+      else if (cp < 0x800) r.push(0xc0 | (cp >> 6), 0x80 | (cp & 63));
+      else if (cp < 0x10000) r.push(0xe0 | (cp >> 12), 0x80 | ((cp >> 6) & 63), 0x80 | (cp & 63));
+      else r.push(0xf0 | (cp >> 18), 0x80 | ((cp >> 12) & 63), 0x80 | ((cp >> 6) & 63), 0x80 | (cp & 63));
+    }
+    return r;
+  }
+  function costoSustitucion(a, b) {
+    if ((a & 31) !== (b & 31)) return 2;
+    if (a === b) return 0;
+    if (a >= 65 && a <= 90) a += 32;
+    if (b >= 65 && b <= 90) b += 32;
+    return a === b ? 1 : 2;
+  }
+  function distanciaNombres(a, b, maximo) {
+    var i = 0, j;
+    while (i < a.length && i < b.length && a[i] === b[i]) i++;
+    a = a.slice(i); b = b.slice(i);
+    while (a.length && b.length && a[a.length - 1] === b[b.length - 1]) { a = a.slice(0, -1); b = b.slice(0, -1); }
+    if (!a.length || !b.length) return (a.length + b.length) * 2;
+    if (a.length > 40 || b.length > 40) return maximo + 1;
+    if (b.length < a.length) { var t = a; a = b; b = t; }
+    if ((b.length - a.length) * 2 > maximo) return maximo + 1;
+    var fila = [];
+    for (j = 0; j < a.length; j++) fila.push((j + 1) * 2);
+    var resultado = 0;
+    for (var jb = 0; jb < b.length; jb++) {
+      var distancia = jb * 2, minimo = Infinity;
+      resultado = distancia;
+      for (var k = 0; k < a.length; k++) {
+        var sustituir = distancia + costoSustitucion(b[jb], a[k]);
+        distancia = fila[k];
+        resultado = Math.min(Math.min(resultado, distancia) + 2, sustituir);
+        fila[k] = resultado;
+        if (resultado < minimo) minimo = resultado;
+      }
+      if (minimo > maximo) return maximo + 1;
+    }
+    return resultado;
+  }
+  function sugerirNombre(candidatos, nombre) {
+    if (candidatos.length >= 750) return null;
+    var nb = bytesUtf8(nombre), mejor = null, mejorD = Infinity;
+    for (var i = 0; i < candidatos.length; i++) {
+      var c = candidatos[i];
+      if (c === nombre) continue;
+      var cb = bytesUtf8(c);
+      var maximo = Math.min(Math.floor((nb.length + cb.length + 3) * 2 / 6), mejorD - 1);
+      var d = distanciaNombres(nb, cb, maximo);
+      if (d > maximo) continue;
+      if (mejor === null || d < mejorD) { mejor = c; mejorD = d; }
+    }
+    return mejor;
+  }
+  // El mensaje del NameError, con "Did you mean" y "Did you forget to import" como Python 3.12
+  // extra: nombres que se agregan a builtins (la consola agrega _ después de mostrar un valor)
+  function mensajeNombre(nombre, globales, extra) {
+    var s = sugerirNombre(globales, nombre) || sugerirNombre(extra ? NOMBRES_BUILTINS.concat(extra) : NOMBRES_BUILTINS, nombre);
+    var t = "name '" + nombre + "' is not defined";
+    if (s) t += ". Did you mean: '" + s + "'?";
+    if (MODULOS_ESTANDAR.has(nombre)) t += s ? " Or did you forget to import '" + nombre + "'?" : ". Did you forget to import '" + nombre + "'?";
+    return t;
+  }
+  // Busca un nombre en las funciones integradas que simula la página; si Python lo tiene pero la
+  // página no, es un aviso; si no existe, NameError exacto.
+  function buscarIntegrada(nombre, nodo, globales, extra) {
+    if (Object.prototype.hasOwnProperty.call(INTEGRADAS, nombre)) return INTEGRADAS[nombre];
+    if (NOMBRES_BUILTINS.indexOf(nombre) >= 0) throw new Aviso("Python sí tiene " + nombre + ", pero esta página no lo simula.");
+    throw new ErrorPy("NameError", mensajeNombre(nombre, globales, extra), nodo);
+  }
+
+  // =====================================================================================
+  // Tokens y expresiones
+  // =====================================================================================
+  var PALABRAS_CLAVE = ["False", "None", "True", "and", "as", "assert", "async", "await", "break", "class", "continue",
+    "def", "del", "elif", "else", "except", "finally", "for", "from", "global", "if", "import", "in", "is", "lambda",
+    "nonlocal", "not", "or", "pass", "raise", "return", "try", "while", "with", "yield"];
+  var OPERADORES = ["**=", "//=", ">>=", "<<=", "!=", "%=", "&=", "**", "*=", "+=", "-=", "->", "//", "/=", ":=", "<<",
+    "<=", "==", ">=", ">>", "@=", "^=", "|=", "!", "%", "&", "(", ")", "*", "+", ",", "-", ".", "/", ":", ";", "<",
+    "=", ">", "@", "[", "]", "^", "{", "|", "}", "~"];
+  var RX_ID = /[\p{L}\p{Nl}_][\p{L}\p{Nl}\p{Mn}\p{Mc}\p{Nd}\p{Pc}]*/uy;
+  var RX_NUM = /(?:0[xX](?:_?[0-9a-fA-F])+|0[oO](?:_?[0-7])+|0[bB](?:_?[01])+|(?:[0-9](?:_?[0-9])*\.(?:[0-9](?:_?[0-9])*)?|\.[0-9](?:_?[0-9])*|[0-9](?:_?[0-9])*)(?:[eE][+-]?[0-9](?:_?[0-9])*)?)[jJ]?/y;
+  var COMILLAS_RARAS = [0x201C, 0x201D, 0x2018, 0x2019, 0xAB, 0xBB];
+  var AVISO_SINTAXIS = "Python no puede leer eso (sería un SyntaxError). Revisa la expresión.";
+
+  function Tok(tipo, valor, c0, c1) { this.tipo = tipo; this.valor = valor; this.c0 = c0; this.c1 = c1; }
+
+  function procesarEscapes(t) {
+    if (t.indexOf("\\") < 0) return t;
+    var r = "", i = 0;
+    var simples = { "\\": "\\", "'": "'", '"': '"', "a": String.fromCharCode(7), "b": String.fromCharCode(8),
+                    "f": String.fromCharCode(12), "n": "\n", "r": "\r", "t": "\t", "v": String.fromCharCode(11) };
+    while (i < t.length) {
+      var c = t[i];
+      if (c !== "\\") { r += c; i++; continue; }
+      var e = t[i + 1];
+      if (e === undefined) throw new Aviso(AVISO_SINTAXIS);
+      if (Object.prototype.hasOwnProperty.call(simples, e)) { r += simples[e]; i += 2; continue; }
+      if (/[0-7]/.test(e)) {
+        var oct = /^[0-7]{1,3}/.exec(t.slice(i + 1))[0], vo = parseInt(oct, 8);
+        if (vo > 255) throw new Aviso("Esta página no simula escapes octales mayores que \\377.");
+        r += String.fromCharCode(vo); i += 1 + oct.length; continue;
+      }
+      var largoHex = e === "x" ? 2 : e === "u" ? 4 : e === "U" ? 8 : 0;
+      if (largoHex) {
+        var h = t.substr(i + 2, largoHex);
+        if (h.length !== largoHex || !/^[0-9a-fA-F]+$/.test(h)) throw new Aviso(AVISO_SINTAXIS);
+        var cp = parseInt(h, 16);
+        if (cp > 0x10FFFF) throw new Aviso(AVISO_SINTAXIS);
+        r += String.fromCodePoint(cp); i += 2 + largoHex; continue;
+      }
+      throw new Aviso("Esa diagonal invertida \\" + e + " no es un escape válido de Python (Python daría una advertencia).");
+    }
+    return r;
+  }
+
+  // Lee un texto ('...', "...", f"...") que empieza en i; regresa el token
+  function leerTextoLiteral(linea, i, fin) {
+    var m = /^([rRbBuUfF]{0,2})(['"])/.exec(linea.slice(i, fin));
+    var prefijo = m[1].toLowerCase(), q = m[2], ini = i + m[0].length;
+    if (linea.substr(ini - 1, 3) === q + q + q) throw new Aviso("Esta página no evalúa textos con comillas triples.");
+    if (prefijo && prefijo !== "f" && prefijo !== "u") throw new Aviso("Esta página no simula textos con el prefijo " + m[1] + ".");
+    var j = ini;
+    if (prefijo !== "f") {
+      while (j < fin && linea[j] !== q) j += linea[j] === "\\" ? 2 : 1;
+      if (j >= fin) throw new Aviso("Falta cerrar las comillas del texto.");
+      return new Tok("texto", procesarEscapes(linea.slice(ini, j)), i, j + 1);
+    }
+    // f-string (Python 3.12): adentro de { } puede haber textos con cualquier comilla.
+    // modo 0 = texto, 1 = expresión de un campo, 2 = especificación de formato
+    var modo = 0, prof = 0, k = j;
+    while (k < fin) {
+      var ch = linea[k];
+      if (modo === 0) {
+        if (ch === q) break;
+        if (ch === "\\") { k += 2; continue; }
+        if (ch === "{") { if (linea[k + 1] === "{") { k += 2; continue; } modo = 1; prof = 0; k++; continue; }
+        k++;
+        continue;
+      }
+      if (modo === 1) {
+        if (ch === "'" || ch === '"') {
+          var cierre = linea.indexOf(ch, k + 1);
+          if (cierre < 0 || cierre >= fin) throw new Aviso("Falta cerrar las comillas del texto.");
+          k = cierre + 1; continue;
+        }
+        if (ch === "(" || ch === "[" || ch === "{") prof++;
+        else if (ch === ")" || ch === "]") prof--;
+        else if (ch === "}") { if (prof === 0) modo = 0; else prof--; }
+        else if (ch === ":" && prof === 0) modo = 2;
+        k++;
+        continue;
+      }
+      if (ch === "}") { modo = 0; k++; continue; }
+      if (ch === "{") throw new Aviso("Esta página no simula llaves anidadas dentro de la especificación de formato.");
+      if (ch === q) break;
+      k++;
+    }
+    if (k >= fin) throw new Aviso("Falta cerrar las comillas del f-string.");
+    var tk = new Tok("ftexto", null, i, k + 1);
+    tk.ini = ini; tk.fin = k; tk.linea = linea;
+    return tk;
+  }
+
+  function tokenizar(linea, desde, hasta) {
+    var toks = [], i = desde === undefined ? 0 : desde, fin = hasta === undefined ? linea.length : hasta;
+    while (i < fin) {
+      var c = linea[i], cp = linea.codePointAt(i);
+      if (c === " " || c === "\t" || c === "\f") { i++; continue; }
+      if (c === "#") break;
+      if (COMILLAS_RARAS.indexOf(cp) >= 0) {
+        throw new Aviso("Tu teclado escribió comillas tipográficas (" + String.fromCodePoint(cp) + "). Python solo acepta comillas rectas: \" o '.");
+      }
+      if (/^[rRbBuUfF]{0,2}['"]/.test(linea.slice(i, Math.min(fin, i + 3)))) {
+        var tt = leerTextoLiteral(linea, i, fin);
+        toks.push(tt); i = tt.c1; continue;
+      }
+      RX_ID.lastIndex = i;
+      var mi = RX_ID.exec(linea);
+      if (mi && mi.index === i && !/[0-9]/.test(c)) {
+        var palabra = mi[0], fi = i + palabra.length;
+        if (fi > fin) throw new Aviso(AVISO_SINTAXIS);
+        toks.push(new Tok(PALABRAS_CLAVE.indexOf(palabra) >= 0 ? "clave" : "nombre", palabra, i, fi));
+        i = fi; continue;
+      }
+      if (/[0-9]/.test(c) || (c === "." && /[0-9]/.test(linea[i + 1] || ""))) {
+        RX_NUM.lastIndex = i;
+        var mn = RX_NUM.exec(linea), lit = mn[0], fn = i + lit.length;
+        var sig = linea[fn] || "";
+        if (fn > fin || /[\p{L}\p{N}_.]/u.test(sig) && fn < fin) throw new Aviso(AVISO_SINTAXIS);
+        if (/[jJ]$/.test(lit)) throw new Aviso("Ese es un número complejo (con j); esta página no calcula complejos.");
+        var limpio = lit.replace(/_/g, ""), valor;
+        if (/^0[xXoObB]/.test(limpio)) valor = BigInt(limpio.toLowerCase());
+        else if (/[.eE]/.test(limpio)) valor = Number(limpio);
+        else {
+          if (/^0+[1-9]/.test(limpio)) throw new Aviso("Python no acepta enteros con ceros a la izquierda como " + lit + " (sería un SyntaxError).");
+          valor = BigInt(limpio);
+        }
+        toks.push(new Tok("numero", valor, i, fn));
+        i = fn; continue;
+      }
+      var op = null;
+      for (var k = 0; k < OPERADORES.length; k++) {
+        if (linea.substr(i, OPERADORES[k].length) === OPERADORES[k]) { op = OPERADORES[k]; break; }
+      }
+      if (!op) throw new Aviso("Python no reconoce el carácter " + String.fromCodePoint(cp) + " en ese lugar.");
+      toks.push(new Tok("op", op, i, i + op.length));
+      i += op.length;
+    }
+    toks.push(new Tok("fin", null, Math.min(i, fin), Math.min(i, fin)));
+    return toks;
+  }
+
+  // Analizador de expresiones. Cada función regresa {n: nodo, a: inicio, b: fin}: a y b
+  // incluyen los paréntesis que rodean a la expresión; n.c0 y n.c1 son la posición del nodo
+  // (como col_offset y end_col_offset de Python).
+  function Analizador(tokens, linea) { this.t = tokens; this.i = 0; this.linea = linea; }
+  Analizador.prototype.ver = function (k) { return this.t[this.i + (k || 0)]; };
+  Analizador.prototype.tomar = function () { return this.t[this.i++]; };
+  Analizador.prototype.esOp = function (s, k) { var x = this.ver(k); return x.tipo === "op" && x.valor === s; };
+  Analizador.prototype.esClave = function (s, k) { var x = this.ver(k); return x.tipo === "clave" && x.valor === s; };
+  Analizador.prototype.esperarOp = function (s) {
+    if (!this.esOp(s)) throw new Aviso(AVISO_SINTAXIS);
+    return this.tomar();
+  };
+  function envolver(n) { return { n: n, a: n.c0, b: n.c1 }; }
+  Analizador.prototype.expresion = function () {
+    var r = this.orTest();
+    if (this.esClave("if")) throw new Aviso("Esta página no simula la expresión condicional (x if c else y).");
+    return r;
+  };
+  Analizador.prototype.boolOp = function (palabra, sub) {
+    var primero = sub.call(this);
+    if (!this.esClave(palabra)) return primero;
+    var valores = [primero];
+    while (this.esClave(palabra)) { this.tomar(); valores.push(sub.call(this)); }
+    var ultimo = valores[valores.length - 1];
+    return envolver({ t: "bool", op: palabra, valores: valores.map(function (v) { return v.n; }), c0: primero.a, c1: ultimo.b });
+  };
+  Analizador.prototype.orTest = function () { return this.boolOp("or", this.andTest); };
+  Analizador.prototype.andTest = function () { return this.boolOp("and", this.notTest); };
+  Analizador.prototype.notTest = function () {
+    if (this.esClave("not")) {
+      var tk = this.tomar(), x = this.notTest();
+      return envolver({ t: "un", op: "not", x: x.n, c0: tk.c0, c1: x.b });
+    }
+    return this.comparacion();
+  };
+  Analizador.prototype.comparacion = function () {
+    var primero = this.suma(), ops = [], comps = [], ultimo = primero;
+    for (;;) {
+      var x = this.ver(), op = null;
+      if (x.tipo === "op" && ["<", ">", "==", ">=", "<=", "!="].indexOf(x.valor) >= 0) { op = x.valor; this.tomar(); }
+      else if (this.esClave("in")) { op = "in"; this.tomar(); }
+      else if (this.esClave("not") && this.esClave("in", 1)) { op = "not in"; this.tomar(); this.tomar(); }
+      else if (this.esClave("is")) { this.tomar(); op = "is"; if (this.esClave("not")) { this.tomar(); op = "is not"; } }
+      if (!op) break;
+      ultimo = this.suma();
+      ops.push(op); comps.push(ultimo.n);
+    }
+    if (!ops.length) return primero;
+    return envolver({ t: "cmp", primero: primero.n, ops: ops, comps: comps, c0: primero.a, c1: ultimo.b });
+  };
+  Analizador.prototype.binarios = function (ops, sub) {
+    var izq = sub.call(this);
+    for (;;) {
+      var x = this.ver();
+      if (x.tipo !== "op" || ops.indexOf(x.valor) < 0) return izq;
+      if (x.valor === "@") throw new Aviso("Esta página no simula el operador @.");
+      this.tomar();
+      var der = sub.call(this);
+      izq = envolver({ t: "bin", op: x.valor, izq: izq.n, der: der.n, c0: izq.a, c1: der.b });
+    }
+  };
+  Analizador.prototype.suma = function () {
+    var x = this.ver();
+    if (x.tipo === "op" && ["|", "&", "^", "<<", ">>"].indexOf(x.valor) >= 0) throw new Aviso(AVISO_SINTAXIS);
+    var r = this.binarios(["+", "-"], this.termino);
+    var y = this.ver();
+    if (y.tipo === "op" && ["|", "&", "^", "<<", ">>"].indexOf(y.valor) >= 0) throw new Aviso("Esta página no simula los operadores de bits (|, &, ^, <<, >>).");
+    return r;
+  };
+  Analizador.prototype.termino = function () { return this.binarios(["*", "/", "//", "%", "@"], this.factor); };
+  Analizador.prototype.factor = function () {
+    var x = this.ver();
+    if (x.tipo === "op" && (x.valor === "-" || x.valor === "+" || x.valor === "~")) {
+      this.tomar();
+      var y = this.factor();
+      return envolver({ t: "un", op: x.valor, x: y.n, c0: x.c0, c1: y.b });
+    }
+    return this.potencia();
+  };
+  Analizador.prototype.potencia = function () {
+    var base = this.primario();
+    if (this.esOp("**")) {
+      this.tomar();
+      var ex = this.factor();
+      return envolver({ t: "bin", op: "**", izq: base.n, der: ex.n, c0: base.a, c1: ex.b });
+    }
+    return base;
+  };
+  Analizador.prototype.primario = function () {
+    var r = this.atomo();
+    for (;;) {
+      if (this.esOp("(")) {
+        this.tomar();
+        var args = [], kw = {}, kwNodos = [];
+        while (!this.esOp(")")) {
+          if (this.esOp("*") || this.esOp("**")) throw new Aviso("Esta página no simula *args ni **kwargs.");
+          if (this.ver().tipo === "nombre" && this.esOp("=", 1)) {
+            var nom = this.tomar().valor; this.tomar();
+            kwNodos.push([nom, this.expresion().n]);
+          } else {
+            if (kwNodos.length) throw new Aviso(AVISO_SINTAXIS);
+            args.push(this.expresion().n);
+          }
+          if (this.esOp(",")) this.tomar(); else break;
+        }
+        var cierre = this.esperarOp(")");
+        r = envolver({ t: "llamada", f: r.n, args: args, kw: kwNodos, c0: r.a, c1: cierre.c1 });
+        continue;
+      }
+      if (this.esOp("[")) {
+        this.tomar();
+        if (this.esOp(":")) throw new Aviso("Esta página no simula rebanadas [a:b].");
+        var ind = this.expresion();
+        if (this.esOp(":")) throw new Aviso("Esta página no simula rebanadas [a:b].");
+        if (this.esOp(",")) throw new Aviso(AVISO_SINTAXIS);
+        var c2 = this.esperarOp("]");
+        r = envolver({ t: "sub", valor: r.n, indice: ind.n, c0: r.a, c1: c2.c1 });
+        continue;
+      }
+      if (this.esOp(".")) {
+        this.tomar();
+        var at = this.tomar();
+        if (at.tipo !== "nombre") throw new Aviso(AVISO_SINTAXIS);
+        r = envolver({ t: "attr", valor: r.n, nombre: at.valor, c0: r.a, c1: at.c1 });
+        continue;
+      }
+      return r;
+    }
+  };
+  Analizador.prototype.atomo = function () {
+    var x = this.ver();
+    if (x.tipo === "numero") { this.tomar(); return envolver({ t: "const", v: x.valor, c0: x.c0, c1: x.c1 }); }
+    if (x.tipo === "texto" || x.tipo === "ftexto") {
+      var partes = [], ini = x.c0, finTxt = x.c1, hayF = false;
+      while (this.ver().tipo === "texto" || this.ver().tipo === "ftexto") {
+        var tk = this.tomar();
+        finTxt = tk.c1;
+        if (tk.tipo === "ftexto") { hayF = true; partes = partes.concat(partesFstring(tk)); }
+        else partes.push(tk.valor);
+      }
+      if (!hayF) return envolver({ t: "const", v: partes.join(""), c0: ini, c1: finTxt });
+      return envolver({ t: "fstr", partes: partes, c0: ini, c1: finTxt });
+    }
+    if (x.tipo === "nombre") { this.tomar(); return envolver({ t: "nombre", id: x.valor, c0: x.c0, c1: x.c1 }); }
+    if (x.tipo === "clave") {
+      if (x.valor === "True" || x.valor === "False" || x.valor === "None") {
+        this.tomar();
+        return envolver({ t: "const", v: x.valor === "None" ? null : x.valor === "True", c0: x.c0, c1: x.c1 });
+      }
+      if (x.valor === "lambda") throw new Aviso("Esta página no simula lambda.");
+      throw new Aviso(AVISO_SINTAXIS);
+    }
+    if (x.tipo === "op" && x.valor === "(") {
+      var abre = this.tomar();
+      if (this.esOp(")")) throw new Aviso("Esta página no simula tuplas.");
+      var dentro = this.expresion();
+      if (this.esOp(",")) throw new Aviso("Esta página no simula tuplas.");
+      if (this.esClave("for")) throw new Aviso("Esta página no simula generadores ni comprensiones.");
+      var cierra = this.esperarOp(")");
+      return { n: dentro.n, a: abre.c0, b: cierra.c1 };
+    }
+    if (x.tipo === "op" && x.valor === "[") {
+      var a1 = this.tomar(), elems = [];
+      while (!this.esOp("]")) {
+        elems.push(this.expresion().n);
+        if (this.esClave("for")) throw new Aviso("Esta página no simula comprensiones de listas.");
+        if (this.esOp(",")) this.tomar(); else break;
+      }
+      var b1 = this.esperarOp("]");
+      return envolver({ t: "lista", elementos: elems, c0: a1.c0, c1: b1.c1 });
+    }
+    if (x.tipo === "op" && x.valor === "{") throw new Aviso("Esta página no simula diccionarios ni conjuntos.");
+    throw new Aviso(AVISO_SINTAXIS);
+  };
+
+  // Partes de un f-string: textos y campos {expr!conv:spec} con su posición
+  function partesFstring(tk) {
+    var L = tk.linea, i = tk.ini, fin = tk.fin, partes = [], lit = "";
+    function soltar() { if (lit) { partes.push(procesarEscapes(lit)); lit = ""; } }
+    while (i < fin) {
+      var c = L[i];
+      if (c === "{") {
+        if (L[i + 1] === "{") { lit += "{"; i += 2; continue; }
+        soltar();
+        var j = i + 1, prof = 0;
+        while (j < fin) {
+          var ch = L[j];
+          if (ch === "'" || ch === '"') {
+            var otra = L.indexOf(ch, j + 1);
+            if (otra < 0 || otra >= fin) throw new Aviso(AVISO_SINTAXIS);
+            j = otra + 1; continue;
+          }
+          if (ch === "(" || ch === "[" || ch === "{") prof++;
+          else if (ch === ")" || ch === "]") prof--;
+          else if (ch === "}") { if (prof === 0) break; prof--; }
+          else if (prof === 0 && (ch === ":" || (ch === "!" && L[j + 1] !== "="))) break;
+          else if (prof === 0 && ch === "=" && L[j + 1] !== "=" && "=!<>".indexOf(L[j - 1]) < 0) {
+            throw new Aviso("Esta página no simula el f-string con = (como {x=}).");
+          }
+          j++;
+        }
+        if (j >= fin) throw new Aviso(AVISO_SINTAXIS);
+        var toks = tokenizar(L, i + 1, j);
+        if (toks.length === 1) throw new Aviso("Un f-string necesita una expresión dentro de las llaves (Python daría un SyntaxError).");
+        var an = new Analizador(toks, L), ex = an.expresion();
+        if (an.ver().tipo !== "fin") throw new Aviso(AVISO_SINTAXIS);
+        var conv = null, spec = "";
+        if (L[j] === "!") {
+          conv = L[j + 1];
+          if (conv !== "r" && conv !== "s") throw new Aviso("Esta página solo simula las conversiones !r y !s.");
+          j += 2;
+        }
+        if (L[j] === ":") {
+          var k = j + 1;
+          while (k < fin && L[k] !== "}") {
+            if (L[k] === "{") throw new Aviso("Esta página no simula llaves anidadas dentro de la especificación de formato.");
+            if (L[k] === "\\") throw new Aviso("Esta página no simula diagonales invertidas en la especificación de formato.");
+            k++;
+          }
+          spec = L.slice(j + 1, k);
+          j = k;
+        }
+        if (L[j] !== "}") throw new Aviso(AVISO_SINTAXIS);
+        partes.push({ expr: ex.n, conv: conv, spec: spec, c0: i, c1: j + 1 });
+        i = j + 1;
+        continue;
+      }
+      if (c === "}") {
+        if (L[i + 1] === "}") { lit += "}"; i += 2; continue; }
+        throw new Aviso("En un f-string, una } sola no está permitida (sería un SyntaxError); escribe }} para una llave.");
+      }
+      if (c === "\\") { lit += L.substr(i, 2); i += 2; continue; }
+      lit += c; i++;
+    }
+    soltar();
+    return partes;
+  }
+
+  // Analiza una expresión completa escrita en una línea
+  function analizarExpresion(texto) {
+    var an = new Analizador(tokenizar(texto), texto), r = an.expresion();
+    if (an.ver().tipo !== "fin") {
+      if (an.esOp("=")) throw new Aviso("Escribe solo una expresión, sin asignar con =.");
+      throw new Aviso(AVISO_SINTAXIS);
+    }
+    return r.n;
+  }
+
+  // =====================================================================================
+  // Evaluación de expresiones
+  // ctx: { buscar(nombre) → valor (lanza NameError), llamar(nombreFuncion, args, kw, nodo),
+  //        traza: Map nodo → valor (opcional, para mostrar el cortocircuito) }
+  // =====================================================================================
+  function errorEn(e, nodo) { if (e instanceof ErrorPy && !e.nodo) e.nodo = nodo; return e; }
+  function evaluar(nodo, ctx) {
+    var v = evaluarSinTraza(nodo, ctx);
+    if (ctx.traza) ctx.traza.set(nodo, v);
+    return v;
+  }
+  function evaluarSinTraza(nodo, ctx) {
+    switch (nodo.t) {
+      case "const": return nodo.v;
+      case "nombre": return ctx.buscar(nodo.id, nodo);
+      case "lista": return nodo.elementos.map(function (e) { return evaluar(e, ctx); });
+      case "fstr":
+        return nodo.partes.map(function (p) {
+          if (typeof p === "string") return p;
+          var v = evaluar(p.expr, ctx);
+          try {
+            if (p.conv === "r") v = pyRepr(v); else if (p.conv === "s") v = pyStrDe(v);
+            return pyFormat(v, p.spec);
+          } catch (e) { throw errorEn(e, p); }
+        }).join("");
+      case "bin": {
+        var a = evaluar(nodo.izq, ctx), b = evaluar(nodo.der, ctx);
+        try { return binario(nodo.op, a, b); } catch (e) { throw errorEn(e, nodo); }
+      }
+      case "un": {
+        var x = evaluar(nodo.x, ctx);
+        try { return unario(nodo.op, x); } catch (e) { throw errorEn(e, nodo); }
+      }
+      case "bool": {
+        var r;
+        for (var i = 0; i < nodo.valores.length; i++) {
+          r = evaluar(nodo.valores[i], ctx);
+          if (nodo.op === "and" ? !verdad(r) : verdad(r)) return r;
+        }
+        return r;
+      }
+      case "cmp": {
+        var izq = evaluar(nodo.primero, ctx), res = true;
+        for (var k = 0; k < nodo.ops.length; k++) {
+          var der = evaluar(nodo.comps[k], ctx);
+          try { res = comparar(nodo.ops[k], izq, der); } catch (e) { throw errorEn(e, nodo); }
+          if (!res) return false;
+          izq = der;
+        }
+        return res;
+      }
+      case "sub": {
+        var base = evaluar(nodo.valor, ctx), ind = evaluar(nodo.indice, ctx);
+        try { return indexar(base, ind); } catch (e) { throw errorEn(e, nodo); }
+      }
+      case "attr": {
+        var obj = evaluar(nodo.valor, ctx);
+        if (typeof obj === "string" && nodo.nombre === "isdigit") {
+          return new MetodoPy("isdigit", obj, function (args, kw) { exigirArgs("isdigit", args, kw, 0, 0); return pyIsdigit(obj); });
+        }
+        if (nodo.nombre === "isdigit" && ["int", "float", "bool", "NoneType", "range"].indexOf(nombreTipo(obj)) >= 0) {
+          throw errorEn(new ErrorPy("AttributeError", "'" + nombreTipo(obj) + "' object has no attribute 'isdigit'"), nodo);
+        }
+        throw new Aviso("Esta página no simula ." + nodo.nombre + (typeof obj === "string" || Array.isArray(obj) ? "()" : "") + " de ese valor.");
+      }
+      case "llamada": {
+        var f = evaluar(nodo.f, ctx);
+        var args = nodo.args.map(function (e) { return evaluar(e, ctx); }), kw = {};
+        nodo.kw.forEach(function (par) { kw[par[0]] = evaluar(par[1], ctx); });
+        try {
+          if (f === INTEGRADAS.print || f === INTEGRADAS.input) return ctx.llamar(f.nombre, args, kw, nodo);
+          if (f instanceof TipoPy || f instanceof FuncionPy || f instanceof MetodoPy) {
+            if (!f.impl) throw new Aviso("Esta página no simula " + f.nombre + "().");
+            return f.impl(args, kw);
+          }
+          throw new ErrorPy("TypeError", "'" + nombreTipo(f) + "' object is not callable");
+        } catch (e) { throw errorEn(e, nodo); }
+      }
+    }
+    throw new Aviso("Esta página no simula esa parte de Python.");
+  }
+  function indexar(base, ind) {
+    if (Array.isArray(base) || typeof base === "string") {
+      var lista = Array.isArray(base);
+      if (!esInt(ind)) {
+        if (lista) throw new ErrorPy("TypeError", "list indices must be integers or slices, not " + nombreTipo(ind));
+        throw new ErrorPy("TypeError", "string indices must be integers, not '" + nombreTipo(ind) + "'");
+      }
+      var elems = lista ? base : Array.from(base), k = aBig(ind);
+      if (k < 0n) k += BigInt(elems.length);
+      if (k < 0n || k >= BigInt(elems.length)) throw new ErrorPy("IndexError", (lista ? "list" : "string") + " index out of range");
+      return elems[Number(k)];
+    }
+    if (base instanceof RangoPy) {
+      if (!esInt(ind)) throw new ErrorPy("TypeError", "range indices must be integers or slices, not " + nombreTipo(ind));
+      var n = base.largo(), j = aBig(ind);
+      if (j < 0n) j += n;
+      if (j < 0n || j >= n) throw new ErrorPy("IndexError", "range object index out of range");
+      return base.inicio + j * base.paso;
+    }
+    if (base instanceof TipoPy) throw new Aviso("Esta página no simula tipos con corchetes como list[int].");
+    throw new ErrorPy("TypeError", "'" + nombreTipo(base) + "' object is not subscriptable");
+  }
+
+  // ---------- Traceback como lo imprime Python 3.12 ----------
+  function esBlancoTb(ch) { return ch === " " || ch === "\t" || ch === "\f"; }
+  function anclasDe(nodo, seg, c0) {
+    if (nodo.t === "bin") {
+      var L = nodo.izq.c1 - c0, R = nodo.der.c0 - c0, la = -1, ra = -1;
+      for (var i = L; i < R; i++) {
+        if (esBlancoTb(seg[i])) continue;
+        la = i; ra = i + 1;
+        if (i + 1 < R && !esBlancoTb(seg[i + 1])) ra++;
+        if (i + 1 < R && seg[i] === ")") continue;
+        break;
+      }
+      return la < 0 ? null : { izq: la, der: ra };
+    }
+    if (nodo.t === "sub") {
+      var a = nodo.valor.c1 - c0, b = nodo.indice.c1 - c0 + 1;
+      while (a < seg.length && (esBlancoTb(seg[a]) || seg[a] !== "[")) a++;
+      while (b < seg.length && (esBlancoTb(seg[b]) || seg[b] !== "]")) b++;
+      if (b < seg.length) b++;
+      return { izq: a, der: b };
+    }
+    return null;
+  }
+  function lineaDeMarcas(fuente, nodo) {
+    if (!nodo || nodo.c0 === undefined) return "";
+    var sinIzq = fuente.replace(/^[ \t\f]+/, ""), sangria = fuente.length - sinIzq.length;
+    var limpia = sinIzq.replace(/\s+$/, "");
+    var seg = fuente.slice(nodo.c0, nodo.c1), anclas = anclasDe(nodo, seg, nodo.c0);
+    var largoSeg = Array.from(seg).length;
+    if (!(largoSeg < Array.from(limpia).length || anclas)) return "";
+    var s = "    " + " ".repeat(Array.from(fuente.slice(sangria, nodo.c0)).length);
+    if (anclas) {
+      s += "~".repeat(anclas.izq) + "^".repeat(anclas.der - anclas.izq) + "~".repeat(seg.length - anclas.der);
+    } else s += "^".repeat(largoSeg);
+    return s + "\n";
+  }
+  function textoTraceback(archivo, numLinea, fuente, error) {
+    var t = "Traceback (most recent call last):\n  File \"" + archivo + "\", line " + numLinea + ", in <module>\n";
+    var limpia = fuente.replace(/^[ \t\f]+/, "").replace(/\s+$/, "");
+    if (limpia) t += "    " + limpia + "\n" + lineaDeMarcas(fuente, error.nodo);
+    return t + error.texto() + "\n";
+  }
+
+  // =====================================================================================
+  // Programas cortos: análisis por líneas y ejecución paso a paso (un paso = un evento
+  // "line" de sys.settrace en Python 3.12)
+  // =====================================================================================
+  function ErrorSintaxisPy(linea, fuente, c0, c1, mensaje) {
+    this.linea = linea; this.fuente = fuente; this.c0 = c0; this.c1 = c1; this.mensaje = mensaje;
+  }
+  ErrorSintaxisPy.prototype.textoPara = function (archivo) {
+    var sinIzq = this.fuente.replace(/^[ \t\f]+/, ""), sangria = this.fuente.length - sinIzq.length;
+    return "  File \"" + archivo + "\", line " + this.linea + "\n    " + sinIzq.replace(/\s+$/, "") + "\n    " +
+           " ".repeat(this.c0 - sangria) + "^".repeat(this.c1 - this.c0) + "\nSyntaxError: " + this.mensaje + "\n";
+  };
+
+  function analizarPrograma(codigo) {
+    var fuentes = codigo.replace(/\n$/, "").split("\n"), logicas = [];
+    fuentes.forEach(function (f, k) {
+      var sinIzq = f.replace(/^ +/, "");
+      if (/^\t/.test(sinIzq)) throw new Aviso("Esta página no simula sangrías con tabuladores.");
+      if (sinIzq === "" || sinIzq[0] === "#") return;
+      var toks = tokenizar(f);
+      if (toks.length === 1) return;
+      logicas.push({ num: k + 1, sangria: f.length - sinIzq.length, toks: toks, fuente: f });
+    });
+    var pos = 0;
+    function condicion(L, desde) {
+      var an = new Analizador(L.toks, L.fuente);
+      an.i = desde;
+      var r = an.expresion();
+      if (an.esOp("=")) {
+        var izq = r.n;
+        if (izq.t === "nombre") {
+          var an2 = new Analizador(L.toks, L.fuente); an2.i = an.i + 1;
+          var der = an2.expresion();
+          throw new ErrorSintaxisPy(L.num, L.fuente, r.a, der.b, "invalid syntax. Maybe you meant '==' or ':=' instead of '='?");
+        }
+        throw new ErrorSintaxisPy(L.num, L.fuente, r.a, r.b, "cannot assign to expression here. Maybe you meant '==' instead of '='?");
+      }
+      if (!an.esOp(":") || an.ver(1).tipo !== "fin") throw new Aviso("Esta página no puede leer la línea " + L.num + ".");
+      return r.n;
+    }
+    function bloque(sangria) {
+      var lista = [];
+      while (pos < logicas.length && logicas[pos].sangria === sangria) lista.push(sentencia());
+      if (pos < logicas.length && logicas[pos].sangria > sangria) throw new Aviso("La sangría de la línea " + logicas[pos].num + " no corresponde a ningún bloque.");
+      return lista;
+    }
+    function cuerpo(L) {
+      if (pos >= logicas.length || logicas[pos].sangria <= L.sangria) throw new Aviso("Falta el bloque con sangría después de la línea " + L.num + ".");
+      return bloque(logicas[pos].sangria);
+    }
+    function sentencia() {
+      var L = logicas[pos++], t = L.toks, x = t[0];
+      var base = { linea: L.num, fuente: L.fuente };
+      if (x.tipo === "clave") {
+        switch (x.valor) {
+          case "if": {
+            var ramas = [{ linea: L.num, fuente: L.fuente, cond: condicion(L, 1), cuerpo: cuerpo(L) }], sino = null;
+            while (pos < logicas.length && logicas[pos].sangria === L.sangria && logicas[pos].toks[0].valor === "elif" && logicas[pos].toks[0].tipo === "clave") {
+              var E = logicas[pos++];
+              ramas.push({ linea: E.num, fuente: E.fuente, cond: condicion(E, 1), cuerpo: cuerpo(E) });
+            }
+            if (pos < logicas.length && logicas[pos].sangria === L.sangria && logicas[pos].toks[0].valor === "else" && logicas[pos].toks[0].tipo === "clave") {
+              var S = logicas[pos++];
+              sino = cuerpo(S);
+            }
+            return Object.assign(base, { t: "if", ramas: ramas, sino: sino });
+          }
+          case "while":
+            return Object.assign(base, { t: "while", cond: condicion(L, 1), cuerpo: cuerpo(L) });
+          case "for": {
+            if (t[1].tipo !== "nombre" || !(t[2].tipo === "clave" && t[2].valor === "in")) throw new Aviso("Esta página solo simula for nombre in ...:");
+            var an = new Analizador(t, L.fuente); an.i = 3;
+            var it = an.expresion();
+            if (!an.esOp(":") || an.ver(1).tipo !== "fin") throw new Aviso("Esta página no puede leer la línea " + L.num + ".");
+            return Object.assign(base, { t: "for", var: t[1].valor, iter: it.n, cuerpo: cuerpo(L) });
+          }
+          case "pass": case "break": case "continue":
+            return Object.assign(base, { t: x.valor });
+        }
+      }
+      var A = new Analizador(t, L.fuente);
+      if (x.tipo === "nombre" && A.esOp("=", 1)) {
+        A.i = 2;
+        var v = A.expresion();
+        if (A.ver().tipo !== "fin") throw new Aviso("Esta página no puede leer la línea " + L.num + ".");
+        return Object.assign(base, { t: "asig", nombre: x.valor, valor: v.n });
+      }
+      if (x.tipo === "nombre" && A.esOp(":", 1)) {
+        A.i = 2;
+        var anot = A.expresion(), val = null;
+        if (A.esOp("=")) { A.tomar(); val = A.expresion().n; }
+        if (A.ver().tipo !== "fin") throw new Aviso("Esta página no puede leer la línea " + L.num + ".");
+        return Object.assign(base, { t: "anot", nombre: x.valor, anot: anot.n, valor: val });
+      }
+      if (x.tipo === "nombre" && t[1].tipo === "op" && ["+=", "-=", "*=", "/=", "//=", "%=", "**="].indexOf(t[1].valor) >= 0) {
+        A.i = 2;
+        var va = A.expresion();
+        if (A.ver().tipo !== "fin") throw new Aviso("Esta página no puede leer la línea " + L.num + ".");
+        return Object.assign(base, { t: "aug", nombre: x.valor, op: t[1].valor.slice(0, -1), valor: va.n, c0: x.c0, c1: va.b });
+      }
+      var e = A.expresion();
+      if (A.ver().tipo !== "fin") throw new Aviso("Esta página no puede leer la línea " + L.num + ".");
+      return Object.assign(base, { t: "expr", expr: e.n });
+    }
+    var cuerpoPrincipal = bloque(logicas.length ? logicas[0].sangria : 0);
+    if (logicas.length && logicas[0].sangria !== 0) throw new Aviso("La primera línea no debe llevar sangría.");
+    if (pos < logicas.length) throw new Aviso("Esta página no puede leer la línea " + logicas[pos].num + ".");
+    return { fuentes: fuentes, cuerpo: cuerpoPrincipal };
+  }
+
+  // Nombres de variables que aparecen en una expresión (para mostrar sus valores)
+  function nombresEn(nodo, lista) {
+    lista = lista || [];
+    if (!nodo || typeof nodo !== "object") return lista;
+    if (nodo.t === "nombre") { lista.push(nodo); return lista; }
+    if (nodo.t === "llamada") { nodo.args.forEach(function (a) { nombresEn(a, lista); }); nodo.kw.forEach(function (p) { nombresEn(p[1], lista); }); return lista; }
+    ["izq", "der", "x", "primero", "valor", "indice"].forEach(function (k) { if (nodo[k]) nombresEn(nodo[k], lista); });
+    ["valores", "comps", "elementos"].forEach(function (k) { if (nodo[k]) nodo[k].forEach(function (h) { nombresEn(h, lista); }); });
+    if (nodo.t === "fstr") nodo.partes.forEach(function (p) { if (typeof p !== "string") nombresEn(p.expr, lista); });
+    return lista;
+  }
+
+  function Detenido() {}
+  function SenalBreak() {}
+  function SenalContinue() {}
+
+  // Ejecuta un programa y regresa los pasos. opciones: {archivo, entradas: [...], tope}
+  function ejecutarPrograma(prog, opciones) {
+    opciones = opciones || {};
+    var archivo = opciones.archivo || "programa.py", tope = opciones.tope || 300;
+    var entradas = (opciones.entradas || []).slice();
+    var globales = new Map(), ids = new Map(), anotaciones = new Map(), objetos = [], siguienteId = 1;
+    var salida = "", pasos = [], actual = null, lineaActual = 0, fuenteActual = "";
+    function foto() {
+      var vars = [];
+      globales.forEach(function (v, k) {
+        var rep;
+        try { rep = pyRepr(v); } catch (e) { rep = e instanceof ErrorPy ? "(" + e.texto() + ")" : "(?)"; }
+        vars.push([k, rep, nombreTipo(v), ids.get(k)]);
+      });
+      return vars;
+    }
+    function cerrarPaso() {
+      if (!actual) return;
+      actual.vars = foto();
+      actual.impreso = salida.slice(actual.desde);
+      actual.objetos = objetos.slice();
+    }
+    function evento(linea, fuente) {
+      cerrarPaso();
+      if (pasos.length >= tope) throw new Detenido();
+      lineaActual = linea; fuenteActual = fuente;
+      actual = { linea: linea, cond: null, asign: [], desde: salida.length, vars: null, impreso: "", error: null };
+      pasos.push(actual);
+    }
+    function nuevoObjeto(v) {
+      var rep;
+      try { rep = pyRepr(v); } catch (e) { rep = "(?)"; }
+      objetos.push({ id: siguienteId, repr: rep, tipo: nombreTipo(v) });
+      return siguienteId++;
+    }
+    function asignar(nombre, v, nodoValor) {
+      var id = (nodoValor && nodoValor.t === "nombre" && ids.has(nodoValor.id)) ? ids.get(nodoValor.id) : nuevoObjeto(v);
+      globales.set(nombre, v);
+      ids.set(nombre, id);
+      var rep;
+      try { rep = pyRepr(v); } catch (e) { rep = "(?)"; }
+      actual.asign.push([nombre, rep, nombreTipo(v)]);
+    }
+    var ctx = {
+      buscar: function (nombre, nodo) {
+        if (globales.has(nombre)) return globales.get(nombre);
+        return buscarIntegrada(nombre, nodo, GLOBALES_ARCHIVO.concat(Array.from(globales.keys())));
+      },
+      llamar: function (nombre, args, kw) {
+        if (nombre === "print") {
+          var sep = " ", fin = "\n";
+          Object.keys(kw).forEach(function (k) {
+            if (k !== "sep" && k !== "end") throw new Aviso("Esta página no simula print(" + k + "=...).");
+            var v = kw[k];
+            if (v !== null && typeof v !== "string") throw new ErrorPy("TypeError", k + " must be None or a string, not " + nombreTipo(v));
+            if (k === "sep" && v !== null) sep = v;
+            if (k === "end" && v !== null) fin = v;
+          });
+          salida += args.map(pyStrDe).join(sep) + fin;
+          return null;
+        }
+        exigirArgs("input", args, kw, 0, 1);
+        var aviso = args.length ? pyStrDe(args[0]) : "";
+        if (!entradas.length) {
+          salida += aviso + "\n";
+          throw new ErrorPy("EOFError", "EOF when reading a line");
+        }
+        var dato = entradas.shift();
+        salida += aviso + dato + "\n";
+        return dato;
+      }
+    };
+    function textoSustituido(nodo, fuente) {
+      var nombres = nombresEn(nodo).filter(function (n) { return globales.has(n.id); }).sort(function (a, b) { return a.c0 - b.c0; });
+      var s = "", p = nodo.c0;
+      nombres.forEach(function (n) {
+        s += fuente.slice(p, n.c0);
+        var rep;
+        try { rep = pyRepr(globales.get(n.id)); } catch (e) { rep = n.id; }
+        s += rep;
+        p = n.c1;
+      });
+      return s + fuente.slice(p, nodo.c1);
+    }
+    function evaluarCond(nodo, fuente) {
+      var texto = fuente.slice(nodo.c0, nodo.c1), sust = textoSustituido(nodo, fuente);
+      var traza = new Map(), c2 = Object.assign({}, ctx, { traza: traza });
+      var v = evaluar(nodo, c2);
+      actual.cond = { tipo: "cond", texto: texto, sust: sust, valor: verdad(v), traza: traza, nodo: nodo };
+      return verdad(v);
+    }
+    function ejecutarBloque(lista) { for (var i = 0; i < lista.length; i++) ejecutarSentencia(lista[i]); }
+    function ejecutarSentencia(s) {
+      switch (s.t) {
+        case "expr": evento(s.linea, s.fuente); evaluar(s.expr, ctx); return;
+        case "asig": evento(s.linea, s.fuente); asignar(s.nombre, evaluar(s.valor, ctx), s.valor); return;
+        case "anot": {
+          evento(s.linea, s.fuente);
+          if (s.valor) asignar(s.nombre, evaluar(s.valor, ctx), s.valor);
+          anotaciones.set(s.nombre, evaluar(s.anot, ctx));
+          return;
+        }
+        case "aug": {
+          evento(s.linea, s.fuente);
+          var actualV = ctx.buscar(s.nombre, { t: "nombre", id: s.nombre, c0: s.c0, c1: s.c0 + s.nombre.length });
+          var der = evaluar(s.valor, ctx), res;
+          try { res = binario(s.op, actualV, der, true); } catch (e) { throw errorEn(e, { t: "aug", c0: s.c0, c1: s.c1 }); }
+          asignar(s.nombre, res, null);
+          return;
+        }
+        case "pass": evento(s.linea, s.fuente); return;
+        case "break": evento(s.linea, s.fuente); throw new SenalBreak();
+        case "continue": evento(s.linea, s.fuente); throw new SenalContinue();
+        case "if":
+          for (var i = 0; i < s.ramas.length; i++) {
+            var r = s.ramas[i];
+            evento(r.linea, r.fuente);
+            if (evaluarCond(r.cond, r.fuente)) { ejecutarBloque(r.cuerpo); return; }
+          }
+          if (s.sino) ejecutarBloque(s.sino);
+          return;
+        case "while":
+          for (;;) {
+            evento(s.linea, s.fuente);
+            if (!evaluarCond(s.cond, s.fuente)) return;
+            try { ejecutarBloque(s.cuerpo); }
+            catch (e) {
+              if (e instanceof SenalBreak) return;
+              if (!(e instanceof SenalContinue)) throw e;
+            }
+          }
+        case "for": {
+          evento(s.linea, s.fuente);
+          var iterable = evaluar(s.iter, ctx), it;
+          try { it = iterar(iterable); } catch (e) { throw errorEn(e, s.iter); }
+          for (;;) {
+            var p = it.next();
+            if (p.done) { actual.cond = { tipo: "for", var: s.var, fin: true }; return; }
+            asignar(s.var, p.value, null);
+            actual.cond = { tipo: "for", var: s.var, fin: false, valor: actual.asign[actual.asign.length - 1][1] };
+            try { ejecutarBloque(s.cuerpo); }
+            catch (e2) {
+              if (e2 instanceof SenalBreak) return;
+              if (!(e2 instanceof SenalContinue)) throw e2;
+            }
+            evento(s.linea, s.fuente);
+          }
+        }
+      }
+    }
+    var resultado = { pasos: pasos, salida: "", error: null, detenido: false, aviso: null, anotaciones: anotaciones };
+    try {
+      ejecutarBloque(prog.cuerpo);
+    } catch (e) {
+      if (e instanceof Detenido) resultado.detenido = true;
+      else if (e instanceof ErrorPy) {
+        resultado.error = textoTraceback(archivo, lineaActual, fuenteActual, e);
+        resultado.errorPy = e;
+        if (actual) actual.error = resultado.error;
+      } else if (e instanceof Aviso) resultado.aviso = e.texto;
+      else throw e;
+    }
+    cerrarPaso();
+    resultado.salida = salida;
+    return resultado;
+  }
+
+
+  // ==================== La página ====================
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(t) { return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+
+  var PY_KW = /^(False|None|True|and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)$/;
+  function pyResaltar(linea) {
+    var html = "", i = 0, m, resto;
+    while (i < linea.length) {
+      resto = linea.slice(i);
+      if ((m = /^#.*/.exec(resto))) { html += '<span class="com">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[rRbBfFuU]{0,2}("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')/.exec(resto))) { html += '<span class="str">' + esc(m[0]) + "</span>"; }
+      else if ((m = /^[A-Za-z_\u00C0-\u024F][\w\u00C0-\u024F]*/.exec(resto))) { html += PY_KW.test(m[0]) ? '<span class="kw">' + m[0] + "</span>" : esc(m[0]); }
+      else if ((m = /^(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?j?/.exec(resto))) { html += '<span class="num">' + m[0] + "</span>"; }
+      else { m = [resto[0]]; html += esc(m[0]); }
+      i += m[0].length;
+    }
+    return html;
+  }
+
+  var PROGRAMAS = JSON.parse($("programas").textContent);
+  var REFERENCIA = PROGRAMAS[0];             // el programa correcto: dice qué debería imprimirse
+  var CLAVE = "pb-s04-camino-if";
+  var e = { prog: null, textos: {}, literales: {}, lineas: [], res: null, cuerpo: [], ejecutadas: new Set(), conds: new Map(),
+            probados: {}, fallas: [], aviso: null };
+  function leer(c) { try { return localStorage.getItem(CLAVE + "-" + c); } catch (x) { return null; } }
+  function escribir(c, v) { try { localStorage.setItem(CLAVE + "-" + c, v); } catch (x) { /* sin almacenamiento */ } }
+
+  // ---------- Valores ----------
+  function leerValor(v, texto) {
+    texto = String(texto).trim();
+    if (v.tipo === "bool") return { literal: texto === "True" ? "True" : "False" };
+    var x;
+    if (/^[+-]?\d+$/.test(texto)) { x = Number(texto); if (x >= v.min && x <= v.max) return { literal: String(BigInt(texto)), numero: x }; }
+    else if (/^[+-]?(\d+\.\d*|\.\d+)$/.test(texto)) { x = Number(texto); if (x >= v.min && x <= v.max) return { literal: pyFloat(x), numero: x }; }
+    else return { error: "Escribe un número, como 85 o 89.5." };
+    return { error: "Usa un valor entre " + v.min + " y " + v.max + "." };
+  }
+  function codigoCon(prog, literales) {
+    var c = prog.codigo;
+    prog.vars.forEach(function (v) { c = c.split("{{" + v.nombre + "}}").join(literales[v.nombre]); });
+    return c;
+  }
+  function correrCon(prog, literales) {
+    return ejecutarPrograma(analizarPrograma(codigoCon(prog, literales)), { tope: 60, archivo: "programa.py" });
+  }
+
+  // ---------- Selector y controles ----------
+  function pintarSelector() {
+    $("programa").innerHTML = PROGRAMAS.map(function (p, i) {
+      var hecho = p.tipo === "rompe" && leer("hecho-" + p.id) === "1";
+      return '<option value="' + i + '">' + esc(p.titulo + (hecho ? " ✓" : "")) + "</option>";
+    }).join("");
+  }
+  function pintarControles() {
+    $("controles").innerHTML = e.prog.vars.map(function (v) {
+      if (v.tipo === "bool") {
+        return '<label class="casilla"><input type="checkbox" id="v-' + v.nombre + '"' + (e.textos[v.nombre] === "True" ? " checked" : "") +
+               "> <code>" + esc(v.nombre) + "</code> = True <small style=\"font-weight:normal;color:var(--gris)\">(desmarcada: False)</small></label>";
+      }
+      var n = Number(e.textos[v.nombre]);
+      return '<div class="control"><label for="r-' + v.nombre + '"><code>' + esc(v.nombre) + "</code>" + (v.unidad ? " <small>(" + esc(v.unidad) + ")</small>" : "") +
+             '</label><input type="range" id="r-' + v.nombre + '" min="' + v.min + '" max="' + v.max + '" step="1" value="' + Math.round(n) + '">' +
+             '<input type="text" id="t-' + v.nombre + '" inputmode="decimal" spellcheck="false" autocomplete="off" aria-label="' + esc(v.nombre) +
+             ' (escríbelo)" value="' + esc(e.textos[v.nombre]) + '"><p class="error" id="e-' + v.nombre + '" aria-live="polite"></p></div>';
+    }).join("");
+    e.prog.vars.forEach(function (v) {
+      if (v.tipo === "bool") {
+        $("v-" + v.nombre).addEventListener("change", function (ev) { fijar(v, ev.target.checked ? "True" : "False", true); });
+        return;
+      }
+      $("r-" + v.nombre).addEventListener("input", function (ev) { $("t-" + v.nombre).value = ev.target.value; fijar(v, ev.target.value, false); });
+      $("r-" + v.nombre).addEventListener("change", function (ev) { fijar(v, ev.target.value, true); });
+      $("t-" + v.nombre).addEventListener("input", function (ev) { fijar(v, ev.target.value, false); });
+      $("t-" + v.nombre).addEventListener("change", function (ev) { fijar(v, ev.target.value, true); });
+    });
+  }
+  function fijar(v, texto, probar) {
+    var r = leerValor(v, texto);
+    if (v.tipo !== "bool") $("e-" + v.nombre).textContent = r.error || "";
+    if (r.error) return;
+    e.textos[v.nombre] = String(texto).trim();
+    e.literales[v.nombre] = r.literal;
+    if (v.tipo !== "bool" && document.activeElement !== $("r-" + v.nombre)) $("r-" + v.nombre).value = String(Math.round(r.numero));
+    correr();
+    if (probar && e.prog.tipo === "rompe") registrarPrueba();
+  }
+
+  // ---------- Ejecutar y pintar ----------
+  function correr() {
+    var codigo = codigoCon(e.prog, e.literales);
+    e.lineas = codigo.replace(/\n$/, "").split("\n");
+    e.aviso = null;
+    try {
+      var prog = analizarPrograma(codigo);
+      e.cuerpo = prog.cuerpo;
+      e.res = ejecutarPrograma(prog, { tope: 60, archivo: "programa.py" });
+    } catch (err) {
+      if (err instanceof Aviso) { e.aviso = err.texto; e.res = null; } else throw err;
+    }
+    e.ejecutadas = new Set();
+    e.conds = new Map();
+    if (e.res) e.res.pasos.forEach(function (p) {
+      e.ejecutadas.add(p.linea);
+      if (p.cond && p.cond.tipo === "cond") e.conds.set(p.linea, { cond: p.cond, vars: p.vars });
+    });
+    pintar();
+  }
+  function esLineaCondicion(n) { return /^(if|elif)\b/.test(e.lineas[n - 1].trim()); }
+  function pintarCodigo() {
+    $("codigo").innerHTML = '<div class="codigo"><ol>' + e.lineas.map(function (l, k) {
+      var n = k + 1, c = e.conds.get(n), ins = "";
+      if (c) ins = '<span class="insignia ' + (c.cond.valor ? "si" : "no") + '">' + (c.cond.valor ? "True" : "False") + "</span>";
+      else if (esLineaCondicion(n)) ins = '<span class="insignia sin">no se evalúa</span>';
+      return "<li" + (e.ejecutadas.has(n) ? ' class="marca"' : "") + ">" + pyResaltar(l) + ins + "</li>";
+    }).join("") + "</ol></div>";
+  }
+  function sustituido(nodo, fuente, vars) {
+    var valores = {};
+    vars.forEach(function (v) { valores[v[0]] = v[1]; });
+    var nombres = nombresEn(nodo).filter(function (n) { return valores[n.id] !== undefined; }).sort(function (a, b) { return a.c0 - b.c0; });
+    var s = "", p = nodo.c0;
+    nombres.forEach(function (n) { s += fuente.slice(p, n.c0) + valores[n.id]; p = n.c1; });
+    return s + fuente.slice(p, nodo.c1);
+  }
+  function lineaEvaluada(nodo, fuente, traza, vars) {
+    var texto = fuente.slice(nodo.c0, nodo.c1);
+    if (!traza.has(nodo)) return null;
+    var sust = sustituido(nodo, fuente, vars), valor = pyRepr(traza.get(nodo));
+    if (sust === valor) return "<code>" + esc(texto) + "</code> → <b>" + esc(valor) + "</b>";
+    return "<code>" + esc(texto) + "</code>" + (sust !== texto ? " → <code>" + esc(sust) + "</code>" : "") + " → <b>" + esc(valor) + "</b>";
+  }
+  function pintarEvaluacion() {
+    var items = [];
+    if (e.res) e.res.pasos.forEach(function (p) {
+      if (!p.cond || p.cond.tipo !== "cond") return;
+      var nodo = p.cond.nodo, fuente = e.lineas[p.linea - 1], traza = p.cond.traza, h;
+      if (nodo.t === "bool") {
+        var detenida = false;
+        h = "Línea " + p.linea + ": <code>" + esc(p.cond.texto) + "</code><ul>" + nodo.valores.map(function (sub, i) {
+          var t = lineaEvaluada(sub, fuente, traza, p.vars);
+          if (t) return "<li>" + t + "</li>";
+          var motivo = nodo.op === "and" ? "con and, si una parte es False el resultado ya es False" : "con or, si una parte es True el resultado ya es True";
+          var r = '<li class="omitida"><code>' + esc(fuente.slice(sub.c0, sub.c1)) + "</code> → no se evalúa" + (detenida ? "" : ": " + motivo + " (cortocircuito)") + ".</li>";
+          detenida = true;
+          return r;
+        }).join("") + "</ul>Resultado: <b>" + (p.cond.valor ? "True" : "False") + "</b>";
+      } else {
+        h = "Línea " + p.linea + ": " + lineaEvaluada(nodo, fuente, traza, p.vars);
+        if (nodo.t === "un" && nodo.op === "not") h += " (not invierte el valor)";
+      }
+      items.push("<li>" + h + "</li>");
+    });
+    var sinEvaluar = [];
+    e.lineas.forEach(function (l, k) { if (esLineaCondicion(k + 1) && !e.conds.has(k + 1)) sinEvaluar.push(k + 1); });
+    if (sinEvaluar.length) {
+      items.push('<li class="omitida">' + (sinEvaluar.length === 1 ? "La condición de la línea " : "Las condiciones de las líneas ") +
+                 enLista(sinEvaluar.map(String)) + (sinEvaluar.length === 1 ? " no se evalúa" : " no se evalúan") +
+                 ": Python ya ejecutó otro bloque de la misma cadena if/elif/else.</li>");
+    }
+    $("evaluacion").innerHTML = items.join("");
+  }
+
+  // ---------- Diagrama de flujo (SVG) ----------
+  var DF = { W: 600, cx: 150, dw: 270, ax: 454, aw: 206, riel: 584, lh: 17, sep: 24 };
+  var COL = { azul: "#00408F", gris: "#C3C9D3", verde: "#2F7D5B", guinda: "#8C1D35", oro: "#B8975A", oroClaro: "#F7F1E6",
+              verdeClaro: "#EAF4EF", guindaClaro: "#F5E6EA", grisClaro: "#F4F5F7", tinta: "#1B1F2A" };
+  function partirCondicion(t) {
+    if (t.length <= 24) return [t];
+    var m = /^(.*?\s(?:and|or))\s(.*)$/.exec(t);
+    return m ? [m[1], m[2]] : [t];
+  }
+  function diagramaSVG() {
+    var formas = [], flechas = [], y = 10, ej = e.ejecutadas, fin = !!e.res && !e.res.error && !e.aviso;
+    function flecha(pts, activa, etiqueta, ex, ey, colorEt) { flechas.push({ pts: pts, activa: activa, et: etiqueta, ex: ex, ey: ey, color: colorEt }); }
+    function pildora(cy, texto, activa) {
+      formas.push('<rect x="' + (DF.cx - 46) + '" y="' + (cy - 14) + '" width="92" height="28" rx="14" fill="' + (activa ? COL.oroClaro : "#fff") +
+                  '" stroke="' + (activa ? COL.azul : COL.gris) + '" stroke-width="' + (activa ? 2 : 1.5) + '"/>' +
+                  '<text class="df-pildora" x="' + DF.cx + '" y="' + (cy + 4.5) + '" text-anchor="middle">' + texto + "</text>");
+    }
+    function caja(cx, top, w, lineas, activa) {
+      var h = 12 + lineas.length * DF.lh;
+      formas.push('<rect x="' + (cx - w / 2) + '" y="' + top + '" width="' + w + '" height="' + h + '" rx="4" fill="' + (activa ? COL.oroClaro : "#fff") +
+                  '" stroke="' + (activa ? COL.oro : COL.gris) + '" stroke-width="' + (activa ? 2.5 : 1.5) + '"/>' +
+                  lineas.map(function (l, i) {
+                    return '<text class="df-texto" x="' + cx + '" y="' + (top + 6 + DF.lh * (i + 0.5) + 4.5) + '" text-anchor="middle"' +
+                           (activa ? "" : ' fill-opacity="0.55"') + ">" + esc(l) + "</text>";
+                  }).join(""));
+      return h;
+    }
+    function rombo(cy, lineas, estado) {
+      var h = lineas.length > 1 ? 84 : 62, w = DF.dw;
+      var borde = estado === "si" ? COL.verde : estado === "no" ? COL.guinda : COL.gris;
+      var relleno = estado === "si" ? COL.verdeClaro : estado === "no" ? COL.guindaClaro : COL.grisClaro;
+      formas.push('<polygon points="' + DF.cx + "," + (cy - h / 2) + " " + (DF.cx + w / 2) + "," + cy + " " + DF.cx + "," + (cy + h / 2) + " " +
+                  (DF.cx - w / 2) + "," + cy + '" fill="' + relleno + '" stroke="' + borde + '" stroke-width="' + (estado === "sin" ? 1.5 : 2.5) + '"/>' +
+                  lineas.map(function (l, i) {
+                    return '<text class="df-texto" x="' + DF.cx + '" y="' + (cy + (i - (lineas.length - 1) / 2) * DF.lh + 4.5) + '" text-anchor="middle"' +
+                           (estado === "sin" ? ' fill-opacity="0.55"' : "") + ">" + esc(l) + "</text>";
+                  }).join(""));
+      return h;
+    }
+    pildora(y + 14, "Inicio", true);
+    var yAbierto = y + 28, activaEntrada = true, etFalse = null;
+    y = yAbierto;
+    var cuerpo = e.cuerpo, i = 0;
+    while (i < cuerpo.length) {
+      if (cuerpo[i].t !== "if") {
+        var grupo = [];
+        while (i < cuerpo.length && cuerpo[i].t !== "if") grupo.push(cuerpo[i++]);
+        var activa = grupo.some(function (g) { return ej.has(g.linea); });
+        var top = y + DF.sep;
+        flecha([[DF.cx, yAbierto], [DF.cx, top]], activa, etFalse);
+        etFalse = null;
+        var hc = caja(DF.cx, top, DF.aw, grupo.map(function (g) { return g.fuente.trim(); }), activa);
+        y = yAbierto = top + hc;
+        continue;
+      }
+      var s = cuerpo[i++], acciones = [];
+      s.ramas.forEach(function (rama) {
+        var c = e.conds.get(rama.linea), evaluada = !!c, valor = evaluada && c.cond.valor;
+        var lineasCond = partirCondicion(rama.fuente.slice(rama.cond.c0, rama.cond.c1));
+        var h = lineasCond.length > 1 ? 84 : 62, cy = y + DF.sep + h / 2;
+        flecha([[DF.cx, yAbierto], [DF.cx, cy - h / 2]], evaluada, etFalse, DF.cx + 8, yAbierto + 14, COL.guinda);
+        rombo(cy, lineasCond, evaluada ? (valor ? "si" : "no") : "sin");
+        var activaA = rama.cuerpo.some(function (g) { return ej.has(g.linea); });
+        var hA = 12 + rama.cuerpo.length * DF.lh;
+        flecha([[DF.cx + DF.dw / 2, cy], [DF.ax - DF.aw / 2, cy]], evaluada && valor, "True", DF.cx + DF.dw / 2 + 12, cy - 7, COL.verde);
+        caja(DF.ax, cy - hA / 2, DF.aw, rama.cuerpo.map(function (g) { return g.fuente.trim(); }), activaA);
+        acciones.push({ y: cy, activa: activaA });
+        yAbierto = cy + h / 2; y = yAbierto;
+        etFalse = "False";
+        activaEntrada = evaluada && !valor;
+      });
+      if (s.sino) {
+        var activaS = s.sino.some(function (g) { return ej.has(g.linea); }), topS = y + DF.sep;
+        flecha([[DF.cx, yAbierto], [DF.cx, topS]], activaS, "False", DF.cx + 8, yAbierto + 14, COL.guinda);
+        var hS = caja(DF.cx, topS, DF.aw, s.sino.map(function (g) { return g.fuente.trim(); }), activaS);
+        yAbierto = topS + hS; y = yAbierto;
+        etFalse = null;
+        activaEntrada = activaS;
+      }
+      var yUnion = y + DF.sep, ultimaActiva = activaEntrada;
+      flecha([[DF.cx, yAbierto], [DF.cx, yUnion]], ultimaActiva, etFalse, DF.cx + 8, yAbierto + 14, COL.guinda);
+      etFalse = null;
+      acciones.forEach(function (a) {
+        flecha([[DF.ax + DF.aw / 2, a.y], [DF.riel, a.y], [DF.riel, yUnion], [DF.cx, yUnion]], a.activa, null);
+      });
+      var algunaActiva = acciones.some(function (a) { return a.activa; }) || ultimaActiva;
+      formas.push('<circle cx="' + DF.cx + '" cy="' + yUnion + '" r="4" fill="' + (algunaActiva ? COL.azul : COL.gris) + '"/>');
+      y = yAbierto = yUnion;
+    }
+    var yFin = y + DF.sep + 14;
+    flecha([[DF.cx, yAbierto], [DF.cx, yFin - 14]], fin, null);
+    pildora(yFin, "Fin", fin);
+    var H = yFin + 22;
+    flechas.sort(function (a, b) { return (a.activa ? 1 : 0) - (b.activa ? 1 : 0); });
+    var svgFlechas = flechas.map(function (f) {
+      var pts = f.pts.map(function (p) { return p[0] + "," + p[1]; }).join(" ");
+      var r = '<polyline points="' + pts + '" fill="none" stroke="' + (f.activa ? COL.azul : COL.gris) + '" stroke-width="' + (f.activa ? 3 : 1.5) +
+              '" marker-end="url(#' + (f.activa ? "punta-azul" : "punta-gris") + ')"/>';
+      if (f.et) r += '<text class="df-etiqueta" x="' + f.ex + '" y="' + f.ey + '" fill="' + (f.activa ? f.color : "#9AA1AC") + '">' + f.et + "</text>";
+      return r;
+    }).join("");
+    var defs = '<defs><marker id="punta-azul" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">' +
+               '<path d="M0,0 L10,5 L0,10 z" fill="' + COL.azul + '"/></marker>' +
+               '<marker id="punta-gris" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">' +
+               '<path d="M0,0 L10,5 L0,10 z" fill="' + COL.gris + '"/></marker></defs>';
+    return '<svg viewBox="0 0 ' + DF.W + " " + H + '" role="img" aria-label="' + esc(descripcionCamino()) + '">' + defs + svgFlechas + formas.join("") + "</svg>";
+  }
+  function descripcionCamino() {
+    var partes = ["Diagrama de flujo del programa."];
+    if (e.res) e.res.pasos.forEach(function (p) {
+      if (p.cond && p.cond.tipo === "cond") partes.push("La condición " + p.cond.texto + " es " + (p.cond.valor ? "True" : "False") + ".");
+      if (p.impreso) partes.push("Imprime " + p.impreso.trim() + ".");
+    });
+    return partes.join(" ");
+  }
+
+  // ---------- Rómpelo ----------
+  function salidaPara(prog, nombre, literal) {
+    var lits = {};
+    lits[nombre] = literal;
+    try { var r = correrCon(prog, lits); return r.error ? "(error)" : r.salida; } catch (x) { return "(?)"; }
+  }
+  function calcularFallas() {
+    var v = e.prog.vars[0], fallas = [];
+    for (var n = v.min; n <= v.max; n++) {
+      if (salidaPara(e.prog, v.nombre, String(n)) !== salidaPara(REFERENCIA, v.nombre, String(n))) fallas.push(n);
+    }
+    e.fallas = fallas;
+  }
+  function enLista(xs) { return xs.length <= 1 ? xs.join("") : xs.slice(0, -1).join(", ") + " y " + xs[xs.length - 1]; }
+  function frase(s, infinitivo) {
+    var verbo = infinitivo ? "imprimir" : "imprime";
+    return s === "" ? "no " + verbo + " nada" : verbo + " " + enLista(s.trim().split("\n"));
+  }
+  function registrarPrueba() {
+    var v = e.prog.vars[0], lit = e.literales[v.nombre];
+    var obtenida = salidaPara(e.prog, v.nombre, lit), esperada = salidaPara(REFERENCIA, v.nombre, lit);
+    e.probados[lit] = obtenida !== esperada;
+    $("veredicto").innerHTML = obtenida === esperada ?
+      '<span class="ok">Con ' + esc(lit) + " funciona:</span> " + esc(frase(obtenida)) + ", como debe." :
+      '<span class="mal">¡Lo rompiste con ' + esc(lit) + "!</span> " + esc(frase(obtenida).replace(/^./, function (c) { return c.toUpperCase(); })) +
+      ", pero debería " + esc(frase(esperada, true)) + ".";
+    pintarReto();
+  }
+  function pintarReto() {
+    var p = e.prog, esRompe = p.tipo === "rompe";
+    $("rompe").hidden = !esRompe;
+    if (!esRompe) return;
+    $("objetivo").textContent = p.desc;
+    $("espera").innerHTML = "<tr><th>calificacion</th><th>Debería imprimir</th></tr>" +
+      "<tr><td>90 a 100</td><td>Excelente</td></tr><tr><td>80 a 89</td><td>Muy bien</td></tr>" +
+      "<tr><td>70 a 79</td><td>Aprobado</td></tr><tr><td>0 a 69</td><td>No aprobado</td></tr>";
+    var rotas = Object.keys(e.probados).filter(function (k) { return e.probados[k]; });
+    var bien = Object.keys(e.probados).filter(function (k) { return !e.probados[k]; });
+    var listo = false, estado;
+    if (p.objetivo === "frontera") {
+      var F = e.fallas[0];
+      listo = e.probados[String(F)] === true && e.probados[String(F - 1)] === false;
+      if (listo) estado = "¡Encontraste la frontera! Con " + (F - 1) + " funciona y con " + F + " ya falla.";
+      else if (rotas.length) estado = "Ya lo rompiste. ¿Es la calificación más baja con la que falla? Prueba las vecinas.";
+      else estado = "Todavía no lo rompes: prueba otras calificaciones.";
+    } else {
+      var hallados = e.fallas.filter(function (n) { return e.probados[String(n)] === true; });
+      listo = hallados.length === e.fallas.length;
+      estado = listo ? "¡Encontraste las " + e.fallas.length + "!" : "Llevas " + hallados.length + " de " + e.fallas.length + ".";
+    }
+    $("estadoReto").textContent = estado;
+    $("estadoReto").className = "estado-reto" + (listo ? " listo" : "");
+    $("probados").textContent = (rotas.length ? "Lo rompen: " + rotas.join(", ") + ". " : "") + (bien.length ? "Funcionan: " + bien.join(", ") + "." : "");
+    $("explicaReto").hidden = !listo;
+    $("explicaReto").innerHTML = listo ? "<b>¿Por qué falla?</b> " + esc(p.explica) : "";
+    if (listo && leer("hecho-" + p.id) !== "1") {
+      escribir("hecho-" + p.id, "1");
+      var i = $("programa").value;
+      pintarSelector();
+      $("programa").value = i;
+    }
+  }
+
+  function pintar() {
+    pintarCodigo();
+    var html = '<span style="color:#9AA0A6">&gt; python programa.py</span>\n';
+    if (e.res) html += esc(e.res.salida) + (e.res.error ? '<span style="color:#FF8A80">' + esc(e.res.error) + "</span>" : "");
+    $("consola").innerHTML = html.replace(/\n$/, "");
+    $("diagrama").innerHTML = e.aviso ? '<p class="nota" style="padding:8px">' + esc(e.aviso) + "</p>" : diagramaSVG();
+    pintarEvaluacion();
+    var evaluadas = e.conds.size, impresas = e.res ? e.res.salida.split("\n").filter(Boolean).length : 0;
+    $("lectura").innerHTML = e.aviso ? "<b>Aviso de la página:</b> " + esc(e.aviso) :
+      "<b>Python evaluó " + evaluadas + (evaluadas === 1 ? " condición" : " condiciones") + "</b> y " +
+      (impresas ? "imprimió " + impresas + (impresas === 1 ? " mensaje." : " mensajes.") : "no imprimió nada.") +
+      " Las líneas resaltadas son las que se ejecutaron.";
+  }
+  function cargar(i) {
+    e.prog = PROGRAMAS[i];
+    e.textos = {}; e.literales = {}; e.probados = {};
+    e.prog.vars.forEach(function (v) { e.textos[v.nombre] = v.valor; e.literales[v.nombre] = leerValor(v, v.valor).literal; });
+    $("desc").textContent = e.prog.desc;
+    $("veredicto").textContent = "";
+    if (e.prog.tipo === "rompe") calcularFallas();
+    pintarControles();
+    correr();
+    pintarReto();
+  }
+  $("programa").addEventListener("change", function () { escribir("programa", $("programa").value); cargar(Number($("programa").value)); });
+
+  pintarSelector();
+  var inicial = Number(leer("programa"));
+  if (!(inicial >= 0 && inicial < PROGRAMAS.length)) inicial = 0;
+  $("programa").value = String(inicial);
+  cargar(inicial);
+})();
+</script>
+<div id="qr-sitio" class="qr-capa" hidden>
+  <div class="qr-caja" role="dialog" aria-modal="true" aria-label="Código QR de esta página">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 45" role="img" aria-label="Código QR de https://memosanchezg.github.io/programacion-basica-interactivos/semana-04-camino-del-if.html" shape-rendering="crispEdges"><rect width="45" height="45" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM15 2h4v1h-4zM20 2h3v1h-3zM24 2h3v1h-3zM30 2h2v1h-2zM33 2h2v1h-2zM36 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM11 3h2v1h-2zM16 3h1v1h-1zM18 3h1v1h-1zM20 3h1v1h-1zM22 3h1v1h-1zM24 3h1v1h-1zM26 3h1v1h-1zM29 3h2v1h-2zM32 3h1v1h-1zM34 3h1v1h-1zM36 3h1v1h-1zM42 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM10 4h1v1h-1zM12 4h1v1h-1zM15 4h2v1h-2zM18 4h1v1h-1zM22 4h1v1h-1zM26 4h1v1h-1zM28 4h3v1h-3zM32 4h3v1h-3zM36 4h1v1h-1zM38 4h3v1h-3zM42 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h3v1h-3zM14 5h2v1h-2zM17 5h2v1h-2zM20 5h2v1h-2zM23 5h2v1h-2zM26 5h1v1h-1zM31 5h1v1h-1zM33 5h2v1h-2zM36 5h1v1h-1zM38 5h3v1h-3zM42 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h3v1h-3zM17 6h1v1h-1zM21 6h1v1h-1zM25 6h1v1h-1zM28 6h1v1h-1zM30 6h2v1h-2zM33 6h2v1h-2zM36 6h1v1h-1zM38 6h3v1h-3zM42 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h5v1h-5zM16 7h2v1h-2zM22 7h1v1h-1zM26 7h1v1h-1zM29 7h2v1h-2zM34 7h1v1h-1zM36 7h1v1h-1zM42 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM30 8h1v1h-1zM32 8h1v1h-1zM34 8h1v1h-1zM36 8h7v1h-7zM10 9h2v1h-2zM13 9h1v1h-1zM15 9h4v1h-4zM20 9h1v1h-1zM23 9h1v1h-1zM25 9h2v1h-2zM28 9h1v1h-1zM33 9h2v1h-2zM2 10h1v1h-1zM4 10h5v1h-5zM12 10h3v1h-3zM16 10h4v1h-4zM22 10h1v1h-1zM24 10h1v1h-1zM27 10h3v1h-3zM31 10h1v1h-1zM36 10h5v1h-5zM2 11h1v1h-1zM4 11h1v1h-1zM7 11h1v1h-1zM10 11h1v1h-1zM13 11h1v1h-1zM16 11h1v1h-1zM19 11h5v1h-5zM25 11h1v1h-1zM27 11h1v1h-1zM30 11h1v1h-1zM32 11h3v1h-3zM36 11h3v1h-3zM40 11h3v1h-3zM2 12h1v1h-1zM4 12h11v1h-11zM22 12h2v1h-2zM29 12h4v1h-4zM34 12h1v1h-1zM36 12h2v1h-2zM2 13h1v1h-1zM6 13h1v1h-1zM9 13h3v1h-3zM13 13h1v1h-1zM17 13h1v1h-1zM23 13h2v1h-2zM28 13h1v1h-1zM32 13h3v1h-3zM38 13h2v1h-2zM2 14h2v1h-2zM7 14h3v1h-3zM12 14h1v1h-1zM16 14h1v1h-1zM18 14h2v1h-2zM21 14h1v1h-1zM24 14h1v1h-1zM27 14h3v1h-3zM31 14h1v1h-1zM33 14h1v1h-1zM37 14h1v1h-1zM39 14h2v1h-2zM42 14h1v1h-1zM7 15h1v1h-1zM9 15h3v1h-3zM17 15h4v1h-4zM22 15h3v1h-3zM26 15h1v1h-1zM29 15h2v1h-2zM32 15h11v1h-11zM2 16h1v1h-1zM5 16h1v1h-1zM8 16h3v1h-3zM12 16h1v1h-1zM15 16h3v1h-3zM20 16h2v1h-2zM23 16h2v1h-2zM31 16h2v1h-2zM35 16h1v1h-1zM37 16h1v1h-1zM40 16h1v1h-1zM7 17h1v1h-1zM15 17h2v1h-2zM18 17h1v1h-1zM21 17h3v1h-3zM26 17h1v1h-1zM28 17h1v1h-1zM30 17h1v1h-1zM33 17h2v1h-2zM36 17h2v1h-2zM39 17h1v1h-1zM41 17h1v1h-1zM2 18h1v1h-1zM4 18h2v1h-2zM7 18h5v1h-5zM13 18h2v1h-2zM19 18h1v1h-1zM21 18h1v1h-1zM27 18h2v1h-2zM31 18h3v1h-3zM35 18h1v1h-1zM37 18h1v1h-1zM40 18h1v1h-1zM5 19h2v1h-2zM9 19h1v1h-1zM11 19h2v1h-2zM14 19h1v1h-1zM17 19h7v1h-7zM25 19h3v1h-3zM30 19h1v1h-1zM32 19h3v1h-3zM36 19h4v1h-4zM41 19h2v1h-2zM2 20h3v1h-3zM7 20h2v1h-2zM17 20h1v1h-1zM19 20h1v1h-1zM22 20h2v1h-2zM27 20h4v1h-4zM35 20h1v1h-1zM38 20h2v1h-2zM41 20h1v1h-1zM4 21h2v1h-2zM9 21h3v1h-3zM13 21h3v1h-3zM17 21h1v1h-1zM19 21h2v1h-2zM23 21h2v1h-2zM27 21h1v1h-1zM29 21h2v1h-2zM32 21h4v1h-4zM38 21h2v1h-2zM41 21h2v1h-2zM3 22h1v1h-1zM7 22h3v1h-3zM12 22h1v1h-1zM16 22h3v1h-3zM23 22h1v1h-1zM25 22h2v1h-2zM28 22h2v1h-2zM31 22h1v1h-1zM39 22h3v1h-3zM3 23h1v1h-1zM9 23h4v1h-4zM14 23h2v1h-2zM17 23h9v1h-9zM27 23h1v1h-1zM30 23h1v1h-1zM32 23h3v1h-3zM36 23h1v1h-1zM38 23h2v1h-2zM41 23h2v1h-2zM2 24h2v1h-2zM6 24h6v1h-6zM13 24h1v1h-1zM15 24h1v1h-1zM17 24h2v1h-2zM20 24h1v1h-1zM22 24h1v1h-1zM24 24h1v1h-1zM27 24h4v1h-4zM34 24h1v1h-1zM38 24h1v1h-1zM3 25h1v1h-1zM5 25h1v1h-1zM7 25h1v1h-1zM9 25h2v1h-2zM13 25h1v1h-1zM15 25h1v1h-1zM18 25h1v1h-1zM20 25h2v1h-2zM23 25h2v1h-2zM29 25h1v1h-1zM33 25h3v1h-3zM37 25h1v1h-1zM39 25h1v1h-1zM41 25h1v1h-1zM3 26h3v1h-3zM7 26h2v1h-2zM10 26h1v1h-1zM12 26h1v1h-1zM14 26h3v1h-3zM18 26h2v1h-2zM25 26h7v1h-7zM33 26h1v1h-1zM40 26h1v1h-1zM42 26h1v1h-1zM2 27h3v1h-3zM6 27h1v1h-1zM10 27h1v1h-1zM12 27h8v1h-8zM21 27h3v1h-3zM25 27h1v1h-1zM27 27h1v1h-1zM30 27h1v1h-1zM32 27h2v1h-2zM35 27h5v1h-5zM41 27h2v1h-2zM4 28h2v1h-2zM8 28h1v1h-1zM10 28h1v1h-1zM16 28h1v1h-1zM18 28h1v1h-1zM20 28h1v1h-1zM22 28h1v1h-1zM26 28h5v1h-5zM32 28h1v1h-1zM34 28h5v1h-5zM41 28h1v1h-1zM4 29h2v1h-2zM7 29h1v1h-1zM12 29h7v1h-7zM21 29h4v1h-4zM26 29h1v1h-1zM28 29h1v1h-1zM30 29h1v1h-1zM33 29h2v1h-2zM38 29h2v1h-2zM42 29h1v1h-1zM2 30h2v1h-2zM5 30h1v1h-1zM8 30h1v1h-1zM11 30h1v1h-1zM13 30h1v1h-1zM15 30h1v1h-1zM17 30h3v1h-3zM22 30h1v1h-1zM24 30h5v1h-5zM31 30h1v1h-1zM33 30h1v1h-1zM39 30h2v1h-2zM42 30h1v1h-1zM2 31h1v1h-1zM7 31h1v1h-1zM11 31h2v1h-2zM15 31h3v1h-3zM19 31h2v1h-2zM27 31h1v1h-1zM29 31h1v1h-1zM31 31h3v1h-3zM35 31h2v1h-2zM38 31h1v1h-1zM40 31h1v1h-1zM42 31h1v1h-1zM2 32h1v1h-1zM4 32h1v1h-1zM6 32h1v1h-1zM8 32h6v1h-6zM15 32h1v1h-1zM18 32h2v1h-2zM22 32h8v1h-8zM31 32h1v1h-1zM35 32h3v1h-3zM39 32h1v1h-1zM2 33h1v1h-1zM4 33h4v1h-4zM10 33h3v1h-3zM14 33h1v1h-1zM16 33h2v1h-2zM20 33h1v1h-1zM23 33h3v1h-3zM29 33h2v1h-2zM33 33h5v1h-5zM39 33h1v1h-1zM41 33h2v1h-2zM2 34h1v1h-1zM7 34h2v1h-2zM10 34h2v1h-2zM13 34h3v1h-3zM17 34h3v1h-3zM24 34h5v1h-5zM31 34h1v1h-1zM34 34h5v1h-5zM40 34h1v1h-1zM42 34h1v1h-1zM10 35h2v1h-2zM15 35h1v1h-1zM20 35h3v1h-3zM25 35h2v1h-2zM30 35h2v1h-2zM33 35h2v1h-2zM38 35h1v1h-1zM41 35h2v1h-2zM2 36h7v1h-7zM12 36h2v1h-2zM16 36h3v1h-3zM20 36h1v1h-1zM22 36h1v1h-1zM24 36h1v1h-1zM29 36h2v1h-2zM33 36h2v1h-2zM36 36h1v1h-1zM38 36h1v1h-1zM40 36h1v1h-1zM2 37h1v1h-1zM8 37h1v1h-1zM10 37h1v1h-1zM12 37h3v1h-3zM17 37h1v1h-1zM21 37h1v1h-1zM26 37h1v1h-1zM28 37h1v1h-1zM33 37h2v1h-2zM38 37h2v1h-2zM2 38h1v1h-1zM4 38h3v1h-3zM8 38h1v1h-1zM10 38h3v1h-3zM14 38h2v1h-2zM17 38h2v1h-2zM20 38h1v1h-1zM23 38h2v1h-2zM26 38h1v1h-1zM29 38h1v1h-1zM31 38h1v1h-1zM34 38h5v1h-5zM40 38h1v1h-1zM2 39h1v1h-1zM4 39h3v1h-3zM8 39h1v1h-1zM10 39h1v1h-1zM12 39h1v1h-1zM15 39h1v1h-1zM18 39h2v1h-2zM21 39h2v1h-2zM25 39h2v1h-2zM28 39h1v1h-1zM30 39h4v1h-4zM35 39h1v1h-1zM37 39h1v1h-1zM39 39h1v1h-1zM2 40h1v1h-1zM4 40h3v1h-3zM8 40h1v1h-1zM10 40h3v1h-3zM14 40h1v1h-1zM16 40h3v1h-3zM22 40h1v1h-1zM24 40h1v1h-1zM26 40h2v1h-2zM29 40h2v1h-2zM34 40h6v1h-6zM2 41h1v1h-1zM8 41h1v1h-1zM13 41h1v1h-1zM16 41h2v1h-2zM23 41h1v1h-1zM25 41h1v1h-1zM28 41h3v1h-3zM34 41h2v1h-2zM38 41h2v1h-2zM41 41h1v1h-1zM2 42h7v1h-7zM10 42h2v1h-2zM15 42h4v1h-4zM20 42h2v1h-2zM24 42h5v1h-5zM31 42h1v1h-1zM33 42h1v1h-1zM35 42h4v1h-4zM40 42h1v1h-1z"/></svg>
+    <p class="qr-texto">Escanea con la cámara del celular para abrir esta página</p>
+    <p class="qr-url">https://memosanchezg.github.io/programacion-basica-interactivos/semana-04-camino-del-if.html</p>
+    <button type="button" class="qr-cerrar">Cerrar</button>
+  </div>
+</div>
+<style>
+  .qr-capa { position:fixed; top:0; right:0; bottom:0; left:0; z-index:10000; display:flex; align-items:center;
+             justify-content:center; padding:16px; background:#fff; }
+  .qr-capa[hidden] { display:none; }
+  .qr-caja { max-width:100%; text-align:center; color:#0A2A57; font:16px/1.4 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .qr-caja svg { display:block; width:min(62vh, 84vw); height:auto; margin:0 auto; }
+  .qr-texto { margin:12px 0 2px; font-size:1.15rem; font-weight:bold; }
+  .qr-url { margin:0 0 12px; color:#5B6472; word-break:break-all; }
+  .qr-cerrar { font:inherit; padding:6px 20px; border:2px solid #00408F; border-radius:4px; background:#fff;
+               color:#00408F; cursor:pointer; }
+</style>
+<script>
+  (function () {
+    var capa = document.getElementById("qr-sitio");
+    document.querySelectorAll("a.qr-abrir").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        capa.hidden = false;
+        capa.querySelector(".qr-cerrar").focus();
+      });
+    });
+    capa.addEventListener("click", function (e) {
+      if (e.target === capa || e.target.classList.contains("qr-cerrar")) capa.hidden = true;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !capa.hidden) capa.hidden = true;
+    });
+  })();
+</script>
+</body>
+</html>

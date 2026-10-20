@@ -1,0 +1,1062 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="tipo" content="ejercicio">
+<title>Entrada, conversión y formato</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<style>
+  :root {
+    --azul:#00408F; --azul-oscuro:#0A2A57; --guinda:#8C1D35; --oro:#B8975A; --oro-texto:#8A6A2E;
+    --azul-claro:#E8EEF7; --oro-claro:#F7F1E6; --guinda-claro:#F5E6EA; --verde:#2F7D5B;
+    --tinta:#1B1F2A; --gris:#5B6472; --gris-claro:#E9ECF1; --borde:#D9DEE6; --fondo:#FFFFFF;
+    --cmd-fondo:#0C0C0C; --cmd-texto:#E6E6E6;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--fondo); color:var(--tinta);
+         font:16px/1.45 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .franja { height:8px; background:var(--azul); border-bottom:3px solid var(--oro); }
+  header { max-width:1280px; margin:0 auto; padding:12px 18px 4px; }
+  .semana { color:var(--guinda); font-weight:bold; letter-spacing:.04em; font-size:.85rem; text-transform:uppercase; }
+  h1 { font-family:Cambria,Georgia,serif; color:var(--azul-oscuro); font-size:1.7rem; margin:2px 0 2px; }
+  .sub { color:var(--gris); margin:0; }
+  main { max-width:1280px; margin:0 auto; padding:8px 18px 24px; }
+  .fila { display:grid; grid-template-columns:minmax(260px,400px) minmax(0,1fr); gap:16px; align-items:start; }
+  .panel { background:#fff; border:1px solid var(--borde); border-radius:10px; padding:12px 14px; min-width:0; }
+  .panel h2 { font-size:1.02rem; color:var(--azul-oscuro); margin:0 0 8px; }
+  .panel h3 { font-size:.95rem; color:var(--azul-oscuro); margin:12px 0 4px; }
+  .panel ol, .panel ul { padding-left:20px; margin:4px 0; }
+  .panel li { margin:4px 0; }
+  code { font-family:Consolas,"Courier New",monospace; color:var(--azul); }
+  .lectura { background:var(--oro-claro); border-left:4px solid var(--oro); border-radius:8px; padding:10px 12px;
+             margin-top:12px; line-height:1.55; }
+  .barra { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-bottom:8px; }
+  button.accion { font:inherit; font-weight:bold; border-radius:8px; padding:7px 12px;
+                  border:1px solid var(--azul); background:#fff; color:var(--azul); cursor:pointer; }
+  button.accion:hover:not(:disabled), button.accion:focus-visible { background:var(--azul); color:#fff; outline:none; }
+  button.accion.primaria { background:var(--azul); color:#fff; }
+  button.accion.primaria:hover:not(:disabled) { background:var(--azul-oscuro); }
+  button.accion:disabled { opacity:.5; cursor:wait; }
+  #estado { color:var(--gris); font-size:.92rem; margin-left:4px; }
+  #estado.listo { color:var(--verde); }
+  .editor-caja { border:1px solid var(--tinta); }
+  .CodeMirror { height:auto; min-height:260px; font:15px/1.5 Consolas,"Courier New",monospace; }
+  .CodeMirror-linenumber { color:var(--gris); font:11px Cambria,Georgia,serif; padding-top:3px; }
+  .cm-s-default .cm-keyword { color:#000080; font-weight:bold; }
+  .cm-s-default .cm-string { color:#0000FF; }
+  .cm-s-default .cm-number { color:#0000FF; }
+  .cm-s-default .cm-comment { color:#008800; font-style:italic; }
+  .cm-s-default .cm-builtin, .cm-s-default .cm-variable, .cm-s-default .cm-def,
+  .cm-s-default .cm-property, .cm-s-default .cm-operator { color:var(--tinta); }
+  textarea#editor { width:100%; min-height:260px; font:15px/1.5 Consolas,"Courier New",monospace; border:0; padding:8px; }
+  .consola { background:var(--cmd-fondo); color:var(--cmd-texto); font:15px/1.45 Consolas,"Courier New",monospace;
+             white-space:pre-wrap; word-break:break-word; padding:8px 12px; border-radius:4px; margin:6px 0; min-height:2.6em; }
+  .consola .error { color:#FF8A80; }
+  .consola .aviso { color:#B8975A; }
+  #figuras img { max-width:100%; border:1px solid var(--borde); border-radius:6px; margin:6px 0; display:block; }
+  #archivos a { display:inline-block; margin:4px 10px 4px 0; color:var(--azul); font-weight:bold; }
+  ul.pruebas { list-style:none; padding-left:0; }
+  ul.pruebas li { padding:4px 0 4px 26px; position:relative; }
+  ul.pruebas li::before { content:"•"; position:absolute; left:8px; color:var(--gris); }
+  ul.pruebas li.ok::before { content:"✓"; color:var(--verde); font-weight:bold; left:4px; }
+  ul.pruebas li.mal::before { content:"✗"; color:var(--guinda); font-weight:bold; left:4px; }
+  ul.pruebas li.mal { color:var(--guinda); }
+  .resumen { font-weight:bold; margin:6px 0; }
+  .resumen.ok { color:var(--verde); }
+  .resumen.mal { color:var(--guinda); }
+  footer { max-width:1280px; margin:0 auto; padding:6px 18px 18px; color:var(--gris); font-size:.85rem; }
+  footer a { color:var(--azul); }
+  @media (max-width: 860px) { .fila { grid-template-columns:1fr; } }
+
+  /* Propios de estos ejercicios */
+  nav.retos { display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 12px; }
+  nav.retos button { font:inherit; font-size:.95rem; border:1px solid var(--borde); border-radius:8px; background:#fff;
+                     color:var(--azul-oscuro); padding:6px 10px; cursor:pointer; text-align:left; }
+  nav.retos button .num { font-weight:bold; color:var(--guinda); }
+  nav.retos button[aria-selected="true"] { border-color:var(--azul); background:var(--azul-claro); font-weight:bold; }
+  nav.retos button:hover, nav.retos button:focus-visible { border-color:var(--azul); outline:none; }
+  nav.retos button .hecho { color:var(--verde); font-weight:bold; margin-left:4px; }
+  #reto-titulo { font-family:Cambria,Georgia,serif; font-size:1.2rem; color:var(--azul-oscuro); margin:0 0 6px; }
+  .ejemplo { font-size:14px; }
+  label.etiqueta { display:block; font-weight:bold; color:var(--azul-oscuro); margin:10px 0 2px; }
+  label.etiqueta small { font-weight:normal; color:var(--gris); }
+  textarea#entradas { width:100%; min-height:5.2em; font:15px/1.45 Consolas,"Courier New",monospace; border:1px solid var(--tinta);
+                      border-radius:4px; padding:6px 8px; resize:vertical; }
+  @media (max-width: 480px) {
+    header { padding:10px 12px 4px; } main { padding:8px 10px 20px; } footer { padding:6px 12px 16px; }
+    .panel { padding:10px; } h1 { font-size:1.45rem; } nav.retos button { padding:6px 8px; }
+    .consola { font-size:13.5px; }
+  }
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header>
+  <div class="semana">Semana 03 · Tipos de datos y asignación formal · Ejercicio con Python</div>
+  <h1>Entrada, conversión y formato</h1>
+  <p class="sub">Cuatro programas cortos que piden datos con input(), los convierten, los validan y los muestran con f-strings. Escríbelos, córrelos aquí mismo con tus entradas y verifícalos.</p>
+</header>
+<main>
+  <div class="fila">
+    <div class="panel">
+      <h2>Elige un reto</h2>
+      <nav class="retos" id="retos" role="tablist" aria-label="Retos"></nav>
+      <h3 id="reto-titulo"></h3>
+      <ol id="instrucciones"></ol>
+      <h3>Así debe verse <small style="font-weight:normal;color:var(--gris)">(con las entradas del ejemplo)</small></h3>
+      <div class="consola ejemplo" id="ejemplo" aria-label="Ejemplo de la consola"></div>
+      <h3>Lo que se revisa al presionar Verificar</h3>
+      <ul class="pruebas" id="lista-pruebas"></ul>
+      <div class="lectura" id="pista"></div>
+    </div>
+    <div class="panel">
+      <div class="barra">
+        <button type="button" class="accion primaria" id="ejecutar" disabled>▶ Ejecutar</button>
+        <button type="button" class="accion" id="verificar" disabled>✓ Verificar</button>
+        <button type="button" class="accion" id="restaurar">↺ Código inicial</button>
+        <button type="button" class="accion" id="descargar">⬇ Descargar .py</button>
+        <span id="estado" role="status">Cargando Python…</span>
+      </div>
+      <div class="editor-caja"><textarea id="editor" spellcheck="false" aria-label="Editor de código Python"></textarea></div>
+      <label class="etiqueta" for="entradas">Entradas (una por renglón) <small>lo que teclearía el usuario en cada input()</small></label>
+      <textarea id="entradas" spellcheck="false" autocomplete="off"></textarea>
+      <h3>Salida</h3>
+      <div class="consola" id="salida"></div>
+      <div id="figuras"></div>
+      <div id="archivos"></div>
+      <div id="resultados" aria-live="polite"></div>
+    </div>
+  </div>
+</main>
+<footer>
+  Programación Básica · FCFM-UANL · Python corre en tu navegador (la primera vez descarga unos 10 MB;
+  después funciona más rápido). Ctrl+Enter ejecuta. Tu código y tus entradas de cada reto se guardan en este navegador.
+  <a href="index.html">Índice de simuladores</a> · <a href="#qr-sitio" class="qr-abrir">Abrir en el celular (QR)</a>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.27.7/full/pyodide.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  // ===================== Configuración de los ejercicios =====================
+  var CLAVE = "pb-s03-ejercicios";
+  var PAQUETES = [];
+  var MICROPIP = [];
+  var ARCHIVOS = {};
+  // Entradas y salidas esperadas de las pruebas (generadas con Python 3.12)
+  var CASOS = {
+ "temperatura": [
+  {
+   "entradas": [
+    "25"
+   ],
+   "esperado": "Temperatura en °C: 25\n25.0 °C son 77.0 °F\n"
+  },
+  {
+   "entradas": [
+    "-40"
+   ],
+   "esperado": "Temperatura en °C: -40\n-40.0 °C son -40.0 °F\n"
+  },
+  {
+   "entradas": [
+    "36.6"
+   ],
+   "esperado": "Temperatura en °C: 36.6\n36.6 °C son 97.9 °F\n"
+  },
+  {
+   "entradas": [
+    "0"
+   ],
+   "esperado": "Temperatura en °C: 0\n0.0 °C son 32.0 °F\n"
+  },
+  {
+   "entradas": [
+    "100"
+   ],
+   "esperado": "Temperatura en °C: 100\n100.0 °C son 212.0 °F\n"
+  },
+  {
+   "entradas": [
+    "21.5"
+   ],
+   "esperado": "Temperatura en °C: 21.5\n21.5 °C son 70.7 °F\n"
+  },
+  {
+   "entradas": [
+    "-12"
+   ],
+   "esperado": "Temperatura en °C: -12\n-12.0 °C son 10.4 °F\n"
+  }
+ ],
+ "ficha": [
+  {
+   "entradas": [
+    "Ana López",
+    "19",
+    "87.456"
+   ],
+   "esperado": "Nombre: Ana López\nEdad: 19\nPromedio: 87.456\nAlumno: Ana López (19 años)\nPromedio: 87.46\n"
+  },
+  {
+   "entradas": [
+    "Luis",
+    "20",
+    "90"
+   ],
+   "esperado": "Nombre: Luis\nEdad: 20\nPromedio: 90\nAlumno: Luis (20 años)\nPromedio: 90.00\n"
+  },
+  {
+   "entradas": [
+    "Marta",
+    "18",
+    "70.5"
+   ],
+   "esperado": "Nombre: Marta\nEdad: 18\nPromedio: 70.5\nAlumno: Marta (18 años)\nPromedio: 70.50\n"
+  },
+  {
+   "entradas": [
+    "Sofía Garza",
+    "21",
+    "99.999"
+   ],
+   "esperado": "Nombre: Sofía Garza\nEdad: 21\nPromedio: 99.999\nAlumno: Sofía Garza (21 años)\nPromedio: 100.00\n"
+  },
+  {
+   "entradas": [
+    "Ana",
+    "diecinueve",
+    "90"
+   ],
+   "esperado": "Nombre: Ana\nEdad: diecinueve\nPromedio: 90\nError: la edad debe escribirse solo con dígitos, por ejemplo 19.\n"
+  },
+  {
+   "entradas": [
+    "Ana",
+    "-5",
+    "90"
+   ],
+   "esperado": "Nombre: Ana\nEdad: -5\nPromedio: 90\nError: la edad debe escribirse solo con dígitos, por ejemplo 19.\n"
+  },
+  {
+   "entradas": [
+    "Ana",
+    "19.5",
+    "90"
+   ],
+   "esperado": "Nombre: Ana\nEdad: 19.5\nPromedio: 90\nError: la edad debe escribirse solo con dígitos, por ejemplo 19.\n"
+  },
+  {
+   "entradas": [
+    "Beto",
+    "",
+    "80"
+   ],
+   "esperado": "Nombre: Beto\nEdad: \nPromedio: 80\nError: la edad debe escribirse solo con dígitos, por ejemplo 19.\n"
+  }
+ ],
+ "iva": [
+  {
+   "entradas": [
+    "Cuaderno",
+    "45.5",
+    "3"
+   ],
+   "esperado": "Producto: Cuaderno\nPrecio unitario: 45.5\nCantidad: 3\nCuaderno x 3\nSubtotal: $    136.50\nIVA:      $     21.84\nTotal:    $    158.34\n"
+  },
+  {
+   "entradas": [
+    "Calculadora",
+    "1250",
+    "4"
+   ],
+   "esperado": "Producto: Calculadora\nPrecio unitario: 1250\nCantidad: 4\nCalculadora x 4\nSubtotal: $  5,000.00\nIVA:      $    800.00\nTotal:    $  5,800.00\n"
+  },
+  {
+   "entradas": [
+    "Lápiz",
+    "8.75",
+    "12"
+   ],
+   "esperado": "Producto: Lápiz\nPrecio unitario: 8.75\nCantidad: 12\nLápiz x 12\nSubtotal: $    105.00\nIVA:      $     16.80\nTotal:    $    121.80\n"
+  },
+  {
+   "entradas": [
+    "Mochila",
+    "899.9",
+    "1"
+   ],
+   "esperado": "Producto: Mochila\nPrecio unitario: 899.9\nCantidad: 1\nMochila x 1\nSubtotal: $    899.90\nIVA:      $    143.98\nTotal:    $  1,043.88\n"
+  },
+  {
+   "entradas": [
+    "Cuaderno",
+    "45.5",
+    "tres"
+   ],
+   "esperado": "Producto: Cuaderno\nPrecio unitario: 45.5\nCantidad: tres\nError: la cantidad debe ser un número entero de piezas.\n"
+  },
+  {
+   "entradas": [
+    "Cuaderno",
+    "45.5",
+    "2.5"
+   ],
+   "esperado": "Producto: Cuaderno\nPrecio unitario: 45.5\nCantidad: 2.5\nError: la cantidad debe ser un número entero de piezas.\n"
+  },
+  {
+   "entradas": [
+    "Cuaderno",
+    "45.5",
+    "-1"
+   ],
+   "esperado": "Producto: Cuaderno\nPrecio unitario: 45.5\nCantidad: -1\nError: la cantidad debe ser un número entero de piezas.\n"
+  }
+ ],
+ "minutos": [
+  {
+   "entradas": [
+    "135"
+   ],
+   "esperado": "Minutos: 135\n135 minutos son 2 h 15 min (2:15)\n"
+  },
+  {
+   "entradas": [
+    "65"
+   ],
+   "esperado": "Minutos: 65\n65 minutos son 1 h 5 min (1:05)\n"
+  },
+  {
+   "entradas": [
+    "0"
+   ],
+   "esperado": "Minutos: 0\n0 minutos son 0 h 0 min (0:00)\n"
+  },
+  {
+   "entradas": [
+    "1440"
+   ],
+   "esperado": "Minutos: 1440\n1440 minutos son 24 h 0 min (24:00)\n"
+  },
+  {
+   "entradas": [
+    "59"
+   ],
+   "esperado": "Minutos: 59\n59 minutos son 0 h 59 min (0:59)\n"
+  },
+  {
+   "entradas": [
+    "600"
+   ],
+   "esperado": "Minutos: 600\n600 minutos son 10 h 0 min (10:00)\n"
+  },
+  {
+   "entradas": [
+    "1.5"
+   ],
+   "esperado": "Minutos: 1.5\nError: escribe los minutos como un número entero, sin signo ni punto.\n"
+  },
+  {
+   "entradas": [
+    "-30"
+   ],
+   "esperado": "Minutos: -30\nError: escribe los minutos como un número entero, sin signo ni punto.\n"
+  },
+  {
+   "entradas": [
+    "dos horas"
+   ],
+   "esperado": "Minutos: dos horas\nError: escribe los minutos como un número entero, sin signo ni punto.\n"
+  }
+ ]
+};
+  var CODIGOS = [
+    [
+      "# Reto 1: de Celsius a Fahrenheit",
+      "celsius_texto: str = input(\"Temperatura en °C: \")",
+      "celsius: float = 0.0      # cambia el 0.0: convierte celsius_texto a float",
+      "fahrenheit: float = 0.0   # F = C × 9 / 5 + 32",
+      "print(f\"{celsius} °C son {fahrenheit} °F\")   # falta el formato: 1 decimal",
+    ].join("\n") + "\n",
+    [
+      "# Reto 2: ficha de inscripción",
+      "nombre: str = input(\"Nombre: \")",
+      "edad_texto: str = input(\"Edad: \")",
+      "promedio_texto: str = input(\"Promedio: \")",
+      "",
+      "if edad_texto.isdigit():",
+      "    edad: int = 0            # convierte edad_texto",
+      "    promedio: float = 0.0    # convierte promedio_texto",
+      "    # imprime los dos renglones de la ficha (mira el ejemplo)",
+      "else:",
+      "    print(\"\")                # escribe aquí el mensaje de error del ejemplo",
+    ].join("\n") + "\n",
+    [
+      "# Reto 3: recibo con IVA (16 %)",
+      "producto: str = input(\"Producto: \")",
+      "precio: float = float(input(\"Precio unitario: \"))",
+      "cantidad_texto: str = input(\"Cantidad: \")",
+      "",
+      "if cantidad_texto.isdigit():",
+      "    cantidad: int = int(cantidad_texto)",
+      "    subtotal: float = 0.0",
+      "    iva: float = 0.0",
+      "    total: float = 0.0",
+      "    # imprime el recibo como en el ejemplo",
+      "else:",
+      "    print(\"\")    # escribe aquí el mensaje de error del ejemplo",
+    ].join("\n") + "\n",
+    [
+      "# Reto 4: de minutos a horas y minutos",
+      "minutos_texto: str = input(\"Minutos: \")",
+      "",
+      "if minutos_texto.isdigit():",
+      "    total: int = int(minutos_texto)",
+      "    # completa: las horas y los minutos que sobran (con // y %),",
+      "    # y el mensaje del ejemplo; los minutos del reloj, siempre con dos dígitos",
+      "else:",
+      "    print(\"\")    # escribe aquí el mensaje de error del ejemplo",
+    ].join("\n") + "\n"
+  ];
+  var RETOS = [
+    { corto: "Temperatura", titulo: "Reto 1 · De Celsius a Fahrenheit", archivo: "reto1_temperatura.py", casos: "temperatura",
+      instrucciones: [
+        "Presiona <b>▶ Ejecutar</b>: el programa lee la temperatura, pero no la convierte e imprime 0.0.",
+        "Convierte <code>celsius_texto</code> a float y calcula <code>fahrenheit</code> con F = C × 9 / 5 + 32.",
+        "Imprime los dos valores con un decimal (<code>.1f</code>), con el mismo texto del ejemplo.",
+        "Prueba con otras entradas y presiona <b>✓ Verificar</b>."],
+      ejemplo: 0,
+      pruebas: ["Con siete temperaturas (positivas, negativas, con y sin decimales), la salida es exactamente como la del ejemplo",
+                "celsius y fahrenheit llevan la anotación float"],
+      pista: "input() regresa un texto: sin float(), celsius_texto * 9 da otra cosa o un error. Sin .1f, 36.6 °C saldría como 97.88000000000001." },
+    { corto: "Ficha", titulo: "Reto 2 · Ficha de inscripción", archivo: "reto2_ficha.py", casos: "ficha",
+      instrucciones: [
+        "El programa pide nombre, edad y promedio. El <code>if</code> revisa que la edad sea solo dígitos antes de convertirla.",
+        "Dentro del if convierte la edad (int) y el promedio (float) e imprime los dos renglones de la ficha: el promedio con 2 decimales.",
+        "En el else, imprime el mensaje de error del ejemplo de abajo.",
+        "Corre con una edad válida y con una inválida (por ejemplo diecinueve) y verifica."],
+      ejemplo: 0, ejemploMal: 4,
+      pruebas: ["Con cuatro fichas válidas, la salida es exactamente como la del ejemplo",
+                "Con cuatro edades inválidas (diecinueve, -5, 19.5 y vacía), aparece el mensaje de error, sin traceback",
+                "edad lleva la anotación int y promedio la anotación float"],
+      pista: "isdigit() es False si hay letras, un signo, un punto o nada. Así el int() solo se ejecuta cuando no puede fallar." },
+    { corto: "IVA", titulo: "Reto 3 · Recibo con IVA", archivo: "reto3_iva.py", casos: "iva",
+      instrucciones: [
+        "Calcula el subtotal (precio × cantidad), el IVA (16 % del subtotal) y el total.",
+        "Imprime el recibo como en el ejemplo: las etiquetas ocupan 10 caracteres a la izquierda; después va $ y la cantidad en 10 caracteres a la derecha, con separador de miles y 2 decimales.",
+        "Si la cantidad no son solo dígitos, imprime el mensaje de error del ejemplo.",
+        "Verifica."],
+      ejemplo: 0, ejemploMal: 4,
+      pruebas: ["Con cuatro compras (con y sin miles), la salida es exactamente como la del ejemplo",
+                "Con tres cantidades inválidas (tres, 2.5, -1), aparece el mensaje de error, sin traceback",
+                "subtotal, iva y total llevan la anotación float"],
+      pista: "Repasa el laboratorio de f-strings: < y > alinean, el número es el ancho, la coma separa los miles y .2f deja dos decimales. El $ va fuera de las llaves." },
+    { corto: "Minutos", titulo: "Reto 4 · De minutos a horas", archivo: "reto4_minutos.py", casos: "minutos",
+      instrucciones: [
+        "Con <code>//</code> calcula las horas completas y con <code>%</code> los minutos que sobran.",
+        "Imprime el mensaje del ejemplo; en el reloj, los minutos van siempre con dos dígitos (1:05, no 1:5).",
+        "Si lo tecleado no son solo dígitos, imprime el mensaje de error del ejemplo.",
+        "Verifica."],
+      ejemplo: 1, ejemploMal: 6,
+      pruebas: ["Con seis cantidades (0, 59, 65, 135, 600 y 1440), la salida es exactamente como la del ejemplo",
+                "Con tres entradas inválidas (1.5, -30 y dos horas), aparece el mensaje de error, sin traceback"],
+      pista: "135 // 60 es 2 y 135 % 60 es 15. Para que un número ocupe dos dígitos con ceros a la izquierda, usa la especificación 0 con ancho 2 y tipo d." }
+  ];
+  // Pruebas: revisar_k(ns, salida, archivos, figuras) regresa una lista de (ok, mensaje).
+  var PRUEBAS_PY = [
+    "_CASOS = json.loads(_CASOS_JSON)",
+    "",
+    "def _lista(entradas):",
+    "    return ', '.join(repr(e) for e in entradas) if entradas else '(ninguna)'",
+    "",
+    "def _comparar(entradas, esperado):",
+    "    salida, error, ns = _ejecutar_con(entradas)",
+    "    con = 'Con las entradas ' + _lista(entradas)",
+    "    if error == 'detenido':",
+    "        return False, con + ', el programa no terminó: ¿hay un ciclo que nunca acaba?'",
+    "    if error:",
+    "        return False, con + ', el programa terminó con un error: ' + error.strip().splitlines()[-1]",
+    "    if salida == esperado:",
+    "        return True, con + ', la salida es correcta'",
+    "    a, b = salida.splitlines(), esperado.splitlines()",
+    "    for i in range(max(len(a), len(b))):",
+    "        x = a[i] if i < len(a) else None",
+    "        y = b[i] if i < len(b) else None",
+    "        if x != y:",
+    "            if x is None:",
+    "                return False, con + f', falta el renglón {i + 1}: {y!r}'",
+    "            if y is None:",
+    "                return False, con + f', sobra el renglón {i + 1}: {x!r}'",
+    "            return False, con + f', el renglón {i + 1} debe ser {y!r} y tu programa imprimió {x!r}'",
+    "    return False, con + ', la salida no coincide (revisa los espacios al final o los renglones vacíos)'",
+    "",
+    "def _todas(nombre, cuales, bien):",
+    "    fallas = []",
+    "    for k in cuales:",
+    "        ok, msg = _comparar(_CASOS[nombre][k]['entradas'], _CASOS[nombre][k]['esperado'])",
+    "        if not ok:",
+    "            fallas.append(msg)",
+    "    if fallas:",
+    "        return (False, fallas[0] + (f' (y {len(fallas) - 1} caso(s) más con problemas)' if len(fallas) > 1 else ''))",
+    "    return (True, bien)",
+    "",
+    "def _anotaciones(entradas, esperadas):",
+    "    salida, error, ns = _ejecutar_con(entradas)",
+    "    anot = ns.get('__annotations__', {})",
+    "    faltan = [f'{n}: {t.__name__}' for n, t in esperadas.items() if anot.get(n) is not t]",
+    "    if faltan:",
+    "        return (False, 'Falta la anotación de tipo: ' + ', '.join(faltan))",
+    "    return (True, 'Llevan su anotación de tipo: ' + ', '.join(f'{n}: {t.__name__}' for n, t in esperadas.items()))",
+    "",
+    "def revisar_1(ns, salida, archivos, figuras):",
+    "    return [_todas('temperatura', range(7), 'Con las siete temperaturas la salida es exactamente la esperada'),",
+    "            _anotaciones(['25'], {'celsius': float, 'fahrenheit': float})]",
+    "",
+    "def revisar_2(ns, salida, archivos, figuras):",
+    "    return [_todas('ficha', range(4), 'Con las cuatro fichas válidas la salida es exactamente la esperada'),",
+    "            _todas('ficha', range(4, 8), 'Con las cuatro edades inválidas aparece el mensaje de error'),",
+    "            _anotaciones(['Ana', '19', '90'], {'edad': int, 'promedio': float})]",
+    "",
+    "def revisar_3(ns, salida, archivos, figuras):",
+    "    return [_todas('iva', range(4), 'Con las cuatro compras la salida es exactamente la esperada'),",
+    "            _todas('iva', range(4, 7), 'Con las tres cantidades inválidas aparece el mensaje de error'),",
+    "            _anotaciones(['Cuaderno', '45.5', '3'], {'subtotal': float, 'iva': float, 'total': float})]",
+    "",
+    "def revisar_4(ns, salida, archivos, figuras):",
+    "    return [_todas('minutos', range(6), 'Con las seis cantidades válidas la salida es exactamente la esperada'),",
+    "            _todas('minutos', range(6, 9), 'Con las tres entradas inválidas aparece el mensaje de error')]",
+    "",
+    "revisar = revisar_1",
+  ].join("\n");
+  // ==========================================================================
+
+  var PREPARAR_PY = [
+    "import sys, io, os, json, base64, traceback, linecache",
+    "_TRABAJO = '/home/pyodide/trabajo'",
+    "",
+    "# Los errores como los imprime python.exe 3.12: solo las líneas de tu_programa.py, con las",
+    "# sugerencias \"Did you mean\" de Python/suggestions.c y las excepciones encadenadas.",
+    "def _costo(a, b):",
+    "    if (a & 31) != (b & 31):",
+    "        return 2",
+    "    if a == b:",
+    "        return 0",
+    "    if 65 <= a <= 90:",
+    "        a += 32",
+    "    if 65 <= b <= 90:",
+    "        b += 32",
+    "    return 1 if a == b else 2",
+    "",
+    "def _distancia(a, b, maximo):",
+    "    while a and b and a[0] == b[0]:",
+    "        a, b = a[1:], b[1:]",
+    "    while a and b and a[-1] == b[-1]:",
+    "        a, b = a[:-1], b[:-1]",
+    "    if not a or not b:",
+    "        return (len(a) + len(b)) * 2",
+    "    if len(a) > 40 or len(b) > 40:",
+    "        return maximo + 1",
+    "    if len(b) < len(a):",
+    "        a, b = b, a",
+    "    if (len(b) - len(a)) * 2 > maximo:",
+    "        return maximo + 1",
+    "    fila = [(i + 1) * 2 for i in range(len(a))]",
+    "    resultado = 0",
+    "    for j, cb in enumerate(b):",
+    "        distancia = resultado = j * 2",
+    "        minimo = sys.maxsize",
+    "        for k, ca in enumerate(a):",
+    "            sustituir = distancia + _costo(cb, ca)",
+    "            distancia = fila[k]",
+    "            resultado = min(min(resultado, distancia) + 2, sustituir)",
+    "            fila[k] = resultado",
+    "            if resultado < minimo:",
+    "                minimo = resultado",
+    "        if minimo > maximo:",
+    "            return maximo + 1",
+    "    return resultado",
+    "",
+    "def _sugerir(candidatos, nombre):",
+    "    if len(candidatos) >= 750:",
+    "        return None",
+    "    nb = nombre.encode('utf-8', 'surrogatepass')",
+    "    mejor, mejor_d = None, sys.maxsize",
+    "    for c in candidatos:",
+    "        if not isinstance(c, str) or c == nombre:",
+    "            continue",
+    "        cb = c.encode('utf-8', 'surrogatepass')",
+    "        maximo = min((len(nb) + len(cb) + 3) * 2 // 6, mejor_d - 1)",
+    "        d = _distancia(nb, cb, maximo)",
+    "        if d > maximo:",
+    "            continue",
+    "        if mejor is None or d < mejor_d:",
+    "            mejor, mejor_d = c, d",
+    "    return mejor",
+    "",
+    "def _sugerencia(e):",
+    "    try:",
+    "        if isinstance(e, ImportError):",
+    "            if getattr(e, 'name_from', None) is None or not isinstance(e.name, str):",
+    "                return None",
+    "            m = sys.modules.get(e.name)",
+    "            return None if m is None else _sugerir(dir(m), e.name_from)",
+    "        nombre = getattr(e, 'name', None)",
+    "        if not isinstance(nombre, str):",
+    "            return None",
+    "        if isinstance(e, AttributeError):",
+    "            return _sugerir(dir(e.obj), nombre)",
+    "        if isinstance(e, NameError):",
+    "            tb = e.__traceback__",
+    "            if tb is None:",
+    "                return None",
+    "            while tb.tb_next is not None:",
+    "                tb = tb.tb_next",
+    "            marco = tb.tb_frame",
+    "            locales = list(marco.f_code.co_varnames)",
+    "            s = _sugerir(locales, nombre)",
+    "            if s:",
+    "                return s",
+    "            if 'self' in locales and 'self' in marco.f_locals and hasattr(marco.f_locals['self'], nombre):",
+    "                return 'self.' + nombre",
+    "            return _sugerir(list(marco.f_globals), nombre) or _sugerir(list(marco.f_builtins), nombre)",
+    "    except Exception:",
+    "        return None",
+    "    return None",
+    "",
+    "def _mensaje(e):",
+    "    texto = traceback._safe_string(e, 'exception')",
+    "    s = _sugerencia(e)",
+    "    if s:",
+    "        texto += \". Did you mean: '\" + s + \"'?\"",
+    "    if isinstance(e, NameError) and isinstance(getattr(e, 'name', None), str) and e.name in sys.stdlib_module_names:",
+    "        texto += (\" Or did you forget to import '%s'?\" if s else \". Did you forget to import '%s'?\") % e.name",
+    "    return texto",
+    "",
+    "def _ajustar(te, e, vistos):",
+    "    if id(te) in vistos:",
+    "        return",
+    "    vistos.add(id(te))",
+    "    te.stack = traceback.StackSummary.from_list([m for m in te.stack if m.filename == 'tu_programa.py'])",
+    "    if not isinstance(e, SyntaxError):",
+    "        te._str = _mensaje(e)",
+    "    if te.__cause__ is not None and e.__cause__ is not None:",
+    "        _ajustar(te.__cause__, e.__cause__, vistos)",
+    "    if te.__context__ is not None and e.__context__ is not None:",
+    "        _ajustar(te.__context__, e.__context__, vistos)",
+    "",
+    "def _formatear_error(e):",
+    "    if isinstance(e, SystemExit):",
+    "        return None if e.code is None or isinstance(e.code, int) else str(e.code) + '\\n'",
+    "    te = traceback.TracebackException.from_exception(e)",
+    "    _ajustar(te, e, set())",
+    "    return ''.join(te.format())",
+    "",
+    "def _correr(codigo, archivos_json, verificar):",
+    "    archivos = json.loads(archivos_json)",
+    "    # Para que los errores muestren la línea de código, como en la consola",
+    "    linecache.cache['tu_programa.py'] = (len(codigo), None, codigo.splitlines(True), 'tu_programa.py')",
+    "    os.makedirs(_TRABAJO, exist_ok=True)",
+    "    os.chdir(_TRABAJO)",
+    "    for n in os.listdir('.'):",
+    "        if os.path.isfile(n):",
+    "            os.remove(n)",
+    "    for nombre, contenido in archivos.items():",
+    "        with open(nombre, 'w', encoding='utf-8') as f:",
+    "            f.write(contenido)",
+    "    salida, imagenes, figuras, plt = io.StringIO(), [], [], None",
+    "    if 'matplotlib' in sys.modules or 'matplotlib' in codigo:",
+    "        try:",
+    "            import matplotlib",
+    "            matplotlib.use('Agg')",
+    "            import matplotlib.pyplot as plt",
+    "            plt.close('all')",
+    "        except ImportError:",
+    "            plt = None",
+    "    def _mostrar(*args, **kwargs):",
+    "        for n in plt.get_fignums():",
+    "            b = io.BytesIO()",
+    "            plt.figure(n).savefig(b, format='png', dpi=100, bbox_inches='tight')",
+    "            imagenes.append(base64.b64encode(b.getvalue()).decode('ascii'))",
+    "            figuras.append(plt.figure(n))",
+    "        plt.close('all')",
+    "    if plt is not None:",
+    "        show_original, plt.show = plt.show, _mostrar",
+    "    ns = {'__name__': '__main__'}",
+    "    error = None",
+    "    viejo_out, viejo_err = sys.stdout, sys.stderr",
+    "    sys.stdout = sys.stderr = salida",
+    "    # Mismo margen de recursión que al correr el archivo con python (1000 marcos)",
+    "    profundidad, marco = 0, sys._getframe()",
+    "    while marco is not None:",
+    "        profundidad, marco = profundidad + 1, marco.f_back",
+    "    limite = sys.getrecursionlimit()",
+    "    sys.setrecursionlimit(1000 + profundidad)",
+    "    try:",
+    "        exec(compile(codigo, 'tu_programa.py', 'exec'), ns)",
+    "    except BaseException as e:",
+    "        error = _formatear_error(e)",
+    "    finally:",
+    "        sys.setrecursionlimit(limite)",
+    "        sys.stdout, sys.stderr = viejo_out, viejo_err",
+    "        if plt is not None:",
+    "            plt.show = show_original",
+    "    sin_show = plt is not None and not imagenes and len(plt.get_fignums()) > 0",
+    "    if sin_show:",
+    "        _mostrar()",
+    "    nuevos = sorted(n for n in os.listdir('.') if os.path.isfile(n) and n not in archivos)",
+    "    resultados = None",
+    "    if verificar and error is None:",
+    "        try:",
+    "            resultados = [[bool(ok), str(msg)] for ok, msg in revisar(ns, salida.getvalue(), nuevos, figuras)]",
+    "        except Exception as e:",
+    "            resultados = [[False, 'No se pudo revisar: ' + ''.join(traceback.format_exception_only(type(e), e)).strip()]]",
+    "    return json.dumps({'salida': salida.getvalue(), 'error': error, 'figuras': imagenes,",
+    "                       'archivos': nuevos, 'resultados': resultados, 'sin_show': sin_show})",
+  ].join("\n");
+
+  // input() con las entradas de la caja y un tope para los ciclos que no terminan.
+  var ENTRADAS_PY = [
+    "import builtins",
+    "_ENTRADAS = []",
+    "_PASOS = 0",
+    "_DETENIDO = False",
+    "_TOPE_LINEAS = 200000",
+    "_TOPE_SALIDA = 400000",
+    "",
+    "class _Detener(BaseException):",
+    "    pass",
+    "",
+    "def _input_simulado(*args, **kwargs):",
+    "    if kwargs:",
+    "        raise TypeError('input() takes no keyword arguments')",
+    "    if len(args) > 1:",
+    "        raise TypeError(f'input expected at most 1 argument, got {len(args)}')",
+    "    aviso = str(args[0]) if args else ''",
+    "    if not _ENTRADAS:",
+    "        sys.stdout.write(aviso + '\\n')",
+    "        raise EOFError('EOF when reading a line')",
+    "    dato = _ENTRADAS.pop(0)",
+    "    sys.stdout.write(aviso + dato + '\\n')",
+    "    return dato",
+    "",
+    "def _contar(marco, evento, arg):",
+    "    global _PASOS, _DETENIDO",
+    "    if evento == 'line':",
+    "        _PASOS += 1",
+    "        try:",
+    "            mucha_salida = sys.stdout.tell() > _TOPE_SALIDA",
+    "        except Exception:",
+    "            mucha_salida = False",
+    "        if _PASOS > _TOPE_LINEAS or mucha_salida:",
+    "            _DETENIDO = True",
+    "            raise _Detener()",
+    "    return _contar",
+    "",
+    "def _vigilante(marco, evento, arg):",
+    "    return _contar if marco.f_code.co_filename == 'tu_programa.py' else None",
+    "",
+    "def _preparar(entradas):",
+    "    global _ENTRADAS, _PASOS, _DETENIDO",
+    "    _ENTRADAS = [str(e) for e in entradas]",
+    "    _PASOS, _DETENIDO = 0, False",
+    "",
+    "def _correr_entradas(codigo, archivos_json, entradas_json):",
+    "    _preparar(json.loads(entradas_json))",
+    "    viejo = builtins.input",
+    "    builtins.input = _input_simulado",
+    "    sys.settrace(_vigilante)",
+    "    try:",
+    "        r = json.loads(_correr(codigo, archivos_json, False))",
+    "    finally:",
+    "        sys.settrace(None)",
+    "        builtins.input = viejo",
+    "    r['detenido'] = _DETENIDO",
+    "    return json.dumps(r)",
+    "",
+    "def _ejecutar_con(entradas):",
+    "    _preparar(entradas)",
+    "    salida, ns, error = io.StringIO(), {'__name__': '__main__'}, None",
+    "    viejo_out, viejo_err = sys.stdout, sys.stderr",
+    "    sys.stdout = sys.stderr = salida",
+    "    profundidad, marco = 0, sys._getframe()",
+    "    while marco is not None:",
+    "        profundidad, marco = profundidad + 1, marco.f_back",
+    "    limite = sys.getrecursionlimit()",
+    "    sys.setrecursionlimit(1000 + profundidad)",
+    "    # El vigilante se activa en cada ejecución: Python lo apaga cuando detiene un programa",
+    "    sys.settrace(_vigilante)",
+    "    try:",
+    "        exec(compile(_codigo_alumno, 'tu_programa.py', 'exec'), ns)",
+    "    except BaseException as e:",
+    "        error = 'detenido' if _DETENIDO else (_formatear_error(e) or None)",
+    "    finally:",
+    "        sys.settrace(None)",
+    "        sys.setrecursionlimit(limite)",
+    "        sys.stdout, sys.stderr = viejo_out, viejo_err",
+    "    return salida.getvalue(), error, ns",
+    "",
+    "def _verificar_con_entradas(codigo):",
+    "    linecache.cache['tu_programa.py'] = (len(codigo), None, codigo.splitlines(True), 'tu_programa.py')",
+    "    try:",
+    "        compile(codigo, 'tu_programa.py', 'exec')",
+    "    except SyntaxError as e:",
+    "        return json.dumps({'sintaxis': _formatear_error(e), 'resultados': None})",
+    "    viejo = builtins.input",
+    "    builtins.input = _input_simulado",
+    "    try:",
+    "        resultados = [[bool(ok), str(msg)] for ok, msg in revisar(None, '', [], [])]",
+    "    except Exception as e:",
+    "        resultados = [[False, 'No se pudo revisar: ' + ''.join(traceback.format_exception_only(type(e), e)).strip()]]",
+    "    finally:",
+    "        sys.settrace(None)",
+    "        builtins.input = viejo",
+    "    return json.dumps({'sintaxis': None, 'resultados': resultados})",
+  ].join("\n");
+
+  var $ = function (id) { return document.getElementById(id); };
+  var pyodide = null, editor = null, reto = 0, listo = false;
+  var MSJ_DETENIDO = "(La página detuvo tu programa: ejecutó más de 200 000 líneas o imprimió demasiado. ¿Hay un ciclo que nunca termina?)";
+
+  function esc(t) {
+    return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  function estado(texto, listo) {
+    $("estado").textContent = texto;
+    $("estado").className = listo ? "listo" : "";
+  }
+  // Lo que se guarda en el navegador. Si el navegador no deja guardar (ventana privada), se
+  // conserva en memoria mientras la página esté abierta.
+  var memoria = {};
+  function leer(clave) {
+    if (Object.prototype.hasOwnProperty.call(memoria, clave)) return memoria[clave];
+    try { return localStorage.getItem(CLAVE + "-" + clave); } catch (e) { return null; }
+  }
+  function escribir(clave, valor) {
+    memoria[clave] = valor;
+    try { localStorage.setItem(CLAVE + "-" + clave, valor); } catch (e) { /* sin almacenamiento */ }
+  }
+  function guardar() { escribir("reto" + (reto + 1), obtenerCodigo()); escribir("entradas" + (reto + 1), $("entradas").value); }
+  function obtenerCodigo() { return editor ? editor.getValue() : $("editor").value; }
+  function ponerCodigo(t) { if (editor) { editor.setValue(t); editor.clearHistory(); } else $("editor").value = t; }
+  function leerEntradas() {
+    var lineas = $("entradas").value.replace(/\r/g, "").split("\n");
+    if (lineas.length && lineas[lineas.length - 1] === "") lineas.pop();
+    return lineas;
+  }
+
+  // Botones de los retos
+  $("retos").innerHTML = RETOS.map(function (r, k) {
+    return '<button type="button" role="tab" id="boton-reto' + (k + 1) + '" data-reto="' + k + '">' +
+           '<span class="num">' + (k + 1) + '</span> ' + esc(r.corto) + '<span class="hecho" id="hecho' + (k + 1) + '"></span></button>';
+  }).join("");
+  function marcarHechos() {
+    RETOS.forEach(function (r, k) {
+      var hecho = leer("ok" + (k + 1)) === "1";
+      $("hecho" + (k + 1)).textContent = hecho ? " ✓" : "";
+      $("boton-reto" + (k + 1)).setAttribute("aria-label", "Reto " + (k + 1) + ": " + r.corto + (hecho ? " (ya pasaste sus pruebas)" : ""));
+    });
+  }
+  function limpiar() {
+    $("salida").innerHTML = "";
+    $("figuras").innerHTML = "";
+    $("archivos").innerHTML = "";
+    $("resultados").innerHTML = "";
+  }
+  function usarReto(k, guardarAntes) {
+    if (guardarAntes) guardar();
+    reto = k;
+    var r = RETOS[k], casos = CASOS[r.casos];
+    document.querySelectorAll("#retos button").forEach(function (b) {
+      b.setAttribute("aria-selected", Number(b.dataset.reto) === k ? "true" : "false");
+      b.tabIndex = Number(b.dataset.reto) === k ? 0 : -1;
+    });
+    $("reto-titulo").textContent = r.titulo;
+    $("instrucciones").innerHTML = r.instrucciones.map(function (t) { return "<li>" + t + "</li>"; }).join("");
+    $("ejemplo").textContent = casos[r.ejemplo].esperado.replace(/\n$/, "") +
+      (r.ejemploMal !== undefined ? "\n\n" + casos[r.ejemploMal].esperado.replace(/\n$/, "") : "");
+    $("lista-pruebas").innerHTML = r.pruebas.map(function (p) { return "<li>" + esc(p) + "</li>"; }).join("");
+    $("pista").innerHTML = "<b>Pista:</b> " + esc(r.pista);
+    ponerCodigo(leer("reto" + (k + 1)) || CODIGOS[k]);
+    var ent = leer("entradas" + (k + 1));
+    $("entradas").value = ent !== null ? ent : casos[r.ejemplo].entradas.join("\n");
+    limpiar();
+    escribir("actual", String(k));
+    if (listo) pyodide.runPython("revisar = revisar_" + (k + 1));
+  }
+  document.querySelectorAll("#retos button").forEach(function (b) {
+    b.addEventListener("click", function () { if (Number(b.dataset.reto) !== reto) usarReto(Number(b.dataset.reto), true); });
+    b.addEventListener("keydown", function (e) {
+      if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+      e.preventDefault();
+      var k = (reto + (e.key === "ArrowRight" ? 1 : RETOS.length - 1)) % RETOS.length;
+      usarReto(k, true);
+      $("boton-reto" + (k + 1)).focus();
+    });
+  });
+
+  // Editor: CodeMirror si cargó; si no, el cuadro de texto con Tab = 4 espacios
+  $("editor").value = "";
+  if (window.CodeMirror) {
+    editor = CodeMirror.fromTextArea($("editor"), {
+      mode: "python", lineNumbers: true, indentUnit: 4, tabSize: 4, smartIndent: true,
+      extraKeys: {
+        "Tab": function (cm) { cm.replaceSelection("    "); },
+        "Ctrl-Enter": function () { ejecutar(false); },
+        "Cmd-Enter": function () { ejecutar(false); }
+      }
+    });
+    var temporizador = null;
+    editor.on("change", function () { clearTimeout(temporizador); temporizador = setTimeout(guardar, 500); });
+  } else {
+    $("editor").addEventListener("keydown", function (e) {
+      if (e.key === "Tab") {
+        e.preventDefault();
+        var t = e.target, i = t.selectionStart;
+        t.value = t.value.slice(0, i) + "    " + t.value.slice(t.selectionEnd);
+        t.selectionStart = t.selectionEnd = i + 4;
+      } else if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault(); ejecutar(false);
+      }
+    });
+    $("editor").addEventListener("input", guardar);
+  }
+  $("entradas").addEventListener("input", guardar);
+  $("entradas").addEventListener("keydown", function (e) { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); ejecutar(false); } });
+
+  async function ejecutar(verificar) {
+    if (!listo) return;
+    guardar();
+    limpiar();
+    $("ejecutar").disabled = $("verificar").disabled = true;
+    estado(verificar ? "Verificando…" : "Ejecutando…");
+    await new Promise(function (r) { setTimeout(r, 30); });   // deja que se pinte el estado
+    var r, k = reto;
+    try {
+      pyodide.globals.set("_codigo_alumno", obtenerCodigo());
+      pyodide.globals.set("_archivos_json", JSON.stringify(ARCHIVOS));
+      pyodide.globals.set("_entradas_json", JSON.stringify(leerEntradas()));
+      r = JSON.parse(await pyodide.runPythonAsync(verificar ? "_verificar_con_entradas(_codigo_alumno)" :
+                                                              "_correr_entradas(_codigo_alumno, _archivos_json, _entradas_json)"));
+    } catch (e) {
+      $("salida").innerHTML = '<span class="error">' + esc(String(e)) + "</span>";
+      $("ejecutar").disabled = $("verificar").disabled = false;
+      estado("Python listo", true);
+      return;
+    }
+    if (verificar) {
+      if (r.sintaxis) {
+        $("salida").innerHTML = '<span class="error">' + esc(r.sintaxis) + "</span>";
+        $("resultados").innerHTML = '<p class="resumen mal">Corrige el error de arriba y vuelve a verificar.</p>';
+      } else {
+        $("salida").innerHTML = '<span class="aviso">(Verificar corre tu programa varias veces con otras entradas; los resultados están abajo. Para ver la salida con tus entradas, presiona ▶ Ejecutar.)</span>';
+        var bien = r.resultados.filter(function (x) { return x[0]; }).length, total = r.resultados.length;
+        $("resultados").innerHTML =
+          '<p class="resumen ' + (bien === total ? "ok" : "mal") + '">' +
+          (bien === total ? "¡Todas las pruebas pasan! (" + total + " de " + total + ")" : bien + " de " + total + " pruebas pasan") +
+          "</p><ul class=\"pruebas\">" + r.resultados.map(function (x) {
+            return '<li class="' + (x[0] ? "ok" : "mal") + '">' + esc(x[1]) + "</li>";
+          }).join("") + "</ul>";
+        if (bien === total && k === reto) { escribir("ok" + (k + 1), "1"); marcarHechos(); }
+      }
+    } else {
+      var html = esc(r.salida);
+      if (r.detenido) html += '<span class="aviso">' + esc(MSJ_DETENIDO) + "</span>";
+      else if (r.error) html += '<span class="error">' + esc(r.error) + "</span>";
+      if (!r.salida && !r.error && !r.detenido) html = '<span class="aviso">(el programa terminó sin imprimir nada)</span>';
+      $("salida").innerHTML = html;
+    }
+    $("ejecutar").disabled = $("verificar").disabled = false;
+    estado("Python listo", true);
+  }
+
+  $("ejecutar").addEventListener("click", function () { ejecutar(false); });
+  $("verificar").addEventListener("click", function () { ejecutar(true); });
+  $("restaurar").addEventListener("click", function () {
+    if (confirm("¿Regresar al código inicial de este reto? Se perderán tus cambios.")) { ponerCodigo(CODIGOS[reto]); guardar(); limpiar(); }
+  });
+  $("descargar").addEventListener("click", function () {
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([obtenerCodigo()], { type: "text/x-python" }));
+    a.download = RETOS[reto].archivo;
+    a.click();
+  });
+
+  async function iniciar() {
+    if (!window.loadPyodide) {
+      estado("No se pudo descargar Python: revisa tu conexión a internet y recarga la página.");
+      return;
+    }
+    try {
+      pyodide = await loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.27.7/full/" });
+      if (PAQUETES.length) {
+        estado("Cargando " + PAQUETES.join(", ") + "…");
+        await pyodide.loadPackage(PAQUETES);
+      }
+      if (MICROPIP.length) {
+        estado("Instalando " + MICROPIP.join(", ") + "…");
+        await pyodide.loadPackage("micropip");
+        await pyodide.pyimport("micropip").install(MICROPIP);
+      }
+      pyodide.runPython(PREPARAR_PY);
+      pyodide.runPython(ENTRADAS_PY);
+      pyodide.globals.set("_CASOS_JSON", JSON.stringify(CASOS));
+      pyodide.runPython(PRUEBAS_PY);
+      pyodide.runPython("revisar = revisar_" + (reto + 1));
+      listo = true;
+      $("ejecutar").disabled = $("verificar").disabled = false;
+      estado("Python listo", true);
+    } catch (e) {
+      estado("No se pudo preparar Python: " + e);
+    }
+  }
+
+  var guardado = Number(leer("actual"));
+  usarReto(guardado >= 0 && guardado < RETOS.length ? guardado : 0, false);
+  marcarHechos();
+  iniciar();
+})();
+</script>
+<div id="qr-sitio" class="qr-capa" hidden>
+  <div class="qr-caja" role="dialog" aria-modal="true" aria-label="Código QR de esta página">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 45" role="img" aria-label="Código QR de https://memosanchezg.github.io/programacion-basica-interactivos/semana-03-ejercicios.html" shape-rendering="crispEdges"><rect width="45" height="45" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM11 2h1v1h-1zM13 2h1v1h-1zM17 2h3v1h-3zM21 2h7v1h-7zM30 2h2v1h-2zM33 2h2v1h-2zM36 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM12 3h2v1h-2zM16 3h2v1h-2zM19 3h1v1h-1zM22 3h2v1h-2zM26 3h5v1h-5zM34 3h1v1h-1zM36 3h1v1h-1zM42 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM10 4h4v1h-4zM19 4h2v1h-2zM22 4h3v1h-3zM26 4h2v1h-2zM29 4h2v1h-2zM32 4h3v1h-3zM36 4h1v1h-1zM38 4h3v1h-3zM42 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h2v1h-2zM14 5h1v1h-1zM17 5h2v1h-2zM23 5h1v1h-1zM26 5h1v1h-1zM28 5h1v1h-1zM32 5h3v1h-3zM36 5h1v1h-1zM38 5h3v1h-3zM42 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h2v1h-2zM16 6h2v1h-2zM20 6h2v1h-2zM24 6h2v1h-2zM30 6h5v1h-5zM36 6h1v1h-1zM38 6h3v1h-3zM42 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h2v1h-2zM13 7h2v1h-2zM16 7h2v1h-2zM22 7h1v1h-1zM26 7h1v1h-1zM29 7h2v1h-2zM34 7h1v1h-1zM36 7h1v1h-1zM42 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM30 8h1v1h-1zM32 8h1v1h-1zM34 8h1v1h-1zM36 8h7v1h-7zM10 9h1v1h-1zM13 9h1v1h-1zM15 9h1v1h-1zM17 9h2v1h-2zM20 9h1v1h-1zM23 9h1v1h-1zM25 9h2v1h-2zM28 9h1v1h-1zM33 9h2v1h-2zM2 10h1v1h-1zM4 10h5v1h-5zM13 10h1v1h-1zM15 10h5v1h-5zM22 10h1v1h-1zM24 10h1v1h-1zM27 10h3v1h-3zM31 10h1v1h-1zM36 10h5v1h-5zM3 11h2v1h-2zM6 11h1v1h-1zM14 11h1v1h-1zM16 11h1v1h-1zM19 11h5v1h-5zM25 11h1v1h-1zM27 11h1v1h-1zM30 11h1v1h-1zM32 11h3v1h-3zM36 11h3v1h-3zM40 11h3v1h-3zM3 12h1v1h-1zM7 12h7v1h-7zM17 12h2v1h-2zM22 12h2v1h-2zM29 12h4v1h-4zM34 12h1v1h-1zM36 12h2v1h-2zM2 13h1v1h-1zM6 13h2v1h-2zM11 13h1v1h-1zM13 13h1v1h-1zM18 13h1v1h-1zM23 13h2v1h-2zM28 13h1v1h-1zM32 13h5v1h-5zM38 13h2v1h-2zM42 13h1v1h-1zM2 14h1v1h-1zM6 14h4v1h-4zM12 14h1v1h-1zM14 14h1v1h-1zM16 14h1v1h-1zM19 14h1v1h-1zM21 14h2v1h-2zM24 14h1v1h-1zM26 14h6v1h-6zM33 14h1v1h-1zM37 14h1v1h-1zM39 14h3v1h-3zM2 15h2v1h-2zM6 15h1v1h-1zM9 15h2v1h-2zM13 15h2v1h-2zM20 15h1v1h-1zM23 15h2v1h-2zM29 15h1v1h-1zM32 15h11v1h-11zM2 16h1v1h-1zM5 16h1v1h-1zM8 16h5v1h-5zM14 16h2v1h-2zM17 16h4v1h-4zM22 16h1v1h-1zM25 16h2v1h-2zM29 16h4v1h-4zM34 16h2v1h-2zM37 16h1v1h-1zM40 16h1v1h-1zM2 17h1v1h-1zM12 17h3v1h-3zM17 17h2v1h-2zM20 17h1v1h-1zM23 17h3v1h-3zM28 17h2v1h-2zM34 17h1v1h-1zM36 17h2v1h-2zM39 17h1v1h-1zM41 17h1v1h-1zM2 18h4v1h-4zM8 18h2v1h-2zM11 18h1v1h-1zM15 18h3v1h-3zM19 18h1v1h-1zM25 18h1v1h-1zM27 18h3v1h-3zM31 18h3v1h-3zM35 18h1v1h-1zM37 18h1v1h-1zM40 18h1v1h-1zM6 19h1v1h-1zM9 19h1v1h-1zM15 19h1v1h-1zM18 19h1v1h-1zM20 19h3v1h-3zM25 19h2v1h-2zM30 19h5v1h-5zM36 19h4v1h-4zM41 19h2v1h-2zM2 20h2v1h-2zM5 20h1v1h-1zM7 20h3v1h-3zM11 20h1v1h-1zM13 20h1v1h-1zM16 20h1v1h-1zM18 20h1v1h-1zM20 20h1v1h-1zM24 20h1v1h-1zM29 20h3v1h-3zM35 20h1v1h-1zM38 20h2v1h-2zM41 20h1v1h-1zM13 21h1v1h-1zM15 21h2v1h-2zM21 21h1v1h-1zM28 21h8v1h-8zM38 21h2v1h-2zM41 21h2v1h-2zM3 22h1v1h-1zM5 22h1v1h-1zM7 22h4v1h-4zM12 22h1v1h-1zM16 22h1v1h-1zM18 22h1v1h-1zM20 22h2v1h-2zM23 22h4v1h-4zM29 22h1v1h-1zM39 22h3v1h-3zM3 23h2v1h-2zM11 23h1v1h-1zM14 23h2v1h-2zM17 23h3v1h-3zM21 23h3v1h-3zM25 23h1v1h-1zM27 23h2v1h-2zM30 23h1v1h-1zM32 23h3v1h-3zM36 23h1v1h-1zM38 23h1v1h-1zM40 23h3v1h-3zM7 24h3v1h-3zM12 24h2v1h-2zM16 24h3v1h-3zM20 24h1v1h-1zM22 24h1v1h-1zM24 24h1v1h-1zM27 24h4v1h-4zM34 24h1v1h-1zM37 24h1v1h-1zM39 24h1v1h-1zM3 25h4v1h-4zM9 25h1v1h-1zM12 25h2v1h-2zM16 25h1v1h-1zM18 25h1v1h-1zM20 25h2v1h-2zM23 25h2v1h-2zM29 25h1v1h-1zM33 25h3v1h-3zM38 25h2v1h-2zM2 26h1v1h-1zM4 26h1v1h-1zM7 26h2v1h-2zM10 26h2v1h-2zM15 26h1v1h-1zM19 26h1v1h-1zM25 26h7v1h-7zM33 26h1v1h-1zM40 26h3v1h-3zM3 27h3v1h-3zM12 27h5v1h-5zM19 27h1v1h-1zM21 27h3v1h-3zM25 27h1v1h-1zM27 27h1v1h-1zM30 27h1v1h-1zM32 27h2v1h-2zM35 27h5v1h-5zM41 27h2v1h-2zM2 28h3v1h-3zM7 28h2v1h-2zM14 28h1v1h-1zM16 28h3v1h-3zM20 28h1v1h-1zM22 28h1v1h-1zM26 28h5v1h-5zM32 28h1v1h-1zM34 28h5v1h-5zM2 29h1v1h-1zM5 29h1v1h-1zM9 29h1v1h-1zM12 29h1v1h-1zM15 29h3v1h-3zM21 29h4v1h-4zM26 29h1v1h-1zM28 29h1v1h-1zM30 29h1v1h-1zM33 29h3v1h-3zM38 29h2v1h-2zM5 30h5v1h-5zM11 30h1v1h-1zM13 30h1v1h-1zM15 30h1v1h-1zM18 30h2v1h-2zM24 30h2v1h-2zM27 30h2v1h-2zM31 30h1v1h-1zM33 30h1v1h-1zM39 30h4v1h-4zM2 31h1v1h-1zM7 31h1v1h-1zM11 31h2v1h-2zM15 31h2v1h-2zM18 31h1v1h-1zM20 31h1v1h-1zM22 31h1v1h-1zM26 31h2v1h-2zM29 31h6v1h-6zM36 31h1v1h-1zM38 31h1v1h-1zM40 31h1v1h-1zM42 31h1v1h-1zM2 32h1v1h-1zM4 32h1v1h-1zM6 32h5v1h-5zM13 32h1v1h-1zM16 32h1v1h-1zM18 32h4v1h-4zM23 32h2v1h-2zM27 32h2v1h-2zM31 32h1v1h-1zM35 32h3v1h-3zM39 32h1v1h-1zM2 33h1v1h-1zM4 33h4v1h-4zM10 33h1v1h-1zM12 33h1v1h-1zM14 33h1v1h-1zM18 33h1v1h-1zM21 33h4v1h-4zM26 33h1v1h-1zM30 33h1v1h-1zM34 33h4v1h-4zM39 33h1v1h-1zM41 33h2v1h-2zM2 34h1v1h-1zM5 34h2v1h-2zM8 34h1v1h-1zM10 34h2v1h-2zM18 34h2v1h-2zM21 34h1v1h-1zM24 34h1v1h-1zM26 34h3v1h-3zM31 34h1v1h-1zM34 34h5v1h-5zM40 34h1v1h-1zM42 34h1v1h-1zM10 35h2v1h-2zM15 35h1v1h-1zM17 35h1v1h-1zM19 35h5v1h-5zM25 35h3v1h-3zM30 35h1v1h-1zM33 35h2v1h-2zM38 35h1v1h-1zM41 35h2v1h-2zM2 36h7v1h-7zM11 36h1v1h-1zM15 36h2v1h-2zM19 36h1v1h-1zM22 36h2v1h-2zM27 36h4v1h-4zM32 36h3v1h-3zM36 36h1v1h-1zM38 36h1v1h-1zM40 36h1v1h-1zM2 37h1v1h-1zM8 37h1v1h-1zM10 37h1v1h-1zM13 37h2v1h-2zM16 37h2v1h-2zM19 37h2v1h-2zM22 37h3v1h-3zM26 37h2v1h-2zM33 37h2v1h-2zM38 37h2v1h-2zM2 38h1v1h-1zM4 38h3v1h-3zM8 38h1v1h-1zM10 38h2v1h-2zM14 38h2v1h-2zM18 38h1v1h-1zM23 38h1v1h-1zM26 38h1v1h-1zM28 38h2v1h-2zM32 38h1v1h-1zM34 38h5v1h-5zM40 38h1v1h-1zM2 39h1v1h-1zM4 39h3v1h-3zM8 39h1v1h-1zM10 39h3v1h-3zM15 39h2v1h-2zM18 39h5v1h-5zM24 39h3v1h-3zM30 39h2v1h-2zM33 39h1v1h-1zM35 39h1v1h-1zM37 39h1v1h-1zM39 39h2v1h-2zM2 40h1v1h-1zM4 40h3v1h-3zM8 40h1v1h-1zM10 40h2v1h-2zM14 40h1v1h-1zM16 40h3v1h-3zM20 40h1v1h-1zM22 40h1v1h-1zM24 40h1v1h-1zM26 40h2v1h-2zM29 40h2v1h-2zM34 40h7v1h-7zM2 41h1v1h-1zM8 41h1v1h-1zM12 41h2v1h-2zM15 41h1v1h-1zM17 41h1v1h-1zM20 41h1v1h-1zM23 41h1v1h-1zM25 41h1v1h-1zM28 41h3v1h-3zM34 41h2v1h-2zM38 41h2v1h-2zM41 41h1v1h-1zM2 42h7v1h-7zM10 42h2v1h-2zM14 42h1v1h-1zM16 42h3v1h-3zM21 42h1v1h-1zM24 42h5v1h-5zM31 42h1v1h-1zM33 42h1v1h-1zM35 42h6v1h-6z"/></svg>
+    <p class="qr-texto">Escanea con la cámara del celular para abrir esta página</p>
+    <p class="qr-url">https://memosanchezg.github.io/programacion-basica-interactivos/semana-03-ejercicios.html</p>
+    <button type="button" class="qr-cerrar">Cerrar</button>
+  </div>
+</div>
+<style>
+  .qr-capa { position:fixed; top:0; right:0; bottom:0; left:0; z-index:10000; display:flex; align-items:center;
+             justify-content:center; padding:16px; background:#fff; }
+  .qr-capa[hidden] { display:none; }
+  .qr-caja { max-width:100%; text-align:center; color:#0A2A57; font:16px/1.4 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .qr-caja svg { display:block; width:min(62vh, 84vw); height:auto; margin:0 auto; }
+  .qr-texto { margin:12px 0 2px; font-size:1.15rem; font-weight:bold; }
+  .qr-url { margin:0 0 12px; color:#5B6472; word-break:break-all; }
+  .qr-cerrar { font:inherit; padding:6px 20px; border:2px solid #00408F; border-radius:4px; background:#fff;
+               color:#00408F; cursor:pointer; }
+</style>
+<script>
+  (function () {
+    var capa = document.getElementById("qr-sitio");
+    document.querySelectorAll("a.qr-abrir").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        capa.hidden = false;
+        capa.querySelector(".qr-cerrar").focus();
+      });
+    });
+    capa.addEventListener("click", function (e) {
+      if (e.target === capa || e.target.classList.contains("qr-cerrar")) capa.hidden = true;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !capa.hidden) capa.hidden = true;
+    });
+  })();
+</script>
+</body>
+</html>

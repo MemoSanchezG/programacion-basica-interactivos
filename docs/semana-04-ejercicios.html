@@ -1,0 +1,1022 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="tipo" content="ejercicio">
+<title>Patrones con ciclos</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<style>
+  :root {
+    --azul:#00408F; --azul-oscuro:#0A2A57; --guinda:#8C1D35; --oro:#B8975A; --oro-texto:#8A6A2E;
+    --azul-claro:#E8EEF7; --oro-claro:#F7F1E6; --guinda-claro:#F5E6EA; --verde:#2F7D5B;
+    --tinta:#1B1F2A; --gris:#5B6472; --gris-claro:#E9ECF1; --borde:#D9DEE6; --fondo:#FFFFFF;
+    --cmd-fondo:#0C0C0C; --cmd-texto:#E6E6E6;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--fondo); color:var(--tinta);
+         font:16px/1.45 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .franja { height:8px; background:var(--azul); border-bottom:3px solid var(--oro); }
+  header { max-width:1280px; margin:0 auto; padding:12px 18px 4px; }
+  .semana { color:var(--guinda); font-weight:bold; letter-spacing:.04em; font-size:.85rem; text-transform:uppercase; }
+  h1 { font-family:Cambria,Georgia,serif; color:var(--azul-oscuro); font-size:1.7rem; margin:2px 0 2px; }
+  .sub { color:var(--gris); margin:0; }
+  main { max-width:1280px; margin:0 auto; padding:8px 18px 24px; }
+  .fila { display:grid; grid-template-columns:minmax(260px,400px) minmax(0,1fr); gap:16px; align-items:start; }
+  .panel { background:#fff; border:1px solid var(--borde); border-radius:10px; padding:12px 14px; min-width:0; }
+  .panel h2 { font-size:1.02rem; color:var(--azul-oscuro); margin:0 0 8px; }
+  .panel h3 { font-size:.95rem; color:var(--azul-oscuro); margin:12px 0 4px; }
+  .panel ol, .panel ul { padding-left:20px; margin:4px 0; }
+  .panel li { margin:4px 0; }
+  code { font-family:Consolas,"Courier New",monospace; color:var(--azul); }
+  .lectura { background:var(--oro-claro); border-left:4px solid var(--oro); border-radius:8px; padding:10px 12px;
+             margin-top:12px; line-height:1.55; }
+  .barra { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-bottom:8px; }
+  button.accion { font:inherit; font-weight:bold; border-radius:8px; padding:7px 12px;
+                  border:1px solid var(--azul); background:#fff; color:var(--azul); cursor:pointer; }
+  button.accion:hover:not(:disabled), button.accion:focus-visible { background:var(--azul); color:#fff; outline:none; }
+  button.accion.primaria { background:var(--azul); color:#fff; }
+  button.accion.primaria:hover:not(:disabled) { background:var(--azul-oscuro); }
+  button.accion:disabled { opacity:.5; cursor:wait; }
+  #estado { color:var(--gris); font-size:.92rem; margin-left:4px; }
+  #estado.listo { color:var(--verde); }
+  .editor-caja { border:1px solid var(--tinta); }
+  .CodeMirror { height:auto; min-height:260px; font:15px/1.5 Consolas,"Courier New",monospace; }
+  .CodeMirror-linenumber { color:var(--gris); font:11px Cambria,Georgia,serif; padding-top:3px; }
+  .cm-s-default .cm-keyword { color:#000080; font-weight:bold; }
+  .cm-s-default .cm-string { color:#0000FF; }
+  .cm-s-default .cm-number { color:#0000FF; }
+  .cm-s-default .cm-comment { color:#008800; font-style:italic; }
+  .cm-s-default .cm-builtin, .cm-s-default .cm-variable, .cm-s-default .cm-def,
+  .cm-s-default .cm-property, .cm-s-default .cm-operator { color:var(--tinta); }
+  textarea#editor { width:100%; min-height:260px; font:15px/1.5 Consolas,"Courier New",monospace; border:0; padding:8px; }
+  .consola { background:var(--cmd-fondo); color:var(--cmd-texto); font:15px/1.45 Consolas,"Courier New",monospace;
+             white-space:pre-wrap; word-break:break-word; padding:8px 12px; border-radius:4px; margin:6px 0; min-height:2.6em; }
+  .consola .error { color:#FF8A80; }
+  .consola .aviso { color:#B8975A; }
+  #figuras img { max-width:100%; border:1px solid var(--borde); border-radius:6px; margin:6px 0; display:block; }
+  #archivos a { display:inline-block; margin:4px 10px 4px 0; color:var(--azul); font-weight:bold; }
+  ul.pruebas { list-style:none; padding-left:0; }
+  ul.pruebas li { padding:4px 0 4px 26px; position:relative; }
+  ul.pruebas li::before { content:"•"; position:absolute; left:8px; color:var(--gris); }
+  ul.pruebas li.ok::before { content:"✓"; color:var(--verde); font-weight:bold; left:4px; }
+  ul.pruebas li.mal::before { content:"✗"; color:var(--guinda); font-weight:bold; left:4px; }
+  ul.pruebas li.mal { color:var(--guinda); }
+  .resumen { font-weight:bold; margin:6px 0; }
+  .resumen.ok { color:var(--verde); }
+  .resumen.mal { color:var(--guinda); }
+  footer { max-width:1280px; margin:0 auto; padding:6px 18px 18px; color:var(--gris); font-size:.85rem; }
+  footer a { color:var(--azul); }
+  @media (max-width: 860px) { .fila { grid-template-columns:1fr; } }
+
+  /* Propios de estos ejercicios */
+  nav.retos { display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 12px; }
+  nav.retos button { font:inherit; font-size:.95rem; border:1px solid var(--borde); border-radius:8px; background:#fff;
+                     color:var(--azul-oscuro); padding:6px 10px; cursor:pointer; text-align:left; }
+  nav.retos button .num { font-weight:bold; color:var(--guinda); }
+  nav.retos button[aria-selected="true"] { border-color:var(--azul); background:var(--azul-claro); font-weight:bold; }
+  nav.retos button:hover, nav.retos button:focus-visible { border-color:var(--azul); outline:none; }
+  nav.retos button .hecho { color:var(--verde); font-weight:bold; margin-left:4px; }
+  #reto-titulo { font-family:Cambria,Georgia,serif; font-size:1.2rem; color:var(--azul-oscuro); margin:0 0 6px; }
+  .ejemplo { font-size:14px; }
+  label.etiqueta { display:block; font-weight:bold; color:var(--azul-oscuro); margin:10px 0 2px; }
+  label.etiqueta small { font-weight:normal; color:var(--gris); }
+  textarea#entradas { width:100%; min-height:5.2em; font:15px/1.45 Consolas,"Courier New",monospace; border:1px solid var(--tinta);
+                      border-radius:4px; padding:6px 8px; resize:vertical; }
+  @media (max-width: 480px) {
+    header { padding:10px 12px 4px; } main { padding:8px 10px 20px; } footer { padding:6px 12px 16px; }
+    .panel { padding:10px; } h1 { font-size:1.45rem; } nav.retos button { padding:6px 8px; }
+    .consola { font-size:13.5px; }
+  }
+</style>
+</head>
+<body>
+<div class="franja"></div>
+<header>
+  <div class="semana">Semana 04 · Control de flujo · Ejercicio con Python</div>
+  <h1>Patrones con ciclos</h1>
+  <p class="sub">Contador, acumulador, bandera, máximo y mínimo: cuatro programas con ciclos que leen sus datos con input(). Escríbelos, córrelos aquí con tus entradas y verifícalos.</p>
+</header>
+<main>
+  <div class="fila">
+    <div class="panel">
+      <h2>Elige un reto</h2>
+      <nav class="retos" id="retos" role="tablist" aria-label="Retos"></nav>
+      <h3 id="reto-titulo"></h3>
+      <ol id="instrucciones"></ol>
+      <h3>Así debe verse <small style="font-weight:normal;color:var(--gris)">(con las entradas del ejemplo)</small></h3>
+      <div class="consola ejemplo" id="ejemplo" aria-label="Ejemplo de la consola"></div>
+      <h3>Lo que se revisa al presionar Verificar</h3>
+      <ul class="pruebas" id="lista-pruebas"></ul>
+      <div class="lectura" id="pista"></div>
+    </div>
+    <div class="panel">
+      <div class="barra">
+        <button type="button" class="accion primaria" id="ejecutar" disabled>▶ Ejecutar</button>
+        <button type="button" class="accion" id="verificar" disabled>✓ Verificar</button>
+        <button type="button" class="accion" id="restaurar">↺ Código inicial</button>
+        <button type="button" class="accion" id="descargar">⬇ Descargar .py</button>
+        <span id="estado" role="status">Cargando Python…</span>
+      </div>
+      <div class="editor-caja"><textarea id="editor" spellcheck="false" aria-label="Editor de código Python"></textarea></div>
+      <label class="etiqueta" for="entradas">Entradas (una por renglón) <small>lo que teclearía el usuario en cada input()</small></label>
+      <textarea id="entradas" spellcheck="false" autocomplete="off"></textarea>
+      <h3>Salida</h3>
+      <div class="consola" id="salida"></div>
+      <div id="figuras"></div>
+      <div id="archivos"></div>
+      <div id="resultados" aria-live="polite"></div>
+    </div>
+  </div>
+</main>
+<footer>
+  Programación Básica · FCFM-UANL · Python corre en tu navegador (la primera vez descarga unos 10 MB;
+  después funciona más rápido). Ctrl+Enter ejecuta. Tu código y tus entradas de cada reto se guardan en este navegador.
+  <a href="index.html">Índice de simuladores</a> · <a href="#qr-sitio" class="qr-abrir">Abrir en el celular (QR)</a>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.27.7/full/pyodide.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  // ===================== Configuración de los ejercicios =====================
+  var CLAVE = "pb-s04-ejercicios";
+  var PAQUETES = [];
+  var MICROPIP = [];
+  var ARCHIVOS = {};
+  // Entradas y salidas esperadas de las pruebas (generadas con Python 3.12)
+  var CASOS = {
+ "contador": [
+  {
+   "entradas": [
+    "5",
+    "8000",
+    "6500",
+    "12030",
+    "7999",
+    "9100"
+   ],
+   "esperado": "¿Cuántos días? 5\nPasos del día 1: 8000\nPasos del día 2: 6500\nPasos del día 3: 12030\nPasos del día 4: 7999\nPasos del día 5: 9100\nDías con la meta cumplida: 3 de 5\n"
+  },
+  {
+   "entradas": [
+    "3",
+    "1000",
+    "2000",
+    "3000"
+   ],
+   "esperado": "¿Cuántos días? 3\nPasos del día 1: 1000\nPasos del día 2: 2000\nPasos del día 3: 3000\nDías con la meta cumplida: 0 de 3\n"
+  },
+  {
+   "entradas": [
+    "1",
+    "8000"
+   ],
+   "esperado": "¿Cuántos días? 1\nPasos del día 1: 8000\nDías con la meta cumplida: 1 de 1\n"
+  },
+  {
+   "entradas": [
+    "0"
+   ],
+   "esperado": "¿Cuántos días? 0\nDías con la meta cumplida: 0 de 0\n"
+  },
+  {
+   "entradas": [
+    "4",
+    "8001",
+    "15000",
+    "8000",
+    "20000"
+   ],
+   "esperado": "¿Cuántos días? 4\nPasos del día 1: 8001\nPasos del día 2: 15000\nPasos del día 3: 8000\nPasos del día 4: 20000\nDías con la meta cumplida: 4 de 4\n"
+  }
+ ],
+ "acumulador": [
+  {
+   "entradas": [
+    "5.2",
+    "3.8",
+    "fin"
+   ],
+   "esperado": "Kilómetros (o fin): 5.2\nKilómetros (o fin): 3.8\nKilómetros (o fin): fin\nDías: 2\nTotal: 9.0 km\nPromedio: 4.5 km por día\n"
+  },
+  {
+   "entradas": [
+    "10",
+    "fin"
+   ],
+   "esperado": "Kilómetros (o fin): 10\nKilómetros (o fin): fin\nDías: 1\nTotal: 10.0 km\nPromedio: 10.0 km por día\n"
+  },
+  {
+   "entradas": [
+    "fin"
+   ],
+   "esperado": "Kilómetros (o fin): fin\nNo hay datos.\n"
+  },
+  {
+   "entradas": [
+    "2.5",
+    "3",
+    "4.25",
+    "0",
+    "6.1",
+    "fin"
+   ],
+   "esperado": "Kilómetros (o fin): 2.5\nKilómetros (o fin): 3\nKilómetros (o fin): 4.25\nKilómetros (o fin): 0\nKilómetros (o fin): 6.1\nKilómetros (o fin): fin\nDías: 5\nTotal: 15.8 km\nPromedio: 3.2 km por día\n"
+  },
+  {
+   "entradas": [
+    "1.05",
+    "1.05",
+    "fin"
+   ],
+   "esperado": "Kilómetros (o fin): 1.05\nKilómetros (o fin): 1.05\nKilómetros (o fin): fin\nDías: 2\nTotal: 2.1 km\nPromedio: 1.1 km por día\n"
+  }
+ ],
+ "bandera": [
+  {
+   "entradas": [
+    "17"
+   ],
+   "esperado": "Número: 17\n17 es primo\n"
+  },
+  {
+   "entradas": [
+    "18"
+   ],
+   "esperado": "Número: 18\n18 no es primo\n"
+  },
+  {
+   "entradas": [
+    "2"
+   ],
+   "esperado": "Número: 2\n2 es primo\n"
+  },
+  {
+   "entradas": [
+    "1"
+   ],
+   "esperado": "Número: 1\n1 no es primo\n"
+  },
+  {
+   "entradas": [
+    "0"
+   ],
+   "esperado": "Número: 0\n0 no es primo\n"
+  },
+  {
+   "entradas": [
+    "97"
+   ],
+   "esperado": "Número: 97\n97 es primo\n"
+  },
+  {
+   "entradas": [
+    "91"
+   ],
+   "esperado": "Número: 91\n91 no es primo\n"
+  },
+  {
+   "entradas": [
+    "3"
+   ],
+   "esperado": "Número: 3\n3 es primo\n"
+  },
+  {
+   "entradas": [
+    "4"
+   ],
+   "esperado": "Número: 4\n4 no es primo\n"
+  },
+  {
+   "entradas": [
+    "49"
+   ],
+   "esperado": "Número: 49\n49 no es primo\n"
+  }
+ ],
+ "maximo": [
+  {
+   "entradas": [
+    "4",
+    "21.5",
+    "25.0",
+    "19.8",
+    "27.3"
+   ],
+   "esperado": "¿Cuántas temperaturas? 4\nTemperatura 1: 21.5\nTemperatura 2: 25.0\nTemperatura 3: 19.8\nTemperatura 4: 27.3\nMáxima: 27.3 °C (día 4)\nMínima: 19.8 °C (día 3)\n"
+  },
+  {
+   "entradas": [
+    "3",
+    "-3.5",
+    "-1.2",
+    "-7.0"
+   ],
+   "esperado": "¿Cuántas temperaturas? 3\nTemperatura 1: -3.5\nTemperatura 2: -1.2\nTemperatura 3: -7.0\nMáxima: -1.2 °C (día 2)\nMínima: -7.0 °C (día 3)\n"
+  },
+  {
+   "entradas": [
+    "1",
+    "18.5"
+   ],
+   "esperado": "¿Cuántas temperaturas? 1\nTemperatura 1: 18.5\nMáxima: 18.5 °C (día 1)\nMínima: 18.5 °C (día 1)\n"
+  },
+  {
+   "entradas": [
+    "5",
+    "30",
+    "30",
+    "28",
+    "31",
+    "28"
+   ],
+   "esperado": "¿Cuántas temperaturas? 5\nTemperatura 1: 30\nTemperatura 2: 30\nTemperatura 3: 28\nTemperatura 4: 31\nTemperatura 5: 28\nMáxima: 31.0 °C (día 4)\nMínima: 28.0 °C (día 3)\n"
+  },
+  {
+   "entradas": [
+    "2",
+    "0",
+    "-0.5"
+   ],
+   "esperado": "¿Cuántas temperaturas? 2\nTemperatura 1: 0\nTemperatura 2: -0.5\nMáxima: 0.0 °C (día 1)\nMínima: -0.5 °C (día 2)\n"
+  }
+ ]
+};
+  var CODIGOS = [
+    [
+      "# Reto 1: ¿cuántos días llegaste a la meta de pasos?",
+      "dias: int = int(input(\"¿Cuántos días? \"))",
+      "meta: int = 8000",
+      "cumplidos: int = 0",
+      "# completa: un for con range que lea los pasos de cada día con",
+      "# input(f\"Pasos del día {dia}: \") y cuente los días con 8000 pasos o más",
+      "",
+      "print(f\"Días con la meta cumplida: {cumplidos} de {dias}\")",
+    ].join("\n") + "\n",
+    [
+      "# Reto 2: kilómetros recorridos (escribe fin para terminar)",
+      "total: float = 0.0",
+      "dias: int = 0",
+      "dato: str = input(\"Kilómetros (o fin): \")",
+      "# completa: mientras dato no sea \"fin\", acumula los kilómetros, cuenta",
+      "# los días y vuelve a preguntar",
+      "",
+      "# al final: si no hubo datos, imprime No hay datos.;",
+      "# si hubo, los tres renglones del ejemplo",
+    ].join("\n") + "\n",
+    [
+      "# Reto 3: ¿es primo?",
+      "n: int = int(input(\"Número: \"))",
+      "es_primo: bool = True",
+      "# completa: busca un divisor entre 2 y n - 1; si encuentras uno,",
+      "# apaga la bandera (ojo: 0 y 1 no son primos)",
+      "",
+      "if es_primo:",
+      "    print(f\"{n} es primo\")",
+      "else:",
+      "    print(f\"{n} no es primo\")",
+    ].join("\n") + "\n",
+    [
+      "# Reto 4: la temperatura más alta y la más baja (sin max() ni min())",
+      "n: int = int(input(\"¿Cuántas temperaturas? \"))",
+      "# completa: lee las n temperaturas con input(f\"Temperatura {dia}: \"),",
+      "# guarda la máxima y la mínima y el día en que aparecieron",
+      "# (si se repiten, el primer día)",
+      "",
+      "print(f\"Máxima: {maxima} °C (día {dia_max})\")",
+      "print(f\"Mínima: {minima} °C (día {dia_min})\")",
+    ].join("\n") + "\n"
+  ];
+  var RETOS = [
+    { corto: "Contador", titulo: "Reto 1 · Contador: días con la meta", archivo: "reto1_contador.py", casos: "contador",
+      instrucciones: [
+        "El programa pregunta cuántos días hay. Escribe un <code>for</code> con <code>range</code> que lea los pasos de cada día, con el mensaje del ejemplo.",
+        "Cuenta en <code>cumplidos</code> los días con 8000 pasos o más (8000 exactos sí cuentan).",
+        "Corre con las entradas del ejemplo y verifica."],
+      ejemplo: 0,
+      pruebas: ["Con cinco juegos de datos (incluidos 0 días, 1 día y días con 7999 y 8000 pasos), la salida es exactamente como la del ejemplo"],
+      pista: "Con range(1, dias + 1) los días van del 1 al número de días. El contador se inicializa antes del ciclo y dentro solo suma 1 cuando se cumple la condición." },
+    { corto: "Acumulador", titulo: "Reto 2 · Acumulador: kilómetros hasta escribir fin", archivo: "reto2_acumulador.py", casos: "acumulador",
+      instrucciones: [
+        "El usuario escribe los kilómetros de cada día y termina con <code>fin</code> (el centinela).",
+        "Con un <code>while</code>, mientras el dato no sea <code>\"fin\"</code>: suma los kilómetros a <code>total</code>, cuenta el día y vuelve a preguntar.",
+        "Al final imprime los días, el total y el promedio con un decimal; si el primer dato ya es fin, imprime <code>No hay datos.</code>",
+        "Verifica."],
+      ejemplo: 0, ejemploMal: 2,
+      pruebas: ["Con cinco juegos de datos (uno solo con fin), la salida es exactamente como la del ejemplo",
+                "El programa usa un while"],
+      pista: "Si olvidas preguntar otra vez dentro del while, el dato nunca cambia y el ciclo no termina: la página lo detiene y te avisa. Sin datos no se puede dividir entre 0 días." },
+    { corto: "Bandera", titulo: "Reto 3 · Bandera: ¿es primo?", archivo: "reto3_bandera.py", casos: "bandera",
+      instrucciones: [
+        "Un número es primo si es mayor que 1 y solo se divide entre 1 y entre sí mismo.",
+        "Recorre los posibles divisores de 2 a n - 1; si alguno divide a n (<code>n % divisor == 0</code>), apaga la bandera <code>es_primo</code>. Con <code>break</code> puedes dejar de buscar.",
+        "Cuida 0 y 1: no son primos.",
+        "Verifica."],
+      ejemplo: 0, ejemploMal: 1,
+      pruebas: ["Los primos 2, 3, 17 y 97 se reportan como primos",
+                "Los números 0, 1, 4, 18, 49 y 91 se reportan como no primos"],
+      pista: "La bandera empieza en un valor y solo cambia si encuentras un divisor. Para 0 y 1 el for de 2 a n - 1 no da ninguna vuelta: decide su valor antes del ciclo." },
+    { corto: "Máximo", titulo: "Reto 4 · La más caliente y la más fría", archivo: "reto4_maximo.py", casos: "maximo",
+      instrucciones: [
+        "Lee cuántas temperaturas hay y después cada temperatura (float) con el mensaje del ejemplo.",
+        "Guarda la máxima y la mínima y el día en que aparecieron; si se repiten, se queda el primer día.",
+        "No uses <code>max()</code> ni <code>min()</code>: practica el patrón.",
+        "Verifica (las pruebas incluyen temperaturas bajo cero)."],
+      ejemplo: 0, ejemploMal: 1,
+      pruebas: ["Con cinco juegos de datos (temperaturas negativas, una sola temperatura y empates), la salida es exactamente como la del ejemplo",
+                "El programa no usa max() ni min()"],
+      pista: "Empieza la máxima y la mínima con la primera temperatura, no con 0: si todas son negativas, 0 sería mayor que todas. Con > (y no >=) un empate conserva el primer día." }
+  ];
+  // Pruebas: revisar_k(ns, salida, archivos, figuras) regresa una lista de (ok, mensaje).
+  var PRUEBAS_PY = [
+    "import ast as _ast",
+    "_CASOS = json.loads(_CASOS_JSON)",
+    "",
+    "def _lista(entradas):",
+    "    return ', '.join(repr(e) for e in entradas) if entradas else '(ninguna)'",
+    "",
+    "def _comparar(entradas, esperado):",
+    "    salida, error, ns = _ejecutar_con(entradas)",
+    "    con = 'Con las entradas ' + _lista(entradas)",
+    "    if error == 'detenido':",
+    "        return False, con + ', el programa no terminó: ¿hay un ciclo que nunca acaba?'",
+    "    if error:",
+    "        return False, con + ', el programa terminó con un error: ' + error.strip().splitlines()[-1]",
+    "    if salida == esperado:",
+    "        return True, con + ', la salida es correcta'",
+    "    a, b = salida.splitlines(), esperado.splitlines()",
+    "    for i in range(max(len(a), len(b))):",
+    "        x = a[i] if i < len(a) else None",
+    "        y = b[i] if i < len(b) else None",
+    "        if x != y:",
+    "            if x is None:",
+    "                return False, con + f', falta el renglón {i + 1}: {y!r}'",
+    "            if y is None:",
+    "                return False, con + f', sobra el renglón {i + 1}: {x!r}'",
+    "            return False, con + f', el renglón {i + 1} debe ser {y!r} y tu programa imprimió {x!r}'",
+    "    return False, con + ', la salida no coincide (revisa los espacios al final o los renglones vacíos)'",
+    "",
+    "def _todas(nombre, cuales, bien):",
+    "    fallas = []",
+    "    for k in cuales:",
+    "        ok, msg = _comparar(_CASOS[nombre][k]['entradas'], _CASOS[nombre][k]['esperado'])",
+    "        if not ok:",
+    "            fallas.append(msg)",
+    "    if fallas:",
+    "        return (False, fallas[0] + (f' (y {len(fallas) - 1} caso(s) más con problemas)' if len(fallas) > 1 else ''))",
+    "    return (True, bien)",
+    "",
+    "def _arbol():",
+    "    return _ast.parse(_codigo_alumno)",
+    "",
+    "def revisar_1(ns, salida, archivos, figuras):",
+    "    return [_todas('contador', range(5), 'Con los cinco juegos de datos la salida es exactamente la esperada')]",
+    "",
+    "def revisar_2(ns, salida, archivos, figuras):",
+    "    usa_while = any(isinstance(n, _ast.While) for n in _ast.walk(_arbol()))",
+    "    return [_todas('acumulador', range(5), 'Con los cinco juegos de datos la salida es exactamente la esperada'),",
+    "            (usa_while, 'El programa usa un while' if usa_while else 'Usa un while que se repita mientras el dato no sea fin')]",
+    "",
+    "def revisar_3(ns, salida, archivos, figuras):",
+    "    return [_todas('bandera', [0, 2, 5, 7], '2, 3, 17 y 97 se reportan como primos'),",
+    "            _todas('bandera', [1, 3, 4, 6, 8, 9], '0, 1, 4, 18, 49 y 91 se reportan como no primos')]",
+    "",
+    "def revisar_4(ns, salida, archivos, figuras):",
+    "    usados = sorted({n.func.id for n in _ast.walk(_arbol()) if isinstance(n, _ast.Call) and isinstance(n.func, _ast.Name) and n.func.id in ('max', 'min', 'sorted')})",
+    "    return [_todas('maximo', range(5), 'Con los cinco juegos de datos la salida es exactamente la esperada'),",
+    "            (not usados, 'No usa max() ni min()' if not usados else 'Este reto es para practicar el patrón: quita ' + ', '.join(u + '()' for u in usados))]",
+    "",
+    "revisar = revisar_1",
+  ].join("\n");
+  // ==========================================================================
+
+  var PREPARAR_PY = [
+    "import sys, io, os, json, base64, traceback, linecache",
+    "_TRABAJO = '/home/pyodide/trabajo'",
+    "",
+    "# Los errores como los imprime python.exe 3.12: solo las líneas de tu_programa.py, con las",
+    "# sugerencias \"Did you mean\" de Python/suggestions.c y las excepciones encadenadas.",
+    "def _costo(a, b):",
+    "    if (a & 31) != (b & 31):",
+    "        return 2",
+    "    if a == b:",
+    "        return 0",
+    "    if 65 <= a <= 90:",
+    "        a += 32",
+    "    if 65 <= b <= 90:",
+    "        b += 32",
+    "    return 1 if a == b else 2",
+    "",
+    "def _distancia(a, b, maximo):",
+    "    while a and b and a[0] == b[0]:",
+    "        a, b = a[1:], b[1:]",
+    "    while a and b and a[-1] == b[-1]:",
+    "        a, b = a[:-1], b[:-1]",
+    "    if not a or not b:",
+    "        return (len(a) + len(b)) * 2",
+    "    if len(a) > 40 or len(b) > 40:",
+    "        return maximo + 1",
+    "    if len(b) < len(a):",
+    "        a, b = b, a",
+    "    if (len(b) - len(a)) * 2 > maximo:",
+    "        return maximo + 1",
+    "    fila = [(i + 1) * 2 for i in range(len(a))]",
+    "    resultado = 0",
+    "    for j, cb in enumerate(b):",
+    "        distancia = resultado = j * 2",
+    "        minimo = sys.maxsize",
+    "        for k, ca in enumerate(a):",
+    "            sustituir = distancia + _costo(cb, ca)",
+    "            distancia = fila[k]",
+    "            resultado = min(min(resultado, distancia) + 2, sustituir)",
+    "            fila[k] = resultado",
+    "            if resultado < minimo:",
+    "                minimo = resultado",
+    "        if minimo > maximo:",
+    "            return maximo + 1",
+    "    return resultado",
+    "",
+    "def _sugerir(candidatos, nombre):",
+    "    if len(candidatos) >= 750:",
+    "        return None",
+    "    nb = nombre.encode('utf-8', 'surrogatepass')",
+    "    mejor, mejor_d = None, sys.maxsize",
+    "    for c in candidatos:",
+    "        if not isinstance(c, str) or c == nombre:",
+    "            continue",
+    "        cb = c.encode('utf-8', 'surrogatepass')",
+    "        maximo = min((len(nb) + len(cb) + 3) * 2 // 6, mejor_d - 1)",
+    "        d = _distancia(nb, cb, maximo)",
+    "        if d > maximo:",
+    "            continue",
+    "        if mejor is None or d < mejor_d:",
+    "            mejor, mejor_d = c, d",
+    "    return mejor",
+    "",
+    "def _sugerencia(e):",
+    "    try:",
+    "        if isinstance(e, ImportError):",
+    "            if getattr(e, 'name_from', None) is None or not isinstance(e.name, str):",
+    "                return None",
+    "            m = sys.modules.get(e.name)",
+    "            return None if m is None else _sugerir(dir(m), e.name_from)",
+    "        nombre = getattr(e, 'name', None)",
+    "        if not isinstance(nombre, str):",
+    "            return None",
+    "        if isinstance(e, AttributeError):",
+    "            return _sugerir(dir(e.obj), nombre)",
+    "        if isinstance(e, NameError):",
+    "            tb = e.__traceback__",
+    "            if tb is None:",
+    "                return None",
+    "            while tb.tb_next is not None:",
+    "                tb = tb.tb_next",
+    "            marco = tb.tb_frame",
+    "            locales = list(marco.f_code.co_varnames)",
+    "            s = _sugerir(locales, nombre)",
+    "            if s:",
+    "                return s",
+    "            if 'self' in locales and 'self' in marco.f_locals and hasattr(marco.f_locals['self'], nombre):",
+    "                return 'self.' + nombre",
+    "            return _sugerir(list(marco.f_globals), nombre) or _sugerir(list(marco.f_builtins), nombre)",
+    "    except Exception:",
+    "        return None",
+    "    return None",
+    "",
+    "def _mensaje(e):",
+    "    texto = traceback._safe_string(e, 'exception')",
+    "    s = _sugerencia(e)",
+    "    if s:",
+    "        texto += \". Did you mean: '\" + s + \"'?\"",
+    "    if isinstance(e, NameError) and isinstance(getattr(e, 'name', None), str) and e.name in sys.stdlib_module_names:",
+    "        texto += (\" Or did you forget to import '%s'?\" if s else \". Did you forget to import '%s'?\") % e.name",
+    "    return texto",
+    "",
+    "def _ajustar(te, e, vistos):",
+    "    if id(te) in vistos:",
+    "        return",
+    "    vistos.add(id(te))",
+    "    te.stack = traceback.StackSummary.from_list([m for m in te.stack if m.filename == 'tu_programa.py'])",
+    "    if not isinstance(e, SyntaxError):",
+    "        te._str = _mensaje(e)",
+    "    if te.__cause__ is not None and e.__cause__ is not None:",
+    "        _ajustar(te.__cause__, e.__cause__, vistos)",
+    "    if te.__context__ is not None and e.__context__ is not None:",
+    "        _ajustar(te.__context__, e.__context__, vistos)",
+    "",
+    "def _formatear_error(e):",
+    "    if isinstance(e, SystemExit):",
+    "        return None if e.code is None or isinstance(e.code, int) else str(e.code) + '\\n'",
+    "    te = traceback.TracebackException.from_exception(e)",
+    "    _ajustar(te, e, set())",
+    "    return ''.join(te.format())",
+    "",
+    "def _correr(codigo, archivos_json, verificar):",
+    "    archivos = json.loads(archivos_json)",
+    "    # Para que los errores muestren la línea de código, como en la consola",
+    "    linecache.cache['tu_programa.py'] = (len(codigo), None, codigo.splitlines(True), 'tu_programa.py')",
+    "    os.makedirs(_TRABAJO, exist_ok=True)",
+    "    os.chdir(_TRABAJO)",
+    "    for n in os.listdir('.'):",
+    "        if os.path.isfile(n):",
+    "            os.remove(n)",
+    "    for nombre, contenido in archivos.items():",
+    "        with open(nombre, 'w', encoding='utf-8') as f:",
+    "            f.write(contenido)",
+    "    salida, imagenes, figuras, plt = io.StringIO(), [], [], None",
+    "    if 'matplotlib' in sys.modules or 'matplotlib' in codigo:",
+    "        try:",
+    "            import matplotlib",
+    "            matplotlib.use('Agg')",
+    "            import matplotlib.pyplot as plt",
+    "            plt.close('all')",
+    "        except ImportError:",
+    "            plt = None",
+    "    def _mostrar(*args, **kwargs):",
+    "        for n in plt.get_fignums():",
+    "            b = io.BytesIO()",
+    "            plt.figure(n).savefig(b, format='png', dpi=100, bbox_inches='tight')",
+    "            imagenes.append(base64.b64encode(b.getvalue()).decode('ascii'))",
+    "            figuras.append(plt.figure(n))",
+    "        plt.close('all')",
+    "    if plt is not None:",
+    "        show_original, plt.show = plt.show, _mostrar",
+    "    ns = {'__name__': '__main__'}",
+    "    error = None",
+    "    viejo_out, viejo_err = sys.stdout, sys.stderr",
+    "    sys.stdout = sys.stderr = salida",
+    "    # Mismo margen de recursión que al correr el archivo con python (1000 marcos)",
+    "    profundidad, marco = 0, sys._getframe()",
+    "    while marco is not None:",
+    "        profundidad, marco = profundidad + 1, marco.f_back",
+    "    limite = sys.getrecursionlimit()",
+    "    sys.setrecursionlimit(1000 + profundidad)",
+    "    try:",
+    "        exec(compile(codigo, 'tu_programa.py', 'exec'), ns)",
+    "    except BaseException as e:",
+    "        error = _formatear_error(e)",
+    "    finally:",
+    "        sys.setrecursionlimit(limite)",
+    "        sys.stdout, sys.stderr = viejo_out, viejo_err",
+    "        if plt is not None:",
+    "            plt.show = show_original",
+    "    sin_show = plt is not None and not imagenes and len(plt.get_fignums()) > 0",
+    "    if sin_show:",
+    "        _mostrar()",
+    "    nuevos = sorted(n for n in os.listdir('.') if os.path.isfile(n) and n not in archivos)",
+    "    resultados = None",
+    "    if verificar and error is None:",
+    "        try:",
+    "            resultados = [[bool(ok), str(msg)] for ok, msg in revisar(ns, salida.getvalue(), nuevos, figuras)]",
+    "        except Exception as e:",
+    "            resultados = [[False, 'No se pudo revisar: ' + ''.join(traceback.format_exception_only(type(e), e)).strip()]]",
+    "    return json.dumps({'salida': salida.getvalue(), 'error': error, 'figuras': imagenes,",
+    "                       'archivos': nuevos, 'resultados': resultados, 'sin_show': sin_show})",
+  ].join("\n");
+
+  // input() con las entradas de la caja y un tope para los ciclos que no terminan.
+  var ENTRADAS_PY = [
+    "import builtins",
+    "_ENTRADAS = []",
+    "_PASOS = 0",
+    "_DETENIDO = False",
+    "_TOPE_LINEAS = 200000",
+    "_TOPE_SALIDA = 400000",
+    "",
+    "class _Detener(BaseException):",
+    "    pass",
+    "",
+    "def _input_simulado(*args, **kwargs):",
+    "    if kwargs:",
+    "        raise TypeError('input() takes no keyword arguments')",
+    "    if len(args) > 1:",
+    "        raise TypeError(f'input expected at most 1 argument, got {len(args)}')",
+    "    aviso = str(args[0]) if args else ''",
+    "    if not _ENTRADAS:",
+    "        sys.stdout.write(aviso + '\\n')",
+    "        raise EOFError('EOF when reading a line')",
+    "    dato = _ENTRADAS.pop(0)",
+    "    sys.stdout.write(aviso + dato + '\\n')",
+    "    return dato",
+    "",
+    "def _contar(marco, evento, arg):",
+    "    global _PASOS, _DETENIDO",
+    "    if evento == 'line':",
+    "        _PASOS += 1",
+    "        try:",
+    "            mucha_salida = sys.stdout.tell() > _TOPE_SALIDA",
+    "        except Exception:",
+    "            mucha_salida = False",
+    "        if _PASOS > _TOPE_LINEAS or mucha_salida:",
+    "            _DETENIDO = True",
+    "            raise _Detener()",
+    "    return _contar",
+    "",
+    "def _vigilante(marco, evento, arg):",
+    "    return _contar if marco.f_code.co_filename == 'tu_programa.py' else None",
+    "",
+    "def _preparar(entradas):",
+    "    global _ENTRADAS, _PASOS, _DETENIDO",
+    "    _ENTRADAS = [str(e) for e in entradas]",
+    "    _PASOS, _DETENIDO = 0, False",
+    "",
+    "def _correr_entradas(codigo, archivos_json, entradas_json):",
+    "    _preparar(json.loads(entradas_json))",
+    "    viejo = builtins.input",
+    "    builtins.input = _input_simulado",
+    "    sys.settrace(_vigilante)",
+    "    try:",
+    "        r = json.loads(_correr(codigo, archivos_json, False))",
+    "    finally:",
+    "        sys.settrace(None)",
+    "        builtins.input = viejo",
+    "    r['detenido'] = _DETENIDO",
+    "    return json.dumps(r)",
+    "",
+    "def _ejecutar_con(entradas):",
+    "    _preparar(entradas)",
+    "    salida, ns, error = io.StringIO(), {'__name__': '__main__'}, None",
+    "    viejo_out, viejo_err = sys.stdout, sys.stderr",
+    "    sys.stdout = sys.stderr = salida",
+    "    profundidad, marco = 0, sys._getframe()",
+    "    while marco is not None:",
+    "        profundidad, marco = profundidad + 1, marco.f_back",
+    "    limite = sys.getrecursionlimit()",
+    "    sys.setrecursionlimit(1000 + profundidad)",
+    "    # El vigilante se activa en cada ejecución: Python lo apaga cuando detiene un programa",
+    "    sys.settrace(_vigilante)",
+    "    try:",
+    "        exec(compile(_codigo_alumno, 'tu_programa.py', 'exec'), ns)",
+    "    except BaseException as e:",
+    "        error = 'detenido' if _DETENIDO else (_formatear_error(e) or None)",
+    "    finally:",
+    "        sys.settrace(None)",
+    "        sys.setrecursionlimit(limite)",
+    "        sys.stdout, sys.stderr = viejo_out, viejo_err",
+    "    return salida.getvalue(), error, ns",
+    "",
+    "def _verificar_con_entradas(codigo):",
+    "    linecache.cache['tu_programa.py'] = (len(codigo), None, codigo.splitlines(True), 'tu_programa.py')",
+    "    try:",
+    "        compile(codigo, 'tu_programa.py', 'exec')",
+    "    except SyntaxError as e:",
+    "        return json.dumps({'sintaxis': _formatear_error(e), 'resultados': None})",
+    "    viejo = builtins.input",
+    "    builtins.input = _input_simulado",
+    "    try:",
+    "        resultados = [[bool(ok), str(msg)] for ok, msg in revisar(None, '', [], [])]",
+    "    except Exception as e:",
+    "        resultados = [[False, 'No se pudo revisar: ' + ''.join(traceback.format_exception_only(type(e), e)).strip()]]",
+    "    finally:",
+    "        sys.settrace(None)",
+    "        builtins.input = viejo",
+    "    return json.dumps({'sintaxis': None, 'resultados': resultados})",
+  ].join("\n");
+
+  var $ = function (id) { return document.getElementById(id); };
+  var pyodide = null, editor = null, reto = 0, listo = false;
+  var MSJ_DETENIDO = "(La página detuvo tu programa: ejecutó más de 200 000 líneas o imprimió demasiado. ¿Hay un ciclo que nunca termina?)";
+
+  function esc(t) {
+    return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  function estado(texto, listo) {
+    $("estado").textContent = texto;
+    $("estado").className = listo ? "listo" : "";
+  }
+  // Lo que se guarda en el navegador. Si el navegador no deja guardar (ventana privada), se
+  // conserva en memoria mientras la página esté abierta.
+  var memoria = {};
+  function leer(clave) {
+    if (Object.prototype.hasOwnProperty.call(memoria, clave)) return memoria[clave];
+    try { return localStorage.getItem(CLAVE + "-" + clave); } catch (e) { return null; }
+  }
+  function escribir(clave, valor) {
+    memoria[clave] = valor;
+    try { localStorage.setItem(CLAVE + "-" + clave, valor); } catch (e) { /* sin almacenamiento */ }
+  }
+  function guardar() { escribir("reto" + (reto + 1), obtenerCodigo()); escribir("entradas" + (reto + 1), $("entradas").value); }
+  function obtenerCodigo() { return editor ? editor.getValue() : $("editor").value; }
+  function ponerCodigo(t) { if (editor) { editor.setValue(t); editor.clearHistory(); } else $("editor").value = t; }
+  function leerEntradas() {
+    var lineas = $("entradas").value.replace(/\r/g, "").split("\n");
+    if (lineas.length && lineas[lineas.length - 1] === "") lineas.pop();
+    return lineas;
+  }
+
+  // Botones de los retos
+  $("retos").innerHTML = RETOS.map(function (r, k) {
+    return '<button type="button" role="tab" id="boton-reto' + (k + 1) + '" data-reto="' + k + '">' +
+           '<span class="num">' + (k + 1) + '</span> ' + esc(r.corto) + '<span class="hecho" id="hecho' + (k + 1) + '"></span></button>';
+  }).join("");
+  function marcarHechos() {
+    RETOS.forEach(function (r, k) {
+      var hecho = leer("ok" + (k + 1)) === "1";
+      $("hecho" + (k + 1)).textContent = hecho ? " ✓" : "";
+      $("boton-reto" + (k + 1)).setAttribute("aria-label", "Reto " + (k + 1) + ": " + r.corto + (hecho ? " (ya pasaste sus pruebas)" : ""));
+    });
+  }
+  function limpiar() {
+    $("salida").innerHTML = "";
+    $("figuras").innerHTML = "";
+    $("archivos").innerHTML = "";
+    $("resultados").innerHTML = "";
+  }
+  function usarReto(k, guardarAntes) {
+    if (guardarAntes) guardar();
+    reto = k;
+    var r = RETOS[k], casos = CASOS[r.casos];
+    document.querySelectorAll("#retos button").forEach(function (b) {
+      b.setAttribute("aria-selected", Number(b.dataset.reto) === k ? "true" : "false");
+      b.tabIndex = Number(b.dataset.reto) === k ? 0 : -1;
+    });
+    $("reto-titulo").textContent = r.titulo;
+    $("instrucciones").innerHTML = r.instrucciones.map(function (t) { return "<li>" + t + "</li>"; }).join("");
+    $("ejemplo").textContent = casos[r.ejemplo].esperado.replace(/\n$/, "") +
+      (r.ejemploMal !== undefined ? "\n\n" + casos[r.ejemploMal].esperado.replace(/\n$/, "") : "");
+    $("lista-pruebas").innerHTML = r.pruebas.map(function (p) { return "<li>" + esc(p) + "</li>"; }).join("");
+    $("pista").innerHTML = "<b>Pista:</b> " + esc(r.pista);
+    ponerCodigo(leer("reto" + (k + 1)) || CODIGOS[k]);
+    var ent = leer("entradas" + (k + 1));
+    $("entradas").value = ent !== null ? ent : casos[r.ejemplo].entradas.join("\n");
+    limpiar();
+    escribir("actual", String(k));
+    if (listo) pyodide.runPython("revisar = revisar_" + (k + 1));
+  }
+  document.querySelectorAll("#retos button").forEach(function (b) {
+    b.addEventListener("click", function () { if (Number(b.dataset.reto) !== reto) usarReto(Number(b.dataset.reto), true); });
+    b.addEventListener("keydown", function (e) {
+      if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+      e.preventDefault();
+      var k = (reto + (e.key === "ArrowRight" ? 1 : RETOS.length - 1)) % RETOS.length;
+      usarReto(k, true);
+      $("boton-reto" + (k + 1)).focus();
+    });
+  });
+
+  // Editor: CodeMirror si cargó; si no, el cuadro de texto con Tab = 4 espacios
+  $("editor").value = "";
+  if (window.CodeMirror) {
+    editor = CodeMirror.fromTextArea($("editor"), {
+      mode: "python", lineNumbers: true, indentUnit: 4, tabSize: 4, smartIndent: true,
+      extraKeys: {
+        "Tab": function (cm) { cm.replaceSelection("    "); },
+        "Ctrl-Enter": function () { ejecutar(false); },
+        "Cmd-Enter": function () { ejecutar(false); }
+      }
+    });
+    var temporizador = null;
+    editor.on("change", function () { clearTimeout(temporizador); temporizador = setTimeout(guardar, 500); });
+  } else {
+    $("editor").addEventListener("keydown", function (e) {
+      if (e.key === "Tab") {
+        e.preventDefault();
+        var t = e.target, i = t.selectionStart;
+        t.value = t.value.slice(0, i) + "    " + t.value.slice(t.selectionEnd);
+        t.selectionStart = t.selectionEnd = i + 4;
+      } else if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault(); ejecutar(false);
+      }
+    });
+    $("editor").addEventListener("input", guardar);
+  }
+  $("entradas").addEventListener("input", guardar);
+  $("entradas").addEventListener("keydown", function (e) { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); ejecutar(false); } });
+
+  async function ejecutar(verificar) {
+    if (!listo) return;
+    guardar();
+    limpiar();
+    $("ejecutar").disabled = $("verificar").disabled = true;
+    estado(verificar ? "Verificando…" : "Ejecutando…");
+    await new Promise(function (r) { setTimeout(r, 30); });   // deja que se pinte el estado
+    var r, k = reto;
+    try {
+      pyodide.globals.set("_codigo_alumno", obtenerCodigo());
+      pyodide.globals.set("_archivos_json", JSON.stringify(ARCHIVOS));
+      pyodide.globals.set("_entradas_json", JSON.stringify(leerEntradas()));
+      r = JSON.parse(await pyodide.runPythonAsync(verificar ? "_verificar_con_entradas(_codigo_alumno)" :
+                                                              "_correr_entradas(_codigo_alumno, _archivos_json, _entradas_json)"));
+    } catch (e) {
+      $("salida").innerHTML = '<span class="error">' + esc(String(e)) + "</span>";
+      $("ejecutar").disabled = $("verificar").disabled = false;
+      estado("Python listo", true);
+      return;
+    }
+    if (verificar) {
+      if (r.sintaxis) {
+        $("salida").innerHTML = '<span class="error">' + esc(r.sintaxis) + "</span>";
+        $("resultados").innerHTML = '<p class="resumen mal">Corrige el error de arriba y vuelve a verificar.</p>';
+      } else {
+        $("salida").innerHTML = '<span class="aviso">(Verificar corre tu programa varias veces con otras entradas; los resultados están abajo. Para ver la salida con tus entradas, presiona ▶ Ejecutar.)</span>';
+        var bien = r.resultados.filter(function (x) { return x[0]; }).length, total = r.resultados.length;
+        $("resultados").innerHTML =
+          '<p class="resumen ' + (bien === total ? "ok" : "mal") + '">' +
+          (bien === total ? "¡Todas las pruebas pasan! (" + total + " de " + total + ")" : bien + " de " + total + " pruebas pasan") +
+          "</p><ul class=\"pruebas\">" + r.resultados.map(function (x) {
+            return '<li class="' + (x[0] ? "ok" : "mal") + '">' + esc(x[1]) + "</li>";
+          }).join("") + "</ul>";
+        if (bien === total && k === reto) { escribir("ok" + (k + 1), "1"); marcarHechos(); }
+      }
+    } else {
+      var html = esc(r.salida);
+      if (r.detenido) html += '<span class="aviso">' + esc(MSJ_DETENIDO) + "</span>";
+      else if (r.error) html += '<span class="error">' + esc(r.error) + "</span>";
+      if (!r.salida && !r.error && !r.detenido) html = '<span class="aviso">(el programa terminó sin imprimir nada)</span>';
+      $("salida").innerHTML = html;
+    }
+    $("ejecutar").disabled = $("verificar").disabled = false;
+    estado("Python listo", true);
+  }
+
+  $("ejecutar").addEventListener("click", function () { ejecutar(false); });
+  $("verificar").addEventListener("click", function () { ejecutar(true); });
+  $("restaurar").addEventListener("click", function () {
+    if (confirm("¿Regresar al código inicial de este reto? Se perderán tus cambios.")) { ponerCodigo(CODIGOS[reto]); guardar(); limpiar(); }
+  });
+  $("descargar").addEventListener("click", function () {
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([obtenerCodigo()], { type: "text/x-python" }));
+    a.download = RETOS[reto].archivo;
+    a.click();
+  });
+
+  async function iniciar() {
+    if (!window.loadPyodide) {
+      estado("No se pudo descargar Python: revisa tu conexión a internet y recarga la página.");
+      return;
+    }
+    try {
+      pyodide = await loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.27.7/full/" });
+      if (PAQUETES.length) {
+        estado("Cargando " + PAQUETES.join(", ") + "…");
+        await pyodide.loadPackage(PAQUETES);
+      }
+      if (MICROPIP.length) {
+        estado("Instalando " + MICROPIP.join(", ") + "…");
+        await pyodide.loadPackage("micropip");
+        await pyodide.pyimport("micropip").install(MICROPIP);
+      }
+      pyodide.runPython(PREPARAR_PY);
+      pyodide.runPython(ENTRADAS_PY);
+      pyodide.globals.set("_CASOS_JSON", JSON.stringify(CASOS));
+      pyodide.runPython(PRUEBAS_PY);
+      pyodide.runPython("revisar = revisar_" + (reto + 1));
+      listo = true;
+      $("ejecutar").disabled = $("verificar").disabled = false;
+      estado("Python listo", true);
+    } catch (e) {
+      estado("No se pudo preparar Python: " + e);
+    }
+  }
+
+  var guardado = Number(leer("actual"));
+  usarReto(guardado >= 0 && guardado < RETOS.length ? guardado : 0, false);
+  marcarHechos();
+  iniciar();
+})();
+</script>
+<div id="qr-sitio" class="qr-capa" hidden>
+  <div class="qr-caja" role="dialog" aria-modal="true" aria-label="Código QR de esta página">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 45 45" role="img" aria-label="Código QR de https://memosanchezg.github.io/programacion-basica-interactivos/semana-04-ejercicios.html" shape-rendering="crispEdges"><rect width="45" height="45" fill="#fff"/><path fill="#000" d="M2 2h7v1h-7zM11 2h4v1h-4zM16 2h2v1h-2zM19 2h1v1h-1zM21 2h7v1h-7zM30 2h2v1h-2zM33 2h2v1h-2zM36 2h7v1h-7zM2 3h1v1h-1zM8 3h1v1h-1zM12 3h3v1h-3zM16 3h1v1h-1zM19 3h1v1h-1zM22 3h2v1h-2zM26 3h5v1h-5zM34 3h1v1h-1zM36 3h1v1h-1zM42 3h1v1h-1zM2 4h1v1h-1zM4 4h3v1h-3zM8 4h1v1h-1zM10 4h4v1h-4zM17 4h4v1h-4zM22 4h3v1h-3zM26 4h2v1h-2zM29 4h2v1h-2zM32 4h3v1h-3zM36 4h1v1h-1zM38 4h3v1h-3zM42 4h1v1h-1zM2 5h1v1h-1zM4 5h3v1h-3zM8 5h1v1h-1zM10 5h2v1h-2zM14 5h1v1h-1zM18 5h1v1h-1zM23 5h1v1h-1zM26 5h1v1h-1zM28 5h1v1h-1zM32 5h3v1h-3zM36 5h1v1h-1zM38 5h3v1h-3zM42 5h1v1h-1zM2 6h1v1h-1zM4 6h3v1h-3zM8 6h1v1h-1zM10 6h2v1h-2zM16 6h2v1h-2zM20 6h2v1h-2zM24 6h2v1h-2zM30 6h5v1h-5zM36 6h1v1h-1zM38 6h3v1h-3zM42 6h1v1h-1zM2 7h1v1h-1zM8 7h1v1h-1zM10 7h2v1h-2zM13 7h2v1h-2zM16 7h2v1h-2zM22 7h1v1h-1zM26 7h1v1h-1zM29 7h2v1h-2zM34 7h1v1h-1zM36 7h1v1h-1zM42 7h1v1h-1zM2 8h7v1h-7zM10 8h1v1h-1zM12 8h1v1h-1zM14 8h1v1h-1zM16 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM24 8h1v1h-1zM26 8h1v1h-1zM28 8h1v1h-1zM30 8h1v1h-1zM32 8h1v1h-1zM34 8h1v1h-1zM36 8h7v1h-7zM10 9h1v1h-1zM13 9h1v1h-1zM15 9h1v1h-1zM17 9h2v1h-2zM20 9h1v1h-1zM23 9h1v1h-1zM25 9h2v1h-2zM28 9h1v1h-1zM33 9h2v1h-2zM2 10h1v1h-1zM4 10h5v1h-5zM13 10h1v1h-1zM15 10h5v1h-5zM22 10h1v1h-1zM24 10h1v1h-1zM27 10h3v1h-3zM31 10h1v1h-1zM36 10h5v1h-5zM3 11h1v1h-1zM6 11h2v1h-2zM9 11h1v1h-1zM14 11h1v1h-1zM16 11h1v1h-1zM19 11h5v1h-5zM25 11h1v1h-1zM27 11h1v1h-1zM30 11h1v1h-1zM32 11h3v1h-3zM36 11h3v1h-3zM40 11h3v1h-3zM3 12h1v1h-1zM5 12h1v1h-1zM7 12h2v1h-2zM10 12h4v1h-4zM17 12h2v1h-2zM22 12h2v1h-2zM29 12h4v1h-4zM34 12h1v1h-1zM36 12h2v1h-2zM2 13h1v1h-1zM4 13h4v1h-4zM9 13h1v1h-1zM11 13h1v1h-1zM13 13h1v1h-1zM18 13h1v1h-1zM23 13h2v1h-2zM28 13h1v1h-1zM32 13h5v1h-5zM38 13h2v1h-2zM42 13h1v1h-1zM2 14h1v1h-1zM6 14h4v1h-4zM12 14h1v1h-1zM14 14h1v1h-1zM16 14h1v1h-1zM19 14h1v1h-1zM21 14h2v1h-2zM24 14h1v1h-1zM26 14h6v1h-6zM33 14h1v1h-1zM37 14h1v1h-1zM39 14h3v1h-3zM2 15h2v1h-2zM6 15h1v1h-1zM9 15h3v1h-3zM13 15h3v1h-3zM20 15h1v1h-1zM23 15h2v1h-2zM29 15h1v1h-1zM32 15h11v1h-11zM2 16h1v1h-1zM5 16h1v1h-1zM8 16h4v1h-4zM14 16h1v1h-1zM16 16h5v1h-5zM22 16h5v1h-5zM29 16h4v1h-4zM34 16h2v1h-2zM37 16h1v1h-1zM40 16h1v1h-1zM2 17h1v1h-1zM13 17h2v1h-2zM17 17h2v1h-2zM20 17h1v1h-1zM23 17h1v1h-1zM25 17h1v1h-1zM28 17h2v1h-2zM34 17h1v1h-1zM36 17h2v1h-2zM39 17h1v1h-1zM41 17h1v1h-1zM2 18h4v1h-4zM8 18h2v1h-2zM12 18h1v1h-1zM16 18h2v1h-2zM19 18h1v1h-1zM25 18h1v1h-1zM27 18h3v1h-3zM31 18h3v1h-3zM35 18h1v1h-1zM37 18h1v1h-1zM40 18h1v1h-1zM6 19h1v1h-1zM9 19h1v1h-1zM15 19h1v1h-1zM18 19h1v1h-1zM20 19h3v1h-3zM25 19h2v1h-2zM30 19h5v1h-5zM36 19h4v1h-4zM41 19h2v1h-2zM2 20h2v1h-2zM5 20h1v1h-1zM7 20h3v1h-3zM11 20h1v1h-1zM14 20h1v1h-1zM16 20h2v1h-2zM20 20h1v1h-1zM24 20h1v1h-1zM29 20h3v1h-3zM35 20h1v1h-1zM38 20h2v1h-2zM41 20h1v1h-1zM13 21h6v1h-6zM21 21h1v1h-1zM28 21h8v1h-8zM38 21h2v1h-2zM41 21h2v1h-2zM3 22h1v1h-1zM5 22h1v1h-1zM7 22h4v1h-4zM12 22h2v1h-2zM16 22h3v1h-3zM20 22h2v1h-2zM23 22h4v1h-4zM29 22h1v1h-1zM39 22h3v1h-3zM2 23h3v1h-3zM6 23h1v1h-1zM11 23h1v1h-1zM14 23h2v1h-2zM17 23h3v1h-3zM21 23h3v1h-3zM25 23h1v1h-1zM27 23h2v1h-2zM30 23h1v1h-1zM32 23h3v1h-3zM36 23h1v1h-1zM38 23h1v1h-1zM40 23h3v1h-3zM8 24h2v1h-2zM12 24h2v1h-2zM16 24h3v1h-3zM20 24h1v1h-1zM22 24h1v1h-1zM24 24h1v1h-1zM27 24h4v1h-4zM34 24h1v1h-1zM37 24h1v1h-1zM39 24h1v1h-1zM3 25h3v1h-3zM7 25h1v1h-1zM9 25h1v1h-1zM12 25h2v1h-2zM16 25h1v1h-1zM18 25h1v1h-1zM20 25h2v1h-2zM23 25h2v1h-2zM29 25h1v1h-1zM33 25h3v1h-3zM38 25h2v1h-2zM4 26h1v1h-1zM7 26h2v1h-2zM11 26h1v1h-1zM15 26h1v1h-1zM19 26h1v1h-1zM25 26h7v1h-7zM33 26h1v1h-1zM40 26h3v1h-3zM3 27h3v1h-3zM7 27h1v1h-1zM10 27h1v1h-1zM12 27h5v1h-5zM19 27h1v1h-1zM21 27h3v1h-3zM25 27h1v1h-1zM27 27h1v1h-1zM30 27h1v1h-1zM32 27h2v1h-2zM35 27h5v1h-5zM41 27h2v1h-2zM2 28h2v1h-2zM5 28h1v1h-1zM7 28h2v1h-2zM10 28h1v1h-1zM14 28h1v1h-1zM16 28h3v1h-3zM20 28h1v1h-1zM22 28h1v1h-1zM26 28h5v1h-5zM32 28h1v1h-1zM34 28h5v1h-5zM2 29h1v1h-1zM5 29h1v1h-1zM10 29h1v1h-1zM12 29h1v1h-1zM15 29h3v1h-3zM21 29h4v1h-4zM26 29h1v1h-1zM28 29h1v1h-1zM30 29h1v1h-1zM33 29h3v1h-3zM38 29h2v1h-2zM5 30h4v1h-4zM11 30h1v1h-1zM13 30h1v1h-1zM15 30h1v1h-1zM18 30h2v1h-2zM24 30h2v1h-2zM27 30h2v1h-2zM31 30h1v1h-1zM33 30h1v1h-1zM39 30h4v1h-4zM2 31h1v1h-1zM7 31h1v1h-1zM11 31h2v1h-2zM16 31h1v1h-1zM18 31h1v1h-1zM20 31h1v1h-1zM22 31h1v1h-1zM26 31h2v1h-2zM29 31h6v1h-6zM36 31h1v1h-1zM38 31h1v1h-1zM40 31h1v1h-1zM42 31h1v1h-1zM2 32h1v1h-1zM4 32h1v1h-1zM6 32h8v1h-8zM18 32h4v1h-4zM23 32h2v1h-2zM27 32h2v1h-2zM31 32h1v1h-1zM35 32h3v1h-3zM39 32h1v1h-1zM2 33h1v1h-1zM4 33h4v1h-4zM10 33h2v1h-2zM14 33h1v1h-1zM16 33h1v1h-1zM18 33h1v1h-1zM21 33h4v1h-4zM26 33h1v1h-1zM30 33h1v1h-1zM34 33h4v1h-4zM39 33h1v1h-1zM41 33h2v1h-2zM2 34h1v1h-1zM5 34h2v1h-2zM8 34h1v1h-1zM10 34h1v1h-1zM16 34h1v1h-1zM18 34h2v1h-2zM21 34h1v1h-1zM24 34h1v1h-1zM26 34h3v1h-3zM31 34h1v1h-1zM34 34h5v1h-5zM40 34h1v1h-1zM42 34h1v1h-1zM10 35h2v1h-2zM15 35h9v1h-9zM25 35h3v1h-3zM30 35h1v1h-1zM33 35h2v1h-2zM38 35h1v1h-1zM41 35h2v1h-2zM2 36h7v1h-7zM11 36h1v1h-1zM13 36h4v1h-4zM19 36h1v1h-1zM22 36h2v1h-2zM27 36h4v1h-4zM32 36h3v1h-3zM36 36h1v1h-1zM38 36h1v1h-1zM40 36h1v1h-1zM2 37h1v1h-1zM8 37h1v1h-1zM10 37h1v1h-1zM14 37h1v1h-1zM16 37h1v1h-1zM18 37h3v1h-3zM22 37h3v1h-3zM26 37h2v1h-2zM33 37h2v1h-2zM38 37h2v1h-2zM2 38h1v1h-1zM4 38h3v1h-3zM8 38h1v1h-1zM10 38h2v1h-2zM13 38h3v1h-3zM18 38h1v1h-1zM23 38h1v1h-1zM26 38h1v1h-1zM28 38h2v1h-2zM32 38h1v1h-1zM34 38h5v1h-5zM40 38h1v1h-1zM2 39h1v1h-1zM4 39h3v1h-3zM8 39h1v1h-1zM10 39h3v1h-3zM15 39h2v1h-2zM18 39h5v1h-5zM24 39h3v1h-3zM30 39h2v1h-2zM33 39h1v1h-1zM35 39h1v1h-1zM37 39h1v1h-1zM39 39h2v1h-2zM2 40h1v1h-1zM4 40h3v1h-3zM8 40h1v1h-1zM10 40h2v1h-2zM14 40h1v1h-1zM16 40h3v1h-3zM20 40h1v1h-1zM22 40h1v1h-1zM24 40h1v1h-1zM26 40h2v1h-2zM29 40h2v1h-2zM34 40h7v1h-7zM2 41h1v1h-1zM8 41h1v1h-1zM12 41h2v1h-2zM15 41h1v1h-1zM17 41h1v1h-1zM20 41h1v1h-1zM23 41h1v1h-1zM25 41h1v1h-1zM28 41h3v1h-3zM34 41h2v1h-2zM38 41h2v1h-2zM41 41h1v1h-1zM2 42h7v1h-7zM10 42h2v1h-2zM14 42h1v1h-1zM16 42h3v1h-3zM21 42h1v1h-1zM24 42h5v1h-5zM31 42h1v1h-1zM33 42h1v1h-1zM35 42h6v1h-6z"/></svg>
+    <p class="qr-texto">Escanea con la cámara del celular para abrir esta página</p>
+    <p class="qr-url">https://memosanchezg.github.io/programacion-basica-interactivos/semana-04-ejercicios.html</p>
+    <button type="button" class="qr-cerrar">Cerrar</button>
+  </div>
+</div>
+<style>
+  .qr-capa { position:fixed; top:0; right:0; bottom:0; left:0; z-index:10000; display:flex; align-items:center;
+             justify-content:center; padding:16px; background:#fff; }
+  .qr-capa[hidden] { display:none; }
+  .qr-caja { max-width:100%; text-align:center; color:#0A2A57; font:16px/1.4 Calibri,"Segoe UI",system-ui,sans-serif; }
+  .qr-caja svg { display:block; width:min(62vh, 84vw); height:auto; margin:0 auto; }
+  .qr-texto { margin:12px 0 2px; font-size:1.15rem; font-weight:bold; }
+  .qr-url { margin:0 0 12px; color:#5B6472; word-break:break-all; }
+  .qr-cerrar { font:inherit; padding:6px 20px; border:2px solid #00408F; border-radius:4px; background:#fff;
+               color:#00408F; cursor:pointer; }
+</style>
+<script>
+  (function () {
+    var capa = document.getElementById("qr-sitio");
+    document.querySelectorAll("a.qr-abrir").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        capa.hidden = false;
+        capa.querySelector(".qr-cerrar").focus();
+      });
+    });
+    capa.addEventListener("click", function (e) {
+      if (e.target === capa || e.target.classList.contains("qr-cerrar")) capa.hidden = true;
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !capa.hidden) capa.hidden = true;
+    });
+  })();
+</script>
+</body>
+</html>
